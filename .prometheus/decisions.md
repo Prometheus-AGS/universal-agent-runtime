@@ -2716,3 +2716,44 @@ Operator answered the explicit lane question: Linux amd64 container APIs (recomm
 ## 2026-10-31 — Final fallback authority and output restriction in #476
 
 Source integration found ordinary noncredential roots ignored nonempty artifact fallback lists, unlike child/credential authority. Preserve exact-target exclusion and legacy empty-list global behavior; bind nonempty explicit members before capture. Registered final fallback output was also ignored on ordinary sends. Use the private final admission result to apply only a downward registered cap to typed output and any existing exact contract, before driver/accounting. Never install a synthetic exact image profile or manufacture a real-image token bound to satisfy fixtures. These are source-present repairs; actual mounted outcomes remain NOT_EXERCISED.
+
+## 2026-10-30 — JWT validator (#422) and local loopback owner (#392), batch3-identity
+
+Recorded by uar-trust-tools. Source-only change; nothing compiled or run at the
+time of recording (verification lock CLOSED).
+
+- **Decision (operator, binding):** the loopback `local-host` owner ships as an
+  opt-in flag, `security.local_loopback_owner`, default `false`. It is honored
+  only with `deployment_profile: trusted_local` and `jwt_required: false`.
+  - **Rationale:** turned on by default, it flipped existing live-harness
+    assertions that expect credential-less requests to be refused
+    (`tests/integration/live/baseline_cases.rs:645-656`;
+    `capability_cases.rs` C-04, C-02 and C-21).
+  - **Rationale:** it is unsafe behind any same-host proxy or mesh sidecar.
+    Istio forwards from 127.0.0.6, and a client can send `Host: localhost`.
+  - **Data note:** history stored under `anonymous` before the flag is
+    enabled is not migrated to the `local-host` owner.
+- **Decision (trust-tools judgement):** an unknown `kid` returns 401, not 503.
+  - **Rationale:** when the configured JWKS fetched successfully and lacks the
+    key, the key source is available and the credential is defective.
+  - Only failure to obtain the key set returns 503: unavailable, timeout,
+    invalid set, or past the hard age (`VerificationError::is_key_source_unavailable`).
+  - **Rationale:** this keeps `jwks_unknown_kid_maps_to_unauthorized`.
+- **Decision (trust-tools judgement):** an explicit `typ: application/jwt` is
+  accepted alongside `JWT`, `at+jwt` and `application/at+jwt`.
+  - **Rationale:** RFC 7515 §4.1.9 lets the `application/` prefix be omitted,
+    so it is the same type as `JWT`, in parallel with `application/at+jwt`.
+- **Decision (trust-tools judgement):** a loopback owner request must also name
+  a loopback `Host`, and either send no `Origin` or a loopback `Origin`.
+  Repeated `Host` or `Origin` headers are refused.
+  - **Rationale:** DNS-rebinding and cross-origin browser pages also reach a
+    loopback socket, as `src/uar/security/sidecar_guard.rs:1-10` already
+    documents.
+  - Headers only ever refuse. The peer address comes from the socket alone
+    (`ConnectInfo`). This does not protect against a proxy, which is why the
+    flag defaults off.
+
+2026-10-31 — #476 first Linux amd64 APIs run behind a trusted host/gateway (explicit operator choice). Direct remote multi-user promotion excluded. Actual active host config already uses trusted_local/JWToptional/settings-admin-key-check-disabled local policy; older ~/.uar defaults were not active. Reuse existing policy only for isolated local fixture; no production gateway or remote-admission certificate follows.
+
+
+2026-11-01 — #476 rc.2 integration: operator requested incorporating the committed rc.2 branch before continuing. Integrated exact af37c2f834f7b34f511ecc93f408e80205c94229 with standard --no-commit merge, preserving readiness destination authority plus rc.2 estimated fallback fitting, owner migration and JWT boundaries. Source snapshot a3b5b6f8e6b6222cfaa9ad419c4ca8e5df083bd7 retained for recovery; it contains only this worktree work. Other checkout/branch/services unchanged. Commit is deliberately pending because ordinary hooks run prohibited gates; do not bypass hooks or claim merged ancestry until approved commit succeeds. Historical macOS receipts do not qualify this tree/Linux artifact.

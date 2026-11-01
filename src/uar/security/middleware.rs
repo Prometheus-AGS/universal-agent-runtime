@@ -6,13 +6,18 @@ use super::{
 };
 use crate::{AppState, config::SecurityConfig};
 use axum::{
-    extract::{Request, State},
+    extract::{ConnectInfo, Request, State},
     http::{StatusCode, header},
     middleware::Next,
     response::{IntoResponse, Response},
 };
+use std::net::SocketAddr;
 
 pub const SIDECAR_PRINCIPAL_HEADER: &str = "x-uar-principal";
+
+/// Subject of the single owner that credential-less loopback callers act as
+/// in a trusted-local installation with optional JWT.
+pub const LOCAL_LOOPBACK_SUBJECT: &str = "local-user";
 
 fn principal_error(code: &'static str) -> Response {
     principal_error_with_status(StatusCode::BAD_REQUEST, code)
@@ -116,28 +121,109 @@ async fn resolve_authenticated_context(
         }
     };
 
-    let verification = verify_token(config, token).await;
+    // A presented bearer never falls back to anonymous, whatever
+    // `jwt_required` says: failure returns no context at all.
+    let principal = verify_token(config, token).await
+        .map_err(|error| verification_failure_status(&error))?;
+    let claims = principal.claims;
+    Ok((UserContext {
+        host_authority: principal.host_authority, authority: principal.authority,
+        user_id: principal.subject,
+        tenant_id: principal.tenant_id,
+        claims,
+    }, AuthenticatedCredentialCapture::bearer(token)))
+}
 
-    match verification {
-        Ok(principal) => {
-            let claims = principal.claims;
-            Ok((UserContext {
-                host_authority: principal.host_authority, authority: principal.authority,
-                user_id: principal.subject,
-                tenant_id: principal.tenant_id,
-                claims,
-            }, AuthenticatedCredentialCapture::bearer(token)))
+/// Deterministic status for a presented bearer that did not verify.
+///
+/// Credential defects are 401. Verification that could not run is 503: the
+/// configured JWKS source failed or timed out, or the identity policy is
+/// misconfigured. A process JWT-provider conflict is 500. The response never
+/// carries the error text, the token, or key material.
+fn verification_failure_status(error: &VerificationError) -> StatusCode {
+    match error {
+        VerificationError::ProviderConflict => StatusCode::INTERNAL_SERVER_ERROR,
+        VerificationError::IdentityPolicy(_) => StatusCode::SERVICE_UNAVAILABLE,
+        VerificationError::Jwks(_) if error.is_key_source_unavailable() => {
+            StatusCode::SERVICE_UNAVAILABLE
         }
-        Err(VerificationError::ProviderConflict) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-        Err(VerificationError::IdentityPolicy(_)) => Err(StatusCode::SERVICE_UNAVAILABLE),
-        Err(_) => {
-            if config.jwt_required {
-                Err(StatusCode::UNAUTHORIZED)
-            } else {
-                Ok((anonymous_context(), AuthenticatedCredentialCapture::default()))
-            }
-        }
+        VerificationError::Token(_)
+        | VerificationError::MissingKeyId
+        | VerificationError::UnsupportedAlgorithm(_)
+        | VerificationError::Jwks(_)
+        | VerificationError::MissingRemoteIdentity
+        | VerificationError::AlgorithmMismatch { .. }
+        | VerificationError::UnsupportedPresentation
+        | VerificationError::UnsupportedTokenType => StatusCode::UNAUTHORIZED,
     }
+}
+
+/// The trusted-local owner for a request that carries no credential at all,
+/// arrives over a loopback TCP connection, and reaches an installation with
+/// `local_loopback_owner: true`, `deployment_profile: trusted_local` and
+/// `jwt_required: false`. With the flag off (the default) such a request keeps
+/// the anonymous context exactly as before.
+///
+/// The peer address comes only from the accepted socket (`ConnectInfo`), never
+/// from `X-Forwarded-For` or any other header. A request without socket
+/// information (a non-TCP listener, an in-process call) is treated as
+/// non-loopback and keeps the anonymous behavior. IPv4-mapped IPv6 loopback
+/// (`::ffff:127.0.0.0/104`) counts as IPv4 loopback. Headers can only refuse:
+/// see [`names_loopback_origin`].
+fn trusted_local_loopback_context(
+    config: &SecurityConfig,
+    request: &Request,
+) -> Option<UserContext> {
+    let loopback = request.extensions().get::<ConnectInfo<SocketAddr>>()
+        .is_some_and(|ConnectInfo(peer)| peer.ip().to_canonical().is_loopback());
+    let credential_less = !request.headers().contains_key(header::AUTHORIZATION)
+        && !request.headers().contains_key("x-api-key");
+    let enabled = config.local_loopback_owner && !config.jwt_required && !config.is_remote();
+    (enabled && loopback && credential_less && names_loopback_origin(request))
+        .then(|| UserContext::trusted_local_loopback(LOCAL_LOOPBACK_SUBJECT))
+}
+
+/// Whether a `host[:port]` authority names the loopback interface.
+fn is_loopback_authority(authority: &str) -> bool {
+    authority.parse::<axum::http::uri::Authority>().is_ok_and(|authority| {
+        let host = authority.host();
+        host.eq_ignore_ascii_case("localhost")
+            || host
+                .trim_start_matches('[')
+                .trim_end_matches(']')
+                .parse::<std::net::IpAddr>()
+                .is_ok_and(|ip| ip.to_canonical().is_loopback())
+    })
+}
+
+/// The request names a loopback `Host` (or HTTP/2 authority) and, when a
+/// browser sent an `Origin`, that origin is itself a loopback page.
+///
+/// A loopback port is reachable from any web page: a DNS-rebinding page
+/// arrives under its own host name, and a cross-origin page carries its own
+/// `Origin`. Neither may become the local owner, so either refuses here, as
+/// the sidecar launch guard does. Repeated `Host` or `Origin` headers refuse.
+fn names_loopback_origin(request: &Request) -> bool {
+    let mut hosts = request.headers().get_all(header::HOST).iter();
+    let authority = match (hosts.next(), hosts.next()) {
+        (Some(host), None) => host.to_str().ok(),
+        (None, _) => request.uri().authority().map(axum::http::uri::Authority::as_str),
+        (Some(_), Some(_)) => None,
+    };
+    let mut origins = request.headers().get_all(header::ORIGIN).iter();
+    let origin_is_loopback = match (origins.next(), origins.next()) {
+        (None, _) => true,
+        (Some(origin), None) => origin
+            .to_str()
+            .ok()
+            .and_then(|origin| origin.parse::<axum::http::Uri>().ok())
+            .is_some_and(|origin| {
+                matches!(origin.scheme_str(), Some("http" | "https"))
+                    && origin.authority().is_some_and(|value| is_loopback_authority(value.as_str()))
+            }),
+        (Some(_), Some(_)) => false,
+    };
+    authority.is_some_and(is_loopback_authority) && origin_is_loopback
 }
 
 /// Verify bearer identity for a trusted non-HTTP host adapter using the same
@@ -188,6 +274,7 @@ fn resolve_user_context(
         jwt_validate_nbf: true,
         settings_mutation_auth_required: true,
         settings_admin_key: Some("test-admin-key".to_owned().into()),
+        local_loopback_owner: false,
     };
     futures::executor::block_on(resolve_user_context_with_config(&config, auth_header))
 }
@@ -279,6 +366,10 @@ pub async fn auth_middleware(
                 .ok_or_else(|| StatusCode::UNAUTHORIZED.into_response())?;
             credential_capture.extend(AuthenticatedCredentialCapture::api_key(key));
             context
+        } else if let Some(local) =
+            trusted_local_loopback_context(&state.config.security, &request)
+        {
+            local
         } else {
             resolve_authenticated_context(&state.config.security, None).await
                 .map_err(|status| status.into_response())?.0
@@ -335,7 +426,9 @@ mod tests {
     };
 
     use super::*;
+    use crate::uar::runtime::actor::messages::ActorOwner;
     use crate::uar::security::{
+        claims::CredentialPrincipal,
         jwt,
         verifier::test_support::{TestJwksServer, jwk, signed_token},
     };
@@ -400,6 +493,7 @@ mod tests {
             jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
             settings_admin_key: Some("test-admin-key".to_owned().into()),
+            local_loopback_owner: false,
         }
     }
 
@@ -421,6 +515,7 @@ mod tests {
             jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
             settings_admin_key: Some("test-admin-key".to_owned().into()),
+            local_loopback_owner: false,
         }
     }
 
@@ -461,11 +556,13 @@ mod tests {
         assert_eq!(ctx.user_id, "anonymous");
     }
 
+    /// #422 decision A: a presented bearer that fails verification is 401 even
+    /// when JWT is optional. It never degrades to the anonymous context.
     #[test]
-    fn test_resolve_user_context_anonymous_when_jwt_disabled_and_invalid_header() {
-        let ctx = resolve_user_context(false, "secret", Some("Bearer invalid.token"))
-            .expect("expected anonymous fallback context");
-        assert_eq!(ctx.user_id, "anonymous");
+    fn j10_invalid_bearer_is_unauthorized_when_jwt_optional() {
+        let err = resolve_user_context(false, "secret", Some("Bearer invalid.token"))
+            .expect_err("an invalid presented bearer must not fall back to anonymous");
+        assert_eq!(err, StatusCode::UNAUTHORIZED);
     }
 
     #[test]
@@ -639,7 +736,8 @@ mod tests {
         let error = resolve_user_context_with_config(&config, Some(&format!("Bearer {token}")))
             .await
             .expect_err("unreachable JWKS must fail closed");
-        assert_eq!(error, StatusCode::UNAUTHORIZED);
+        // #422 J07/J09: verification could not run, which is not a bad credential.
+        assert_eq!(error, StatusCode::SERVICE_UNAVAILABLE);
         let output = logs.contents();
         assert!(
             output.contains("ERROR"),
@@ -649,6 +747,322 @@ mod tests {
             output.contains("JWKS refresh failed"),
             "expected JWKS failure log: {output}"
         );
+    }
+
+    // ── #422 status mapping and #392 trusted-local loopback identity ───────
+
+    fn unreachable_jwks_url() -> String {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0")
+            .expect("temporary listener must bind");
+        let address = listener.local_addr().expect("temporary listener must have an address");
+        drop(listener);
+        format!("http://{address}/jwks")
+    }
+
+    fn optional_jwt_config() -> SecurityConfig {
+        let mut config = shared_secret_config(None, None);
+        config.jwt_required = false;
+        config
+    }
+
+    /// Optional JWT with the opt-in loopback owner enabled.
+    fn local_owner_config() -> SecurityConfig {
+        let mut config = optional_jwt_config();
+        config.local_loopback_owner = true;
+        config
+    }
+
+    /// A request with a loopback `Host` unless `headers` supplies its own.
+    fn request_from(peer: Option<&str>, headers: &[(&str, &str)]) -> Request {
+        let mut builder = axum::http::Request::builder().uri("/api/uar/sessions");
+        if !headers.iter().any(|(name, _)| name.eq_ignore_ascii_case("host")) {
+            builder = builder.header("host", "127.0.0.1:8088");
+        }
+        for (name, value) in headers {
+            builder = builder.header(*name, *value);
+        }
+        let mut request = builder
+            .body(axum::body::Body::empty())
+            .expect("fixture request must build");
+        if let Some(peer) = peer {
+            let address: std::net::SocketAddr = peer.parse().expect("fixture peer must parse");
+            request.extensions_mut().insert(ConnectInfo(address));
+        }
+        request
+    }
+
+    #[tokio::test]
+    async fn j10_invalid_bearers_are_unauthorized_never_anonymous_when_jwt_optional() {
+        let config = optional_jwt_config();
+        let expired = jwt::encode(
+            &Header::default(),
+            &serde_json::json!({"sub": "claim-user", "exp": 1}),
+            &EncodingKey::from_secret(b"claim-test-secret"),
+        )
+        .expect("expired fixture must encode");
+        let wrong_key = jwt::encode(
+            &Header::default(),
+            &serde_json::json!({"sub": "claim-user", "exp": usize::MAX}),
+            &EncodingKey::from_secret(b"another-secret"),
+        )
+        .expect("wrong-key fixture must encode");
+        for token in [
+            "invalid.token".to_owned(),
+            "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ4In0.".to_owned(),
+            expired,
+            wrong_key,
+            String::new(),
+        ] {
+            let error = resolve_user_context_with_config(&config, Some(&format!("Bearer {token}")))
+                .await
+                .expect_err("an invalid presented bearer must be refused");
+            assert_eq!(error, StatusCode::UNAUTHORIZED, "{token}");
+        }
+        let valid = shared_secret_token(None, None, None);
+        let context = resolve_user_context_with_config(&config, Some(&format!("Bearer {valid}")))
+            .await
+            .expect("a valid bearer still authenticates when JWT is optional");
+        assert_eq!(context.user_id, "claim-user");
+    }
+
+    #[tokio::test]
+    async fn j07_unreachable_jwks_is_service_unavailable_when_jwt_optional() {
+        let mut config = jwks_config(unreachable_jwks_url(), "issuer", "audience");
+        config.jwt_required = false;
+        let token = signed_token("unreachable-optional-key", "issuer", "audience");
+        for _ in 0..2 {
+            let error = resolve_user_context_with_config(&config, Some(&format!("Bearer {token}")))
+                .await
+                .expect_err("unavailable trust material must never yield a context");
+            assert_eq!(error, StatusCode::SERVICE_UNAVAILABLE);
+        }
+    }
+
+    #[tokio::test]
+    async fn j09_misconfigured_identity_policy_is_service_unavailable_regardless_of_jwt_required() {
+        let token = shared_secret_token(None, None, None);
+        for jwt_required in [true, false] {
+            let mut config = shared_secret_config(None, None);
+            config.jwt_required = jwt_required;
+            // Contradictory: an asymmetric algorithm with no JWKS source.
+            config.jwt_algorithm = Some(crate::config::JwtAlgorithm::RS256);
+            for _ in 0..2 {
+                let error =
+                    resolve_user_context_with_config(&config, Some(&format!("Bearer {token}")))
+                        .await
+                        .expect_err("contradictory trust configuration must fail closed");
+                assert_eq!(error, StatusCode::SERVICE_UNAVAILABLE);
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn j09_repeated_equivalent_credential_failures_map_consistently() {
+        let server = TestJwksServer::start(vec![jwk("repeat-key")]).await;
+        let config = jwks_config(server.url.clone(), "issuer", "audience");
+        let wrong_audience = signed_token("repeat-key", "issuer", "other-audience");
+        let unknown_kid = signed_token("repeat-missing", "issuer", "audience");
+        for token in [wrong_audience, unknown_kid, "x.y.z".to_owned()] {
+            for _ in 0..3 {
+                let error =
+                    resolve_user_context_with_config(&config, Some(&format!("Bearer {token}")))
+                        .await
+                        .expect_err("an invalid credential must be refused");
+                assert_eq!(error, StatusCode::UNAUTHORIZED);
+            }
+        }
+    }
+
+    #[test]
+    fn j10_loopback_without_credential_gets_one_local_host_owner_for_all_stores() {
+        let config = local_owner_config();
+        let sidecar = {
+            let mut context = sidecar_principal(LOCAL_LOOPBACK_SUBJECT)
+                .expect("the loopback subject is a valid host principal");
+            crate::uar::security::sidecar_guard::HostAuthenticated::for_test()
+                .bind_context(&mut context);
+            context
+        };
+        let sidecar_key = sidecar.session_owner_key().expect("sidecar owner key");
+        let loopback_requests = [
+            request_from(Some("127.0.0.1:50000"), &[]),
+            request_from(Some("127.8.9.10:50000"), &[("host", "localhost:8088")]),
+            request_from(Some("[::1]:50000"), &[("host", "[::1]:8088")]),
+            request_from(Some("[::ffff:127.0.0.1]:50000"), &[("origin", "http://localhost:5173")]),
+        ];
+        for request in &loopback_requests {
+            let context = trusted_local_loopback_context(&config, request)
+                .expect("a credential-less loopback caller is the local owner");
+            let principal = CredentialPrincipal::from_verified_context(&context)
+                .expect("the loopback owner is a credential principal");
+            assert_eq!(principal.issuer_kind(), "local-host");
+            assert_eq!(principal.issuer(), "urn:uar:local:host");
+            assert_eq!(principal.tenant_id(), None);
+            assert_eq!(principal.subject(), LOCAL_LOOPBACK_SUBJECT);
+            // No host-administration authority and no role-derived privilege.
+            assert!(context.trusted_host_id().is_none());
+            assert!(
+                context
+                    .verified_identity()
+                    .is_some_and(|identity| identity.roles().is_empty())
+            );
+
+            let history = context.session_owner_key().expect("history owner");
+            let memory = crate::uar::memory::scopes::user_id_for_query(&context)
+                .expect("memory owner");
+            let tools = ActorOwner::from_verified_context(&context)
+                .expect("tool/run owner")
+                .session_owner_key()
+                .expect("tool/run owner key");
+            assert_eq!(history, principal.storage_key());
+            assert_eq!(memory, history);
+            assert_eq!(tools, history);
+            assert_eq!(history, sidecar_key, "loopback and sidecar launch share one owner");
+        }
+    }
+
+    #[tokio::test]
+    async fn j10_non_loopback_credentialed_or_strict_requests_get_no_local_owner() {
+        let optional = local_owner_config();
+        for peer in [
+            "192.168.1.10:50000",
+            "10.0.0.1:50000",
+            "[2001:db8::1]:50000",
+            "0.0.0.0:50000",
+        ] {
+            let request = request_from(Some(peer), &[]);
+            assert!(trusted_local_loopback_context(&optional, &request).is_none(), "{peer}");
+        }
+        // Without socket information the caller is treated as non-loopback.
+        assert!(trusted_local_loopback_context(&optional, &request_from(None, &[])).is_none());
+        // Forwarding headers never establish the peer address.
+        for header in ["x-forwarded-for", "x-real-ip", "forwarded"] {
+            let request = request_from(Some("203.0.113.7:50000"), &[(header, "127.0.0.1")]);
+            assert!(trusted_local_loopback_context(&optional, &request).is_none(), "{header}");
+        }
+        // A DNS-rebinding or cross-origin page reaches the loopback socket too.
+        for headers in [
+            vec![("host", "rebound.example:8088")],
+            vec![("origin", "https://attacker.example")],
+            vec![("origin", "null")],
+            vec![("origin", "http://localhost:5173"), ("origin", "https://attacker.example")],
+            vec![("host", "127.0.0.1:8088"), ("host", "rebound.example:8088")],
+        ] {
+            let request = request_from(Some("127.0.0.1:50000"), &headers);
+            assert!(trusted_local_loopback_context(&optional, &request).is_none(), "{headers:?}");
+        }
+        // Any presented credential is verified, never replaced by the local owner.
+        for header in [
+            ("authorization", "Bearer invalid.token"),
+            ("authorization", "Basic dXNlcjpwYXNz"),
+            ("x-api-key", "not-a-key"),
+        ] {
+            let request = request_from(Some("127.0.0.1:50000"), &[header]);
+            assert!(trusted_local_loopback_context(&optional, &request).is_none(), "{header:?}");
+        }
+        let mut strict = local_owner_config();
+        strict.jwt_required = true;
+        let loopback = || request_from(Some("127.0.0.1:50000"), &[]);
+        assert!(trusted_local_loopback_context(&strict, &loopback()).is_none());
+        let mut remote = local_owner_config();
+        remote.deployment_profile = crate::config::DeploymentProfile::Remote;
+        assert!(trusted_local_loopback_context(&remote, &loopback()).is_none());
+
+        // The non-loopback, no-credential caller keeps today's anonymous context.
+        let anonymous = resolve_user_context_with_config(&optional, None)
+            .await
+            .expect("optional JWT still admits an anonymous non-loopback caller");
+        assert_eq!(anonymous.user_id, "anonymous");
+        assert_eq!(anonymous.session_owner_key().expect("anonymous history owner"), "anonymous");
+    }
+
+    #[tokio::test]
+    async fn j10_loopback_without_credential_stays_anonymous_when_local_loopback_owner_is_off() {
+        let off = optional_jwt_config();
+        assert!(!off.local_loopback_owner, "the loopback owner must default off");
+        let defaulted: SecurityConfig = serde_json::from_value(serde_json::json!({
+            "jwt_required": false, "jwt_secret": "claim-test-secret",
+            "settings_mutation_auth_required": false
+        }))
+        .expect("minimal optional-JWT config must deserialize");
+        assert!(!defaulted.local_loopback_owner, "an absent key must mean off");
+        for config in [&off, &defaulted] {
+            for request in [
+                request_from(Some("127.0.0.1:50000"), &[]),
+                request_from(Some("[::1]:50000"), &[("host", "[::1]:8088")]),
+                request_from(Some("127.0.0.1:50000"), &[("origin", "http://localhost:5173")]),
+            ] {
+                assert!(trusted_local_loopback_context(config, &request).is_none());
+            }
+            let context = resolve_user_context_with_config(config, None)
+                .await
+                .expect("optional JWT admits the credential-less caller");
+            assert_eq!(context.user_id, "anonymous");
+            assert_eq!(context.session_owner_key().expect("anonymous owner"), "anonymous");
+        }
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn j10_verification_paths_leak_no_token_or_key_material() {
+        let logs = LogBuffer::default();
+        let subscriber = tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::TRACE)
+            .without_time()
+            .with_ansi(false)
+            .with_writer(logs.clone())
+            .finish();
+        let _subscriber_guard = tracing::subscriber::set_default(subscriber);
+
+        let shared = shared_secret_config(None, None);
+        let valid = shared_secret_token(None, None, None);
+        let (context, capture) =
+            resolve_authenticated_context(&shared, Some(&format!("Bearer {valid}")))
+                .await
+                .expect("valid bearer must authenticate");
+        let forged = format!("{valid}tampered");
+        let invalid = resolve_authenticated_context(&shared, Some(&format!("Bearer {forged}")))
+            .await
+            .expect_err("tampered bearer must be refused");
+        assert_eq!(invalid, StatusCode::UNAUTHORIZED);
+        let unavailable_token = signed_token("redaction-key", "issuer", "audience");
+        let unavailable = resolve_authenticated_context(
+            &jwks_config(unreachable_jwks_url(), "issuer", "audience"),
+            Some(&format!("Bearer {unavailable_token}")),
+        )
+        .await
+        .expect_err("unavailable verifier must be refused");
+        assert_eq!(unavailable, StatusCode::SERVICE_UNAVAILABLE);
+        let verifier_error = verify_token(&shared, &forged)
+            .await
+            .err()
+            .expect("tampered token must not verify")
+            .to_string();
+
+        let scrubbed = capture
+            .clone()
+            .into_scrubber()
+            .scrub(&format!("upstream echoed Authorization: Bearer {valid}"));
+        let observed = [
+            logs.contents(),
+            format!("{context:?}"),
+            format!("{capture:?}"),
+            verifier_error,
+            scrubbed,
+        ];
+        let signature = |token: &str| token.rsplit('.').next().unwrap_or_default().to_owned();
+        for secret in [
+            valid.clone(),
+            forged.clone(),
+            unavailable_token.clone(),
+            signature(&valid),
+            signature(&unavailable_token),
+            "claim-test-secret".to_owned(),
+        ] {
+            assert!(!secret.is_empty());
+            for text in &observed {
+                assert!(!text.contains(&secret), "credential material leaked into: {text}");
+            }
+        }
     }
 
     mod sidecar_bound {

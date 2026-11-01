@@ -194,3 +194,36 @@ pub(crate) fn rotated_signed_token(kid: &str, issuer: &str, audience: &str) -> S
     };
     jwt::encode(&header, &claims, &rotated_encoding_key()).expect("synthetic rotated token")
 }
+
+pub(crate) fn now_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("system clock must follow the Unix epoch")
+        .as_secs()
+}
+
+/// Sign arbitrary claims with the synthetic RSA key under a caller-built header.
+pub(crate) fn rsa_signed(header: &Header, claims: &serde_json::Value) -> String {
+    jwt::encode(header, claims, &encoding_key()).expect("test token must encode")
+}
+
+/// Registered claims of a valid access token for `issuer`/`audience`.
+pub(crate) fn access_claims(issuer: &str, audience: &str) -> serde_json::Value {
+    serde_json::json!({
+        "sub": "user-123", "roles": ["user"], "iss": issuer, "aud": audience,
+        "exp": now_secs() + 3600,
+    })
+}
+
+/// RS256 header bound to `kid`, as the configured JWKS issues it.
+pub(crate) fn rsa_header(kid: &str) -> Header {
+    let mut header = Header::new(Algorithm::RS256);
+    header.kid = Some(kid.to_owned());
+    header
+}
+
+/// Sign arbitrary claims with the synthetic rotated RSA key, which the
+/// configured JWKS does not publish unless a test installs `rotated_jwk`.
+pub(crate) fn rotated_rsa_signed(header: &Header, claims: &serde_json::Value) -> String {
+    jwt::encode(header, claims, &rotated_encoding_key()).expect("synthetic rotated token")
+}

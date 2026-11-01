@@ -1,0 +1,387 @@
+{
+  "scenario": "KB-UNLINK-ONE-01",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "history_replayed": false,
+  "global_configuration_changes": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/uar/settings/embedding/provenance",
+      "status": 200,
+      "response": "{\"status\":\"serving\",\"space\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"endpoint\":null,\"provenance\":{\"source_dir\":\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models\",\"asset_manifest_sha256\":\"f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3\"},\"failover\":null}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases",
+      "request": {
+        "name": "amber inventory 63413217-a500-42d2-b8be-f7b084ba98a6",
+        "config": {
+          "chunk_strategy": "fixed",
+          "chunk_size": 512,
+          "retrieval_min_score": 0,
+          "retrieval_top_k": 5
+        }
+      },
+      "status": 201,
+      "response": "{\"id\":\"4fa161a9-a9a7-49fa-9abf-fa8a57ee338a\",\"name\":\"amber inventory 63413217-a500-42d2-b8be-f7b084ba98a6\",\"description\":null,\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":null,\"regeneration\":null},\"created_at\":\"2026-10-31T20:23:26.871110+00:00\",\"updated_at\":\"2026-10-31T20:23:26.871110+00:00\",\"document_count\":0}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/4fa161a9-a9a7-49fa-9abf-fa8a57ee338a/documents",
+      "request": {
+        "file": "For project inventory-project-63413217-a500-42d2-b8be-f7b084ba98a6, the amber inventory has 334 units. Its private source seal is AMBER-918da5c3-db5f-4a0d-8e53-f72ee8ab55ae. This inventory note is the authoritative source for amber only."
+      },
+      "status": 202,
+      "response": "{\"id\":\"391e7262-72a5-4ad5-a88a-ebe9dfcd1ed4\",\"kb_id\":\"4fa161a9-a9a7-49fa-9abf-fa8a57ee338a\",\"filename\":\"amber-inventory.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-31T20:23:26.946683+00:00\",\"updated_at\":\"2026-10-31T20:23:26.946683+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/4fa161a9-a9a7-49fa-9abf-fa8a57ee338a/documents/391e7262-72a5-4ad5-a88a-ebe9dfcd1ed4",
+      "status": 200,
+      "response": "{\"id\":\"391e7262-72a5-4ad5-a88a-ebe9dfcd1ed4\",\"kb_id\":\"4fa161a9-a9a7-49fa-9abf-fa8a57ee338a\",\"filename\":\"amber-inventory.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-31T20:23:26.946683+00:00\",\"updated_at\":\"2026-10-31T20:23:26.946683+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/4fa161a9-a9a7-49fa-9abf-fa8a57ee338a/documents/391e7262-72a5-4ad5-a88a-ebe9dfcd1ed4",
+      "status": 200,
+      "response": "{\"id\":\"391e7262-72a5-4ad5-a88a-ebe9dfcd1ed4\",\"kb_id\":\"4fa161a9-a9a7-49fa-9abf-fa8a57ee338a\",\"filename\":\"amber-inventory.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-31T20:23:26.946683+00:00\",\"updated_at\":\"2026-10-31T20:23:27.084471+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/4fa161a9-a9a7-49fa-9abf-fa8a57ee338a",
+      "status": 200,
+      "response": "{\"id\":\"4fa161a9-a9a7-49fa-9abf-fa8a57ee338a\",\"name\":\"amber inventory 63413217-a500-42d2-b8be-f7b084ba98a6\",\"description\":null,\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"regeneration\":null},\"created_at\":\"2026-10-31T20:23:26.871110+00:00\",\"updated_at\":\"2026-10-31T20:23:27.084471+00:00\",\"document_count\":1}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases",
+      "request": {
+        "name": "cobalt inventory 63413217-a500-42d2-b8be-f7b084ba98a6",
+        "config": {
+          "chunk_strategy": "fixed",
+          "chunk_size": 512,
+          "retrieval_min_score": 0,
+          "retrieval_top_k": 5
+        }
+      },
+      "status": 201,
+      "response": "{\"id\":\"ffb5f7d3-19eb-4b19-a975-deae99592788\",\"name\":\"cobalt inventory 63413217-a500-42d2-b8be-f7b084ba98a6\",\"description\":null,\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":null,\"regeneration\":null},\"created_at\":\"2026-10-31T20:23:27.522090+00:00\",\"updated_at\":\"2026-10-31T20:23:27.522090+00:00\",\"document_count\":0}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/knowledge-bases/ffb5f7d3-19eb-4b19-a975-deae99592788/documents",
+      "request": {
+        "file": "For project inventory-project-63413217-a500-42d2-b8be-f7b084ba98a6, the cobalt inventory has 603 units. Its private source seal is COBALT-a710555e-6179-4384-828f-65bb04c89c81. This inventory note is the authoritative source for cobalt only."
+      },
+      "status": 202,
+      "response": "{\"id\":\"3cca948c-31eb-43c3-b73a-9f1530231feb\",\"kb_id\":\"ffb5f7d3-19eb-4b19-a975-deae99592788\",\"filename\":\"cobalt-inventory.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-31T20:23:27.584759+00:00\",\"updated_at\":\"2026-10-31T20:23:27.584759+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/ffb5f7d3-19eb-4b19-a975-deae99592788/documents/3cca948c-31eb-43c3-b73a-9f1530231feb",
+      "status": 200,
+      "response": "{\"id\":\"3cca948c-31eb-43c3-b73a-9f1530231feb\",\"kb_id\":\"ffb5f7d3-19eb-4b19-a975-deae99592788\",\"filename\":\"cobalt-inventory.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":0,\"status\":\"pending\",\"error_message\":null,\"created_at\":\"2026-10-31T20:23:27.584759+00:00\",\"updated_at\":\"2026-10-31T20:23:27.584759+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/ffb5f7d3-19eb-4b19-a975-deae99592788/documents/3cca948c-31eb-43c3-b73a-9f1530231feb",
+      "status": 200,
+      "response": "{\"id\":\"3cca948c-31eb-43c3-b73a-9f1530231feb\",\"kb_id\":\"ffb5f7d3-19eb-4b19-a975-deae99592788\",\"filename\":\"cobalt-inventory.txt\",\"file_path\":null,\"mime_type\":\"text/plain\",\"chunk_count\":1,\"status\":\"indexed\",\"error_message\":null,\"created_at\":\"2026-10-31T20:23:27.584759+00:00\",\"updated_at\":\"2026-10-31T20:23:27.716456+00:00\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/knowledge-bases/ffb5f7d3-19eb-4b19-a975-deae99592788",
+      "status": 200,
+      "response": "{\"id\":\"ffb5f7d3-19eb-4b19-a975-deae99592788\",\"name\":\"cobalt inventory 63413217-a500-42d2-b8be-f7b084ba98a6\",\"description\":null,\"config\":{\"embedding_provider\":\"fastembed\",\"embedding_model\":\"BAAI/bge-small-en-v1.5\",\"vector_dimensions\":null,\"file_processor\":\"kreuzberg\",\"chunk_strategy\":\"FixedSize { size: 512 }\",\"retrieval_min_score\":0.0,\"retrieval_top_k\":5,\"indexed_embedding\":{\"backend\":\"fastembed\",\"model\":\"bge-small-en-v1.5\",\"dimension\":384},\"regeneration\":null},\"created_at\":\"2026-10-31T20:23:27.522090+00:00\",\"updated_at\":\"2026-10-31T20:23:27.716456+00:00\",\"document_count\":1}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-unlink-one-63413217-a500-42d2-b8be-f7b084ba98a6",
+        "metadata": {
+          "title": "Disposable two-KB inventory agent",
+          "description": "Owned by one manual BDD.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only JSON with agent_marker, amber, cobalt, and total. Always set agent_marker to \"AGENT-411f87d2-e062-4230-a9cb-d761ce5593c5\". For each inventory, return an object with units, seal, and citation. Read units and exact private source seal only from the retrieved source for the requested project, copying its numbered citation such as [1]. Calculate total from both inventory quantities. If either inventory is unavailable return null for that inventory and total. Never invent quantities or seals.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": true
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-unlink-one-63413217-a500-42d2-b8be-f7b084ba98a6\",\"metadata\":{\"title\":\"Disposable two-KB inventory agent\",\"description\":\"Owned by one manual BDD.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only JSON with agent_marker, amber, cobalt, and total. Always set agent_marker to \\\"AGENT-411f87d2-e062-4230-a9cb-d761ce5593c5\\\". For each inventory, return an object with units, seal, and citation. Read units and exact private source seal only from the retrieved source for the requested project, copying its numbered citation such as [1]. Calculate total from both inventory quantities. If either inventory is unavailable return null for that inventory and total. Never invent quantities or seals.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:1c3d1ec22a20d1b2c79054ba9b25e60c8ce1822c27f1b70ff7c41a06f714631e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/disposable-unlink-one-63413217-a500-42d2-b8be-f7b084ba98a6",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-unlink-one-63413217-a500-42d2-b8be-f7b084ba98a6\",\"metadata\":{\"title\":\"Disposable two-KB inventory agent\",\"description\":\"Owned by one manual BDD.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only JSON with agent_marker, amber, cobalt, and total. Always set agent_marker to \\\"AGENT-411f87d2-e062-4230-a9cb-d761ce5593c5\\\". For each inventory, return an object with units, seal, and citation. Read units and exact private source seal only from the retrieved source for the requested project, copying its numbered citation such as [1]. Calculate total from both inventory quantities. If either inventory is unavailable return null for that inventory and total. Never invent quantities or seals.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:1c3d1ec22a20d1b2c79054ba9b25e60c8ce1822c27f1b70ff7c41a06f714631e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    }
+  ],
+  "sources": [
+    {
+      "name": "amber",
+      "units": 334,
+      "seal": "AMBER-918da5c3-db5f-4a0d-8e53-f72ee8ab55ae",
+      "kb_id": "4fa161a9-a9a7-49fa-9abf-fa8a57ee338a",
+      "path": "/api/uar/knowledge-bases/4fa161a9-a9a7-49fa-9abf-fa8a57ee338a",
+      "document_id": "391e7262-72a5-4ad5-a88a-ebe9dfcd1ed4",
+      "document": {
+        "id": "391e7262-72a5-4ad5-a88a-ebe9dfcd1ed4",
+        "kb_id": "4fa161a9-a9a7-49fa-9abf-fa8a57ee338a",
+        "filename": "amber-inventory.txt",
+        "file_path": null,
+        "mime_type": "text/plain",
+        "chunk_count": 1,
+        "status": "indexed",
+        "error_message": null,
+        "created_at": "2026-10-31T20:23:26.946683+00:00",
+        "updated_at": "2026-10-31T20:23:27.084471+00:00"
+      },
+      "kb": {
+        "id": "4fa161a9-a9a7-49fa-9abf-fa8a57ee338a",
+        "name": "amber inventory 63413217-a500-42d2-b8be-f7b084ba98a6",
+        "description": null,
+        "config": {
+          "embedding_provider": "fastembed",
+          "embedding_model": "BAAI/bge-small-en-v1.5",
+          "vector_dimensions": null,
+          "file_processor": "kreuzberg",
+          "chunk_strategy": "FixedSize { size: 512 }",
+          "retrieval_min_score": 0,
+          "retrieval_top_k": 5,
+          "indexed_embedding": {
+            "backend": "fastembed",
+            "model": "bge-small-en-v1.5",
+            "dimension": 384
+          },
+          "regeneration": null
+        },
+        "created_at": "2026-10-31T20:23:26.871110+00:00",
+        "updated_at": "2026-10-31T20:23:27.084471+00:00",
+        "document_count": 1
+      }
+    },
+    {
+      "name": "cobalt",
+      "units": 603,
+      "seal": "COBALT-a710555e-6179-4384-828f-65bb04c89c81",
+      "kb_id": "ffb5f7d3-19eb-4b19-a975-deae99592788",
+      "path": "/api/uar/knowledge-bases/ffb5f7d3-19eb-4b19-a975-deae99592788",
+      "document_id": "3cca948c-31eb-43c3-b73a-9f1530231feb",
+      "document": {
+        "id": "3cca948c-31eb-43c3-b73a-9f1530231feb",
+        "kb_id": "ffb5f7d3-19eb-4b19-a975-deae99592788",
+        "filename": "cobalt-inventory.txt",
+        "file_path": null,
+        "mime_type": "text/plain",
+        "chunk_count": 1,
+        "status": "indexed",
+        "error_message": null,
+        "created_at": "2026-10-31T20:23:27.584759+00:00",
+        "updated_at": "2026-10-31T20:23:27.716456+00:00"
+      },
+      "kb": {
+        "id": "ffb5f7d3-19eb-4b19-a975-deae99592788",
+        "name": "cobalt inventory 63413217-a500-42d2-b8be-f7b084ba98a6",
+        "description": null,
+        "config": {
+          "embedding_provider": "fastembed",
+          "embedding_model": "BAAI/bge-small-en-v1.5",
+          "vector_dimensions": null,
+          "file_processor": "kreuzberg",
+          "chunk_strategy": "FixedSize { size: 512 }",
+          "retrieval_min_score": 0,
+          "retrieval_top_k": 5,
+          "indexed_embedding": {
+            "backend": "fastembed",
+            "model": "bge-small-en-v1.5",
+            "dimension": 384
+          },
+          "regeneration": null
+        },
+        "created_at": "2026-10-31T20:23:27.522090+00:00",
+        "updated_at": "2026-10-31T20:23:27.716456+00:00",
+        "document_count": 1
+      }
+    }
+  ],
+  "endpoint": {
+    "client_url": "http://127.0.0.1:60675/",
+    "upstream_url": "http://127.0.0.1:53587",
+    "proxy_pid": 3923,
+    "runtime_pid": 77733
+  },
+  "embedding": {
+    "status": "serving",
+    "space": {
+      "backend": "fastembed",
+      "model": "bge-small-en-v1.5",
+      "dimension": 384
+    },
+    "endpoint": null,
+    "provenance": {
+      "source_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/prompt-macos-hbitxj2c/models",
+      "asset_manifest_sha256": "f6dcb84ec0c04198069459ab3374ad66c1afb1d313b10048440dbaa188daa8b3"
+    },
+    "failover": null
+  },
+  "agent_before": {
+    "version": "1.0.0",
+    "kind": "agent",
+    "id": "disposable-unlink-one-63413217-a500-42d2-b8be-f7b084ba98a6",
+    "metadata": {
+      "title": "Disposable two-KB inventory agent",
+      "description": "Owned by one manual BDD.",
+      "tags": [
+        "disposable",
+        "verification"
+      ],
+      "author": "System",
+      "icon": null
+    },
+    "runtime": {
+      "entry": "default",
+      "protocols": {}
+    },
+    "policy": {
+      "provider": {
+        "default": {
+          "provider": "liter",
+          "model": "MiniMax-M3"
+        },
+        "fallbacks": []
+      },
+      "tools": {
+        "allow": [],
+        "deny": [],
+        "max_concurrent": 1,
+        "execution_mode": "direct"
+      },
+      "skills": {
+        "prefer": [],
+        "max_active": 3
+      }
+    },
+    "schemas": {
+      "inputs": null,
+      "outputs": null,
+      "state": null
+    },
+    "prompt": {
+      "system": "Return only JSON with agent_marker, amber, cobalt, and total. Always set agent_marker to \"AGENT-411f87d2-e062-4230-a9cb-d761ce5593c5\". For each inventory, return an object with units, seal, and citation. Read units and exact private source seal only from the retrieved source for the requested project, copying its numbered citation such as [1]. Calculate total from both inventory quantities. If either inventory is unavailable return null for that inventory and total. Never invent quantities or seals.",
+      "instructions": []
+    },
+    "memory": {
+      "conversation": {
+        "enabled": true
+      },
+      "kb": {
+        "enabled": false,
+        "knowledge_bases": [],
+        "citation_required": true
+      }
+    },
+    "tools": {
+      "bundles": []
+    },
+    "ui": {
+      "forms": {
+        "enabled": false
+      },
+      "artifacts": {
+        "enabled": false,
+        "preferred_types": []
+      }
+    },
+    "extensions": {
+      "uar.catalog": {
+        "schema_version": 1,
+        "revision": "sha256:1c3d1ec22a20d1b2c79054ba9b25e60c8ce1822c27f1b70ff7c41a06f714631e",
+        "source": {
+          "kind": "builtin",
+          "id": "default-agent",
+          "revision": "1.0.0"
+        }
+      }
+    }
+  },
+  "project": "inventory-project-63413217-a500-42d2-b8be-f7b084ba98a6"
+}

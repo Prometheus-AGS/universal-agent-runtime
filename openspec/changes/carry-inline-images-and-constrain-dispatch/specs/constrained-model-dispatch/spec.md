@@ -40,3 +40,50 @@ Acceptance SHALL exercise actual mounted public runs and actual provider-adapter
 - **WHEN** mounted public cases require tools, vision, structured output or bounded context
 - **THEN** captured sends and zero-send controls prove only eligible destinations were used
 - **AND** receipts retain exact source/config/artifact scope and distinguish real-model qualification
+
+### Requirement: Captured final-wire reservation
+Durable model reservations under an enforceable request contract SHALL obtain their input bound and effective output ceiling from the captured driver's actual preparation after host output narrowing and before provider dispatch. Existing uncertainty, reasoning, atomic admission, ownership and uncertain-settlement rules SHALL remain. UAR preflight serialization SHALL not substitute for unavailable final preparation. Serialized image JSON SHALL not certify real-image accounting. Existing no-contract and no-durable-reservation paths SHALL not acquire an unrelated preparation prerequisite.
+
+#### Scenario: Routing identity differs from literal wire model
+- **WHEN** retained adapter preparation strips a qualified routing prefix
+- **THEN** final validation, counting and receipts use the actual prepared body while preserving captured destination, declared profile and protected request controls
+- **AND** routing identity remains distinct from the literal provider-body model
+
+#### Scenario: Durable contract lacks prepared evidence
+- **WHEN** a durable contracted driver cannot supply supported captured final preparation
+- **THEN** admission refuses before model dispatch instead of recording preflight as final-wire evidence
+
+#### Scenario: Existing uncontracted path
+- **WHEN** no request contract or no durable reservation requires final preparation
+- **THEN** the existing catalog, team or no-reservation admission path remains in force
+
+
+### Requirement: Preserve endpoint profiles without finite-budget contracts
+
+An installed endpoint profile SHALL preserve its declared literal model, allowed fields and typed controls in the actual provider-prepared body even when no finite-budget contract is installed. The absence of a budget contract SHALL omit budget arithmetic, not final profile validation. Ordinary unprofiled and uncontracted requests SHALL retain their existing path.
+
+#### Scenario: Adapter changes an uncontracted profile literal
+- **GIVEN** a settings-only profile with no output ceiling and no budget contract
+- **WHEN** the captured adapter preparation changes the declared literal wire model
+- **THEN** dispatch refuses before a provider stream opens
+
+#### Scenario: Adapter preserves an uncontracted profile
+- **GIVEN** a settings-only profile with no output ceiling and no budget contract
+- **WHEN** the actual prepared model, schema and typed controls match the captured profile
+- **THEN** final profile validation succeeds without creating a budget counting contract
+
+
+### Requirement: Fit fallback history against its effective output cap
+
+Estimated fallback fitting SHALL apply the captured destination's downward output restriction before reserving output or displacing optional history. A higher primary output cap SHALL NOT reject an otherwise viable fallback. A caller's lower output cap SHALL NOT be raised. Exact destination preparation SHALL retain its own contract and canonical-history behavior. Fresh admission of the final prepared request SHALL remain immediately before dispatch. Fit diagnostics SHALL describe the effective reserve and retain estimated counting and no guaranteed-fit claim.
+
+#### Scenario: Fallback has a lower output maximum
+- **GIVEN** a permitted fallback with an 8192-token window and 2048-token maximum output, a short prompt and a primary output cap of 16384
+- **WHEN** an authorized pre-output primary failure invokes fallback
+- **THEN** the request is fitted using the fallback's downward cap and can dispatch with output at most 2048 after fresh final admission
+- **AND** the earlier primary cap does not cause overflow refusal or unnecessary history displacement
+
+#### Scenario: Caller cap is already lower
+- **GIVEN** a caller output cap below the fallback maximum
+- **WHEN** that permitted fallback is fitted
+- **THEN** the lower caller cap remains and the fit diagnostics use that effective reserve

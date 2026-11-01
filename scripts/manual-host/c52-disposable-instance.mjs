@@ -133,7 +133,9 @@ async function provision(fx, record, owned, proxy, ttlSecs, surrealVersion) {
 
   fx.uarEnv = processEnvironment(owned.pid);
   const initial = await startUar(fx, 'initial');
-  const proxyEnv = { ...processEnvironment(proxy.pid, 7), PATH: process.env.PATH };
+  // The shared proxy gained `--grpc-listen <addr>` (two more arguments) on 2026-10-28.
+  const proxyArgc = proxy.grpc_base_url ? 9 : 7;
+  const proxyEnv = { ...processEnvironment(proxy.pid, proxyArgc), PATH: process.env.PATH };
   fx.proxy = await launch(proxy.binary, ['--config', fx.configPath, '--upstream', fx.uarUrl, '--listen', `127.0.0.1:${fx.ports.proxy}`],
     { cwd: fx.dir, env: proxyEnv, log: join(fx.dir, 'proxy.log') });
   await waitReady(`${fx.baseUrl}/health`, fx.proxy);

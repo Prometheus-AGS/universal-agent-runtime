@@ -12,6 +12,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::PgPool;
 
+use crate::uar::compiler::owner::CompilerOwner;
 use crate::uar::compiler::pipeline::CompileOutput;
 use crate::uar::compiler::session::{CompilerSession, persistence::SessionStorage};
 
@@ -40,8 +41,8 @@ impl SpecStorage for PostgresCompilerStorage {
     async fn create_spec(&self, record: SpecRecord) -> Result<SpecRecord> {
         sqlx::query(
             r"
-            INSERT INTO uar_specs (id, name, content, description, latest_report_id, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO uar_specs (id, name, content, description, latest_report_id, created_at, updated_at, owner)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             ",
         )
         .bind(&record.id)
@@ -51,6 +52,7 @@ impl SpecStorage for PostgresCompilerStorage {
         .bind(&record.latest_report_id)
         .bind(record.created_at)
         .bind(record.updated_at)
+        .bind(&record.owner)
         .execute(&self.pool)
         .await
         .context("failed to insert spec")?;
@@ -58,16 +60,18 @@ impl SpecStorage for PostgresCompilerStorage {
         Ok(record)
     }
 
-    async fn get_spec(&self, id: &str) -> Result<Option<SpecRecord>> {
+    async fn get_spec(&self, id: &str, owner: &CompilerOwner) -> Result<Option<SpecRecord>> {
         let row = sqlx::query(
             r"
             SELECT id, name, content, description, latest_report_id,
-                   created_at, updated_at
+                   created_at, updated_at, owner
             FROM uar_specs
-            WHERE id = $1
+            WHERE id = $1 AND (owner = $2 OR ($3 AND owner IS NULL))
             ",
         )
         .bind(id)
+        .bind(owner.key())
+        .bind(owner.reads_legacy_records())
         .fetch_optional(&self.pool)
         .await
         .context("failed to fetch spec")?;
@@ -82,19 +86,23 @@ impl SpecStorage for PostgresCompilerStorage {
                 latest_report_id: r.get("latest_report_id"),
                 created_at: r.get("created_at"),
                 updated_at: r.get("updated_at"),
+                owner: r.get("owner"),
             }
         }))
     }
 
-    async fn list_specs(&self) -> Result<Vec<SpecRecord>> {
+    async fn list_specs(&self, owner: &CompilerOwner) -> Result<Vec<SpecRecord>> {
         let rows = sqlx::query(
             r"
             SELECT id, name, content, description, latest_report_id,
-                   created_at, updated_at
+                   created_at, updated_at, owner
             FROM uar_specs
+            WHERE owner = $1 OR ($2 AND owner IS NULL)
             ORDER BY created_at DESC
             ",
         )
+        .bind(owner.key())
+        .bind(owner.reads_legacy_records())
         .fetch_all(&self.pool)
         .await
         .context("failed to list specs")?;
@@ -111,25 +119,33 @@ impl SpecStorage for PostgresCompilerStorage {
                     latest_report_id: r.get("latest_report_id"),
                     created_at: r.get("created_at"),
                     updated_at: r.get("updated_at"),
+                    owner: r.get("owner"),
                 }
             })
             .collect())
     }
 
-    async fn update_spec(&self, id: &str, content: String) -> Result<Option<SpecRecord>> {
+    async fn update_spec(
+        &self,
+        id: &str,
+        owner: &CompilerOwner,
+        content: String,
+    ) -> Result<Option<SpecRecord>> {
         let now = Utc::now();
         let row = sqlx::query(
             r"
             UPDATE uar_specs
             SET content = $2, updated_at = $3
-            WHERE id = $1
+            WHERE id = $1 AND (owner = $4 OR ($5 AND owner IS NULL))
             RETURNING id, name, content, description, latest_report_id,
-                      created_at, updated_at
+                      created_at, updated_at, owner
             ",
         )
         .bind(id)
         .bind(&content)
         .bind(now)
+        .bind(owner.key())
+        .bind(owner.reads_legacy_records())
         .fetch_optional(&self.pool)
         .await
         .context("failed to update spec")?;
@@ -144,14 +160,19 @@ impl SpecStorage for PostgresCompilerStorage {
                 latest_report_id: r.get("latest_report_id"),
                 created_at: r.get("created_at"),
                 updated_at: r.get("updated_at"),
+                owner: r.get("owner"),
             }
         }))
     }
 
-    async fn delete_spec(&self, id: &str) -> Result<bool> {
+    async fn delete_spec(&self, id: &str, owner: &CompilerOwner) -> Result<bool> {
         // Associated reports are deleted via ON DELETE CASCADE in the migration.
-        let result = sqlx::query("DELETE FROM uar_specs WHERE id = $1")
+        let result = sqlx::query(
+            "DELETE FROM uar_specs WHERE id = $1 AND (owner = $2 OR ($3 AND owner IS NULL))",
+        )
             .bind(id)
+            .bind(owner.key())
+            .bind(owner.reads_legacy_records())
             .execute(&self.pool)
             .await
             .context("failed to delete spec")?;
@@ -165,8 +186,8 @@ impl SpecStorage for PostgresCompilerStorage {
 
         sqlx::query(
             r"
-            INSERT INTO uar_reports (id, spec_id, data, created_at)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO uar_reports (id, spec_id, data, created_at, owner)
+            VALUES ($1, $2, $3, $4, $5)
             ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data
             ",
         )
@@ -174,6 +195,7 @@ impl SpecStorage for PostgresCompilerStorage {
         .bind(&record.spec_id)
         .bind(&data)
         .bind(record.created_at)
+        .bind(&record.owner)
         .execute(&self.pool)
         .await
         .context("failed to insert report")?;
@@ -197,13 +219,20 @@ impl SpecStorage for PostgresCompilerStorage {
         Ok(record)
     }
 
-    async fn get_report(&self, id: &str) -> Result<Option<ReportRecord>> {
-        let row =
-            sqlx::query("SELECT id, spec_id, data, created_at FROM uar_reports WHERE id = $1")
-                .bind(id)
-                .fetch_optional(&self.pool)
-                .await
-                .context("failed to fetch report")?;
+    async fn get_report(&self, id: &str, owner: &CompilerOwner) -> Result<Option<ReportRecord>> {
+        let row = sqlx::query(
+            r"
+            SELECT id, spec_id, data, created_at, owner
+            FROM uar_reports
+            WHERE id = $1 AND (owner = $2 OR ($3 AND owner IS NULL))
+            ",
+        )
+        .bind(id)
+        .bind(owner.key())
+        .bind(owner.reads_legacy_records())
+        .fetch_optional(&self.pool)
+        .await
+        .context("failed to fetch report")?;
 
         row.map(|r| {
             use sqlx::Row;
@@ -216,21 +245,28 @@ impl SpecStorage for PostgresCompilerStorage {
                 spec_id: r.get("spec_id"),
                 output,
                 created_at,
+                owner: r.get("owner"),
             })
         })
         .transpose()
     }
 
-    async fn list_reports_for_spec(&self, spec_id: &str) -> Result<Vec<ReportRecord>> {
+    async fn list_reports_for_spec(
+        &self,
+        spec_id: &str,
+        owner: &CompilerOwner,
+    ) -> Result<Vec<ReportRecord>> {
         let rows = sqlx::query(
             r"
-            SELECT id, spec_id, data, created_at
+            SELECT id, spec_id, data, created_at, owner
             FROM uar_reports
-            WHERE spec_id = $1
+            WHERE spec_id = $1 AND (owner = $2 OR ($3 AND owner IS NULL))
             ORDER BY created_at DESC
             ",
         )
         .bind(spec_id)
+        .bind(owner.key())
+        .bind(owner.reads_legacy_records())
         .fetch_all(&self.pool)
         .await
         .context("failed to list reports")?;
@@ -247,6 +283,7 @@ impl SpecStorage for PostgresCompilerStorage {
                     spec_id: r.get("spec_id"),
                     output,
                     created_at,
+                    owner: r.get("owner"),
                 })
             })
             .collect()
@@ -265,8 +302,8 @@ impl SessionStorage for PostgresCompilerStorage {
 
         sqlx::query(
             r"
-            INSERT INTO uar_compiler_sessions (id, data, created_at, updated_at)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO uar_compiler_sessions (id, data, created_at, updated_at, owner)
+            VALUES ($1, $2, $3, $4, $5)
             ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = $4
             ",
         )
@@ -274,6 +311,7 @@ impl SessionStorage for PostgresCompilerStorage {
         .bind(&data)
         .bind(session.created_at)
         .bind(now)
+        .bind(&session.owner)
         .execute(&self.pool)
         .await
         .context("failed to upsert session")?;
@@ -281,9 +319,17 @@ impl SessionStorage for PostgresCompilerStorage {
         Ok(session)
     }
 
-    async fn get_session(&self, id: &str) -> Result<Option<CompilerSession>> {
-        let row = sqlx::query("SELECT data FROM uar_compiler_sessions WHERE id = $1")
+    async fn get_session(
+        &self,
+        id: &str,
+        owner: &CompilerOwner,
+    ) -> Result<Option<CompilerSession>> {
+        let row = sqlx::query(
+            "SELECT data FROM uar_compiler_sessions WHERE id = $1 AND (owner = $2 OR ($3 AND owner IS NULL))",
+        )
             .bind(id)
+            .bind(owner.key())
+            .bind(owner.reads_legacy_records())
             .fetch_optional(&self.pool)
             .await
             .context("failed to fetch session")?;
@@ -296,9 +342,13 @@ impl SessionStorage for PostgresCompilerStorage {
         .transpose()
     }
 
-    async fn delete_session(&self, id: &str) -> Result<bool> {
-        let result = sqlx::query("DELETE FROM uar_compiler_sessions WHERE id = $1")
+    async fn delete_session(&self, id: &str, owner: &CompilerOwner) -> Result<bool> {
+        let result = sqlx::query(
+            "DELETE FROM uar_compiler_sessions WHERE id = $1 AND (owner = $2 OR ($3 AND owner IS NULL))",
+        )
             .bind(id)
+            .bind(owner.key())
+            .bind(owner.reads_legacy_records())
             .execute(&self.pool)
             .await
             .context("failed to delete session")?;
@@ -306,8 +356,12 @@ impl SessionStorage for PostgresCompilerStorage {
         Ok(result.rows_affected() > 0)
     }
 
-    async fn list_sessions(&self) -> Result<Vec<CompilerSession>> {
-        let rows = sqlx::query("SELECT data FROM uar_compiler_sessions ORDER BY updated_at DESC")
+    async fn list_sessions(&self, owner: &CompilerOwner) -> Result<Vec<CompilerSession>> {
+        let rows = sqlx::query(
+            "SELECT data FROM uar_compiler_sessions WHERE owner = $1 OR ($2 AND owner IS NULL) ORDER BY updated_at DESC",
+        )
+            .bind(owner.key())
+            .bind(owner.reads_legacy_records())
             .fetch_all(&self.pool)
             .await
             .context("failed to list sessions")?;

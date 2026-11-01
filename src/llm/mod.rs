@@ -421,6 +421,18 @@ impl LlmRequest {
     }
 }
 
+/// Proven reservation evidence from a driver's already prepared final request.
+///
+/// This is available only from a captured driver that can serialize the same
+/// endpoint-bound representation it will dispatch. It does not certify provider
+/// image-token capacity or infer a capability from a model name.
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PreparedFinalWireBudget {
+    pub(crate) input_tokens: u64,
+    pub(crate) output_tokens: u64,
+}
+
 /// Trait for LLM streaming drivers.
 ///
 /// Implementations of this trait provide streaming access to LLM responses,
@@ -445,6 +457,20 @@ pub trait LlmDriver: Send + Sync {
     /// declaration. Native adapters retain their own established paths.
     fn supports_admitted_inline_images(&self) -> bool {
         false
+    }
+
+    /// Return a final-wire input bound for a request carrying a proven budget
+    /// contract. Drivers without captured final-wire preparation must refuse;
+    /// a generic request serializer is not equivalent evidence.
+    fn prepared_final_wire_budget(
+        &self,
+        request: &LlmRequest,
+    ) -> anyhow::Result<PreparedFinalWireBudget> {
+        anyhow::ensure!(
+            request.budget_contract.is_some(),
+            "prepared final-wire budget requires a request budget contract"
+        );
+        anyhow::bail!("LLM driver has no supported final-wire budget contract")
     }
 
     /// Stream a response from the LLM.

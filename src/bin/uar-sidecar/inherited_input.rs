@@ -73,10 +73,11 @@ impl Input {
             if flags == -1 || unsafe { libc::fcntl(descriptor, libc::F_SETFL, flags | libc::O_NONBLOCK) } == -1 {
                 return Err(io::Error::last_os_error());
             }
-            // SAFETY: the owned File keeps its valid descriptor stable. AsyncInput
-            // never replaces or closes it; AsyncFd deregisters before dropping it.
-            // On registration failure, conversion to io::Error drops the File.
-            Ok(AsyncInput(unsafe { tokio::io::unix::AsyncFd::register(self.file) }?))
+            // SAFETY: the AsyncFd takes ownership of self.file, so the descriptor
+            // stays open and names the same file description until it is dropped,
+            // and File::as_raw_fd always returns that one descriptor.
+            let input = unsafe { tokio::io::unix::AsyncFd::register(self.file) }?;
+            Ok(AsyncInput(input))
         }
         #[cfg(windows)]
         {

@@ -1,0 +1,216 @@
+{
+  "scenario": "A second owner cannot reach the first owner's compiler records on postgres",
+  "backend": "postgres",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/api/uar/compiler/specs",
+      "request": {
+        "content": "# Agent: owner-iso-local-10d11f25\n\n## Metadata\n```yaml\nversion: \"1.0\"\ndescription: \"Compiler owner isolation probe\"\n```\n\n## Identity\n```yaml\nname: \"owner-iso-local-10d11f25\"\nrole: \"assistant\"\npersona: \"Owner isolation probe\"\nsystem_prompt: \"Reply briefly.\"\n```\n"
+      },
+      "status": 201,
+      "response": "{\"id\":\"cd4900d9-11c3-455b-b138-f4eb4c11c172\",\"name\":\"owner-iso-local-10d11f25\",\"content\":\"# Agent: owner-iso-local-10d11f25\\n\\n## Metadata\\n```yaml\\nversion: \\\"1.0\\\"\\ndescription: \\\"Compiler owner isolation probe\\\"\\n```\\n\\n## Identity\\n```yaml\\nname: \\\"owner-iso-local-10d11f25\\\"\\nrole: \\\"assistant\\\"\\npersona: \\\"Owner isolation probe\\\"\\nsystem_prompt: \\\"Reply briefly.\\\"\\n```\\n\",\"created_at\":\"2026-10-31T18:35:55.056529Z\",\"updated_at\":\"2026-10-31T18:35:55.056529Z\",\"owner\":\"v1:k:local-host:i:18:urn:uar:local:host:local:s:10:local-user\"}"
+    },
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/api/uar/compiler/sessions",
+      "status": 201,
+      "response": "{\"id\":\"8aeba1cb-3d2c-4dbf-a367-46a9a02d275e\",\"created_at\":\"2026-10-31T18:35:55.067210Z\",\"updated_at\":\"2026-10-31T18:35:55.067210Z\",\"partial_ir\":{\"agent_name\":null,\"source\":{\"profile\":\"\",\"id\":\"\",\"version\":\"\",\"digest\":\"\",\"revision\":null,\"migratedAt\":null,\"topLevelHeading\":\"\",\"original\":\"\",\"sections\":[],\"authoredFields\":[],\"renameMapping\":{\"sourceId\":\"\",\"targetId\":\"\",\"reason\":\"\"}},\"metadata\":null,\"identity\":null,\"ui\":null,\"capabilities\":null,\"skills\":null,\"tools\":null,\"mcp_servers\":null,\"knowledge\":null,\"memory\":null,\"a2a\":null,\"governance\":null,\"budgets\":null,\"execution\":null,\"observability\":null,\"deployment\":null,\"model_requirements\":null,\"prompt_dialect\":null,\"rag_configuration\":null,\"context_strategy\":null,\"api_harness\":null},\"conversation\":[],\"updated_sections\":[],\"status\":\"active\",\"owner\":\"v1:k:local-host:i:18:urn:uar:local:host:local:s:10:local-user\"}"
+    },
+    {
+      "via": "proxied",
+      "method": "POST",
+      "path": "/api/uar/compiler/specs",
+      "request": {
+        "content": "# Agent: owner-iso-proxied-8d8e1a57\n\n## Metadata\n```yaml\nversion: \"1.0\"\ndescription: \"Compiler owner isolation probe\"\n```\n\n## Identity\n```yaml\nname: \"owner-iso-proxied-8d8e1a57\"\nrole: \"assistant\"\npersona: \"Owner isolation probe\"\nsystem_prompt: \"Reply briefly.\"\n```\n"
+      },
+      "status": 201,
+      "response": "{\"id\":\"c68d06f0-5f55-4a97-b94e-02b928c59712\",\"name\":\"owner-iso-proxied-8d8e1a57\",\"content\":\"# Agent: owner-iso-proxied-8d8e1a57\\n\\n## Metadata\\n```yaml\\nversion: \\\"1.0\\\"\\ndescription: \\\"Compiler owner isolation probe\\\"\\n```\\n\\n## Identity\\n```yaml\\nname: \\\"owner-iso-proxied-8d8e1a57\\\"\\nrole: \\\"assistant\\\"\\npersona: \\\"Owner isolation probe\\\"\\nsystem_prompt: \\\"Reply briefly.\\\"\\n```\\n\",\"created_at\":\"2026-10-31T18:35:55.079196Z\",\"updated_at\":\"2026-10-31T18:35:55.079196Z\",\"owner\":\"v1:k:local-jwt:i:17:urn:uar:local:jwt:local:s:22:bdd-dedicated-postgres\"}"
+    },
+    {
+      "via": "proxied",
+      "method": "POST",
+      "path": "/api/uar/compiler/sessions",
+      "status": 201,
+      "response": "{\"id\":\"f0917507-49e5-4277-a1cb-0e5fd3bffa87\",\"created_at\":\"2026-10-31T18:35:55.087684Z\",\"updated_at\":\"2026-10-31T18:35:55.087684Z\",\"partial_ir\":{\"agent_name\":null,\"source\":{\"profile\":\"\",\"id\":\"\",\"version\":\"\",\"digest\":\"\",\"revision\":null,\"migratedAt\":null,\"topLevelHeading\":\"\",\"original\":\"\",\"sections\":[],\"authoredFields\":[],\"renameMapping\":{\"sourceId\":\"\",\"targetId\":\"\",\"reason\":\"\"}},\"metadata\":null,\"identity\":null,\"ui\":null,\"capabilities\":null,\"skills\":null,\"tools\":null,\"mcp_servers\":null,\"knowledge\":null,\"memory\":null,\"a2a\":null,\"governance\":null,\"budgets\":null,\"execution\":null,\"observability\":null,\"deployment\":null,\"model_requirements\":null,\"prompt_dialect\":null,\"rag_configuration\":null,\"context_strategy\":null,\"api_harness\":null},\"conversation\":[],\"updated_sections\":[],\"status\":\"active\",\"owner\":\"v1:k:local-jwt:i:17:urn:uar:local:jwt:local:s:22:bdd-dedicated-postgres\"}"
+    },
+    {
+      "via": "local",
+      "method": "GET",
+      "path": "/api/uar/compiler/specs",
+      "status": 200,
+      "response": "[{\"id\":\"cd4900d9-11c3-455b-b138-f4eb4c11c172\",\"name\":\"owner-iso-local-10d11f25\",\"content\":\"# Agent: owner-iso-local-10d11f25\\n\\n## Metadata\\n```yaml\\nversion: \\\"1.0\\\"\\ndescription: \\\"Compiler owner isolation probe\\\"\\n```\\n\\n## Identity\\n```yaml\\nname: \\\"owner-iso-local-10d11f25\\\"\\nrole: \\\"assistant\\\"\\npersona: \\\"Owner isolation probe\\\"\\nsystem_prompt: \\\"Reply briefly.\\\"\\n```\\n\",\"created_at\":\"2026-10-31T18:35:55.056529Z\",\"updated_at\":\"2026-10-31T18:35:55.056529Z\",\"owner\":\"v1:k:local-host:i:18:urn:uar:local:host:local:s:10:local-user\"}]"
+    },
+    {
+      "via": "local",
+      "method": "GET",
+      "path": "/api/uar/compiler/sessions",
+      "status": 200,
+      "response": "[{\"id\":\"8aeba1cb-3d2c-4dbf-a367-46a9a02d275e\",\"created_at\":\"2026-10-31T18:35:55.067210Z\",\"updated_at\":\"2026-10-31T18:35:55.067210Z\",\"partial_ir\":{\"agent_name\":null,\"source\":{\"profile\":\"\",\"id\":\"\",\"version\":\"\",\"digest\":\"\",\"revision\":null,\"migratedAt\":null,\"topLevelHeading\":\"\",\"original\":\"\",\"sections\":[],\"authoredFields\":[],\"renameMapping\":{\"sourceId\":\"\",\"targetId\":\"\",\"reason\":\"\"}},\"metadata\":null,\"identity\":null,\"ui\":null,\"capabilities\":null,\"skills\":null,\"tools\":null,\"mcp_servers\":null,\"knowledge\":null,\"memory\":null,\"a2a\":null,\"governance\":null,\"budgets\":null,\"execution\":null,\"observability\":null,\"deployment\":null,\"model_requirements\":null,\"prompt_dialect\":null,\"rag_configuration\":null,\"context_strategy\":null,\"api_harness\":null},\"conversation\":[],\"updated_sections\":[],\"status\":\"active\",\"owner\":\"v1:k:local-host:i:18:urn:uar:local:host:local:s:10:local-user\"}]"
+    },
+    {
+      "via": "local",
+      "method": "GET",
+      "path": "/api/uar/compiler/specs/cd4900d9-11c3-455b-b138-f4eb4c11c172",
+      "status": 200,
+      "response": "{\"id\":\"cd4900d9-11c3-455b-b138-f4eb4c11c172\",\"name\":\"owner-iso-local-10d11f25\",\"content\":\"# Agent: owner-iso-local-10d11f25\\n\\n## Metadata\\n```yaml\\nversion: \\\"1.0\\\"\\ndescription: \\\"Compiler owner isolation probe\\\"\\n```\\n\\n## Identity\\n```yaml\\nname: \\\"owner-iso-local-10d11f25\\\"\\nrole: \\\"assistant\\\"\\npersona: \\\"Owner isolation probe\\\"\\nsystem_prompt: \\\"Reply briefly.\\\"\\n```\\n\",\"created_at\":\"2026-10-31T18:35:55.056529Z\",\"updated_at\":\"2026-10-31T18:35:55.056529Z\",\"owner\":\"v1:k:local-host:i:18:urn:uar:local:host:local:s:10:local-user\"}"
+    },
+    {
+      "via": "local",
+      "method": "GET",
+      "path": "/api/compiler/sessions/8aeba1cb-3d2c-4dbf-a367-46a9a02d275e",
+      "status": 200,
+      "response": "{\"id\":\"8aeba1cb-3d2c-4dbf-a367-46a9a02d275e\",\"created_at\":\"2026-10-31T18:35:55.067210Z\",\"updated_at\":\"2026-10-31T18:35:55.067210Z\",\"partial_ir\":{\"agent_name\":null,\"source\":{\"profile\":\"\",\"id\":\"\",\"version\":\"\",\"digest\":\"\",\"revision\":null,\"migratedAt\":null,\"topLevelHeading\":\"\",\"original\":\"\",\"sections\":[],\"authoredFields\":[],\"renameMapping\":{\"sourceId\":\"\",\"targetId\":\"\",\"reason\":\"\"}},\"metadata\":null,\"identity\":null,\"ui\":null,\"capabilities\":null,\"skills\":null,\"tools\":null,\"mcp_servers\":null,\"knowledge\":null,\"memory\":null,\"a2a\":null,\"governance\":null,\"budgets\":null,\"execution\":null,\"observability\":null,\"deployment\":null,\"model_requirements\":null,\"prompt_dialect\":null,\"rag_configuration\":null,\"context_strategy\":null,\"api_harness\":null},\"conversation\":[],\"updated_sections\":[],\"status\":\"active\",\"owner\":\"v1:k:local-host:i:18:urn:uar:local:host:local:s:10:local-user\",\"completeness\":{\"filled_required\":0,\"total_required\":16,\"ready_to_compile\":false,\"missing_sections\":[\"Agent Name\",\"Metadata\",\"Identity\",\"UI (A2UI)\",\"Capabilities\",\"Skills\",\"Tools\",\"MCP Servers\",\"Knowledge Base\",\"Memory Model\",\"A2A Contracts\",\"Governance\",\"Budgets & Constraints\",\"Execution Model\",\"Observability\",\"Deployment Profiles\"]}}"
+    },
+    {
+      "via": "local",
+      "method": "GET",
+      "path": "/api/uar/compiler/specs/c68d06f0-5f55-4a97-b94e-02b928c59712",
+      "status": 404,
+      "response": "{\"error\":\"spec not found\"}"
+    },
+    {
+      "via": "local",
+      "method": "GET",
+      "path": "/api/uar/compiler/sessions/f0917507-49e5-4277-a1cb-0e5fd3bffa87",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/uar/compiler/specs",
+      "status": 200,
+      "response": "[{\"id\":\"c68d06f0-5f55-4a97-b94e-02b928c59712\",\"name\":\"owner-iso-proxied-8d8e1a57\",\"content\":\"# Agent: owner-iso-proxied-8d8e1a57\\n\\n## Metadata\\n```yaml\\nversion: \\\"1.0\\\"\\ndescription: \\\"Compiler owner isolation probe\\\"\\n```\\n\\n## Identity\\n```yaml\\nname: \\\"owner-iso-proxied-8d8e1a57\\\"\\nrole: \\\"assistant\\\"\\npersona: \\\"Owner isolation probe\\\"\\nsystem_prompt: \\\"Reply briefly.\\\"\\n```\\n\",\"created_at\":\"2026-10-31T18:35:55.079196Z\",\"updated_at\":\"2026-10-31T18:35:55.079196Z\",\"owner\":\"v1:k:local-jwt:i:17:urn:uar:local:jwt:local:s:22:bdd-dedicated-postgres\"}]"
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/uar/compiler/sessions",
+      "status": 200,
+      "response": "[{\"id\":\"f0917507-49e5-4277-a1cb-0e5fd3bffa87\",\"created_at\":\"2026-10-31T18:35:55.087684Z\",\"updated_at\":\"2026-10-31T18:35:55.087684Z\",\"partial_ir\":{\"agent_name\":null,\"source\":{\"profile\":\"\",\"id\":\"\",\"version\":\"\",\"digest\":\"\",\"revision\":null,\"migratedAt\":null,\"topLevelHeading\":\"\",\"original\":\"\",\"sections\":[],\"authoredFields\":[],\"renameMapping\":{\"sourceId\":\"\",\"targetId\":\"\",\"reason\":\"\"}},\"metadata\":null,\"identity\":null,\"ui\":null,\"capabilities\":null,\"skills\":null,\"tools\":null,\"mcp_servers\":null,\"knowledge\":null,\"memory\":null,\"a2a\":null,\"governance\":null,\"budgets\":null,\"execution\":null,\"observability\":null,\"deployment\":null,\"model_requirements\":null,\"prompt_dialect\":null,\"rag_configuration\":null,\"context_strategy\":null,\"api_harness\":null},\"conversation\":[],\"updated_sections\":[],\"status\":\"active\",\"owner\":\"v1:k:local-jwt:i:17:urn:uar:local:jwt:local:s:22:bdd-dedicated-postgres\"}]"
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/uar/compiler/specs/c68d06f0-5f55-4a97-b94e-02b928c59712",
+      "status": 200,
+      "response": "{\"id\":\"c68d06f0-5f55-4a97-b94e-02b928c59712\",\"name\":\"owner-iso-proxied-8d8e1a57\",\"content\":\"# Agent: owner-iso-proxied-8d8e1a57\\n\\n## Metadata\\n```yaml\\nversion: \\\"1.0\\\"\\ndescription: \\\"Compiler owner isolation probe\\\"\\n```\\n\\n## Identity\\n```yaml\\nname: \\\"owner-iso-proxied-8d8e1a57\\\"\\nrole: \\\"assistant\\\"\\npersona: \\\"Owner isolation probe\\\"\\nsystem_prompt: \\\"Reply briefly.\\\"\\n```\\n\",\"created_at\":\"2026-10-31T18:35:55.079196Z\",\"updated_at\":\"2026-10-31T18:35:55.079196Z\",\"owner\":\"v1:k:local-jwt:i:17:urn:uar:local:jwt:local:s:22:bdd-dedicated-postgres\"}"
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/compiler/sessions/f0917507-49e5-4277-a1cb-0e5fd3bffa87",
+      "status": 200,
+      "response": "{\"id\":\"f0917507-49e5-4277-a1cb-0e5fd3bffa87\",\"created_at\":\"2026-10-31T18:35:55.087684Z\",\"updated_at\":\"2026-10-31T18:35:55.087684Z\",\"partial_ir\":{\"agent_name\":null,\"source\":{\"profile\":\"\",\"id\":\"\",\"version\":\"\",\"digest\":\"\",\"revision\":null,\"migratedAt\":null,\"topLevelHeading\":\"\",\"original\":\"\",\"sections\":[],\"authoredFields\":[],\"renameMapping\":{\"sourceId\":\"\",\"targetId\":\"\",\"reason\":\"\"}},\"metadata\":null,\"identity\":null,\"ui\":null,\"capabilities\":null,\"skills\":null,\"tools\":null,\"mcp_servers\":null,\"knowledge\":null,\"memory\":null,\"a2a\":null,\"governance\":null,\"budgets\":null,\"execution\":null,\"observability\":null,\"deployment\":null,\"model_requirements\":null,\"prompt_dialect\":null,\"rag_configuration\":null,\"context_strategy\":null,\"api_harness\":null},\"conversation\":[],\"updated_sections\":[],\"status\":\"active\",\"owner\":\"v1:k:local-jwt:i:17:urn:uar:local:jwt:local:s:22:bdd-dedicated-postgres\",\"completeness\":{\"filled_required\":0,\"total_required\":16,\"ready_to_compile\":false,\"missing_sections\":[\"Agent Name\",\"Metadata\",\"Identity\",\"UI (A2UI)\",\"Capabilities\",\"Skills\",\"Tools\",\"MCP Servers\",\"Knowledge Base\",\"Memory Model\",\"A2A Contracts\",\"Governance\",\"Budgets & Constraints\",\"Execution Model\",\"Observability\",\"Deployment Profiles\"]}}"
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/uar/compiler/specs/cd4900d9-11c3-455b-b138-f4eb4c11c172",
+      "status": 404,
+      "response": "{\"error\":\"spec not found\"}"
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/uar/compiler/sessions/8aeba1cb-3d2c-4dbf-a367-46a9a02d275e",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "via": "proxied",
+      "method": "POST",
+      "path": "/api/uar/compiler/specs/cd4900d9-11c3-455b-b138-f4eb4c11c172/compile",
+      "status": 404,
+      "response": "{\"error\":\"spec 'cd4900d9-11c3-455b-b138-f4eb4c11c172' not found\"}"
+    },
+    {
+      "via": "proxied",
+      "method": "DELETE",
+      "path": "/api/uar/compiler/specs/cd4900d9-11c3-455b-b138-f4eb4c11c172",
+      "status": 404,
+      "response": "{\"error\":\"spec not found\"}"
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/compiler/specs/cd4900d9-11c3-455b-b138-f4eb4c11c172",
+      "status": 404,
+      "response": "{\"error\":\"spec not found\"}"
+    },
+    {
+      "via": "proxied",
+      "method": "POST",
+      "path": "/api/uar/compiler/sessions/8aeba1cb-3d2c-4dbf-a367-46a9a02d275e/cancel",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "via": "proxied",
+      "method": "POST",
+      "path": "/api/uar/compiler/sessions/8aeba1cb-3d2c-4dbf-a367-46a9a02d275e/compile",
+      "status": 404,
+      "response": "{\"error\":\"session '8aeba1cb-3d2c-4dbf-a367-46a9a02d275e' not found\"}"
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/compiler/sessions/8aeba1cb-3d2c-4dbf-a367-46a9a02d275e",
+      "status": 429,
+      "response": ""
+    },
+    {
+      "via": "local",
+      "method": "DELETE",
+      "path": "/api/uar/compiler/specs/cd4900d9-11c3-455b-b138-f4eb4c11c172",
+      "status": 429,
+      "response": ""
+    },
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/api/uar/compiler/sessions/8aeba1cb-3d2c-4dbf-a367-46a9a02d275e/cancel",
+      "status": 429,
+      "response": ""
+    },
+    {
+      "via": "proxied",
+      "method": "DELETE",
+      "path": "/api/uar/compiler/specs/c68d06f0-5f55-4a97-b94e-02b928c59712",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "via": "proxied",
+      "method": "POST",
+      "path": "/api/uar/compiler/sessions/f0917507-49e5-4277-a1cb-0e5fd3bffa87/cancel",
+      "status": 429,
+      "response": ""
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/compiler-owner-isolation/d9db9cf5-0d4e-4d94-b41e-27cb820107f8",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-d9db9cf5",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:58589/",
+    "base_url": "http://127.0.0.1:58591/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:58588",
+    "uar_pid": 56481,
+    "proxy_pid": 57271
+  },
+  "cleanup_errors": [
+    "local spec cleanup: AssertionError [ERR_ASSERTION]: local DELETE /api/uar/compiler/specs/cd4900d9-11c3-455b-b138-f4eb4c11c172: 429: ",
+    "local session cleanup: AssertionError [ERR_ASSERTION]: local POST /api/uar/compiler/sessions/8aeba1cb-3d2c-4dbf-a367-46a9a02d275e/cancel: 429: ",
+    "proxied session cleanup: AssertionError [ERR_ASSERTION]: proxied POST /api/uar/compiler/sessions/f0917507-49e5-4277-a1cb-0e5fd3bffa87/cancel: 429: "
+  ],
+  "status": "FAILED",
+  "duration_ms": 37481
+}

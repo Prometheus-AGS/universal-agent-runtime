@@ -1,0 +1,71 @@
+╭──────────────────────────────────────╮
+│ lefthook  v2.2.2   hook:  pre-commit │
+╰──────────────────────────────────────╯
+sync hooks: ✔️(commit-msg, pre-commit)
+│  frontend-lint (skip) no matching staged files
+│  frontend-typecheck (skip) no matching staged files
+┃  github-actions-policy ❯ 
+Scope: all 23 workspace projects
+✓ Lockfile passes supply-chain policies (verified 2d ago)
+Lockfile is up to date, resolution step is skipped
+Already up to date
+
+Done in 2.3s using pnpm v11.15.0
+$ node scripts/validate-github-actions-policy.mjs
+GitHub Actions policy validation passed (deployment workflows only; Pages publisher: docs.yml).
+
+┃  rust-test-baseline ❯ 
+WORKING_TREE_ONLY: compiles unstaged changes too; does not certify the staged commit.
+mode=working-tree
+repository=/Users/gqadonis/.claude/worktrees/production-readiness-476
+target_directory=/Users/gqadonis/.claude/worktrees/production-readiness-476/target
+cargo_profile=test
+toolchain:
+cargo 1.99.0-nightly (59800466c 2026-07-07)
+rustc 1.99.0-nightly (b6839f4d0 2026-07-17)
+binary: rustc
+commit-hash: b6839f4d0e2bd63b960bbff8619c6fdea27d81e5
+commit-date: 2026-07-17
+host: x86_64-apple-darwin
+release: 1.99.0-nightly
+LLVM version: 22.1.8
+command: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features minimal --lib --no-run
+   Compiling universal-agent-runtime v1.4.0-rc.2 (/Users/gqadonis/.claude/worktrees/production-readiness-476)
+error: comparison operators cannot be chained
+   --> src/llm/liter_driver.rs:246:29
+    |
+246 |     ) -> anyhow::Result<(Vec<u8>, Option<crate::uar::runtime::context::token_service::CountedTokens)> {
+    |                             ^  ^
+    |
+    = help: use `::<...>` instead of `<...>` to specify lifetime, type, or const arguments
+    = help: or use `(...)` if you meant to specify fn arguments
+
+error: expected one of `!`, `(`, `+`, `,`, `::`, `<`, or `>`, found `)`
+   --> src/llm/liter_driver.rs:246:100
+    |
+246 |     ) -> anyhow::Result<(Vec<u8>, Option<crate::uar::runtime::context::token_service::CountedTokens)> {
+    |                                                                                                    ^ expected one of 7 possible tokens
+    |
+help: you might have meant to end the type parameters here
+    |
+246 |     ) -> anyhow::Result<(Vec<u8>, Option<crate::uar::runtime::context::token_service::CountedTokens>)> {
+    |                                                                                                    +
+help: expressions must be enclosed in braces to be used as const generic arguments
+    |
+246 |     ) -> anyhow::Result<{ (Vec<u8>, Option<crate::uar::runtime::context::token_service::CountedTokens) }> {
+    |                         +                                                                              +
+
+error[E0747]: constant provided when a type was expected
+   --> src/llm/liter_driver.rs:246:25
+    |
+246 |     ) -> anyhow::Result<(Vec<u8>, Option<crate::uar::runtime::context::token_service::CountedTokens)> {
+    |                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0747`.
+error: could not compile `universal-agent-runtime` (lib test) due to 3 previous errors
+
+exit status 101
+  ────────────────────────────────────
+summary: (done in 188.85 seconds)
+✓ github-actions-policy (3.48 seconds)
+✗ rust-test-baseline (185.37 seconds)

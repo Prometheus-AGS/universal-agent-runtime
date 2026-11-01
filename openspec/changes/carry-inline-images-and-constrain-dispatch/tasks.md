@@ -44,3 +44,31 @@
 - [x] 5.4 Complete all source/docs/settings/handoffs and renewed exact whole inventory before rerunning affected gates.
 
 - [x] 5.5 Preserve existing authorized run-local fallback precedence and matching final plaintext admission, without hard-capability or known disable/cooldown/revocation bypass.
+
+
+## 6. Observed affected-context repair cohort — verification CLOSED
+- [x] 6.1 E1 trace/correct exact protected final-wire serialization mismatch without weakening #388 or hard capability/budget admission.
+- [x] 6.2 E2 restore pending tool-call persistence/resume refusal with valid fixture admission, preserving actual owner/approval boundaries.
+- [x] 6.3 E3 calibrate oversized eligible-prose fixture so it exercises its stated failure scenario and zero dispatch.
+- [x] 6.4 E4 correct existing checkpoint security-component bootstrap while preserving actual verified identity and refusal assertions; no functional/manual auth plumbing.
+- [x] 6.5 E5 reconcile all source/config/docs/handoffs and renew whole-phase inventory before any gate.
+
+- [x] 6.6 E1b preserve durable input reservation against the actual final Liter representation or an explicitly proven safe bound; correct provenance labels without budget/policy/settlement relaxation.
+
+
+## 7. rc.2 integration and source-review corrections — execution CLOSED
+- [x] 7.1 Integrate exact rc.2 af37c2f8 without losing destination admission, estimated fallback fit, canonical history, identity/owner boundaries or historical receipts.
+- [x] 7.2 E6 extract refusal error without requiring Debug on successful stream.
+- [x] 7.3 E7 validate actual prepared profile controls without a budget contract; author positive and negative regression assertions.
+- [x] 7.4 Reconcile shared SecurityConfig fixture, version/support claims and all handoffs; renew full inventory and present exact named gates.
+
+
+## 8. E8 fallback output ordering — all gates CLOSED
+- [x] 8.1 Apply captured downward fallback output restriction before estimated fitting while preserving exact/unknown-window behavior and fresh final admission.
+- [x] 8.2 Author actual fallback orchestration regressions for high primary cap, lower caller cap, retained history and truthful fit manifest.
+- [x] 8.3 Collect handoff, reconcile all source/docs/config and renew whole-phase inventory; present exact gates for operator approval.
+
+
+## 9. Observed compile delimiter repair — gates CLOSED
+- [x] 9.1 Insert missing Option closing > at prepared_final_wire return type; preserve all behavior/tests/adjacent source.
+- [x] 9.2 Collect narrow writer handoff, renew whole source inventory and present exact failed/pending rerun commands for approval.

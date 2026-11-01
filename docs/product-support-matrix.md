@@ -3,7 +3,7 @@
 This is UAR's public release contract. The canonical, linted data is
 [`product-support-matrix.json`](product-support-matrix.json); its schema is
 [`product-support-matrix.schema.json`](product-support-matrix.schema.json).
-“Cataloged” never means “certified.” Maturity labels and historical gate names do not certify a new source tree or artifact. The matrix contract revision remains `1.0.0`; the Rust product is **1.4.0-rc.1**, and SDK/package/schema versions are independent. `verified_at` retains the historical inventory date; the October 31 claim review is not a verification date.
+“Cataloged” never means “certified.” Maturity labels and historical gate names do not certify a new source tree or artifact. The matrix contract revision remains `1.0.0`; the Rust product is **1.4.0-rc.2**, and SDK/package/schema versions are independent. `verified_at` retains the historical inventory date; the November 1 claim review is not a verification date.
 
 The first selected production contract is **Linux amd64 container APIs**, with SurrealDB 3.3.0 default persistence and PostgreSQL 18’s explicit restrictions. Its actual image/source/configuration and applicable API/recovery rows remain **unverified** pending #465. Other platforms/native archives and WASM/AOT execution are not promoted by this selection. #462’s library baseline on `5aa36a40` is exact-source developer evidence, not container acceptance.
 
@@ -95,3 +95,8 @@ validator.
 
 
 The capability/dispatch source slice also restricts a final send to the selected registered model's output ceiling when known, including ordinary fallbacks. It adds this bound by minimum to the existing typed cap and any existing destination budget contract. It does not create a real-image counting contract or certify context fit. The new fallback/public-path outcome remains NOT_EXERCISED until its exact container fixture receipt exists.
+
+
+### rc.2 integration evidence boundary — 2026-11-01
+
+This readiness candidate incorporates committed rc.2 source from af37c2f834f7b34f511ecc93f408e80205c94229. Imported macOS receipts retain their original source/configuration/artifact scope; they do not qualify the current integrated tree or Linux amd64 container lane. The optional loopback owner remains disabled by default and is not enabled for the trusted gateway fixture. Compiler owner migration is preserved; applying and verifying it against the selected store is unverified. Existing restricted PostgreSQL and process-ephemeral FullHarness recovery claims remain unchanged.

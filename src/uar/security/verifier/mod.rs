@@ -5,7 +5,7 @@ use jwks_cache::{CacheError, JwksCache, cache_for_issuer};
 
 use async_trait::async_trait;
 use jsonwebtoken::{
-    Algorithm, DecodingKey, Validation, decode_header,
+    Algorithm, DecodingKey, Header, Validation, decode_header,
     jwk::{AlgorithmParameters, EllipticCurve, Jwk, KeyAlgorithm},
 };
 
@@ -83,6 +83,52 @@ pub(crate) enum VerificationError {
     },
     #[error("the presented authentication method is not implemented")]
     UnsupportedPresentation,
+    /// The header names a token kind other than an access JWT. The declared
+    /// value is untrusted input and is deliberately not carried here.
+    #[error("JWT header declares a token type other than an access token")]
+    UnsupportedTokenType,
+}
+
+impl VerificationError {
+    /// True when configured signing-key material could not be obtained: the
+    /// JWKS source failed, timed out, returned an invalid key set, or exceeded
+    /// its hard age. An unknown `kid` against a fresh key set is a credential
+    /// failure, not unavailability.
+    pub(crate) fn is_key_source_unavailable(&self) -> bool {
+        matches!(
+            self,
+            Self::Jwks(
+                CacheError::Unavailable
+                    | CacheError::Stale
+                    | CacheError::Timeout
+                    | CacheError::InvalidKeySet
+            )
+        )
+    }
+}
+
+/// Explicit `typ` values accepted for the supported access-token profile:
+/// generic `JWT` (RFC 7519 §5.1) and the access-token type `at+jwt`
+/// (RFC 9068 §2.1), each also in its full `application/` media-type form
+/// (RFC 7515 §4.1.9). Compared case-insensitively.
+const ACCESS_TOKEN_TYPES: [&str; 4] = ["JWT", "application/jwt", "at+jwt", "application/at+jwt"];
+
+/// Reject a token whose header explicitly declares another JWT kind, such as
+/// an ID token, logout token or DPoP proof. A token without `typ` is accepted
+/// only under the exclusive issuer/audience/key profile documented in
+/// `docs/security/jwt-validation.md`.
+fn ensure_access_token_type(header: &Header) -> Result<(), VerificationError> {
+    match header.typ.as_deref() {
+        None => Ok(()),
+        Some(declared)
+            if ACCESS_TOKEN_TYPES
+                .iter()
+                .any(|accepted| declared.eq_ignore_ascii_case(accepted)) =>
+        {
+            Ok(())
+        }
+        Some(_) => Err(VerificationError::UnsupportedTokenType),
+    }
 }
 
 impl From<JwtError> for VerificationError {
@@ -151,6 +197,12 @@ impl TokenVerifier for SharedSecretVerifier<'_> {
             return Err(VerificationError::UnsupportedPresentation);
         };
 
+        // UAR acquires its provider before any input is parsed, so a rejected
+        // token still claims the process slot first.
+        jwt::ensure_rustcrypto_provider()?;
+        // Header parsing selects nothing here; it only refuses other JWT kinds
+        // before any claim is read. Signature and claims are checked below.
+        ensure_access_token_type(&decode_header(&token)?)?;
         let key = DecodingKey::from_secret(self.secret.as_bytes());
         let validation = claim_validation(
             Algorithm::HS256,
@@ -258,6 +310,10 @@ impl TokenVerifier for JwksVerifier {
 
         jwt::ensure_rustcrypto_provider()?;
         let header = decode_header(&token)?;
+        // Refuse other JWT kinds before any key lookup can be triggered.
+        // Header `jku`/`x5u`/`x5c`/`jwk` are never read: only the configured
+        // JWKS URL supplies keys, and `kid` only selects among them.
+        ensure_access_token_type(&header)?;
         if !JWKS_ALGORITHMS.contains(&header.alg) {
             return Err(VerificationError::UnsupportedAlgorithm(header.alg));
         }

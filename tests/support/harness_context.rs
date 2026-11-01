@@ -7,6 +7,39 @@ pub const PAYLOAD_HEAD: &str = "receipt-head\r\n";
 pub const PAYLOAD_MIDDLE: &str = "PROTECTED-MIDDLE-雪🙂é";
 pub const PAYLOAD_TAIL: &str = "\r\nreceipt-tail";
 
+pub async fn verified_fixture_user(
+    subject: &str,
+) -> universal_agent_runtime::uar::security::claims::UserContext {
+    use universal_agent_runtime::config::SecurityConfig;
+    use universal_agent_runtime::uar::security::{
+        claims::UserClaims, middleware::authenticate_bearer_context,
+    };
+
+    let secret = "legacy-checkpoint-signed-fixture";
+    let security = SecurityConfig {
+        provider_credentials: Default::default(),
+        deployment_profile: Default::default(), jwt_algorithm: None, workspace_authorities: Vec::new(),
+        skill_required_roles: Default::default(),
+        api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(), api_key_admin_principals: Vec::new(),
+        trusted_host_principals: Vec::new(), jwt_required: true, jwt_secret: secret.to_owned().into(),
+        jwks_url: None, jwt_issuer: None, jwt_audience: None, jwt_validate_nbf: true,
+        settings_mutation_auth_required: true, settings_admin_key: None,
+        local_loopback_owner: false,
+    };
+    // Enter UAR's verifier before the fixture signer can initialize the
+    // process-wide jsonwebtoken provider. Verification still supplies proof.
+    assert!(matches!(
+        authenticate_bearer_context(&security, "context-history-malformed-fixture-token").await,
+        Err(axum::http::StatusCode::UNAUTHORIZED)
+    ));
+    let token = jsonwebtoken::encode(&jsonwebtoken::Header::default(), &UserClaims {
+        sub: subject.into(), name: None, roles: Some(vec!["user".into()]), tenant_id: None, uar_instance_id: None,
+        exp: (chrono::Utc::now().timestamp() + 3600) as usize,
+    }, &jsonwebtoken::EncodingKey::from_secret(secret.as_bytes())).unwrap();
+    authenticate_bearer_context(&security, &token)
+        .await.expect("actual verified context-history fixture principal")
+}
+
 pub fn text(role: MessageRole, content: impl Into<String>) -> Message {
     Message {
         role,

@@ -3423,7 +3423,12 @@ async fn serve_on_listener(
     };
 
     info!(name: "startup.step", step = 8, stage = "serving_http", "UAR startup progress");
-    let primary = axum::serve(listener, app.clone().into_make_service())
+    // ConnectInfo carries the accepted socket's peer address to auth_middleware,
+    // which uses it (never a header) for the trusted-local loopback owner.
+    let primary = axum::serve(
+        listener,
+        app.clone().into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
         .with_graceful_shutdown(shutdown_future(true));
 
     let serving_result: std::io::Result<()> = match companion {
@@ -3435,7 +3440,10 @@ async fn serve_on_listener(
                     "Dual-stack companion listener serving"
                 );
             }
-            let secondary = axum::serve(companion_listener, app.into_make_service())
+            let secondary = axum::serve(
+                companion_listener,
+                app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+            )
                 .with_graceful_shutdown(shutdown_future(false));
             tokio::try_join!(primary, secondary).map(|_| ())
         }

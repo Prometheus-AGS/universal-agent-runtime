@@ -15,6 +15,7 @@ use uuid::Uuid;
 pub mod persistence;
 
 use super::ir::{PartialAgentDescriptorIR, SectionName};
+use super::owner::CompilerOwner;
 
 /// A multi-turn compiler session.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,6 +34,10 @@ pub struct CompilerSession {
     pub updated_sections: HashSet<String>,
     /// Current session status.
     pub status: SessionStatus,
+    /// Storage key of the verified owner. Absent on sessions written before
+    /// owner scoping (#387); those are readable only by the local-host owner.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub owner: Option<String>,
 }
 
 /// A single conversation turn.
@@ -83,7 +88,15 @@ impl CompilerSession {
             conversation: Vec::new(),
             updated_sections: HashSet::new(),
             status: SessionStatus::Active,
+            owner: None,
         }
+    }
+
+    /// Bind this session to its verified owner.
+    #[must_use]
+    pub fn with_owner(mut self, owner: &CompilerOwner) -> Self {
+        self.owner = Some(owner.key().to_owned());
+        self
     }
 
     /// Add a conversation turn.

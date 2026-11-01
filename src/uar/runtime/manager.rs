@@ -7368,6 +7368,44 @@ impl RunManager {
             .as_ref()
             .and_then(|contract| usize::try_from(contract.limits.context_tokens).ok())
             .or(estimated_context_window);
+        // Each failover destination is compiled against its own window, resolved
+        // like the primary's (run credential, configured provider model, compiled
+        // catalog). A destination with no known window is left out and keeps the
+        // existing unbudgeted failover behavior.
+        let mut fallback_context_windows = std::collections::BTreeMap::new();
+        for fallback_model in model_bindings.fallback_models() {
+            let (fallback_provider, fallback_model_id) =
+                crate::llm::registry::split_model_string_pub(&fallback_model);
+            let fallback_configured = if let Some(registry) = &self.provider_registry {
+                registry
+                    .models(&fallback_provider)
+                    .await
+                    .and_then(|models| {
+                        models
+                            .into_iter()
+                            .find(|entry| entry.id == fallback_model_id)
+                            .and_then(|entry| entry.context_window)
+                    })
+                    .map(|window| window as usize)
+            } else {
+                None
+            };
+            let fallback_window = run_credentials
+                .as_ref()
+                .and_then(|credentials| {
+                    credentials.context_window_for(&fallback_provider, &fallback_model_id)
+                })
+                .or(fallback_configured)
+                .or_else(|| {
+                    crate::llm::catalog::ModelCatalog::global()
+                        .model(&fallback_provider, &fallback_model_id)
+                        .map(|entry| entry.limits.context_window as usize)
+                        .filter(|window| *window > 0)
+                });
+            if let Some(window) = fallback_window {
+                fallback_context_windows.insert(fallback_model, window);
+            }
+        }
         let team_input_allowance = is_team_attempt
             .then(|| {
                 host_usage_grant
@@ -8431,6 +8469,7 @@ impl RunManager {
                 ),
                 None => o,
             };
+            let o = o.with_fallback_context_windows(fallback_context_windows);
             let o = match sandbox {
                 Some(binding) => o.with_sandbox(
                     binding.runner(),

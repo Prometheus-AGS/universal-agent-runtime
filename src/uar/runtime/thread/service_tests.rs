@@ -4,7 +4,8 @@ use super::*;
 use crate::config::{A2aConfig, A2aPeerConfig, LlmConfig, SecurityConfig};
 use crate::llm::{
     DestinationRequestPreparation, DestinationRequestPreparations, EndpointRequestProfile,
-    EndpointRequestTransform, ExternalDriverStream, LlmDriver, LlmRequest,
+    EndpointRequestTransform, ExternalDriverStream, LiterLlmDriver, LlmDriver, LlmRequest,
+    PreparedFinalWireBudget,
 };
 use crate::uar::persistence::accounting::{
     AccountingCall, AccountingScope, AccountingState, ScopeIdentity,
@@ -37,14 +38,38 @@ async fn bounded<T>(operation: &str, future: impl std::future::Future<Output = T
         .unwrap_or_else(|_| panic!("{operation} exceeded the fixture deadline"))
 }
 
-#[derive(Default)]
 struct HoldingDriver {
+    // The stream remains deliberately held for thread-lifecycle assertions.
+    // This captured Liter binding is used only to prepare the same final wire
+    // representation that durable accounting reserves before that hold begins.
+    prepared: LiterLlmDriver,
     ready: tokio::sync::Notify,
     request: std::sync::Mutex<Option<LlmRequest>>,
 }
 
+impl HoldingDriver {
+    fn new(config: &LlmConfig) -> anyhow::Result<Self> {
+        Ok(Self {
+            prepared: LiterLlmDriver::new(
+                crate::config::build_client_config(config),
+                config.model.clone(),
+                config.parallel_tool_calls,
+            )?,
+            ready: tokio::sync::Notify::new(),
+            request: std::sync::Mutex::new(None),
+        })
+    }
+}
+
 #[async_trait::async_trait]
 impl LlmDriver for HoldingDriver {
+    fn prepared_final_wire_budget(
+        &self,
+        request: &LlmRequest,
+    ) -> anyhow::Result<PreparedFinalWireBudget> {
+        self.prepared.prepared_final_wire_budget(request)
+    }
+
     async fn stream(&self, request: LlmRequest) -> anyhow::Result<ExternalDriverStream> {
         assert!(
             self.request.lock().unwrap().replace(request).is_none(),
@@ -458,19 +483,20 @@ impl Harness {
         );
         resources.provider = Some(provider.clone());
         let persistence: Arc<dyn PersistenceLayer> = provider.clone();
-        let driver = Arc::new(HoldingDriver::default());
+        let llm_config = LlmConfig {
+            model: MODEL.into(),
+            resolved_provider_id: Some("openai".into()),
+            base_url: Some(endpoint.clone()),
+            api_key: Some(String::new()),
+            ..LlmConfig::default()
+        };
+        let driver = Arc::new(HoldingDriver::new(&llm_config)?);
         let preparations = preparation(&endpoint);
         let manager = Arc::new(
             bounded(
                 "manager setup",
                 RunManager::new(
-                    LlmConfig {
-                        model: MODEL.into(),
-                        resolved_provider_id: Some("openai".into()),
-                        base_url: Some(endpoint.clone()),
-                        api_key: Some(String::new()),
-                        ..LlmConfig::default()
-                    },
+                    llm_config,
                     Arc::new(crate::mcp::registry::McpRegistry::new_empty()),
                     crate::session::SessionStore::new(),
                     Arc::new(tokio::sync::RwLock::new(SkillRegistry::default())),
@@ -571,8 +597,11 @@ impl Harness {
             .unwrap()
             .clone()
             .expect("actual admitted request");
-        let (input, output) =
-            crate::llm::liter_driver::request_budget_bound(MODEL, &request).unwrap();
+        let prepared = driver
+            .prepared_final_wire_budget(&request)
+            .expect("captured Liter final-wire reservation");
+        let input = prepared.input_tokens;
+        let output = prepared.output_tokens;
         assert_eq!(output, 32);
         let reserved_tokens = input.checked_add(output).unwrap();
         assert!(input > 0 && reserved_tokens <= 960 && reserved_tokens < 1000);

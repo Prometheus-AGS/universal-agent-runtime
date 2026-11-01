@@ -1,15 +1,15 @@
 {
   "phase": "production-readiness-476-capability-dispatch",
-  "status": "IMPLEMENTATION_COMPLETE_SERIAL_GATES_READY",
-  "implementation_total": 9,
-  "implementation_completed": 9,
-  "verification_status": "AUTHORIZED_SERIAL_PHASE_EXIT",
+  "status": "GATE_013_B_COMMIT_HOOKS_IN_PROGRESS",
+  "implementation_total": 20,
+  "implementation_completed": 20,
+  "verification_status": "OPERATOR_AUTHORIZED_GATE_013_A_THROUGH_C_SERIAL_ONLY",
   "changes": {
     "carry-inline-images-and-constrain-dispatch": {
       "status": "IMPLEMENTATION_COMPLETE_ACCEPTANCE_PENDING",
       "tasks_total": 10,
       "tasks_done": 9,
-      "next_task_pending": "Ordinary local commit/hooks attempt003; clean exact-tree guard and affected serial checks after commit",
+      "next_task_pending": "Explicit approval of gate-request-013.md",
       "blockers": []
     }
   },
@@ -38,7 +38,8 @@
   "completed_compile_repairs": [
     "C1 native demand before move and actual projected MCP demand",
     "C2 supported SHA2 byte-wise hexadecimal",
-    "C3 duplicate Arc warning removed"
+    "C3 duplicate Arc warning removed",
+    "Observed missing Option closing > at prepared_final_wire return type source-repaired; unverified"
   ],
   "pending_destination_repairs": [],
   "completed_destination_repairs": [
@@ -46,5 +47,22 @@
     "D2 actual global outside control with isolated sessions, effective global/retry settings and one primary failure",
     "D3 explicit private-container peer listener; loopback-only host topology",
     "D4 request credential precedence; only captured ExplicitRequest metadata-missing plaintext, live health/known vetoes preserved"
-  ]
+  ],
+  "pending_context_repairs": [],
+  "completed_context_repairs": [
+    "E1 actual Liter-prepared final wire and controls/profile validation",
+    "E2 owned persistent fixture, no production runtime relaxation",
+    "E3 meaningful same-allowance prose control/overflow and zero TCP",
+    "E4 existing production verifier bootstrap and owner-keyed history",
+    "E1b captured final-wire durable reservation; explicit unsupported/image refusal; adapted held-thread fixture",
+    "E5 docs/spec/config/handoffs and whole inventory",
+    "E6 explicit stream-result match; no success Debug bound",
+    "E7 actual no-contract profile validation and authored positive/negative regressions",
+    "RC2 af37c2f8 integration; merged admission/fallback fit; explicit false shared fixture; metadata/docs",
+    "E8 estimated fallback fit narrows destination output first; fresh final admission and exact/unknown-window branches retained; six-case orchestration regression authored"
+  ],
+  "merge_status": "RESOLVED_WORKING_TREE_PENDING_NORMAL_COMMIT_HOOK_APPROVAL",
+  "gate_012_A": "PASS_SOURCE_ONLY",
+  "gate_012_B": "FAIL_MINIMAL_COMPILE",
+  "gate_013_A": "PASS_NARROW_SOURCE_ONLY"
 }

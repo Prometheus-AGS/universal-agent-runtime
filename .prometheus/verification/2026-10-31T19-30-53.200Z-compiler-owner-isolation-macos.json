@@ -1,0 +1,320 @@
+[
+  {
+    "description": "  Compiler specs, reports and authoring sessions are stored per verified owner.\n  The local owner is the loopback caller on an installation with the opt-in\n  security.local_loopback_owner. The proxied owner reaches the same installation\n  through the external identity proxy and is a different principal. Neither\n  owner can list, read, compile, change or remove the other's records, and a\n  record that belongs to someone else answers exactly as an absent one does.\n  Without the opt-in, a loopback caller without credentials has no verified owner\n  and creates nothing.",
+    "elements": [
+      {
+        "description": "",
+        "id": "compiler-specs-and-authoring-sessions-belong-to-one-verified-owner-(#387);a-second-owner-cannot-reach-the-first-owner's-compiler-records-on-postgres",
+        "keyword": "Scenario Outline",
+        "line": 23,
+        "name": "A second owner cannot reach the first owner's compiler records on postgres",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 326718
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40644123384
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 13,
+            "name": "a dedicated postgres UAR with local_loopback_owner on",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:88"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 26709208
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 14,
+            "name": "the local owner creates a compiler spec and an authoring session",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:97"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 28225989
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the proxied owner creates its own compiler spec and authoring session",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:101"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 58798319
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 16,
+            "name": "the local owner lists and reads its own spec and session but not the proxied owner's",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:105"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 45828407
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "the proxied owner lists and reads its own spec and session but not the local owner's",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:109"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 87580331
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 18,
+            "name": "each owner gets not found when it compiles, deletes or cancels the other owner's records",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:113"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13036877
+            },
+            "arguments": [],
+            "keyword": "But ",
+            "line": 19,
+            "name": "the local owner still reads its spec and its session is still active",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:126"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1123640312
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb21waWxlci1vd25lci1pc29sYXRpb24vZmNjNzhlODUtODVhNS00ZWYxLTliNWYtZDE3ZTE2ZmVkZTEzLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "compiler-specs-and-authoring-sessions-belong-to-one-verified-owner-(#387);a-second-owner-cannot-reach-the-first-owner's-compiler-records-on-surreal",
+        "keyword": "Scenario Outline",
+        "line": 24,
+        "name": "A second owner cannot reach the first owner's compiler records on surreal",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 45152
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40437949785
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 13,
+            "name": "a dedicated surreal UAR with local_loopback_owner on",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:88"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 21182511
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 14,
+            "name": "the local owner creates a compiler spec and an authoring session",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:97"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 16316338
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the proxied owner creates its own compiler spec and authoring session",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:101"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 40164346
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 16,
+            "name": "the local owner lists and reads its own spec and session but not the proxied owner's",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:105"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 43428541
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "the proxied owner lists and reads its own spec and session but not the local owner's",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:109"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 77898398
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 18,
+            "name": "each owner gets not found when it compiles, deletes or cancels the other owner's records",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:113"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 11226903
+            },
+            "arguments": [],
+            "keyword": "But ",
+            "line": 19,
+            "name": "the local owner still reads its spec and its session is still active",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:126"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 899494384
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb21waWxlci1vd25lci1pc29sYXRpb24vZWEyN2U1M2UtNGZhOC00ZTE0LWI2NWEtNGMyNGZjOTFiZTI5Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "compiler-specs-and-authoring-sessions-belong-to-one-verified-owner-(#387);without-the-opt-in,-a-loopback-caller-without-credentials-cannot-create-compiler-records",
+        "keyword": "Scenario",
+        "line": 26,
+        "name": "Without the opt-in, a loopback caller without credentials cannot create compiler records",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 58578
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 24795122983
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 27,
+            "name": "a dedicated postgres UAR with local_loopback_owner off",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:92"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5700483
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 28,
+            "name": "creating a compiler spec or an authoring session on the loopback address without credentials is refused",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:134"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 796887618
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb21waWxlci1vd25lci1pc29sYXRpb24vZDc4NDE3MzYtNDg2MS00ODMxLWE3OGItMTRhZjYyNTk4MWQ4Lmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "compiler-specs-and-authoring-sessions-belong-to-one-verified-owner-(#387)",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Compiler specs and authoring sessions belong to one verified owner (#387)",
+    "tags": [],
+    "uri": "scripts/behaviors/features/compiler-owner-isolation.feature"
+  }
+]

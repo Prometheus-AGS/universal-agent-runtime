@@ -160,6 +160,7 @@ fn minimal_config() -> AppConfig {
             jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
             settings_admin_key: Some("test-admin-key".to_string().into()),
+            local_loopback_owner: false,
         },
         a2a: Default::default(),
         resilience: ResilienceConfig {

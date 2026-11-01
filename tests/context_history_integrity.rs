@@ -289,7 +289,8 @@ async fn failed_cancelled_empty_and_over_budget_summaries_retain_originals() {
 
 #[tokio::test]
 async fn oversized_summary_chunk_is_rejected_before_provider_dispatch() {
-    use universal_agent_runtime::llm::LiterLlmDriver;
+    use universal_agent_runtime::llm::{LiterLlmDriver, mock_driver::MockLlmDriver};
+    use universal_agent_runtime::normalized::NormalizedEvent;
     use universal_agent_runtime::uar::runtime::context::summarizer::{
         HostMarkedProseSpan, summarize_marked_prose,
     };
@@ -311,10 +312,29 @@ async fn oversized_summary_chunk_is_rejected_before_provider_dispatch() {
     )
     .expect("build summary no-dispatch driver");
     let mut contract = RequestBudgetContract::synthetic_exact(&base_url);
-    contract.limits.context_tokens = 64;
-    contract.limits.independent_input_tokens = Some(32);
+    contract.limits.context_tokens = 1_024;
+    contract.limits.independent_input_tokens = Some(256);
     contract.limits.output_tokens = 8;
+    // The same allowance must admit the fixed summary envelope with short
+    // eligible prose; only the long prose below should cause input overflow.
+    let short_driver = MockLlmDriver::new(vec![vec![
+        NormalizedEvent::MessageDelta { text: "ok".to_string() },
+        NormalizedEvent::Done,
+    ]]);
+    let short_summary = summarize_marked_prose(
+        &[text(MessageRole::User, "short host approved prose")],
+        &[HostMarkedProseSpan::new("short-prose", 0, 1)],
+        &short_driver,
+        SYNTHETIC_EXACT_MODEL,
+        &contract,
+        14,
+    )
+    .await
+    .expect("fixed summary envelope fits the same captured allowance");
+    assert_eq!(short_summary[0].content.as_text(), Some("ok"));
+    assert_eq!(short_driver.call_count(), 1);
     let history = vec![text(MessageRole::User, &"host approved prose ".repeat(200))];
+    let original = serde_json::to_value(&history).expect("serialize oversized source prose");
 
     let error = summarize_marked_prose(
         &history,
@@ -326,10 +346,14 @@ async fn oversized_summary_chunk_is_rejected_before_provider_dispatch() {
     )
     .await
     .expect_err("oversized summary chunk must fail closed");
+    let diagnostic = format!("{error:#}");
     assert!(
-        format!("{error:#}").contains("proven final-wire allowance"),
+        diagnostic.contains("summary request exceeds its captured auxiliary allowance")
+            && diagnostic.contains("ProtectedOverflow")
+            && diagnostic.contains("input_allowance: 256"),
         "unexpected error: {error:#}"
     );
+    assert_eq!(serde_json::to_value(&history).unwrap(), original);
     assert!(
         tokio::time::timeout(std::time::Duration::from_millis(100), listener.accept())
             .await
@@ -725,14 +749,26 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
     use universal_agent_runtime::session::SessionStore;
     use universal_agent_runtime::uar::defaults;
     use universal_agent_runtime::uar::domain::runs::RunStatus;
+    use universal_agent_runtime::uar::persistence::{
+        PersistenceLayer, providers::surreal::SurrealDbProvider,
+    };
     use universal_agent_runtime::uar::rag::embeddings::{
         UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend,
     };
     use universal_agent_runtime::uar::runtime::manager::RunManager;
     use universal_agent_runtime::uar::runtime::matching::VectorMatcher;
     use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
+    use universal_agent_runtime::uar::runtime::turn::RunExecutionRequest;
 
     let sessions = SessionStore::new();
+    let tempdir = tempfile::tempdir().expect("pending history tempdir");
+    let persistence: Arc<dyn PersistenceLayer> = Arc::new(
+        SurrealDbProvider::new(
+            &format!("surrealkv://{}", tempdir.path().display()), None, None, None, None,
+        ).await.expect("pending history durable store"),
+    );
+    let user = harness_context::verified_fixture_user("pending-owner").await;
+    let session_owner = user.session_owner_key().expect("verified pending history owner");
     let driver = Arc::new(MockLlmDriver::new(vec![vec![
         NormalizedEvent::ToolCallComplete {
             call_index: 0,
@@ -764,21 +800,17 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
                 ))),
                 0.75,
             )),
-            None,
+            Some(persistence.clone()),
         )
         .await
         .with_llm_driver(driver.clone()),
     );
 
-    let first_run = manager
-        .start_run(
-            defaults::default_agent(),
-            "start pending tool".to_string(),
-            Some("pending-session".to_string()),
-            None,
-            vec![],
-        )
-        .await;
+    let mut first_request = RunExecutionRequest::new(
+        defaults::default_agent(), "start pending tool".to_string(),
+    ).with_user_context(&user).expect("admit pending history owner");
+    first_request.session_id = Some("pending-session".to_string());
+    let first_run = manager.execute_request(first_request).await;
     tokio::time::timeout(std::time::Duration::from_secs(3), async {
         loop {
             if manager
@@ -795,7 +827,7 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
     .expect("interrupted run reaches Error");
 
     let session = sessions
-        .get("pending-session")
+        .get_for_user("pending-session", &session_owner)
         .expect("pending session remains available");
     let persisted = session.messages();
     let pending = persisted
@@ -813,16 +845,22 @@ async fn run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch() {
         normalize_history(&persisted),
         Err(HistoryValidationError::MissingResult { call_id }) if call_id == "pending-1"
     ));
+    let stored = persistence
+        .load_session(&session_owner, "pending-session")
+        .await
+        .expect("load pending history from durable store")
+        .expect("interrupted pending tool turn was saved");
+    assert_eq!(
+        serde_json::to_value(stored.messages()).unwrap(),
+        serde_json::to_value(&persisted).unwrap(),
+        "durable history preserves the complete pending assistant call"
+    );
 
-    let second_run = manager
-        .start_run(
-            defaults::default_agent(),
-            "resume".to_string(),
-            Some("pending-session".to_string()),
-            None,
-            vec![],
-        )
-        .await;
+    let mut second_request = RunExecutionRequest::new(
+        defaults::default_agent(), "resume".to_string(),
+    ).with_user_context(&user).expect("admit same pending history owner");
+    second_request.session_id = Some("pending-session".to_string());
+    let second_run = manager.execute_request(second_request).await;
     tokio::time::timeout(std::time::Duration::from_secs(3), async {
         loop {
             if manager
@@ -1398,7 +1436,9 @@ async fn exact_budget_contract_dispatches_intact_protected_wire_body() {
     while stream.next().await.is_some() {}
 
     let (body, body_bytes) = server.await.expect("synthetic provider task");
-    assert_eq!(body["model"], SYNTHETIC_EXACT_MODEL);
+    // The trusted destination retains its provider qualifier; Liter sends
+    // the adapter's wire model after resolving that qualifier.
+    assert_eq!(body["model"], "uar-exact-cl100k-json-v1");
     assert_eq!(body["max_completion_tokens"], 512);
     assert!(body.get("max_tokens").is_none());
     assert_eq!(body["stream"], true);
@@ -2167,7 +2207,7 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
     use axum::Extension;
     use axum_test::TestServer;
     use tokio::sync::RwLock;
-    use universal_agent_runtime::config::{LlmConfig, SecurityConfig, ServiceInstanceConfig};
+    use universal_agent_runtime::config::{LlmConfig, ServiceInstanceConfig};
     use universal_agent_runtime::llm::mock_driver::MockLlmDriver;
     use universal_agent_runtime::mcp::registry::McpRegistry;
     use universal_agent_runtime::normalized::NormalizedEvent;
@@ -2182,7 +2222,6 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
     use universal_agent_runtime::uar::runtime::manager::RunManager;
     use universal_agent_runtime::uar::runtime::matching::VectorMatcher;
     use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
-    use universal_agent_runtime::uar::security::claims::UserClaims;
     use universal_agent_runtime::uar::service_instance::ServiceInstanceAuthority;
 
     let tempdir = tempfile::tempdir().expect("checkpoint tempdir");
@@ -2206,22 +2245,8 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
         Arc::new(RwLock::new(SkillRegistry::new(None, None))),
         Arc::new(VectorMatcher::new(Arc::new(SwappableEmbeddingBackend::new(embedding_backend)), 0.75)), Some(persistence.clone()),
     ).await.with_llm_driver(driver.clone()).with_agent_graph(graph));
-    let secret = "legacy-checkpoint-signed-fixture";
-    let security = SecurityConfig {
-        provider_credentials: Default::default(),
-        deployment_profile: Default::default(), jwt_algorithm: None, workspace_authorities: Vec::new(),
-        skill_required_roles: Default::default(),
-        api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(), api_key_admin_principals: Vec::new(),
-        trusted_host_principals: Vec::new(), jwt_required: true, jwt_secret: secret.to_owned().into(),
-        jwks_url: None, jwt_issuer: None, jwt_audience: None, jwt_validate_nbf: true,
-        settings_mutation_auth_required: true, settings_admin_key: None,
-    };
-    let token = jsonwebtoken::encode(&jsonwebtoken::Header::default(), &UserClaims {
-        sub: "alice".into(), name: None, roles: Some(vec!["user".into()]), tenant_id: None, uar_instance_id: None,
-        exp: (chrono::Utc::now().timestamp() + 3600) as usize,
-    }, &jsonwebtoken::EncodingKey::from_secret(secret.as_bytes())).unwrap();
-    let user = universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(&security, &token)
-        .await.expect("actual verified legacy-test principal");
+    let user = harness_context::verified_fixture_user("alice").await;
+    let session_owner = user.session_owner_key().expect("verified checkpoint session owner");
     let mut artifact = defaults::default_agent(); artifact.id = "orchestrator-agent".into(); artifact.memory.kb.enabled = false;
     let mut request = universal_agent_runtime::uar::runtime::turn::RunExecutionRequest::new(
         artifact.clone(), "original conversation".to_owned(),
@@ -2238,7 +2263,7 @@ async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mut
     checkpoint_state.messages = checkpoint_messages.iter().map(serde_json::to_value).collect::<Result<_, _>>().unwrap();
     let checkpoint = Checkpoint::new(&original_run_id, "thread-1", "capture", &checkpoint_state, &authorization);
     persistence.save_checkpoint(&checkpoint).await.unwrap();
-    let retained = sessions.get_for_user("thread-1", "alice").unwrap();
+    let retained = sessions.get_for_user("thread-1", &session_owner).unwrap();
     let before = serde_json::to_value(retained.to_state()).unwrap();
     let calls_before = driver.call_count();
     let app = universal_agent_runtime::uar::api::routes::build_router().with_state(Arc::new(RunApiState {

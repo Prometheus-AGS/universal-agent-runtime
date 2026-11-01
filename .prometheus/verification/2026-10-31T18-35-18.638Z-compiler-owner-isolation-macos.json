@@ -1,0 +1,323 @@
+[
+  {
+    "description": "  Compiler specs, reports and authoring sessions are stored per verified owner.\n  The local owner is the loopback caller on an installation with the opt-in\n  security.local_loopback_owner. The proxied owner reaches the same installation\n  through the external identity proxy and is a different principal. Neither\n  owner can list, read, compile, change or remove the other's records, and a\n  record that belongs to someone else answers exactly as an absent one does.\n  Without the opt-in, a loopback caller without credentials has no verified owner\n  and creates nothing.",
+    "elements": [
+      {
+        "description": "",
+        "id": "compiler-specs-and-authoring-sessions-belong-to-one-verified-owner-(#387);a-second-owner-cannot-reach-the-first-owner's-compiler-records-on-postgres",
+        "keyword": "Scenario Outline",
+        "line": 23,
+        "name": "A second owner cannot reach the first owner's compiler records on postgres",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 309105
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 36336827881
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 13,
+            "name": "a dedicated postgres UAR with local_loopback_owner on",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:85"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 23820414
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 14,
+            "name": "the local owner creates a compiler spec and an authoring session",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:94"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 22336673
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the proxied owner creates its own compiler spec and authoring session",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:98"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 53253816
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 16,
+            "name": "the local owner lists and reads its own spec and session but not the proxied owner's",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:102"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 47283998
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "the proxied owner lists and reads its own spec and session but not the local owner's",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:106"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 48146435,
+              "error_message": "AssertionError [ERR_ASSERTION]: proxied GET /api/compiler/sessions/8aeba1cb-3d2c-4dbf-a367-46a9a02d275e: 429: \n    + expected - actual\n\n    -false\n    +true\n\n    at request (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:26:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:119:5)"
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 18,
+            "name": "each owner gets not found when it compiles, deletes or cancels the other owner's records",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "But ",
+            "line": 19,
+            "name": "the local owner still reads its spec and its session is still active",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:123"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 949481066,
+              "error_message": "AssertionError [ERR_ASSERTION]: Disposable cleanup must succeed\n+ actual - expected\n\n+ [\n+   'local spec cleanup: AssertionError [ERR_ASSERTION]: local DELETE /api/uar/compiler/specs/cd4900d9-11c3-455b-b138-f4eb4c11c172: 429: ',\n+   'local session cleanup: AssertionError [ERR_ASSERTION]: local POST /api/uar/compiler/sessions/8aeba1cb-3d2c-4dbf-a367-46a9a02d275e/cancel: 429: ',\n+   'proxied session cleanup: AssertionError [ERR_ASSERTION]: proxied POST /api/uar/compiler/sessions/f0917507-49e5-4277-a1cb-0e5fd3bffa87/cancel: 429: '\n+ ]\n- []\n\n    + expected - actual\n\n    -[\n    -  \"local spec cleanup: AssertionError [ERR_ASSERTION]: local DELETE /api/uar/compiler/specs/cd4900d9-11c3-455b-b138-f4eb4c11c172: 429: \"\n    -  \"local session cleanup: AssertionError [ERR_ASSERTION]: local POST /api/uar/compiler/sessions/8aeba1cb-3d2c-4dbf-a367-46a9a02d275e/cancel: 429: \"\n    -  \"proxied session cleanup: AssertionError [ERR_ASSERTION]: proxied POST /api/uar/compiler/sessions/f0917507-49e5-4277-a1cb-0e5fd3bffa87/cancel: 429: \"\n    -]\n    +[]\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:162:10)"
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb21waWxlci1vd25lci1pc29sYXRpb24vNjQ5ZjNkNmQtMTY5Mi00N2VjLWJmM2MtYzc2ZjQ0OGE2OTJjLmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "compiler-specs-and-authoring-sessions-belong-to-one-verified-owner-(#387);a-second-owner-cannot-reach-the-first-owner's-compiler-records-on-surreal",
+        "keyword": "Scenario Outline",
+        "line": 24,
+        "name": "A second owner cannot reach the first owner's compiler records on surreal",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 60225
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 39377754276
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 13,
+            "name": "a dedicated surreal UAR with local_loopback_owner on",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:85"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 14597558
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 14,
+            "name": "the local owner creates a compiler spec and an authoring session",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:94"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 16022211
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 15,
+            "name": "the proxied owner creates its own compiler spec and authoring session",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:98"
+            }
+          },
+          {
+            "result": {
+              "status": "failed",
+              "duration": 8223610,
+              "error_message": "AssertionError [ERR_ASSERTION]: local lists its own spec\n    + expected - actual\n\n    -false\n    +true\n\n    at assertOwnRecordsOnly (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:68:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:103:3)"
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 16,
+            "name": "the local owner lists and reads its own spec and session but not the proxied owner's",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:102"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "the proxied owner lists and reads its own spec and session but not the local owner's",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:106"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 18,
+            "name": "each owner gets not found when it compiles, deletes or cancels the other owner's records",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:110"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "But ",
+            "line": 19,
+            "name": "the local owner still reads its spec and its session is still active",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:123"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 816505796
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb21waWxlci1vd25lci1pc29sYXRpb24vZTNiNGU1MGYtZWQ4Ni00MzU2LTgxY2ItYWQ3ZGUwMmIxNTNlLmpzb24iLCJzdGF0dXMiOiJGQUlMRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "compiler-specs-and-authoring-sessions-belong-to-one-verified-owner-(#387);without-the-opt-in,-a-loopback-caller-without-credentials-cannot-create-compiler-records",
+        "keyword": "Scenario",
+        "line": 26,
+        "name": "Without the opt-in, a loopback caller without credentials cannot create compiler records",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 55084
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 25201208608
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 27,
+            "name": "a dedicated postgres UAR with local_loopback_owner off",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:89"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5807904
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 28,
+            "name": "creating a compiler spec or an authoring session on the loopback address without credentials is refused",
+            "match": {
+              "location": "scripts/behaviors/steps/compiler-owner-isolation.steps.mjs:131"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 786510391
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9jb21waWxlci1vd25lci1pc29sYXRpb24vZDhlMTdjMjQtNDIwYS00NTlhLTkwZDMtOTllYmM5M2JiZGFmLmpzb24iLCJzdGF0dXMiOiJQQVNTRUQifQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "compiler-specs-and-authoring-sessions-belong-to-one-verified-owner-(#387)",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Compiler specs and authoring sessions belong to one verified owner (#387)",
+    "tags": [],
+    "uri": "scripts/behaviors/features/compiler-owner-isolation.feature"
+  }
+]

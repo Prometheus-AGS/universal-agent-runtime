@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber';
 import { assertOwnedEndpoint } from '../support/restart-owned-uar.mjs';
+import { parseAnswerJson } from '../support/answer-oracle.mjs';
 
 setDefaultTimeout(360_000);
 const root = '/api/uar/knowledge-bases';
@@ -42,9 +43,8 @@ async function prompt(world) {
   assert.equal(events.gapReason ?? null, null);
   assert.ok(Array.isArray(events.events) && events.events.length > 0);
   const citations = events.events.filter(event => event.eventName === 'agui.rag_citations').flatMap(event => event.data.citations ?? []);
-  const final = completion.choices[0].message.content.replace(/^(?:\s*<think>[\s\S]*?<\/think>)+\s*/, '').trim();
-  const fenced = /^```(?:json)?\s*\n([\s\S]*?)\n```$/.exec(final);
-  const answer = JSON.parse(fenced ? fenced[1] : final);
+  // The shared oracle accepts one fenced JSON block followed by prose.
+  const answer = parseAnswerJson(completion.choices[0].message.content);
   assert.equal(answer.agent_marker, world.marker);
   assert.equal(answer.sum, world.left + world.right);
   return { question, session, run_id: runId, run, events, citations, completion, answer };

@@ -1,0 +1,549 @@
+{
+  "phase": "production-readiness-476-capability-dispatch",
+  "inventoryRevision": 9,
+  "boundary": "WHOLE_PHASE_IMPLEMENTATION_COMPLETE",
+  "recordedAt": "2026-10-31T22:24:37.383875+00:00",
+  "baseCommit": "33e765bb5d29a44e97d2813ad6d0be8bf3e2479d",
+  "sourceState": "Working repair tree; not a clean committed acceptance candidate. Exact files/hash below; source-only review artifact derived from HEAD33e. Commit/tree/artifact receipts will bind serial gates.",
+  "manifestSha256": "8a94479566fa7fe7ff2a31d07d587ec7978f7b4a1ed7692d5c8fba1ac198a244",
+  "implementationTotal": 15,
+  "remainingImplementationItems": [],
+  "originalItems": "Original9 plus all prior R/C/D repairs complete; E1-E5/E1b complete",
+  "writerHandoffs": [
+    ".agent-team/uar-core/production-readiness-context-wire-handoff.md",
+    ".agent-team/uar-core/production-readiness-context-runtime-handoff.md",
+    ".agent-team/uar-core/production-readiness-context-fixture-handoff.md"
+  ],
+  "activeSourceWriters": [],
+  "completedOutcome": "Actual captured Liter wire validation/proof-backed durable reservation, meaningful valid owned persistence/overflow/security fixtures, explicit unsupported/image-accounting refusal; no runtime/identity relaxation",
+  "uncomfortableLimits": [
+    "Literal has no send-prepared-object API; same immutable typed request uses pinned shared preparation again at chat_stream; actual equality remains to be observed by retained real-wire case",
+    "Short-prose mock control credits shared preparation only; held streams/refusal marker are synthetic component evidence, not model/transport/image/platform qualification",
+    "All edited-source compilation/body/format/warning behavior remains unverified",
+    "Image attempt001 on33e failed infrastructure EOF; no image qualification; same existing local daemon/cache reachable through owned private connection, no shared config/service change"
+  ],
+  "sourceInputs": [
+    {
+      "path": ".agent-team/uar-core/production-readiness-capability-fixture-handoff.md",
+      "sha256": "0fa69d15b95f353a45334d4fad15b636bc0ca5aa28126fc659479b4de6c63d01",
+      "bytes": 23351
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-capability-ingress-handoff.md",
+      "sha256": "438bd25058990665b63de5a24e2e788b519bdb5a863ca2cd1a4663c30ca9cf7e",
+      "bytes": 9175
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-capability-provider-handoff.md",
+      "sha256": "3e72fc395b2f24ef098bc089ae43c2a25fdf2afd200433216e4eea20aa0235ed",
+      "bytes": 12253
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-capability-runtime-handoff.md",
+      "sha256": "e026e347f033db8056b12f4450a9744c020f1f30a4d820e2f56a2223745e2680",
+      "bytes": 11314
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-context-fixture-handoff.md",
+      "sha256": "b74985e0c5efadbd09a0a8cc74b9097c4f22676ed661e094be587fdcdbcbb32f",
+      "bytes": 6763
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-context-runtime-handoff.md",
+      "sha256": "2efa32a48c192c84c3d5e2bd77bb4f0f9ee0dd73e707ffb6de11d9414795f7d2",
+      "bytes": 10634
+    },
+    {
+      "path": ".agent-team/uar-core/production-readiness-context-wire-handoff.md",
+      "sha256": "c515fe18486398973bda4e10eea571331165e4b7708078cc13552fb27e90a32c",
+      "bytes": 6281
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-capability/artifact-critic.md",
+      "sha256": "eebd4a08d155672018444e9f6c4b46c7376db3006a4e22e25f759ec057fbafaf",
+      "bytes": 5746
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-capability/code-review.md",
+      "sha256": "3efdb74014ef93d8ed26c9c2105fb0c9831e8289425f8387f5203d08337d5b2a",
+      "bytes": 5741
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-capability/corrective-code-review.md",
+      "sha256": "fd429cd1b94f76ddf034c19e31653a685ae06169d3f667dd075fd946e4cd3b75",
+      "bytes": 6819
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-capability/corrective-js-review.md",
+      "sha256": "b2760f5733b8d6a2b20620a5155eaf05b7f620796f40557cea2f2c4bd28b0666",
+      "bytes": 6199
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-capability/corrective-python-review.md",
+      "sha256": "9f8e36b58083153648518f864ab6dfa6bde80624f257ea4e159385718e1aa897",
+      "bytes": 5044
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-capability/js-review.md",
+      "sha256": "0d17b04f6b3598043255e99124c2c2251807890b2f536770cce386eb5004100d",
+      "bytes": 6950
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-capability/python-review.md",
+      "sha256": "5c893c38d313e03de94b2916d6fed9f4bc408c9813aaf07ac4367e26ecb43171",
+      "bytes": 5279
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-capability/rust-role-workflow-limitation.json",
+      "sha256": "800727a16cf9b7664bdd09d49818a9c2e61770a4ef08fec5385f18306c9eb597",
+      "bytes": 530
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-capability/sycophancy-screening-initial.json",
+      "sha256": "ad4b2d1c1ddcbba7070b90034f88d52bc20cd281779c03a50523fa292b8f7998",
+      "bytes": 3992
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-destination-binding/code-review.md",
+      "sha256": "ba8fd6a6f87695005c7fc6b83ffebbf93e72a6af0af95400774bd2c46caa862f",
+      "bytes": 3489
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-destination-binding/corrective-code-review.md",
+      "sha256": "f075434ecc21103d015b6f7065d77babf87be8a0db9673d9899ce996cd2f4c78",
+      "bytes": 3640
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-destination-binding/corrective-screening.json",
+      "sha256": "4c69fdcf071b4d8cb116529cc8fdf2f0d747845d07ae3dda912986bf7f9fd01d",
+      "bytes": 823
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-destination-binding/js-review.md",
+      "sha256": "dcf9dd8192317328f1dbb0ab3d3b4c0f270b8ebcaa6458076ccbaa432ffd93ec",
+      "bytes": 3436
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-destination-binding/python-review.md",
+      "sha256": "e5ca5674ce7c60ab65c93829ba58c0179110142c8cb233fa8176af38f2e931da",
+      "bytes": 2406
+    },
+    {
+      "path": ".agent-team/uar-core/reviews/production-readiness-destination-binding/sycophancy-screening.json",
+      "sha256": "effef20290770f1597746a6f612eed7646817b7f54d4de1ca9af439e8535c815",
+      "bytes": 5732
+    },
+    {
+      "path": ".kbd-orchestrator/current-waypoint.json",
+      "sha256": "a0c9093eded7ab430f922df53c6094c0ab931ba784987f476106e79d528c6605",
+      "bytes": 1296
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/adopted-contract.json",
+      "sha256": "ea2e5d9d436600c77cd6592bac80cc7a7bd4c30f081c246a5a4db16589d98707",
+      "bytes": 20424
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/assessment.md",
+      "sha256": "4980286a9670e98f4cc268289cb7f6f50f78120d045046ffcbe108391902e1f1",
+      "bytes": 2256
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/compile-attempt-001.json",
+      "sha256": "8ce90b1d7d4962b3855e7966f1e8e2de3a8d60c1954828b1c0531a3356f9c289",
+      "bytes": 899
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/compile-attempt-001.txt",
+      "sha256": "65f2edcd2762502a3be4e5007af4a12e88a6c33e71268a82a8cd24305e0a4427",
+      "bytes": 5528
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/compile-attempt-002.json",
+      "sha256": "fc389e9e4f472da2c4507388eb0b88f52806f274af0575c7f02e966f7c62fd03",
+      "bytes": 1032
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/compile-attempt-002.txt",
+      "sha256": "cf45340b591a03fb7893cd67e3f8f12387d8ee454e2c3b33cbf5fe0b57ba8f69",
+      "bytes": 2225
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/context-history-attempt-001.json",
+      "sha256": "9c4beb1f28c13c752a39b6a004f7eed17e3e165a79004c2c22e36fc14ce0d87d",
+      "bytes": 1622
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/context-history-attempt-001.txt",
+      "sha256": "66b66ad7a7d8293a5a924fe1b86228f14a40bcda3b20b6ee4f3ab5487c7bd527",
+      "bytes": 4896
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/docker-build-attempt-001.json",
+      "sha256": "92dc1acd62f6f6f4d3197013e18a3f6cf69851bea0697b67fe231aac037aedd2",
+      "bytes": 1669
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/verify-controlled-peer-observation.py",
+      "sha256": "264c8ec96ac89c7aaa22048d781d57ace3690054db780c9b4e9e22aaee092dd9",
+      "bytes": 5635
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/verify-fixture-lifetime.mjs",
+      "sha256": "e21b5d0ae4f3659e09f36d363084f5c08ef443c5cef399d02be862686c22a96c",
+      "bytes": 3347
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/execution.md",
+      "sha256": "beaf9c2fd16aa202929b492fc86e7cee2c2910fe0621030306c7def672de7901",
+      "bytes": 21418
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/fixture-invocation-research.md",
+      "sha256": "d10af459d4e9723cf17b2e8c63f53cc2ddd9a85bbfc109964c666ff316df54cd",
+      "bytes": 10231
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/history/contracts/revision-001.json",
+      "sha256": "f6f438d7975ab9cc3d77606532799fdb9fcc28c71fbbc10c5533a8441c76e201",
+      "bytes": 18338
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/history/contracts/revision-002.json",
+      "sha256": "aaf880165d476420c45ac750377cb45d309cb58c417708beef9c2e827ae0809c",
+      "bytes": 20336
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/history/plan-before-consolidation.md",
+      "sha256": "f503f2913f3ce7eabc398c165895569f4d9380a24d56c839043e936059f7132b",
+      "bytes": 16933
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/image-validation-research.md",
+      "sha256": "90cd634ca703c66c3e4281b431d86579cb363d4a12d07bbd7016078ef331519a",
+      "bytes": 10068
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-001.json",
+      "sha256": "7d01805a19c4bd6068ff69063147b916694b3f1dfa9ce223544d16c3b3394329",
+      "bytes": 7260
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-002.json",
+      "sha256": "e72e36431e4402b8ca4850846a3631e8ba269874855e2c343b852f45adc51ad9",
+      "bytes": 8482
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-003.json",
+      "sha256": "0031b41831b718d58080c7c4225613bea45cae76e8b54fe4a2b623e9375bb98e",
+      "bytes": 9043
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-004.json",
+      "sha256": "99f450d9506123e1f6bf798ad02dbee034bd40dffcc9e361ce002a4f0319ea8c",
+      "bytes": 9298
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-005.json",
+      "sha256": "ac811b5cf14e6f4a5684a6496a51533de3f72981d64860151ed40de2340507cc",
+      "bytes": 9888
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-006.json",
+      "sha256": "f86ea86a4d2f78458b9670a43bced463d37c64e517600aa250dd5734d30755b3",
+      "bytes": 10795
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-007.json",
+      "sha256": "a1efd7475c3a82ac2f28161a39f40d31d2ba98a2d02664e1b9cd11ef21dcd184",
+      "bytes": 11217
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-008.json",
+      "sha256": "62401b28eed018fec3af6bccef902565d7435ebf8a3eb5039ab91c2479fa43bd",
+      "bytes": 11176
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/local-fixture-routing-research.md",
+      "sha256": "15f9f14fa77a2d3f1c6d28490c68e2f5c152af454581f7140e9fd3c1eac79a95",
+      "bytes": 3614
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/plan.md",
+      "sha256": "f2fdfc117efc0be58415cecc1d36427ebef3346d58ee1f7af1884f09ea13dd38",
+      "bytes": 18018
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/prior-waypoint.json",
+      "sha256": "15da25784517407e35b8ccfe06804b8f168fca5bcfcb8a78b33b85613d548ffc",
+      "bytes": 1209
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/production-contract.md",
+      "sha256": "3390911b59d4998106706f166770b9df1b96c0bf82015e3007c6ebc46c8a0e81",
+      "bytes": 3758
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/progress.json",
+      "sha256": "18b310ea6e5ba75bcfafa31e047d0d6798e2799eee480980f10941ed0fd044cd",
+      "bytes": 2443
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/provider-admission-design.md",
+      "sha256": "1737d4eb10af3903930e2b0ce2273c88a009def620de8bba9484dd74bc94ecf3",
+      "bytes": 24881
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/runtime-content-design.md",
+      "sha256": "c07f4cc2664f8f1ff8824815fba6f986b536f3a797676a88f6d7b079b83f9415",
+      "bytes": 24214
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/scenario-candidates.md",
+      "sha256": "361cc2b2a98dc5ca1b46b5d1c6f7cb0dea6582b78be5ee331135fbb0606e8d0f",
+      "bytes": 2052
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/scenario-to-assertion-map.md",
+      "sha256": "cc3d334fddd815e9cf787eb93bfaaee0990c9044e8ebc2e015441003f009c524",
+      "bytes": 25053
+    },
+    {
+      "path": ".prometheus/decisions.md",
+      "sha256": "15335f50843be4224a6629f56ea05e394151fde3eb0d653ddd3469dde2c0972f",
+      "bytes": 226537
+    },
+    {
+      "path": ".prometheus/gotchas.md",
+      "sha256": "5951a2d445436c26a41617c85be2cf1e76b9b18bc26160e7c3011dd96a66b14b",
+      "bytes": 170532
+    },
+    {
+      "path": ".prometheus/session-log.md",
+      "sha256": "a2d0311b5f6650b1319422953412b939159d0ca6ed1c3fbb19db5d7e0686f0ac",
+      "bytes": 1681337
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "f129e0743308a9a2f94b0ceaa0b235dce57c9f82b4159d268ebf6d4e10413ad1",
+      "bytes": 375672
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "e2b3e88b10d2b190ccc8cd70baf57fcfa3f842bdabcc2dddf19dd3b3a02e7636",
+      "bytes": 29674
+    },
+    {
+      "path": "README.md",
+      "sha256": "7a6dc69a6e7fb6b6fd79e19f55555d03b0090a3d3a16d66719e5b965f69ea990",
+      "bytes": 16495
+    },
+    {
+      "path": "docs/product-support-matrix.json",
+      "sha256": "ba9699f909ecaee13aab314837732593ad0df8aefbadf28792739a8d9a267979",
+      "bytes": 15923
+    },
+    {
+      "path": "docs/product-support-matrix.md",
+      "sha256": "7897d79b52e00e0abdedb7c30b128063f6e11b0a086a480c24b31b04afd10aed",
+      "bytes": 10662
+    },
+    {
+      "path": "docs/releases/v1.4.0-rc.1.md",
+      "sha256": "c4b9ee4c63ef28a69c33a60e7f0462a5fd28c81a46358334b05035a54ba5dbc2",
+      "bytes": 4689
+    },
+    {
+      "path": "openspec/changes/carry-inline-images-and-constrain-dispatch/.openspec.yaml",
+      "sha256": "c6ab3a95d8d0fd469ca8750ef79234025bf4a8356d5d57856e97d7e47fc8b6c2",
+      "bytes": 40
+    },
+    {
+      "path": "openspec/changes/carry-inline-images-and-constrain-dispatch/design.md",
+      "sha256": "db2a503bb33ee8a705a1daaebe75ed5cb80ec3f311528c93e23fa744b543853b",
+      "bytes": 5366
+    },
+    {
+      "path": "openspec/changes/carry-inline-images-and-constrain-dispatch/proposal.md",
+      "sha256": "c0c3fe3b8b71cf05de9470be90863b032db45feda2e1a91f85957f4b807fa339",
+      "bytes": 2343
+    },
+    {
+      "path": "openspec/changes/carry-inline-images-and-constrain-dispatch/specs/constrained-model-dispatch/spec.md",
+      "sha256": "0486ae24c4019ef9eb49680ffe6d7e4e2a7465ad158b674048ac5c72a2e12568",
+      "bytes": 4726
+    },
+    {
+      "path": "openspec/changes/carry-inline-images-and-constrain-dispatch/specs/inline-image-chat/spec.md",
+      "sha256": "36201e97c92357e1a65101931f9ba3e592749457e47499a4f9e04a497d002c34",
+      "bytes": 3268
+    },
+    {
+      "path": "openspec/changes/carry-inline-images-and-constrain-dispatch/tasks.md",
+      "sha256": "6077a0efe5169c2de13eadc924ad445aa28ce97651f1fe5270fac5b95cbd78f4",
+      "bytes": 4977
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "sha256": "d5a8793f42828a223749a6f50df95db82d3f237307e80414314d60f89faf5414",
+      "bytes": 659
+    },
+    {
+      "path": "scripts/behaviors/README.md",
+      "sha256": "0468d2c94b94358853ffe18d80c5c4423f49f3fed240d669b433d62363db469e",
+      "bytes": 36405
+    },
+    {
+      "path": "scripts/behaviors/capability-dispatch.cucumber.mjs",
+      "sha256": "60c51f9b38fe4831899aa413510c933560d0d8f53a9d5de1863993c8cfa3e386",
+      "bytes": 508
+    },
+    {
+      "path": "scripts/behaviors/features/capability-dispatch.feature",
+      "sha256": "542e50f739750ce93b8fe9df2739b927a070727f19b46c57be7f0826b5056473",
+      "bytes": 7053
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/README.md",
+      "sha256": "a3c18aac7d4f5646d246d05e0410f07626bdfc3dc4d37ce68f4fd1ca34ee54dd",
+      "bytes": 33707
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/generate-png.py",
+      "sha256": "33d46d503a58c7499cc79dddc7f565243574743a95104b0441d22bba63af65a2",
+      "bytes": 1296
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/manifest.template.json",
+      "sha256": "2934b96a9136c53a8d2d98de265bcc0fbe1cf6be57362993f5c9f28258f7ebc0",
+      "bytes": 6834
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/oversized-dimensions.png",
+      "sha256": "50a31de452c3405ab6a68cfded313438172d7dddf085d9d108c915060e1c06f9",
+      "bytes": 112167
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/runtime-overlay.template.yaml",
+      "sha256": "eadde0eb4c1f39a28e940646b596be074a4e23c0001a872a70215bee26a64810",
+      "bytes": 10132
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/synthetic.jpeg",
+      "sha256": "db0fb8cf4b05e9119bda455c2f14ad144ef960fa9aaa1dfc0918e8d2106b9eaa",
+      "bytes": 783
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/synthetic.png",
+      "sha256": "abb052a97dde1d814840e556c20b348009f7eb10dbc6d9998145b211a4234bc3",
+      "bytes": 79
+    },
+    {
+      "path": "scripts/behaviors/steps/capability-dispatch.steps.mjs",
+      "sha256": "3d287c6b294aac6ce52ed2849233b77dcae609ce8e805979e5ef48ad5346da2c",
+      "bytes": 30085
+    },
+    {
+      "path": "scripts/behaviors/support/capability-fixture.mjs",
+      "sha256": "e58aafd81ce8bfdcb01923b299186fc8bb28d28fce0b37ee5e146428980c5692",
+      "bytes": 24055
+    },
+    {
+      "path": "scripts/post_lifecycle/controlled_peer.py",
+      "sha256": "86dbc1bbabaaf210d683f5379a830f03e15cc1b56c1127e5851fc087767d9dff",
+      "bytes": 23197
+    },
+    {
+      "path": "src/llm/inline_image.rs",
+      "sha256": "c7eee3a43073a2b31d924db83a578317dcb8460ee24614ba21049095a4945cf6",
+      "bytes": 8167
+    },
+    {
+      "path": "src/llm/liter_driver.rs",
+      "sha256": "00e0bd1d7a5f03c28ffd9d70ceae5d06e680ca986e66f50c4a3b29564afa6299",
+      "bytes": 67724
+    },
+    {
+      "path": "src/llm/mod.rs",
+      "sha256": "8531c66dd7da01985bcb5d8e0ce53fe19071e6b15a9eb38f15859bbe301aa8ea",
+      "bytes": 16710
+    },
+    {
+      "path": "src/llm/orchestrator.rs",
+      "sha256": "ba0deb20b808c4f6c510270d9fd421af194999765a4b1b6efe695d38a002ddff",
+      "bytes": 230090
+    },
+    {
+      "path": "src/llm/router.rs",
+      "sha256": "222d6e30549201c444af4bd8a58419dab4eedaed569a5f8597ee29157ab866c0",
+      "bytes": 37507
+    },
+    {
+      "path": "src/server.rs",
+      "sha256": "3e505ff9b3b9b4a0f2673f0f7b547f662815d3c8e37a69b8d3dabc35e16fc1ba",
+      "bytes": 361508
+    },
+    {
+      "path": "src/uar/runtime/checkpoint_host.rs",
+      "sha256": "e6b9d7ef7d3eb503a338fe579d3d563745b54411e88aafbb39383ac873480e00",
+      "bytes": 6057
+    },
+    {
+      "path": "src/uar/runtime/cost_budget.rs",
+      "sha256": "989f32912f0125094dba025f6b0f0223966dc920aa9d76571089ba8a4826daf9",
+      "bytes": 105037
+    },
+    {
+      "path": "src/uar/runtime/manager.rs",
+      "sha256": "d916c3f19612357d12830067ea534c8ed79b44e75557a2e30b322711201cd48d",
+      "bytes": 514094
+    },
+    {
+      "path": "src/uar/runtime/thread/service_tests.rs",
+      "sha256": "b04f168a02e15c902d9c889d4dcc03d73836f97147a445d2d90faf79ba86b593",
+      "bytes": 37880
+    },
+    {
+      "path": "src/uar/runtime/turn/bindings.rs",
+      "sha256": "ce8eb6e8ec1a11ebe66c9bb8d1e0d4da71c56a2911f7599d48a664b68c3858cf",
+      "bytes": 26800
+    },
+    {
+      "path": "src/uar/runtime/turn/host/event_projection.rs",
+      "sha256": "945e64cb41a962e75313a57d3679def793f7d99f8c2f2c193bbdcac02b517dab",
+      "bytes": 13367
+    },
+    {
+      "path": "src/uar/runtime/turn/request.rs",
+      "sha256": "945d65dfe64a3af87598faaba8f6df8b7accc9dbeeac8b7e07685a6cfd210a99",
+      "bytes": 16232
+    },
+    {
+      "path": "tests/context_history_integrity.rs",
+      "sha256": "2888ff3b2ef19a9eee41cf4d77a609a4378129b568fd1c05b6592e9f6d939440",
+      "bytes": 86043
+    },
+    {
+      "path": "tests/support/harness_context.rs",
+      "sha256": "d03cfb05fc0fe16742d5e05fcf7cfbbb16ad09f10e8eb7e46f8e0722bdceeae8",
+      "bytes": 4134
+    },
+    {
+      "path": "versions.toml",
+      "sha256": "0e353df1172c464da3cf7326bf4e84db657201caf23a108fc3fd2c5f8edf305d",
+      "bytes": 2585
+    }
+  ],
+  "reviewArtifact": "target/production-readiness-476/context-repair-review/artifact.patch",
+  "reviewArtifactSha256": "c818506cb1dbdd592b01f756f2c4c0d4b5d13e4066ecc8afe3f3a29c8ae5cd85",
+  "next": "Bounded fresh-context source-only repair diff review, resolve whole corrective cohort if necessary, then existing authorized serial packet",
+  "remainingVerification": [
+    "E repair artifact-only review",
+    "Ordinary commit/hooks + clean three-profile guard +16required regressions",
+    "Full affected context target + named actual prepared/refusal/thread + prior router selectors",
+    "Already authored peer/lifetime integrity probes and matrix/OpenSpec validators",
+    "Same local Docker daemon root-image retry with actual new source/image/config receipts",
+    "Mounted selected public HTTP scenarios; no genuine vision/platform/release claim before actual evidence"
+  ],
+  "authorization": "Existing explicit user bounded useful phase/phase-exit authorization; no routine reapproval. External publication/signing/production deployment/paid effects excluded."
+}

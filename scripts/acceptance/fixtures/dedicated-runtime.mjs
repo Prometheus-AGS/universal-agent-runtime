@@ -136,12 +136,16 @@ async function startPostgres(handle, secrets, port) {
  *
  * options.backend: 'surreal' | 'postgres'
  * options.label: names the run directory under target/
- * options.config: overrides merged into the generated UAR config
+ * options.config: overrides merged into the generated UAR config; may be a
+ *   (possibly async) function of `{ stubBaseUrl }` when it must name the stub
+ * options.env: extra non-secret UAR environment; same function form as config
+ * options.stubFixtures: fixture file for the stub LLM (default: the shared one)
  * options.env: extra non-secret environment for UAR
  * options.stubLlm: start the keyless stub LLM and point UAR's default model at it
  */
 export async function startDedicatedRuntime(record, holder, options) {
-  const { backend, label = backend, config: overrides = {}, env: extraEnv = {}, stubLlm = false } = options;
+  const { backend, label = backend, config: overrides = {}, env: extraEnv = {}, stubLlm = false,
+    stubFixtures = STUB_LLM_FIXTURES } = options;
   if (!(backend in TARGETS)) throw new Error(`Unsupported backend ${backend}`);
   const id = randomUUID();
   const root = resolve(`target/dedicated-runtime/${label}/${id}`);
@@ -180,14 +184,17 @@ export async function startDedicatedRuntime(record, holder, options) {
   const llmEnv = {};
   if (stubLlm) {
     const stubPort = await freePort();
-    handle.stubPid = await launch(STUB_LLM_BINARY, [STUB_LLM_FIXTURES], root,
+    handle.stubPid = await launch(STUB_LLM_BINARY, [stubFixtures], root,
       { HOME: process.env.HOME, PATH: process.env.PATH, STUB_LLM_PORT: String(stubPort) }, resolve(root, 'stub-llm.log'));
     await waitFor('stub LLM', async () => (await fetch(`http://127.0.0.1:${stubPort}/v1/models`)).ok,
       30_000, () => !alive(handle.stubPid));
     Object.assign(llmEnv, { UAR_LLM__BASE_URL: `http://127.0.0.1:${stubPort}/v1`,
       UAR_LLM__API_KEY: 'test-stub-key', UAR_LLM__MODEL: STUB_LLM_MODEL });
-    record.stub_llm = { model: STUB_LLM_MODEL, fixtures: STUB_LLM_FIXTURES };
+    record.stub_llm = { model: STUB_LLM_MODEL, fixtures: stubFixtures, base_url: llmEnv.UAR_LLM__BASE_URL };
   }
+  const stubContext = { stubBaseUrl: llmEnv.UAR_LLM__BASE_URL };
+  const resolvedOverrides = typeof overrides === 'function' ? await overrides(stubContext) : overrides;
+  const resolvedEnv = typeof extraEnv === 'function' ? await extraEnv(stubContext) : extraEnv;
 
   const configPath = resolve(root, 'config.json');
   let currentConfig = merge({
@@ -197,9 +204,9 @@ export async function startDedicatedRuntime(record, holder, options) {
     security: { jwt_required: false, settings_mutation_auth_required: false },
     persistence: { ...database.persistence, vector_dimension: 384, external_cache_enabled: false },
     memory: { enabled: false },
-  }, overrides);
+  }, resolvedOverrides);
   let uarEnv = { HOME: process.env.HOME, PATH: process.env.PATH,
-    UAR_MODELS_DIR: resolve('src/uar/runtime/matching/models'), ...llmEnv, ...extraEnv, ...database.env,
+    UAR_MODELS_DIR: resolve('src/uar/runtime/matching/models'), ...llmEnv, ...resolvedEnv, ...database.env,
     UAR_SECURITY__JWT_SECRET: secrets.jwt };
 
   const startUar = async () => {

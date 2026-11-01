@@ -1,0 +1,63 @@
+{
+  "scenario": "CONTINUITY-01",
+  "client_platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "session_id": "a3c7c2e8-912e-45b7-8fc4-aa8a4a692267",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "client_replays_history": false,
+  "service_kept_running": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\",\"c23dfa11-0891-400b-831b-d60c16c71b74\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:227c7dcc77864a6b0fc475fefaf2d9f0009d48e320cd59749b8b50a400a2e323\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"knowledge_bases\":{\"ids\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\",\"c23dfa11-0891-400b-831b-d60c16c71b74\"],\"mode\":\"selected\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "math-specialist-db64c2a8",
+        "model": "liter/MiniMax-M3",
+        "session_id": "a3c7c2e8-912e-45b7-8fc4-aa8a4a692267",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "The first number is 4896 and the second number is 7458. Add them. Apply your saved specialist/answer JSON instructions."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-21b5d8d3-8fb0-41c3-80dd-0118102446bf\",\"object\":\"chat.completion\",\"created\":1793478047,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"<think>The user asks for ordinary arithmetic: 4896 + 7458 = 12354. Return JSON with specialist and answer.\\n\\nShould I use a tool? Not needed. But maybe the intent is to check memory recall? The instruction says \\\"Apply your saved specialist/answer JSON instructions.\\\" The saved instructions are in the system prompt fragment. For ordinary arithmetic, return keys specialist and answer with the numeric result.\\n\\nLet me compute: 4896 + 7458 = 12354.\\n\\nI could optionally use native_echo, but not necessary. I'll just answer.\\n\\nAlso maybe I should check memory for saved instructions? memory_enabled is false. The fragment already provides instructions. I'll just return theJSON.</think>\\n\\n{\\\"specialist\\\": \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\", \\\"answer\\\": 12354}\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":32430,\"completion_tokens\":219,\"total_tokens\":32649},\"session_id\":\"a3c7c2e8-912e-45b7-8fc4-aa8a4a692267\"}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "math-specialist-db64c2a8",
+        "model": "liter/MiniMax-M3",
+        "session_id": "a3c7c2e8-912e-45b7-8fc4-aa8a4a692267",
+        "stream": false,
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Multiply your previous answer by 5, then subtract the second number I originally gave you. Apply your saved specialist/answer JSON instructions."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-1d4eaafc-9957-43a5-bfa1-c6d80bd8425e\",\"object\":\"chat.completion\",\"created\":1793478053,\"model\":\"liter/MiniMax-M3\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"<think>Previous answer 12354 * 5 = 61770. Subtract 7458 = 54312. Let me verify: 61770 - 7458 = 54312. Yes.\\n\\nReturn JSON with specialist and answer.</think>\\n\\n{\\\"specialist\\\": \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\", \\\"answer\\\": 54312}\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":16382,\"completion_tokens\":88,\"total_tokens\":16470},\"session_id\":\"a3c7c2e8-912e-45b7-8fc4-aa8a4a692267\"}"
+    }
+  ],
+  "expected_first": 12354,
+  "expected_follow_up": 54312,
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 12862
+}

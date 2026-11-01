@@ -1,0 +1,287 @@
+{
+  "scenario": "I06-I07-A2A-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "follow_up_contract": "server context via contextId",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+        "metadata": {
+          "title": "Disposable A2A agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "a2a-no-tools-460fa265"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2\",\"metadata\":{\"title\":\"Disposable A2A agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"a2a-no-tools-460fa265\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:376425f67c49cd0e142be5fb75c305fde104561841b42684bfaaa7b97f900b82\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "112af1b0-562d-4cb1-a170-a8e637dc7dd5",
+        "method": "message/send",
+        "params": {
+          "message": {
+            "role": "user",
+            "parts": [
+              {
+                "type": "text",
+                "text": "What is (62 multiplied by 12) plus 227?"
+              }
+            ]
+          }
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"112af1b0-562d-4cb1-a170-a8e637dc7dd5\",\"result\":{\"id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"context_id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-31T20:16:34.243662+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (62 multiplied by 12) plus 227?\"}]}],\"metadata\":{\"run_id\":\"0e1adef3-fb1c-4a90-b2df-575c81635728\",\"agent_id\":\"disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "5fcbe0eb-00e5-44da-9a9b-35e2e3c5080a",
+        "method": "tasks/get",
+        "params": {
+          "id": "15e5d6e7-784c-4be9-8429-e6d93d150816"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"5fcbe0eb-00e5-44da-9a9b-35e2e3c5080a\",\"result\":{\"id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"context_id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-31T20:16:34.244372+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (62 multiplied by 12) plus 227?\"}]}],\"metadata\":{\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2\",\"root_run_id\":\"0e1adef3-fb1c-4a90-b2df-575c81635728\",\"run_id\":\"0e1adef3-fb1c-4a90-b2df-575c81635728\",\"thread_id\":\"07151c3a-dded-4c6a-8e2b-6671f17fc3d4\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "3c56ce01-da74-4e4d-a48d-e7197c85f10f",
+        "method": "tasks/get",
+        "params": {
+          "id": "15e5d6e7-784c-4be9-8429-e6d93d150816"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"3c56ce01-da74-4e4d-a48d-e7197c85f10f\",\"result\":{\"id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"context_id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-31T20:16:34.244372+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (62 multiplied by 12) plus 227?\"}]}],\"metadata\":{\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2\",\"root_run_id\":\"0e1adef3-fb1c-4a90-b2df-575c81635728\",\"run_id\":\"0e1adef3-fb1c-4a90-b2df-575c81635728\",\"thread_id\":\"07151c3a-dded-4c6a-8e2b-6671f17fc3d4\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "1491f9f6-888d-4bf2-92eb-bcf786babf67",
+        "method": "tasks/get",
+        "params": {
+          "id": "15e5d6e7-784c-4be9-8429-e6d93d150816"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"1491f9f6-888d-4bf2-92eb-bcf786babf67\",\"result\":{\"id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"context_id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-31T20:16:34.244372+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (62 multiplied by 12) plus 227?\"}]}],\"metadata\":{\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2\",\"root_run_id\":\"0e1adef3-fb1c-4a90-b2df-575c81635728\",\"run_id\":\"0e1adef3-fb1c-4a90-b2df-575c81635728\",\"thread_id\":\"07151c3a-dded-4c6a-8e2b-6671f17fc3d4\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "4175e1ad-5862-4396-b2e2-32aa964ddec7",
+        "method": "tasks/get",
+        "params": {
+          "id": "15e5d6e7-784c-4be9-8429-e6d93d150816"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"4175e1ad-5862-4396-b2e2-32aa964ddec7\",\"result\":{\"id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"context_id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-31T20:16:34.244372+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (62 multiplied by 12) plus 227?\"}]}],\"metadata\":{\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2\",\"root_run_id\":\"0e1adef3-fb1c-4a90-b2df-575c81635728\",\"run_id\":\"0e1adef3-fb1c-4a90-b2df-575c81635728\",\"thread_id\":\"07151c3a-dded-4c6a-8e2b-6671f17fc3d4\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "d26c75a5-7c9e-493f-9f5d-598cb65f8a9b",
+        "method": "tasks/get",
+        "params": {
+          "id": "15e5d6e7-784c-4be9-8429-e6d93d150816"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"d26c75a5-7c9e-493f-9f5d-598cb65f8a9b\",\"result\":{\"id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"context_id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"status\":{\"state\":\"completed\",\"message\":{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>The task is a simple arithmetic question. The system prompt fragment says to return only a JSON object with keys marker and answer, with marker \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\" and the numeric result in answer.\\n\\n62 * 12 = 744. 744 + 227 = 971.\\n\\nNo skill needed. Just output the JSON.</think>\\n\\n```json\\n{\\\"marker\\\": \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\", \\\"answer\\\": 971}\\n```\\n\\n**Calculation:** 62 × 12 = 744; 744 + 227 = **971**\"}]},\"timestamp\":\"2026-10-31T20:16:38.622095+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (62 multiplied by 12) plus 227?\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>The task is a simple arithmetic question. The system prompt fragment says to return only a JSON object with keys marker and answer, with marker \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\" and the numeric result in answer.\\n\\n62 * 12 = 744. 744 + 227 = 971.\\n\\nNo skill needed. Just output the JSON.</think>\\n\\n```json\\n{\\\"marker\\\": \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\", \\\"answer\\\": 971}\\n```\\n\\n**Calculation:** 62 × 12 = 744; 744 + 227 = **971**\"}]}],\"metadata\":{\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2\",\"root_run_id\":\"0e1adef3-fb1c-4a90-b2df-575c81635728\",\"run_id\":\"0e1adef3-fb1c-4a90-b2df-575c81635728\",\"thread_id\":\"07151c3a-dded-4c6a-8e2b-6671f17fc3d4\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "5c531e0d-3815-4a4c-ac14-74a2b6372ed6",
+        "method": "message/send",
+        "params": {
+          "message": {
+            "role": "user",
+            "parts": [
+              {
+                "type": "text",
+                "text": "Add 19 to your previous answer."
+              }
+            ]
+          },
+          "context_id": "15e5d6e7-784c-4be9-8429-e6d93d150816"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"5c531e0d-3815-4a4c-ac14-74a2b6372ed6\",\"result\":{\"id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"context_id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-31T20:16:39.283052+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (62 multiplied by 12) plus 227?\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>The task is a simple arithmetic question. The system prompt fragment says to return only a JSON object with keys marker and answer, with marker \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\" and the numeric result in answer.\\n\\n62 * 12 = 744. 744 + 227 = 971.\\n\\nNo skill needed. Just output the JSON.</think>\\n\\n```json\\n{\\\"marker\\\": \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\", \\\"answer\\\": 971}\\n```\\n\\n**Calculation:** 62 × 12 = 744; 744 + 227 = **971**\"}]},{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"Add 19 to your previous answer.\"}]}],\"metadata\":{\"agent_id\":\"disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2\",\"run_id\":\"6139e095-af87-40b0-8480-7a4075d97ceb\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "03c7a3b8-c49e-4997-ba9a-8fbcfa12e64f",
+        "method": "tasks/get",
+        "params": {
+          "id": "15e5d6e7-784c-4be9-8429-e6d93d150816"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"03c7a3b8-c49e-4997-ba9a-8fbcfa12e64f\",\"result\":{\"id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"context_id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-31T20:16:39.283637+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (62 multiplied by 12) plus 227?\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>The task is a simple arithmetic question. The system prompt fragment says to return only a JSON object with keys marker and answer, with marker \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\" and the numeric result in answer.\\n\\n62 * 12 = 744. 744 + 227 = 971.\\n\\nNo skill needed. Just output the JSON.</think>\\n\\n```json\\n{\\\"marker\\\": \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\", \\\"answer\\\": 971}\\n```\\n\\n**Calculation:** 62 × 12 = 744; 744 + 227 = **971**\"}]},{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"Add 19 to your previous answer.\"}]}],\"metadata\":{\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2\",\"root_run_id\":\"6139e095-af87-40b0-8480-7a4075d97ceb\",\"run_id\":\"6139e095-af87-40b0-8480-7a4075d97ceb\",\"thread_id\":\"e5375f45-7f7a-4c0b-bbb9-098880680693\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "e51b44d8-26f4-4537-9186-ef6a9a9b464c",
+        "method": "tasks/get",
+        "params": {
+          "id": "15e5d6e7-784c-4be9-8429-e6d93d150816"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"e51b44d8-26f4-4537-9186-ef6a9a9b464c\",\"result\":{\"id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"context_id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"status\":{\"state\":\"working\",\"timestamp\":\"2026-10-31T20:16:39.283637+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (62 multiplied by 12) plus 227?\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>The task is a simple arithmetic question. The system prompt fragment says to return only a JSON object with keys marker and answer, with marker \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\" and the numeric result in answer.\\n\\n62 * 12 = 744. 744 + 227 = 971.\\n\\nNo skill needed. Just output the JSON.</think>\\n\\n```json\\n{\\\"marker\\\": \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\", \\\"answer\\\": 971}\\n```\\n\\n**Calculation:** 62 × 12 = 744; 744 + 227 = **971**\"}]},{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"Add 19 to your previous answer.\"}]}],\"metadata\":{\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2\",\"root_run_id\":\"6139e095-af87-40b0-8480-7a4075d97ceb\",\"run_id\":\"6139e095-af87-40b0-8480-7a4075d97ceb\",\"thread_id\":\"e5375f45-7f7a-4c0b-bbb9-098880680693\"}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/agents/disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "8a560d64-6a66-44bb-a76d-949464c88329",
+        "method": "tasks/get",
+        "params": {
+          "id": "15e5d6e7-784c-4be9-8429-e6d93d150816"
+        }
+      },
+      "status": 200,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":\"8a560d64-6a66-44bb-a76d-949464c88329\",\"result\":{\"id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"context_id\":\"15e5d6e7-784c-4be9-8429-e6d93d150816\",\"status\":{\"state\":\"completed\",\"message\":{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>The user asks to add 19 to previous answer: 971 + 19 = 990.\\n\\nReturn JSON withmarker and answer.</think>\\n\\n```json\\n{\\\"marker\\\": \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\", \\\"answer\\\": 990}\\n```\\n\\n**Calculation:** 971 + 19 = **990**\"}]},\"timestamp\":\"2026-10-31T20:16:42.095247+00:00\"},\"history\":[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"What is (62 multiplied by 12) plus 227?\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>The task is a simple arithmetic question. The system prompt fragment says to return only a JSON object with keys marker and answer, with marker \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\" and the numeric result in answer.\\n\\n62 * 12 = 744. 744 + 227 = 971.\\n\\nNo skill needed. Just output the JSON.</think>\\n\\n```json\\n{\\\"marker\\\": \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\", \\\"answer\\\": 971}\\n```\\n\\n**Calculation:** 62 × 12 = 744; 744 + 227 = **971**\"}]},{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"text\":\"Add 19 to your previous answer.\"}]},{\"role\":\"agent\",\"parts\":[{\"type\":\"text\",\"text\":\"<think>The user asks to add 19 to previous answer: 971 + 19 = 990.\\n\\nReturn JSON withmarker and answer.</think>\\n\\n```json\\n{\\\"marker\\\": \\\"A2A-7566a749-6a9d-449b-8dc9-94ba28da22a8\\\", \\\"answer\\\": 990}\\n```\\n\\n**Calculation:** 971 + 19 = **990**\"}]}],\"metadata\":{\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2\",\"root_run_id\":\"6139e095-af87-40b0-8480-7a4075d97ceb\",\"run_id\":\"6139e095-af87-40b0-8480-7a4075d97ceb\",\"thread_id\":\"e5375f45-7f7a-4c0b-bbb9-098880680693\"}}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-a2a-460fa265-aeeb-4d39-b1f5-e82168c995e2",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    971,
+    990
+  ],
+  "tasks": [
+    {
+      "id": "15e5d6e7-784c-4be9-8429-e6d93d150816",
+      "context_id": "15e5d6e7-784c-4be9-8429-e6d93d150816",
+      "state": "completed"
+    },
+    {
+      "id": "15e5d6e7-784c-4be9-8429-e6d93d150816",
+      "context_id": "15e5d6e7-784c-4be9-8429-e6d93d150816",
+      "state": "completed"
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "legacy-json",
+  "scenario_status": "PASSED",
+  "duration_ms": 8267
+}

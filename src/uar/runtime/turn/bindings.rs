@@ -474,6 +474,14 @@ impl RunModelBindings {
             .collect()
     }
 
+    /// Qualified models of the captured failover destinations, in dispatch order.
+    pub(crate) fn fallback_models(&self) -> Vec<String> {
+        self.fallbacks
+            .iter()
+            .map(|binding| binding.model.clone())
+            .collect()
+    }
+
     /// Opaque grants for root policy capture; no keys or connection recipes.
     pub(crate) fn credential_grants(&self) -> std::collections::BTreeSet<CredentialGrant> {
         self.catalog

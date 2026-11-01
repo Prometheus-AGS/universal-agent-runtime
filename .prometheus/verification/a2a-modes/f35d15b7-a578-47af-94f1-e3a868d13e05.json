@@ -1,0 +1,185 @@
+{
+  "scenario": "I06-I07-A2A-MODES",
+  "client_platform": "darwin",
+  "agent_id": "disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05",
+  "model": "liter/MiniMax-M3",
+  "authentication_supplied_by_test": false,
+  "follow_up_contract": "server context via contextId",
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05",
+        "metadata": {
+          "title": "Disposable A2A agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "disposable",
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "a2a-no-tools-f35d15b7"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Return only a JSON object with keys marker and answer. Always set marker to \"A2A-e9788d40-51bc-4416-a72d-94dbb396ab3b\". Put the requested numeric result in answer.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05\",\"metadata\":{\"title\":\"Disposable A2A agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"disposable\",\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"a2a-no-tools-f35d15b7\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Return only a JSON object with keys marker and answer. Always set marker to \\\"A2A-e9788d40-51bc-4416-a72d-94dbb396ab3b\\\". Put the requested numeric result in answer.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:8b030a0096eb07f01f17aabdc661bf01b5271a56659e781b98cbbc0f93b0c4d3\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/v1/agents/disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "8ba0e6ac-7e12-4d7f-86be-28f8c9a711b6",
+        "method": "SendStreamingMessage",
+        "params": {
+          "message": {
+            "messageId": "f22c01d5-812d-40fa-86c2-4564943973c8",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "What is (27 multiplied by 11) plus 318?"
+              }
+            ]
+          },
+          "configuration": {}
+        }
+      },
+      "status": 200,
+      "response": "data: {\"jsonrpc\":\"2.0\",\"id\":\"8ba0e6ac-7e12-4d7f-86be-28f8c9a711b6\",\"result\":{\"task\":{\"id\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"contextId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"status\":{\"state\":\"TASK_STATE_WORKING\",\"timestamp\":\"2026-10-31T20:16:42.603Z\"},\"history\":[{\"messageId\":\"f22c01d5-812d-40fa-86c2-4564943973c8\",\"taskId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"contextId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"role\":\"ROLE_USER\",\"parts\":[{\"text\":\"What is (27 multiplied by 11) plus 318?\"}],\"metadata\":{}}],\"artifacts\":[],\"metadata\":{\"root_run_id\":\"d2fe6db7-0dc0-44a6-9fac-394a5a7e0775\",\"agent_id\":\"disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05\",\"run_id\":\"d2fe6db7-0dc0-44a6-9fac-394a5a7e0775\",\"thread_id\":\"c3f9acdb-8a7b-41d1-b75d-83fbd05557e6\",\"uar.approvals\":[],\"canonical_path\":\"/root\"}}}}\n\ndata: {\"jsonrpc\":\"2.0\",\"id\":\"8ba0e6ac-7e12-4d7f-86be-28f8c9a711b6\",\"result\":{\"artifactUpdate\":{\"taskId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"contextId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"artifact\":{\"artifactId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1:output\",\"parts\":[{\"text\":\"<think>The user asks a simple arithmetic question: (27 * 11) + 318 = 297 + 318 = 615.\\n\\nThe agent_identity fragment requires returning only a JSON object with keys marker and answer, with marker set to \\\"A2A-e9788d40-51bc-4416-a72d-94dbb396ab3b\\\" and answer containing the numeric result.\\n\\nSo I should just output the JSON. No need to activate a skill. Let me compute: 27*11 = 297. 297+318 = 615.\\n\\nOutput only JSON object.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-e9788d40-51bc-4416-a72d-94dbb396ab3b\\\",\\n  \\\"answer\\\": 615\\n}\\n```\"}]},\"append\":false,\"lastChunk\":true,\"metadata\":{\"agent_id\":\"disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05\",\"run_id\":\"d2fe6db7-0dc0-44a6-9fac-394a5a7e0775\",\"thread_id\":\"c3f9acdb-8a7b-41d1-b75d-83fbd05557e6\",\"canonical_path\":\"/root\",\"uar.approvals\":[],\"root_run_id\":\"d2fe6db7-0dc0-44a6-9fac-394a5a7e0775\"}}}}\n\ndata: {\"jsonrpc\":\"2.0\",\"id\":\"8ba0e6ac-7e12-4d7f-86be-28f8c9a711b6\",\"result\":{\"statusUpdate\":{\"taskId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"contextId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"status\":{\"state\":\"TASK_STATE_COMPLETED\",\"timestamp\":\"2026-10-31T20:16:45.950Z\",\"message\":{\"messageId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1:status\",\"taskId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"contextId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"role\":\"ROLE_AGENT\",\"parts\":[{\"text\":\"<think>The user asks a simple arithmetic question: (27 * 11) + 318 = 297 + 318 = 615.\\n\\nThe agent_identity fragment requires returning only a JSON object with keys marker and answer, with marker set to \\\"A2A-e9788d40-51bc-4416-a72d-94dbb396ab3b\\\" and answer containing the numeric result.\\n\\nSo I should just output the JSON. No need to activate a skill. Let me compute: 27*11 = 297. 297+318 = 615.\\n\\nOutput only JSON object.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-e9788d40-51bc-4416-a72d-94dbb396ab3b\\\",\\n  \\\"answer\\\": 615\\n}\\n```\"}],\"metadata\":{}}},\"metadata\":{\"agent_id\":\"disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05\",\"run_id\":\"d2fe6db7-0dc0-44a6-9fac-394a5a7e0775\",\"thread_id\":\"c3f9acdb-8a7b-41d1-b75d-83fbd05557e6\",\"canonical_path\":\"/root\",\"uar.approvals\":[],\"root_run_id\":\"d2fe6db7-0dc0-44a6-9fac-394a5a7e0775\"}}}}\n\n"
+    },
+    {
+      "method": "POST",
+      "path": "/a2a/v1/agents/disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "cdf5cb68-4910-4798-808a-d55f9f636644",
+        "method": "SendStreamingMessage",
+        "params": {
+          "message": {
+            "messageId": "ab0fce81-7171-4fcf-bbab-0ca1b4939831",
+            "role": "ROLE_USER",
+            "parts": [
+              {
+                "text": "Add 85 to your previous answer."
+              }
+            ],
+            "contextId": "a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1"
+          },
+          "configuration": {}
+        }
+      },
+      "status": 200,
+      "response": "data: {\"jsonrpc\":\"2.0\",\"id\":\"cdf5cb68-4910-4798-808a-d55f9f636644\",\"result\":{\"task\":{\"id\":\"a2a-4bc578356d9bb6bf404e10fc2c4cda2b27c79762981e5162f16c8a5b7cc6f2ea\",\"contextId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"status\":{\"state\":\"TASK_STATE_WORKING\",\"timestamp\":\"2026-10-31T20:16:46.122Z\"},\"history\":[{\"messageId\":\"ab0fce81-7171-4fcf-bbab-0ca1b4939831\",\"taskId\":\"a2a-4bc578356d9bb6bf404e10fc2c4cda2b27c79762981e5162f16c8a5b7cc6f2ea\",\"contextId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"role\":\"ROLE_USER\",\"parts\":[{\"text\":\"Add 85 to your previous answer.\"}],\"metadata\":{}}],\"artifacts\":[],\"metadata\":{\"root_run_id\":\"ab810c36-f35e-4a9d-80b1-19f0a02f8da8\",\"canonical_path\":\"/root\",\"uar.approvals\":[],\"agent_id\":\"disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05\",\"run_id\":\"ab810c36-f35e-4a9d-80b1-19f0a02f8da8\",\"thread_id\":\"ee369a4c-78bf-46be-a220-9f1f523deb85\"}}}}\n\ndata: {\"jsonrpc\":\"2.0\",\"id\":\"cdf5cb68-4910-4798-808a-d55f9f636644\",\"result\":{\"artifactUpdate\":{\"taskId\":\"a2a-4bc578356d9bb6bf404e10fc2c4cda2b27c79762981e5162f16c8a5b7cc6f2ea\",\"contextId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"artifact\":{\"artifactId\":\"a2a-4bc578356d9bb6bf404e10fc2c4cda2b27c79762981e5162f16c8a5b7cc6f2ea:output\",\"parts\":[{\"text\":\"<think>615 + 85 = 700.\\n\\nReturn JSON with marker and answer 700.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-e9788d40-51bc-4416-a72d-94dbb396ab3b\\\",\\n  \\\"answer\\\": 700\\n}\\n```\"}]},\"append\":false,\"lastChunk\":true,\"metadata\":{\"root_run_id\":\"ab810c36-f35e-4a9d-80b1-19f0a02f8da8\",\"thread_id\":\"ee369a4c-78bf-46be-a220-9f1f523deb85\",\"uar.approvals\":[],\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05\",\"run_id\":\"ab810c36-f35e-4a9d-80b1-19f0a02f8da8\"}}}}\n\ndata: {\"jsonrpc\":\"2.0\",\"id\":\"cdf5cb68-4910-4798-808a-d55f9f636644\",\"result\":{\"statusUpdate\":{\"taskId\":\"a2a-4bc578356d9bb6bf404e10fc2c4cda2b27c79762981e5162f16c8a5b7cc6f2ea\",\"contextId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"status\":{\"state\":\"TASK_STATE_COMPLETED\",\"timestamp\":\"2026-10-31T20:16:48.729Z\",\"message\":{\"messageId\":\"a2a-4bc578356d9bb6bf404e10fc2c4cda2b27c79762981e5162f16c8a5b7cc6f2ea:status\",\"taskId\":\"a2a-4bc578356d9bb6bf404e10fc2c4cda2b27c79762981e5162f16c8a5b7cc6f2ea\",\"contextId\":\"a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1\",\"role\":\"ROLE_AGENT\",\"parts\":[{\"text\":\"<think>615 + 85 = 700.\\n\\nReturn JSON with marker and answer 700.</think>\\n\\n```json\\n{\\n  \\\"marker\\\": \\\"A2A-e9788d40-51bc-4416-a72d-94dbb396ab3b\\\",\\n  \\\"answer\\\": 700\\n}\\n```\"}],\"metadata\":{}}},\"metadata\":{\"root_run_id\":\"ab810c36-f35e-4a9d-80b1-19f0a02f8da8\",\"thread_id\":\"ee369a4c-78bf-46be-a220-9f1f523deb85\",\"uar.approvals\":[],\"canonical_path\":\"/root\",\"agent_id\":\"disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05\",\"run_id\":\"ab810c36-f35e-4a9d-80b1-19f0a02f8da8\"}}}}\n\n"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-a2a-f35d15b7-a578-47af-94f1-e3a868d13e05",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "expected": [
+    615,
+    700
+  ],
+  "streams": [
+    {
+      "task_id": "a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1",
+      "context_id": "a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1",
+      "events": [
+        "task",
+        "artifactUpdate",
+        "statusUpdate"
+      ]
+    },
+    {
+      "task_id": "a2a-4bc578356d9bb6bf404e10fc2c4cda2b27c79762981e5162f16c8a5b7cc6f2ea",
+      "context_id": "a2a-7a4dd073e5da48009c6745e506cc252cb63e21bedde2e6b06e45338843c40df1",
+      "events": [
+        "task",
+        "artifactUpdate",
+        "statusUpdate"
+      ]
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "v1-stream",
+  "scenario_status": "PASSED",
+  "duration_ms": 6455
+}

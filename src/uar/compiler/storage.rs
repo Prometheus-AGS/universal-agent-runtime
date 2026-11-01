@@ -19,6 +19,7 @@ pub mod postgres;
 pub mod surreal;
 
 use super::ir::LegacySourceRecord;
+use super::owner::CompilerOwner;
 use super::pipeline::CompileOutput;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -44,6 +45,10 @@ pub struct SpecRecord {
     /// ID of the most recent compile report for this spec (if any).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub latest_report_id: Option<String>,
+    /// Storage key of the verified owner. Absent on records written before
+    /// owner scoping (#387); those are readable only by the local-host owner.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub owner: Option<String>,
 }
 
 impl SpecRecord {
@@ -58,7 +63,15 @@ impl SpecRecord {
             created_at: now,
             updated_at: now,
             latest_report_id: None,
+            owner: None,
         }
+    }
+
+    /// Bind this record to its verified owner.
+    #[must_use]
+    pub fn with_owner(mut self, owner: &CompilerOwner) -> Self {
+        self.owner = Some(owner.key().to_owned());
+        self
     }
 }
 
@@ -73,6 +86,10 @@ pub struct ReportRecord {
     pub output: CompileOutput,
     /// When this report was stored.
     pub created_at: DateTime<Utc>,
+    /// Storage key of the owner of the spec this report was produced from.
+    /// Absent for reports of legacy (ownerless) specs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub owner: Option<String>,
 }
 
 impl ReportRecord {
@@ -83,7 +100,15 @@ impl ReportRecord {
             spec_id: spec_id.into(),
             output,
             created_at: Utc::now(),
+            owner: None,
         }
+    }
+
+    /// Carry the owner of the originating spec (`None` for a legacy spec).
+    #[must_use]
+    pub fn with_owner_key(mut self, owner: Option<String>) -> Self {
+        self.owner = owner;
+        self
     }
 
     /// Lossless legacy source evidence serialized with the compiled payload.
@@ -101,6 +126,9 @@ impl ReportRecord {
 ///
 /// Implement this trait to plug in any storage backend (SurrealDB, SQLite, etc.).
 /// The default implementation is [`InMemorySpecStorage`].
+///
+/// Every read and mutation takes the verified [`CompilerOwner`]. A record that
+/// belongs to another owner is indistinguishable from an absent one.
 #[async_trait]
 pub trait SpecStorage: Send + Sync + std::fmt::Debug {
     // ── Spec CRUD ────────────────────────────────────────────────────────────
@@ -108,28 +136,37 @@ pub trait SpecStorage: Send + Sync + std::fmt::Debug {
     /// Store a new spec record. Returns the stored record (with generated ID).
     async fn create_spec(&self, record: SpecRecord) -> Result<SpecRecord>;
 
-    /// Retrieve a spec by ID.
-    async fn get_spec(&self, id: &str) -> Result<Option<SpecRecord>>;
+    /// Retrieve a spec by ID if `owner` owns it.
+    async fn get_spec(&self, id: &str, owner: &CompilerOwner) -> Result<Option<SpecRecord>>;
 
-    /// List all stored specs (metadata only — content included).
-    async fn list_specs(&self) -> Result<Vec<SpecRecord>>;
+    /// List the specs `owner` owns (metadata only — content included).
+    async fn list_specs(&self, owner: &CompilerOwner) -> Result<Vec<SpecRecord>>;
 
-    /// Update the content of an existing spec.
-    async fn update_spec(&self, id: &str, content: String) -> Result<Option<SpecRecord>>;
+    /// Update the content of an existing spec `owner` owns.
+    async fn update_spec(
+        &self,
+        id: &str,
+        owner: &CompilerOwner,
+        content: String,
+    ) -> Result<Option<SpecRecord>>;
 
-    /// Delete a spec and its associated reports.
-    async fn delete_spec(&self, id: &str) -> Result<bool>;
+    /// Delete a spec `owner` owns and its associated reports.
+    async fn delete_spec(&self, id: &str, owner: &CompilerOwner) -> Result<bool>;
 
     // ── Report storage ───────────────────────────────────────────────────────
 
     /// Store a compile report and link it to the spec.
     async fn save_report(&self, record: ReportRecord) -> Result<ReportRecord>;
 
-    /// Retrieve a compile report by ID.
-    async fn get_report(&self, id: &str) -> Result<Option<ReportRecord>>;
+    /// Retrieve a compile report by ID if `owner` owns it.
+    async fn get_report(&self, id: &str, owner: &CompilerOwner) -> Result<Option<ReportRecord>>;
 
-    /// List all reports for a given spec.
-    async fn list_reports_for_spec(&self, spec_id: &str) -> Result<Vec<ReportRecord>>;
+    /// List the reports of a given spec that `owner` owns.
+    async fn list_reports_for_spec(
+        &self,
+        spec_id: &str,
+        owner: &CompilerOwner,
+    ) -> Result<Vec<ReportRecord>>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -162,22 +199,37 @@ impl SpecStorage for InMemorySpecStorage {
         Ok(record)
     }
 
-    async fn get_spec(&self, id: &str) -> Result<Option<SpecRecord>> {
+    async fn get_spec(&self, id: &str, owner: &CompilerOwner) -> Result<Option<SpecRecord>> {
         let specs = self.specs.read().await;
-        Ok(specs.get(id).cloned())
+        Ok(specs
+            .get(id)
+            .filter(|record| owner.owns(record.owner.as_deref()))
+            .cloned())
     }
 
-    async fn list_specs(&self) -> Result<Vec<SpecRecord>> {
+    async fn list_specs(&self, owner: &CompilerOwner) -> Result<Vec<SpecRecord>> {
         let specs = self.specs.read().await;
-        let mut records: Vec<SpecRecord> = specs.values().cloned().collect();
+        let mut records: Vec<SpecRecord> = specs
+            .values()
+            .filter(|record| owner.owns(record.owner.as_deref()))
+            .cloned()
+            .collect();
         // Stable ordering: newest first
         records.sort_by(|a, b| b.created_at.cmp(&a.created_at));
         Ok(records)
     }
 
-    async fn update_spec(&self, id: &str, content: String) -> Result<Option<SpecRecord>> {
+    async fn update_spec(
+        &self,
+        id: &str,
+        owner: &CompilerOwner,
+        content: String,
+    ) -> Result<Option<SpecRecord>> {
         let mut specs = self.specs.write().await;
-        if let Some(record) = specs.get_mut(id) {
+        if let Some(record) = specs
+            .get_mut(id)
+            .filter(|record| owner.owns(record.owner.as_deref()))
+        {
             record.content = content;
             record.updated_at = Utc::now();
             Ok(Some(record.clone()))
@@ -186,8 +238,14 @@ impl SpecStorage for InMemorySpecStorage {
         }
     }
 
-    async fn delete_spec(&self, id: &str) -> Result<bool> {
+    async fn delete_spec(&self, id: &str, owner: &CompilerOwner) -> Result<bool> {
         let mut specs = self.specs.write().await;
+        if !specs
+            .get(id)
+            .is_some_and(|record| owner.owns(record.owner.as_deref()))
+        {
+            return Ok(false);
+        }
         let removed = specs.remove(id).is_some();
         if removed {
             // Also remove associated reports
@@ -211,16 +269,23 @@ impl SpecStorage for InMemorySpecStorage {
         Ok(record)
     }
 
-    async fn get_report(&self, id: &str) -> Result<Option<ReportRecord>> {
+    async fn get_report(&self, id: &str, owner: &CompilerOwner) -> Result<Option<ReportRecord>> {
         let reports = self.reports.read().await;
-        Ok(reports.get(id).cloned())
+        Ok(reports
+            .get(id)
+            .filter(|record| owner.owns(record.owner.as_deref()))
+            .cloned())
     }
 
-    async fn list_reports_for_spec(&self, spec_id: &str) -> Result<Vec<ReportRecord>> {
+    async fn list_reports_for_spec(
+        &self,
+        spec_id: &str,
+        owner: &CompilerOwner,
+    ) -> Result<Vec<ReportRecord>> {
         let reports = self.reports.read().await;
         let mut records: Vec<ReportRecord> = reports
             .values()
-            .filter(|r| r.spec_id == spec_id)
+            .filter(|r| r.spec_id == spec_id && owner.owns(r.owner.as_deref()))
             .cloned()
             .collect();
         // Newest first
@@ -241,7 +306,11 @@ mod tests {
         InMemorySpecStorage::new()
     }
 
-    fn make_report(spec_id: &str) -> ReportRecord {
+    fn owner(key: &str) -> CompilerOwner {
+        CompilerOwner::for_test(key, false)
+    }
+
+    fn make_report(spec_id: &str, owner_key: &str) -> ReportRecord {
         let report = CompileReport {
             id: Uuid::new_v4().to_string(),
             agent_id: "test-agent".to_string(),
@@ -287,70 +356,118 @@ mod tests {
             "report": serde_json::to_value(&report).unwrap()
         });
         let output: CompileOutput = serde_json::from_value(output_json).unwrap();
-        ReportRecord::new(spec_id, output)
+        ReportRecord::new(spec_id, output).with_owner_key(Some(owner_key.to_owned()))
     }
 
     #[tokio::test]
     async fn test_spec_crud() {
         let store = make_storage();
 
+        let alice = owner("alice");
+
         // Create
-        let spec = SpecRecord::new("my-agent", "## Identity\nname: my-agent");
+        let spec = SpecRecord::new("my-agent", "## Identity\nname: my-agent").with_owner(&alice);
         let created = store.create_spec(spec).await.unwrap();
         assert!(!created.id.is_empty());
 
         // Get
-        let fetched = store.get_spec(&created.id).await.unwrap();
+        let fetched = store.get_spec(&created.id, &alice).await.unwrap();
         assert!(fetched.is_some());
         assert_eq!(fetched.unwrap().name, "my-agent");
 
         // List
-        let list = store.list_specs().await.unwrap();
+        let list = store.list_specs(&alice).await.unwrap();
         assert_eq!(list.len(), 1);
 
         // Update
         let updated = store
-            .update_spec(&created.id, "## Identity\nname: updated".to_string())
+            .update_spec(&created.id, &alice, "## Identity\nname: updated".to_string())
             .await
             .unwrap();
         assert!(updated.is_some());
         assert!(updated.unwrap().content.contains("updated"));
 
         // Delete
-        let deleted = store.delete_spec(&created.id).await.unwrap();
+        let deleted = store.delete_spec(&created.id, &alice).await.unwrap();
         assert!(deleted);
-        assert!(store.get_spec(&created.id).await.unwrap().is_none());
+        assert!(store.get_spec(&created.id, &alice).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_spec_owner_isolation() {
+        let store = make_storage();
+        let alice = owner("alice");
+        let bob = owner("bob");
+        let local = CompilerOwner::for_test("local", true);
+
+        let owned = store
+            .create_spec(SpecRecord::new("owned", "content").with_owner(&alice))
+            .await
+            .unwrap();
+        let legacy = store
+            .create_spec(SpecRecord::new("legacy", "content"))
+            .await
+            .unwrap();
+
+        // Another owner sees neither list entries nor records, and cannot mutate.
+        assert!(store.list_specs(&bob).await.unwrap().is_empty());
+        assert!(store.get_spec(&owned.id, &bob).await.unwrap().is_none());
+        assert!(store
+            .update_spec(&owned.id, &bob, "changed".to_string())
+            .await
+            .unwrap()
+            .is_none());
+        assert!(!store.delete_spec(&owned.id, &bob).await.unwrap());
+        assert!(store.get_spec(&owned.id, &alice).await.unwrap().is_some());
+
+        // Legacy ownerless records belong to the local-host owner only.
+        assert!(store.get_spec(&legacy.id, &alice).await.unwrap().is_none());
+        assert!(store.get_spec(&legacy.id, &local).await.unwrap().is_some());
+        assert_eq!(store.list_specs(&local).await.unwrap().len(), 1);
     }
 
     #[tokio::test]
     async fn test_report_storage() {
         let store = make_storage();
 
+        let alice = owner("alice");
+
         // Create a spec first
-        let spec = SpecRecord::new("agent-x", "content");
+        let spec = SpecRecord::new("agent-x", "content").with_owner(&alice);
         let created = store.create_spec(spec).await.unwrap();
 
         // Save a report
-        let report = make_report(&created.id);
+        let report = make_report(&created.id, "alice");
         let report_id = report.id.clone();
         let saved = store.save_report(report).await.unwrap();
         assert_eq!(saved.id, report_id);
 
         // Spec should now have latest_report_id set
-        let spec = store.get_spec(&created.id).await.unwrap().unwrap();
+        let spec = store.get_spec(&created.id, &alice).await.unwrap().unwrap();
         assert_eq!(spec.latest_report_id, Some(report_id.clone()));
 
         // Get report
-        let fetched = store.get_report(&report_id).await.unwrap();
+        let fetched = store.get_report(&report_id, &alice).await.unwrap();
         assert!(fetched.is_some());
+        assert!(store
+            .get_report(&report_id, &owner("bob"))
+            .await
+            .unwrap()
+            .is_none());
 
         // List reports for spec
-        let reports = store.list_reports_for_spec(&created.id).await.unwrap();
+        let reports = store
+            .list_reports_for_spec(&created.id, &alice)
+            .await
+            .unwrap();
         assert_eq!(reports.len(), 1);
 
         // Delete spec cascades to reports
-        store.delete_spec(&created.id).await.unwrap();
-        let reports = store.list_reports_for_spec(&created.id).await.unwrap();
+        store.delete_spec(&created.id, &alice).await.unwrap();
+        let reports = store
+            .list_reports_for_spec(&created.id, &alice)
+            .await
+            .unwrap();
         assert!(reports.is_empty());
     }
 }

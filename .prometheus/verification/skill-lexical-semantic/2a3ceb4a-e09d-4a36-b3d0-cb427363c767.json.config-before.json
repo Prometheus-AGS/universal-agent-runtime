@@ -1,0 +1,8 @@
+{
+  "engine": "service",
+  "algorithm": "keyword",
+  "threshold": 0.5,
+  "margin_threshold": 0.05,
+  "top_k": 3,
+  "model_name": null
+}

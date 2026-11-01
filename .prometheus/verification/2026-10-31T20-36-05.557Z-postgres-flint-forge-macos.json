@@ -1,0 +1,703 @@
+[
+  {
+    "description": "  UAR keeps its data in its own `uar` database on a flint-forge PostgreSQL 18\n  server and behaves the same across restarts as it does on SurrealDB.",
+    "elements": [
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;uar-starts-on-postgresql-18-and-keeps-its-data-across-a-restart",
+        "keyword": "Scenario",
+        "line": 6,
+        "name": "UAR starts on PostgreSQL 18 and keeps its data across a restart",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 347751
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 25550784564
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 7,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:74"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 78541607
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "readiness reports the postgres persistence backend as ok",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:100"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 110988178
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I save a skill and an agent",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:109"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4914711856
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "UAR restarts on the same database",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:123"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 88417199
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 11,
+            "name": "the skill and the agent are still there",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:132"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 970692153
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9wb3N0Z3Jlcy1mbGludC1mb3JnZS9lOGQ5OTc3Mi05NDRiLTQwODktYWE0Ny0xMGZmZjNlNjMzNzMuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;a-config-driven-setting-follows-the-config-file-across-restarts-(#389)",
+        "keyword": "Scenario",
+        "line": 13,
+        "name": "A config-driven setting follows the config file across restarts (#389)",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 37981
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 28256807287
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 14,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image with shutdown timeout 31",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:78"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4852185122
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 15,
+            "name": "UAR restarts with shutdown timeout 32",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5081990798
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 16,
+            "name": "UAR restarts with shutdown timeout 33",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 10763210
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 17,
+            "name": "the shutdown timeout setting is 33 from the config file",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:144"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 51290045
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 18,
+            "name": "I override the shutdown timeout to 45 through the API",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:151"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4732250653
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 19,
+            "name": "UAR restarts with shutdown timeout 34",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 21934430
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 20,
+            "name": "the shutdown timeout setting stays 45 and is reported as drift",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:160"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 23259434
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 21,
+            "name": "I reset the shutdown timeout setting",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:168"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4935272649
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "UAR restarts with shutdown timeout 34",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:128"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 9955342
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 23,
+            "name": "the shutdown timeout setting is 34 from the config file",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:144"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1119552448
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9wb3N0Z3Jlcy1mbGludC1mb3JnZS82ODUxZGNlYi04NDVhLTQzN2YtODE2NS1lNDY4NGU1NTE2ZGMuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;persisted-sessions-expire-after-their-ttl-(#390)",
+        "keyword": "Scenario",
+        "line": 25,
+        "name": "Persisted sessions expire after their TTL (#390)",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 32126
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 28330304995
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 26,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image with a 20 second session TTL and the stub model",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:82"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1986942395
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 27,
+            "name": "I chat in a new session",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:173"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13368820
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 28,
+            "name": "the session is listed for its owner",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:190"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 20049831195
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 29,
+            "name": "the session disappears within 150 seconds",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:194"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4789919670
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 30,
+            "name": "it stays gone after UAR restarts",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:206"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1106081387
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9wb3N0Z3Jlcy1mbGludC1mb3JnZS8xMjI5Yzk0ZC0zMmM5LTQ5MDgtODhkMi05OWZkYTdlOTI3N2QuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;memory-is-kept-by-the-memory-service,-not-discarded-(#393)",
+        "keyword": "Scenario",
+        "line": 32,
+        "name": "Memory is kept by the memory service, not discarded (#393)",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 35952
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 42961352100
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 33,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image with memory enabled",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:86"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 736786741
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 34,
+            "name": "I save a memory record",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:214"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5249745676
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 35,
+            "name": "UAR restarts on the same database",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:123"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 13220904
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 36,
+            "name": "the memory record is still readable",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:223"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4297059
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 37,
+            "name": "the capability matrix names the memory store",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:228"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1411985894
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9wb3N0Z3Jlcy1mbGludC1mb3JnZS9iYTJkZDM5Yy00NTA5LTQ2YjgtYWFiMC02ZGFjN2JhNmJiM2YuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;skills-work-with-a-1024-dimension-embedder-(#395)",
+        "keyword": "Scenario",
+        "line": 39,
+        "name": "Skills work with a 1024-dimension embedder (#395)",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 26046
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 26531166219
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 40,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image with a 1024-dimension embedder",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:91"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 74670974
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 41,
+            "name": "I save a skill",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:236"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 104745280
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 42,
+            "name": "skill matching finds it",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:251"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4819437517
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 43,
+            "name": "UAR restarts on the same database",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:123"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 90970572
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 44,
+            "name": "skill matching still finds it",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:253"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 914753607
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9wb3N0Z3Jlcy1mbGludC1mb3JnZS9hZWYyZDc1MS0xY2FkLTQ4MWItODQ1Ni05OGE0ZjI2YTU0NDYuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "uar-on-the-flint-forge-postgresql-18-image;unsupported-durable-features-are-reported-and-refused-(#394)",
+        "keyword": "Scenario",
+        "line": 46,
+        "name": "Unsupported durable features are reported and refused (#394)",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 37665
+            },
+            "keyword": "Before",
+            "hidden": true
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 26997460308
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 47,
+            "name": "a dedicated UAR on the flint-forge PostgreSQL 18 image",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:74"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4629383
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 48,
+            "name": "the capability matrix reports the team durability features as unsupported",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:261"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 5873699
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 49,
+            "name": "a follow-up request is refused with capability_unsupported",
+            "match": {
+              "location": "scripts/behaviors/steps/postgres-flint-forge.steps.mjs:268"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 815729177
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9wb3N0Z3Jlcy1mbGludC1mb3JnZS85NDdkOTRlNC0zYWNiLTRhNDMtOGZlNS1kNTg0NWFjMTczZjYuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@postgres",
+            "line": 1
+          },
+          {
+            "name": "@flint-forge",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "uar-on-the-flint-forge-postgresql-18-image",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "UAR on the flint-forge PostgreSQL 18 image",
+    "tags": [
+      {
+        "name": "@postgres",
+        "line": 1
+      },
+      {
+        "name": "@flint-forge",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/postgres-flint-forge.feature"
+  }
+]

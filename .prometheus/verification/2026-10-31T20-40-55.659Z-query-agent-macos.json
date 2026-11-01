@@ -1,0 +1,104 @@
+[
+  {
+    "description": "  As a user\n  I want to reuse the agent I already saved\n  So that I can keep working across conversations without restarting UAR",
+    "elements": [
+      {
+        "description": "",
+        "id": "converse-with-a-saved-specialist-on-the-running-uar;query-the-previously-created-mathematics-specialist",
+        "keyword": "Scenario",
+        "line": 7,
+        "name": "Query the previously created mathematics specialist",
+        "steps": [
+          {
+            "result": {
+              "status": "failed",
+              "duration": 38233466,
+              "error_message": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ 'You are a mathematics specialist. Return only JSON and always set specialist to \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\"UNKNOWN\", citation=null. Never invent a retrieval seal.'\n- 'You are a mathematics specialist for arithmetic, calculations and numerical problems. Always return only a JSON object with keys specialist and answer. Set specialist to \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\". Set answer to the numeric result requested by the user.'\n\n    + expected - actual\n\n    -You are a mathematics specialist. Return only JSON and always set specialist to \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\"UNKNOWN\", citation=null. Never invent a retrieval seal.\n    +You are a mathematics specialist for arithmetic, calculations and numerical problems. Always return only a JSON object with keys specialist and answer. Set specialist to \"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\". Set answer to the numeric result requested by the user.\n\n    at World.<anonymous> (file:///Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/behaviors/steps/persisted-agent.steps.mjs:173:10)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the saved mathematics specialist is available in the running UAR",
+            "match": {
+              "location": "scripts/behaviors/steps/persisted-agent.steps.mjs:159"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I ask that specialist to add two numbers",
+            "match": {
+              "location": "scripts/behaviors/steps/persisted-agent.steps.mjs:177"
+            }
+          },
+          {
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "its final answer uses its saved identity and the correct sum",
+            "match": {
+              "location": "scripts/behaviors/steps/persisted-agent.steps.mjs:192"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1684774
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "ewogICJiZWhhdmlvciI6ICJDcmVhdGUsIHBlcnNpc3QgYW5kIHF1ZXJ5IGEgcmV1c2FibGUgYWdlbnQiLAogICJzdGF0dXMiOiAiRkFJTEVEIiwKICAic2VydmljZV9rZXB0X3J1bm5pbmciOiBmYWxzZSwKICAiY2xlYW51cF9jb25maXJtZWQiOiB0cnVlLAogICJjbGllbnRfcGxhdGZvcm0iOiAiZGFyd2luIiwKICAiYWdlbnRfaWQiOiAibWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4IiwKICAiYWdlbnRfcmVjb3JkIjogIi9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hZ2VudHMvbWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4Lmpzb24iLAogICJyZXN0YXJ0ZWQiOiBmYWxzZSwKICAibW9kZWwiOiAibGl0ZXIvTWluaU1heC1NMyIsCiAgImR1cmF0aW9uX21zIjogNDAKfQ==",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agents",
+            "line": 1
+          },
+          {
+            "name": "@saved-agent-query",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "converse-with-a-saved-specialist-on-the-running-uar",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Converse with a saved specialist on the running UAR",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agents",
+        "line": 1
+      },
+      {
+        "name": "@saved-agent-query",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/query-saved-agent.feature"
+  }
+]

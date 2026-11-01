@@ -1,0 +1,103 @@
+[
+  {
+    "description": "  As a user\n  I want to reuse the agent I already saved\n  So that I can keep working across conversations without restarting UAR",
+    "elements": [
+      {
+        "description": "",
+        "id": "converse-with-a-saved-specialist-on-the-running-uar;query-the-previously-created-mathematics-specialist",
+        "keyword": "Scenario",
+        "line": 7,
+        "name": "Query the previously created mathematics specialist",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 37873224
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 8,
+            "name": "the saved mathematics specialist is available in the running UAR",
+            "match": {
+              "location": "scripts/behaviors/steps/persisted-agent.steps.mjs:159"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4771816187
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 9,
+            "name": "I ask that specialist to add two numbers",
+            "match": {
+              "location": "scripts/behaviors/steps/persisted-agent.steps.mjs:178"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 920704
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 10,
+            "name": "its final answer uses its saved identity and the correct sum",
+            "match": {
+              "location": "scripts/behaviors/steps/persisted-agent.steps.mjs:193"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 1295196
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "ewogICJiZWhhdmlvciI6ICJRdWVyeSB0aGUgcHJldmlvdXNseSBwZXJzaXN0ZWQgYWdlbnQiLAogICJzdGF0dXMiOiAiUEFTU0VEIiwKICAic2VydmljZV9rZXB0X3J1bm5pbmciOiB0cnVlLAogICJjbGllbnRfcGxhdGZvcm0iOiAiZGFyd2luIiwKICAiYWdlbnRfaWQiOiAibWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4IiwKICAiYWdlbnRfcmVjb3JkIjogIi9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9hZ2VudHMvbWF0aC1zcGVjaWFsaXN0LWRiNjRjMmE4Lmtub3dsZWRnZS5qc29uIiwKICAicmVzdGFydGVkIjogZmFsc2UsCiAgInF1ZXN0aW9uIjogIldoYXQgaXMgMjcgKyA0Nz8gQXBwbHkgeW91ciBzYXZlZCBpbnN0cnVjdGlvbnMuIiwKICAiZXhwZWN0ZWRfc3VtIjogNzQsCiAgImFuc3dlciI6ICJ7XCJzcGVjaWFsaXN0XCI6XCJNQVRILWNlOTMyNGVlLTBkNjMtNDcxNC05ODJmLWYwOTllOGM4ZjM3OFwiLFwiYW5zd2VyXCI6NzR9IiwKICAibW9kZWwiOiAibGl0ZXIvTWluaU1heC1NMyIsCiAgInByb3ZpZGVyX3JlYXNvbmluZ19wcmVzZW50IjogZmFsc2UsCiAgImR1cmF0aW9uX21zIjogNDgyNAp9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@agents",
+            "line": 1
+          },
+          {
+            "name": "@saved-agent-query",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "converse-with-a-saved-specialist-on-the-running-uar",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "Converse with a saved specialist on the running UAR",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@agents",
+        "line": 1
+      },
+      {
+        "name": "@saved-agent-query",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/query-saved-agent.feature"
+  }
+]

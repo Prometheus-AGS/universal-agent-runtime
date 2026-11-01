@@ -1723,9 +1723,22 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
                 self.budget.remote.as_ref(),
             )
             .map_err(|error| error.context(BudgetFailureOrigin::Admission))?;
+        // Only a durable reservation needs final-wire evidence. Preserve the
+        // untracked/no-durable path, including mock and helper driver use,
+        // without asking it to certify a provider representation.
+        let prepared_final_wire_budget = if self.budget.durable.is_some()
+            && request.budget_contract.is_some()
+        {
+            Some(
+                crate::llm::LlmDriver::prepared_final_wire_budget(self.inner.as_ref(), &request)
+                    .map_err(|error| error.context(BudgetFailureOrigin::Admission))?,
+            )
+        } else {
+            None
+        };
         let durable_call = self
             .budget
-            .begin_call(&self.model, &request)
+            .begin_call(&self.model, &request, prepared_final_wire_budget)
             .await
             .map_err(|error| error.context(BudgetFailureOrigin::Admission))?;
         let mut stream = tokio::select! {
@@ -1836,10 +1849,13 @@ impl crate::llm::LlmDriver for BudgetedModelDriver {
 #[cfg(test)]
 mod tests {
     use futures::StreamExt;
+    use std::sync::atomic::{AtomicUsize, Ordering};
 
     use super::*;
     use crate::llm::{LlmRequest, mock_driver::MockLlmDriver};
     use crate::normalized::NormalizedEvent;
+    use crate::uar::persistence::providers::memory::InMemoryProvider;
+    use crate::uar::runtime::context::budget::RequestBudgetContract;
 
     fn request() -> LlmRequest {
         LlmRequest {
@@ -1853,6 +1869,21 @@ mod tests {
             anthropic_system: None,
             extra_params: None,
             budget_contract: None,
+        }
+    }
+
+    struct UnsupportedFinalWireDriver {
+        streams: AtomicUsize,
+    }
+
+    #[async_trait::async_trait]
+    impl crate::llm::LlmDriver for UnsupportedFinalWireDriver {
+        async fn stream(
+            &self,
+            _request: LlmRequest,
+        ) -> anyhow::Result<crate::llm::ExternalDriverStream> {
+            self.streams.fetch_add(1, Ordering::SeqCst);
+            Ok(Box::pin(futures::stream::empty()))
         }
     }
 
@@ -1963,6 +1994,59 @@ mod tests {
             provider.call_count(),
             1,
             "the refused call must not reach the provider"
+        );
+    }
+
+    #[tokio::test]
+    async fn durable_contract_without_final_wire_evidence_refuses_before_inner_stream() {
+        let mut budget = ModelCallBudget::for_run(
+            CostBudgetTracker::new(),
+            "synthetic-durable-run".to_owned(),
+            "synthetic-durable-session".to_owned(),
+            "synthetic-durable-agent".to_owned(),
+            tokio_util::sync::CancellationToken::new(),
+            ThreadBudgets::default(),
+            None,
+            Instant::now(),
+        )
+        .expect("synthetic budget is valid");
+        // Synthetic seam coverage only: a nonempty durable capability reaches
+        // the final-wire admission branch, but refusal happens before it can
+        // mutate this non-durable in-memory store or enter the fake stream.
+        budget.durable = Some(DurableBudget {
+            store: Arc::new(InMemoryProvider::new()),
+            owner: "synthetic-verified-owner".to_owned(),
+            scopes: Vec::new(),
+            source_reservation: None,
+        });
+        let inner = Arc::new(UnsupportedFinalWireDriver {
+            streams: AtomicUsize::new(0),
+        });
+        let driver = budget.bind("openai/gpt-4o-mini".to_owned(), inner.clone());
+        let mut contract_request = request();
+        contract_request.output_token_cap = Some(8);
+        contract_request.budget_contract = Some(RequestBudgetContract::synthetic_exact(
+            "http://synthetic-final-wire.invalid/v1",
+        ));
+
+        let error = match driver.stream(contract_request).await {
+            Ok(_) => panic!("durable contract without final-wire evidence must refuse"),
+            Err(error) => error,
+        };
+        assert!(matches!(
+            error.downcast_ref::<BudgetFailureOrigin>(),
+            Some(BudgetFailureOrigin::Admission)
+        ));
+        assert!(
+            error
+                .root_cause()
+                .to_string()
+                .contains("no supported final-wire budget contract")
+        );
+        assert_eq!(
+            inner.streams.load(Ordering::SeqCst),
+            0,
+            "unsupported final-wire evidence must refuse before inner dispatch"
         );
     }
 }
@@ -2167,22 +2251,35 @@ impl ModelCallBudget {
         &self,
         model: &str,
         request: &crate::llm::LlmRequest,
+        prepared_final_wire_budget: Option<crate::llm::PreparedFinalWireBudget>,
     ) -> anyhow::Result<Option<DurableCall>> {
         self.admit_remote_activity(crate::uar::persistence::accounting::RemoteGrantActivity::Model)
             .await?;
         let Some(durable) = &self.durable else {
             return Ok(None);
         };
-        let (input, output, reservation_source) = if request.budget_contract.is_some() {
-            let (input, output) = crate::llm::liter_driver::request_budget_bound(
-                &request
-                    .budget_contract
-                    .as_ref()
-                    .ok_or(AccountingError::Unresolved)?
-                    .destination_model,
-                request,
-            )?;
-            (Some(input), Some(output), "final_wire_contract")
+        let (input, output, reservation_source) = if let Some(contract) = &request.budget_contract {
+            let prepared = prepared_final_wire_budget.ok_or(AccountingError::Unresolved)?;
+            let uncertainty = u64::try_from(contract.limits.count_uncertainty_tokens)?;
+            let output_ceiling = u64::try_from(contract.limits.output_tokens)?;
+            anyhow::ensure!(
+                prepared.output_tokens <= output_ceiling,
+                "prepared final-wire output exceeds the host budget contract"
+            );
+            let reasoning = u64::try_from(contract.limits.additional_reasoning_tokens)?;
+            let input = prepared
+                .input_tokens
+                .checked_add(uncertainty)
+                .ok_or_else(|| anyhow::anyhow!("input reservation overflow"))?;
+            let output = prepared
+                .output_tokens
+                .checked_add(reasoning)
+                .ok_or_else(|| anyhow::anyhow!("output reservation overflow"))?;
+            (
+                Some(input),
+                Some(output),
+                "liter_prepared_final_wire_contract",
+            )
         } else if let Some(remote) = self
             .remote
             .as_ref()

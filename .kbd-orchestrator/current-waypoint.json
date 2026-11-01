@@ -7,14 +7,16 @@
   "phasePath": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch",
   "change": "carry-inline-images-and-constrain-dispatch",
   "stageId": "execute",
-  "status": "IMPLEMENTATION_COMPLETE_SERIAL_GATES_READY",
-  "verification": "AUTHORIZED_SERIAL_PHASE_EXIT",
+  "status": "GATE_013_B_COMMIT_HOOKS_IN_PROGRESS",
+  "verification": "OPERATOR_AUTHORIZED_GATE_013_A_THROUGH_C_SERIAL_ONLY",
   "sourceBase": "629f5702",
   "priorPhase": "production-readiness-476-baseline",
   "priorAcceptanceSource": "5aa36a40ac0661ad358f50db8a066b5f5a1c4263",
-  "authorization": "Operator authorized bounded useful phases and phase-exit validation, no routine approvals. External effect boundaries retained.",
-  "exactNextCommand": "Inventory008 reconciles all implementation/handoffs/reviews; lead ordinary commit/hooks attempt003, then clean guard and serial packet.",
+  "authorization": "2026-11-01 operator explicitly authorized gate request013 A\u2013C serially, stop on failures, preserve other chat, Docker and installed-container qualification closed.",
+  "exactNextCommand": "Normal approved git commit/hooks rerun, then pending clean --acceptance guard if commit succeeds; stop on failure.",
   "blockers": [],
   "productionContract": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/production-contract.md",
-  "selectedDeployment": "Linux amd64 container APIs; Surreal default; PG18 restricted"
+  "selectedDeployment": "Linux amd64 container APIs behind trusted host/gateway; Surreal default; PG18 restricted; direct remote multi-user excluded",
+  "implementationInventory": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-013.json",
+  "pendingMergeParent": "af37c2f834f7b34f511ecc93f408e80205c94229"
 }

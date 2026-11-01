@@ -1,0 +1,187 @@
+{
+  "scenario": "AGUI-01",
+  "client_platform": "darwin",
+  "agent_id": "math-specialist-db64c2a8",
+  "protocol": "AG-UI 1.0 saved-agent SSE",
+  "authentication_supplied_by_test": false,
+  "service_kept_running": true,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/math-specialist-db64c2a8",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"math-specialist-db64c2a8\",\"metadata\":{\"title\":\"Mathematics Specialist\",\"description\":\"Specialist for arithmetic, numerical calculations, addition, subtraction, multiplication and division.\",\"tags\":[\"mathematics\",\"arithmetic\",\"calculations\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a mathematics specialist. Return only JSON and always set specialist to \\\"MATH-ce9324ee-0d63-4714-982f-f099e8c8f378\\\". For ordinary arithmetic, return keys specialist and answer with the requested numeric result. For a research-profile question, answer ONLY from the retrieved knowledge documents: return keys specialist, profile, rim_vertices, lucas_number, sandpile_group_order, retrieval_seal, citation. Copy the exact profile and retrieval seal from the document and its numbered source marker such as [1]. If the profile is absent return specialist, answer=\\\"UNKNOWN\\\", citation=null. Never invent a retrieval seal.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\",\"c23dfa11-0891-400b-831b-d60c16c71b74\"],\"citation_required\":true}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"knowledge_bases\":{\"ids\":[\"f572fa5d-7e48-43e9-bf60-d3e8e9a9405e\",\"58c0e39f-43e0-47a9-b699-7dea5d82417f\",\"a048de8e-3e19-41a6-935b-cea3818e3d1e\",\"e2cfccf9-ac60-40a0-bc58-e47a2cacb3bc\",\"c23dfa11-0891-400b-831b-d60c16c71b74\"],\"mode\":\"selected\"}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:227c7dcc77864a6b0fc475fefaf2d9f0009d48e320cd59749b8b50a400a2e323\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/ag-ui/agents/math-specialist-db64c2a8",
+      "request": {
+        "threadId": "2abb0d73-269f-4ed0-8e29-11220095b55e",
+        "runId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195",
+        "protocolVersion": "1.0",
+        "tools": [],
+        "context": [],
+        "messages": [
+          {
+            "id": "a0097019-17ec-4f56-bbe3-f63cac5292ae",
+            "role": "user",
+            "content": "What is (35 multiplied by 29) plus 492? Follow your saved specialist/answer JSON instructions."
+          }
+        ],
+        "forwardedProps": {
+          "uar": {
+            "model": "liter/MiniMax-M3"
+          }
+        }
+      },
+      "response": "id: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:0:0\ndata: {\"type\":\"RUN_STARTED\",\"threadId\":\"2abb0d73-269f-4ed0-8e29-11220095b55e\",\"runId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195\",\"protocolVersion\":\"1.0\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:11:1\ndata: {\"type\":\"TEXT_MESSAGE_START\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"role\":\"assistant\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:11:2\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"<think>Th\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:12:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"e question i\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:13:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"s ordinary arithmetic:\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:14:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\" (35 × 29)\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:15:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\" + 492 = 101\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:16:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"5 + 492 = 1507\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:17:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\".\\n\\nReturn only JSON\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:18:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\" with specialist and answer.\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:19:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"</think>\\n\\n```\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:20:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"json\\n{\\n  \\\"specialist\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:21:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"\\\": \\\"MATH-ce932\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:22:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"4ee-0\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:23:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"d63-4714\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:24:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"-982f-f099\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:25:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"e8\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:26:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"c8f378\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:27:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"\\\",\\n  \\\"answer\\\": 1507\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:28:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"\\n}\\n```\\n\\n35 × 29 =\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:29:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\" 1015, and\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:30:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\" 1015 + 492 = **\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:31:1\ndata: {\"type\":\"TEXT_MESSAGE_CONTENT\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\",\"delta\":\"1507**.\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:33:90\ndata: {\"type\":\"TEXT_MESSAGE_END\",\"messageId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant\"}\n\nid: 6c41b4327c7ce2336f1fb463245c0c7605d7691ebcf07a87f392d179339cb1a5:33:100\ndata: {\"type\":\"RUN_FINISHED\",\"threadId\":\"2abb0d73-269f-4ed0-8e29-11220095b55e\",\"runId\":\"50abff4b-ce1a-4aa4-bd3e-e0e395544195\",\"outcome\":{\"type\":\"success\"}}\n\n",
+      "status": 200,
+      "content_type": "text/event-stream"
+    }
+  ],
+  "events": [
+    {
+      "type": "RUN_STARTED",
+      "threadId": "2abb0d73-269f-4ed0-8e29-11220095b55e",
+      "runId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195",
+      "protocolVersion": "1.0"
+    },
+    {
+      "type": "TEXT_MESSAGE_START",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "role": "assistant"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "<think>Th"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "e question i"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "s ordinary arithmetic:"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": " (35 × 29)"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": " + 492 = 101"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "5 + 492 = 1507"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": ".\n\nReturn only JSON"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": " with specialist and answer."
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "</think>\n\n```"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "json\n{\n  \"specialist"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "\": \"MATH-ce932"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "4ee-0"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "d63-4714"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "-982f-f099"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "e8"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "c8f378"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "\",\n  \"answer\": 1507"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "\n}\n```\n\n35 × 29 ="
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": " 1015, and"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": " 1015 + 492 = **"
+    },
+    {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant",
+      "delta": "1507**."
+    },
+    {
+      "type": "TEXT_MESSAGE_END",
+      "messageId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195:assistant"
+    },
+    {
+      "type": "RUN_FINISHED",
+      "threadId": "2abb0d73-269f-4ed0-8e29-11220095b55e",
+      "runId": "50abff4b-ce1a-4aa4-bd3e-e0e395544195",
+      "outcome": {
+        "type": "success"
+      }
+    }
+  ],
+  "configured_model": "liter/MiniMax-M3",
+  "expected": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 1507
+  },
+  "thread_id": "2abb0d73-269f-4ed0-8e29-11220095b55e",
+  "run_id": "50abff4b-ce1a-4aa4-bd3e-e0e395544195",
+  "answer": {
+    "specialist": "MATH-ce9324ee-0d63-4714-982f-f099e8c8f378",
+    "answer": 1507
+  },
+  "content_fragments": 21,
+  "result": "VERIFIED",
+  "scenario_status": "PASSED",
+  "duration_ms": 4704
+}

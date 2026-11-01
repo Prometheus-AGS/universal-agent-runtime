@@ -207,6 +207,7 @@ async fn harness(keys: impl FnOnce() -> Vec<Jwk>) -> Harness {
             jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
             settings_admin_key: None,
+            local_loopback_owner: false,
         },
         base_url: format!("http://127.0.0.1:{port}"),
     });

@@ -1,11 +1,11 @@
 {
   "$schema": "./product-support-matrix.schema.json",
   "version": "1.0.0",
-  "product_version": "1.4.0-rc.1",
+  "product_version": "1.4.0-rc.2",
   "version_semantics": "version is the matrix contract revision; product_version follows Cargo.toml; SDK/package/schema versions remain independent",
-  "claim_reviewed_at": "2026-10-31",
+  "claim_reviewed_at": "2026-11-01",
   "verified_at_semantics": "Historical inventory date, not fresh verification of the current source or container",
-  "qualification": {"selected_lane": "linux/amd64 container APIs", "status": "unverified", "default_persistence": "SurrealDB 3.3.0; owned persistent volume", "secondary_persistence": "PostgreSQL18/pgvector restricted by runtime capability document; no parity or checkpoint-resume claim", "memory": "independent service-owned store", "current_source_evidence": "#462 scoped library baseline on5aa36a40; does not certify current image/dispatch edits or installed container", "pending": "#463/#464 actual mounted transport/dispatch; #466 evidence alignment; #465 actual release image/selected lanes", "excluded_lanes": ["arm64", "windows", "mobile", "native archives", "browser/native WASM-AOT certification", "every-provider quality"], "vision_evidence": "source authored; NOT_EXERCISED; no genuine-model understanding qualification", "recovery_contract": "product-support-matrix.md#execution-and-recovery-guarantees"},
+  "qualification": {"selected_lane": "linux/amd64 container APIs behind a trusted host/gateway", "status": "unverified", "default_persistence": "SurrealDB 3.3.0; owned persistent volume", "secondary_persistence": "PostgreSQL18/pgvector restricted by runtime capability document; no parity or checkpoint-resume claim", "memory": "independent service-owned store", "current_source_evidence": "#462 scoped library baseline on5aa36a40; rc.2 af37c2f8 imported with historical macOS receipts; neither certifies this uncommitted integration/repair tree or Linux container", "pending": "#463/#464 actual mounted transport/dispatch; #466 evidence alignment; #465 actual release image/selected lanes", "excluded_lanes": ["arm64", "windows", "mobile", "native archives", "browser/native WASM-AOT certification", "every-provider quality"], "vision_evidence": "source authored; NOT_EXERCISED; no genuine-model understanding qualification", "recovery_contract": "product-support-matrix.md#execution-and-recovery-guarantees"},
   "verified_at": "2026-07-14",
   "features": [
     { "id": "minimal", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features minimal" },

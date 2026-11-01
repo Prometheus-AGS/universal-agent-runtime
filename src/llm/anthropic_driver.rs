@@ -409,12 +409,33 @@ impl LlmDriver for AnthropicDriver {
 
         // Stream SSE response
         let request_id = uuid::Uuid::new_v4().to_string();
-        let mut state = StreamState::new(request_id);
+        let state = StreamState::new(request_id);
         let metrics_model = self.model.clone();
 
-        let byte_stream = response.bytes_stream();
+        Ok(decode_anthropic_sse(
+            response.bytes_stream(),
+            state,
+            metrics_model,
+        ))
+    }
+}
 
-        let event_stream = stream! {
+/// Decode a native Anthropic SSE byte stream into normalized events.
+///
+/// This is the production transport-framing, SSE-decoding, JSON-parsing and
+/// normalization loop used by `AnthropicDriver::stream`. It is generic over
+/// the chunk type so deterministic byte partitions can be fed to it without a
+/// network; the driver passes `reqwest::Response::bytes_stream()`.
+pub(super) fn decode_anthropic_sse<S, B>(
+    byte_stream: S,
+    mut state: StreamState,
+    metrics_model: String,
+) -> Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>
+where
+    S: Stream<Item = Result<B, reqwest::Error>> + Send + 'static,
+    B: AsRef<[u8]> + Send + 'static,
+{
+    let event_stream = stream! {
             use futures::StreamExt;
 
             let mut decoder = liter_llm::SseDecoder::default();
@@ -434,7 +455,7 @@ impl LlmDriver for AnthropicDriver {
                     }
                 };
 
-                let canonical = framer.push(&chunk);
+                let canonical = framer.push(chunk.as_ref());
                 if let Err(error) = decoder.push(&canonical) {
                     yield Err(ProviderError::from_liter(error).into());
                     return;
@@ -516,10 +537,9 @@ impl LlmDriver for AnthropicDriver {
                 return;
             }
             yield Ok(NormalizedEvent::Done);
-        };
+    };
 
-        Ok(Box::pin(event_stream))
-    }
+    Box::pin(event_stream)
 }
 
 #[cfg(test)]

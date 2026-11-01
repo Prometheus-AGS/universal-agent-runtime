@@ -1,0 +1,111 @@
+{
+  "scenario": "Local no-credential chat and memory share one owner",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "exchanges": [
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/api/uar/providers/openai/test",
+      "request": {
+        "model": "gpt-5.4-mini",
+        "output_token_cap": 128
+      },
+      "status": 200,
+      "response": "{\"ok\":true,\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\",\"latency_ms\":342,\"received_text\":true}"
+    },
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/api/memory",
+      "request": {
+        "content": "The local code word is LOCAL-OWNER-fcce85b8.",
+        "categories": [
+          "personal_fact"
+        ]
+      },
+      "status": 200,
+      "response": "{\"status\":\"success\",\"id\":\"memory:27789754-1968-4cee-9d82-79f820610a89\"}"
+    },
+    {
+      "via": "local",
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "model": "openai/gpt-5.4-mini",
+        "session_id": "c735960e-b568-4f8f-a994-618a91a103e9",
+        "stream": false,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Postgres session probe: reply with SESSION-OK."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "{\"id\":\"chatcmpl-afb3135f-f545-4095-8311-1a7e1ba983e8\",\"object\":\"chat.completion\",\"created\":1793478503,\"model\":\"openai/gpt-5.4-mini\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"SESSION-OK\"},\"finish_reason\":\"stop\"}],\"session_id\":\"c735960e-b568-4f8f-a994-618a91a103e9\"}"
+    },
+    {
+      "via": "local",
+      "method": "GET",
+      "path": "/api/memory/records/memory:27789754-1968-4cee-9d82-79f820610a89",
+      "status": 200,
+      "response": "{\"id\":{\"table\":\"memory\",\"key\":{\"String\":\"27789754-1968-4cee-9d82-79f820610a89\"}},\"content\":\"The local code word is LOCAL-OWNER-fcce85b8.\",\"embedding\":[0.0087170955,-0.05473239,0.01405535,0.025621574,0.0052427156,-0.024127765,0.088225365,0.061086897,-0.041238803,-0.00001270205,-0.07569701,-0.0009282186,-0.01968661,0.005574309,0.019152107,0.03125701,0.013509683,-0.014766903,0.012582878,0.009389209,0.111181445,-0.016752467,-0.037019946,0.026112027,0.001575027,0.0259968,-0.026301127,0.034693837,-0.038370885,-0.10559601,0.004345309,0.01710362,0.07660001,0.018354826,0.061071306,-0.07236162,-0.05415324,0.006474463,-0.05159935,0.059266172,-0.025528265,0.069672726,0.048214186,0.040431835,-0.04180781,-0.004488757,0.03200899,0.017293476,0.043201037,-0.050361466,0.08758393,-0.008998938,-0.0396059,0.005672793,-0.03308266,0.013603852,0.03048545,0.084323525,-0.011045109,0.045506522,0.021351332,0.054508265,-0.21988338,0.056445204,-0.001097402,0.016467895,0.02513761,-0.009036636,-0.023437005,-0.042913422,0.035078093,0.02300962,0.013223364,0.03493654,0.037245154,0.016683407,-0.008120943,0.015121071,-0.043894608,-0.05026725,-0.061009333,-0.08312323,-0.0332492,-0.052279387,-0.08628556,0.02265745,0.020367231,0.04962764,0.029051768,0.040602878,-0.06922016,-0.058069695,0.017867597,0.012312136,-0.058136906,-0.042644445,0.01414043,0.049628366,-0.055811416,0.14043064,-0.011925971,-0.00055259996,-0.06510901,-0.061700717,0.08033073,-0.067300804,-0.031173244,0.032402355,-0.05417816,-0.009245955,-0.016024256,0.015380743,0.035082366,0.010988204,0.062151566,0.063405424,0.04129206,0.045954153,0.003897656,0.0360171,0.0102436645,0.013780201,-0.0032923403,0.042260967,-0.011802121,-0.0017039154,0.094631255,0.07134669,0.008557013,0.06342269,0.013035221,0.029427452,0.02902872,0.0074001113,0.008191628,-0.03552843,0.014625087,0.009500116,0.022109272,-0.023279227,0.011488222,-0.14401203,-0.07715713,-0.03803696,-0.0024533637,0.026050312,-0.09691649,0.043446243,-0.0012962762,-0.01768577,-0.013403403,0.040507626,-0.033669256,-0.053295407,-0.049575664,0.032522805,0.12127855,0.054984972,0.012253257,-0.037496615,0.052656874,0.029072877,-0.002031203,0.07481266,-0.01664183,-0.098364346,-0.06979399,-0.00513134,0.040201865,-0.07008849,0.033356883,0.0034276624,-0.0560801,0.099918604,0.03149456,-0.0022957872,-0.043161422,0.06851877,0.012693073,0.033544227,-0.05769132,0.0052154926,-0.039574843,-0.026352424,0.0068378686,0.020506103,0.021184118,-0.053143088,0.044406194,0.009170592,-0.051339537,0.049300097,-0.054231122,-0.07570064,-0.035160024,-0.046379857,-0.090632364,-0.07401198,0.06655079,-0.095846824,0.053321786,0.053043436,-0.015966864,0.0010839379,-0.026176728,-0.018728616,0.031283323,0.004379481,-0.0048973626,-0.07518954,0.0013543495,0.02448089,0.057093427,0.007924554,-0.014536723,-0.011616591,-0.04573333,0.06895591,0.059581585,0.018183906,0.0098104635,0.0370649,-0.013309802,-0.22157505,-0.016751586,-0.020730022,-0.052025646,-0.059049025,-0.053593293,0.041744277,-0.00991576,0.06072637,0.07026252,0.04905365,-0.03775261,0.031281397,-0.00063863635,0.019189302,0.0755,0.061064556,0.008348957,-0.016668981,0.004546766,0.015509308,0.029281154,-0.04056248,-0.011862379,0.054535136,0.004200524,0.1391903,-0.031912256,0.10055481,-0.02071351,0.058957506,-0.05426515,-0.003989209,-0.08005166,0.038599588,-0.017705604,-0.037172902,0.047512047,0.020821271,0.0369219,-0.08238134,0.0005057769,0.010988047,-0.059512652,0.037857786,-0.025840595,-0.03701971,-0.019077228,-0.07292652,-0.026011588,0.029277446,0.024176577,0.07843041,0.07240553,0.047362037,-0.039586138,0.001678274,0.0053252573,0.0073341383,0.0019624506,0.01020613,0.01607025,-0.009726623,-0.027241474,0.03686694,-0.013250501,-0.036078148,-0.007922184,0.043533847,0.020520464,0.0027545204,0.05112407,-0.012233268,-0.1065612,-0.096134365,0.011540408,-0.012823566,-0.062191095,-0.011807016,-0.029628644,0.09543931,-0.0080877775,0.03981671,0.038239848,0.01374252,0.00815536,0.05197667,0.06531293,0.030557547,0.021582052,0.01557931,0.006475699,0.0421472"
+    },
+    {
+      "via": "local",
+      "method": "GET",
+      "path": "/api/uar/sessions",
+      "status": 200,
+      "response": "[{\"id\":\"c735960e-b568-4f8f-a994-618a91a103e9\",\"owner_id\":\"v1:k:local-host:i:18:urn:uar:local:host:local:s:10:local-user\",\"messages\":[{\"role\":\"user\",\"content\":\"Postgres session probe: reply with SESSION-OK.\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: current_time / full]\\nThis replaces the previous current-time section.\\n{\\\"unix_time_bucket\\\":29891308,\\\"granularity_seconds\\\":60,\\\"timezone\\\":\\\"UTC\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: environment / full]\\nThis replaces the previous environment section.\\n{\\\"cwd\\\":\\\"/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/local-identity/d59e5761-087f-442a-b25e-1f6726a76433\\\",\\\"workspace_roots\\\":[],\\\"platform\\\":\\\"macos\\\",\\\"architecture\\\":\\\"x86_64\\\"}\\n</uar-host-content>\"},{\"role\":\"system\",\"content\":\"<uar-host-content>\\n[WORLD STATE: permissions / full]\\nThis replaces the previous permissions summary; enforced policy remains authoritative.\\n{\\\"tools\\\":{\\\"mode\\\":\\\"selected\\\",\\\"ids\\\":[\\\"a2ui_render\\\",\\\"native__memory_capture_policy\\\",\\\"native__memory_delete_by_id\\\",\\\"native__memory_history\\\",\\\"native__memory_list\\\",\\\"native__memory_recall\\\",\\\"native__memory_save\\\",\\\"native__memory_update_by_id\\\",\\\"native_echo\\\",\\\"native_system_info\\\",\\\"session_search\\\",\\\"uar_compile\\\",\\\"uar_session_check_completeness\\\",\\\"uar_session_compile\\\",\\\"uar_session_update_section\\\"],\\\"source\\\":\\\"agent\\\"},\\\"mcp_servers\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[],\\\"source\\\":\\\"legacy\\\"},\\\"skills\\\":{\\\"mode\\\":\\\"auto\\\",\\\"ids\\\":[\\\"actor-model\\\",\\\"adversarial-review\\\",\\\"android-compose-adaptive\\\",\\\"android-edge-to-edge\\\",\\\"api-connector-builder\\\",\\\"argocd-multicloud\\\",\\\"async-patterns\\\",\\\"atproto-lexicon\\\",\\\"atproto-oauth\\\",\\\"atproto-publish-lexicon\\\",\\\"axum-patterns\\\",\\\"bdd-cucumber-js\\\",\\\"bdd-cucumber-rs\\\",\\\"bdd-lifecycle-loop\\\",\\\"bdd-testing\\\",\\\"bdd-video-proof\\\",\\\"better-accessibility\\\",\\\"better-colors\\\",\\\"better-interface\\\",\\\"better-layout\\\",\\\"better-typography\\\",\\\"better-ui\\\",\\\"better-writing\\\",\\\"break\\\",\\\"carrier-relationship-management\\\",\\\"ck\\\",\\\"clean-architecture\\\",\\\"clone-skill\\\",\\\"continuous-learning-v2\\\",\\\"cowork-management\\\",\\\"create-native-agent\\\",\\\"create-skill\\\",\\\"customs-trade-compliance\\\",\\\"dashboard-builder\\\",\\\"deep-research\\\",\\\"defi-amm-security\\\",\\\"delivery-gate\\\",\\\"design-taste-frontend\\\",\\\"design-taste-frontend-v1\\\",\\\"disk-space-guardian\\\",\\\"ecc-recipes\\\",\\\"energy-procurement\\\",\\\"entity-audit\\\",\\\"entity-crud-form\\\",\\\"entity-crud-page\\\",\\\"entity-crud-relations\\\",\\\"entity-crud-table\\\",\\\"entity-gc\\\",\\\"entity-gql-hooks\\\",\\\"entity-gql-setup\\\",\\\"entity-gql-subscription\\\",\\\"entity-graph-crud\\\",\\\"entity-graph-detect\\\",\\\"entity-graph-graphql\\\",\\\"entity-graph-init\\\",\\\"entity-graph-migrate\\\",\\\"entity-graph-optimize\\\",\\\"entity-graph-prisma\\\",\\\"entity-graph-realtime\\\",\\\"entity-graph-setup\\\",\\\"entity-perf\\\",\\\"entity-prisma-api\\\",\\\"entity-prisma-generator\\\",\\\"entity-prisma-migrate\\\",\\\"entity-prisma-setup\\\",\\\"entity-realtime-channel\\\",\\\"entity-realtime-local-first\\\",\\\"entity-realtime-setup\\\",\\\"entity-realtime-surreal-live\\\",\\\"error-handling\\\",\\\"evm-token-decimals\\\",\\\"evolve\\\",\\\"evolve-analyze\\\",\\\"evolve-assess\\\",\\\"evolve-execute\\\",\\\"evolve-plan\\\",\\\"evolve-report\\\",\\\"evolve-status\\\",\\\"explain-interface\\\",\\\"expo-animation\\\",\\\"expo-design-system\\\",\\\"expo-native-ui\\\",\\\"expo-router\\\",\\\"expo-ui\\\",\\\"extend-skill\\\",\\\"fabric-integration\\\",\\\"feynman-loop\\\",\\\"flint-sdk-csharp\\\",\\\"flint-sdk-dart\\\",\\\"flint-sdk-go\\\",\\\"flint-sdk-kotlin\\\",\\\"flint-sdk-swift\\\",\\\"flint-sdk-ts\\\",\\\"flutter-build-responsive-layout\\\",\\\"flutter-fix-layout-issues\\\",\\\"flutter-rust-ffi\\\",\\\"flutter-setup-declarative-routing\\\",\\\"flutter-setup-localization\\\",\\\"full-output-enforcement\\\",\\\"gitops-bootstrap\\\",\\\"gitops-transform\\\",\\\"go-base-patterns\\\",\\\"gpt-taste\\\",\\\"growth-log\\\",\\\"healthcare-cdss-patterns\\\",\\\"healthcare-emr-patterns\\\",\\\"healthcare-eval-harness\\\",\\\"healthcare-phi-compliance\\\",\\\"high-end-visual-design\\\",\\\"hipaa-compliance\\\",\\\"htmx-alpine-lit\\\",\\\"ideation-mindm"
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/memory/records/memory:27789754-1968-4cee-9d82-79f820610a89",
+      "status": 404,
+      "response": ""
+    },
+    {
+      "via": "proxied",
+      "method": "GET",
+      "path": "/api/uar/sessions",
+      "status": 200,
+      "response": "[]"
+    },
+    {
+      "via": "local",
+      "method": "DELETE",
+      "path": "/api/memory/records/memory:27789754-1968-4cee-9d82-79f820610a89",
+      "status": 200,
+      "response": "{\"id\":\"memory:27789754-1968-4cee-9d82-79f820610a89\",\"deleted\":true,\"purge\":\"pending\"}"
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/local-identity/d59e5761-087f-442a-b25e-1f6726a76433",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-d59e5761",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:55818/",
+    "base_url": "http://127.0.0.1:55820/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:55817",
+    "stub_llm": {
+      "model": "openai/gpt-5.4-mini",
+      "fixtures": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/scripts/acceptance/fixtures/dedicated-runtime-stub-llm.json",
+      "base_url": "http://127.0.0.1:55825/v1"
+    },
+    "uar_pid": 86110,
+    "proxy_pid": 86365
+  },
+  "answer": "SESSION-OK",
+  "isolation": {
+    "proxied_memory_status": "refused",
+    "proxied_lists_session": false
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 46877
+}

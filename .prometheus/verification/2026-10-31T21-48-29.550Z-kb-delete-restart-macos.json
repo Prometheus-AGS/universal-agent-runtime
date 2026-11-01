@@ -1,0 +1,155 @@
+[
+  {
+    "description": "",
+    "elements": [
+      {
+        "description": "",
+        "id": "a-deleted-knowledge-base-stays-deleted-after-cold-startup;a-linked-agent-cannot-retrieve-deleted-knowledge-after-uar-restarts",
+        "keyword": "Scenario",
+        "line": 3,
+        "name": "A linked agent cannot retrieve deleted knowledge after UAR restarts",
+        "steps": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2357502218
+            },
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 4,
+            "name": "a disposable agent linked to a knowledge base containing a private fact",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-delete-restart.steps.mjs:52"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 4078498347
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 5,
+            "name": "the agent answers using that fact and direct retrieval finds it",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-delete-restart.steps.mjs:114"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 76705622
+            },
+            "arguments": [],
+            "keyword": "When ",
+            "line": 6,
+            "name": "I delete its knowledge base without editing the agent",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-delete-restart.steps.mjs:125"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 17230954397
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 7,
+            "name": "UAR restarts with the existing knowledge store",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-delete-restart.steps.mjs:131"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 48553723
+            },
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 8,
+            "name": "the knowledge base, its document and its retrieval are absent after cold startup",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-delete-restart.steps.mjs:140"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 8025337
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 9,
+            "name": "the agent still references the deleted knowledge base unchanged",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-delete-restart.steps.mjs:149"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 11540956731
+            },
+            "arguments": [],
+            "keyword": "And ",
+            "line": 10,
+            "name": "the agent answers a fresh conversation without the deleted fact or citations",
+            "match": {
+              "location": "scripts/behaviors/steps/kb-delete-restart.steps.mjs:155"
+            }
+          },
+          {
+            "result": {
+              "status": "passed",
+              "duration": 66049984
+            },
+            "keyword": "After",
+            "hidden": true,
+            "embeddings": [
+              {
+                "data": "eyJldmlkZW5jZSI6Ii9Vc2Vycy9ncWFkb25pcy9Qcm9qZWN0cy9wcm9tZXRoZXVzL3VuaXZlcnNhbC1hZ2VudC1ydW50aW1lLy5wcm9tZXRoZXVzL3ZlcmlmaWNhdGlvbi9rYi1kZWxldGUtcmVzdGFydC9lYWUzZDRmNS0zZTc5LTRmZmItYTE1ZS1lNGM4NDAxMjdkMWMuanNvbiIsInN0YXR1cyI6IlBBU1NFRCJ9",
+                "mime_type": "application/json"
+              }
+            ]
+          }
+        ],
+        "tags": [
+          {
+            "name": "@api",
+            "line": 1
+          },
+          {
+            "name": "@knowledge",
+            "line": 1
+          },
+          {
+            "name": "@restart",
+            "line": 1
+          }
+        ],
+        "type": "scenario"
+      }
+    ],
+    "id": "a-deleted-knowledge-base-stays-deleted-after-cold-startup",
+    "line": 2,
+    "keyword": "Feature",
+    "name": "A deleted knowledge base stays deleted after cold startup",
+    "tags": [
+      {
+        "name": "@api",
+        "line": 1
+      },
+      {
+        "name": "@knowledge",
+        "line": 1
+      },
+      {
+        "name": "@restart",
+        "line": 1
+      }
+    ],
+    "uri": "scripts/behaviors/features/kb-delete-restart.feature"
+  }
+]

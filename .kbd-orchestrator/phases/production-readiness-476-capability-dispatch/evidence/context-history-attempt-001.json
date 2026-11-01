@@ -1,0 +1,30 @@
+{
+  "phase": "production-readiness-476-capability-dispatch",
+  "sourceCommit": "33e765bb5d29a44e97d2813ad6d0be8bf3e2479d",
+  "sourceTree": "bd8c6ef594c4f2cd854569c76b6ac583f4e501cf",
+  "command": "cargo test --locked --no-default-features --features server-full --test context_history_integrity",
+  "environment": "Established PATH/CARGO_BUILD_BUILD_DIR/CARGO_CACHE_RUSTC_INFO=0/RUSTC_WRAPPER empty/CARGO_TERM_COLOR workaround; no global config change",
+  "status": "FAIL",
+  "exitCode": 101,
+  "compile": "warning-free normal test profile,8m15s",
+  "bodies": {
+    "passed": 27,
+    "failed": 4,
+    "ignored": 2,
+    "filtered": 0,
+    "elapsedSeconds": 30.08
+  },
+  "failed": [
+    "exact_budget_contract_dispatches_intact_protected_wire_body",
+    "oversized_summary_chunk_is_rejected_before_provider_dispatch",
+    "run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch",
+    "checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mutating_history"
+  ],
+  "existingIgnored": {
+    "baseline_display_truncation_discards_protected_middle_bytes": "frozen-source diagnostic; task2.1 introduces canonical pre-format receipts",
+    "baseline_sliding_window_drops_the_protected_tool_group": "frozen-source diagnostic; task2.2 replaces destructive group dropping"
+  },
+  "logSha256": "66b66ad7a7d8293a5a924fe1b86228f14a40bcda3b20b6ee4f3ab5487c7bd527",
+  "qualification": "Existing component/loopback/security regression target; not mounted-container or real-image qualification",
+  "next": "CLOSED source-only E-cohort investigation/implementation; no tests/checks before whole cohort inventory"
+}

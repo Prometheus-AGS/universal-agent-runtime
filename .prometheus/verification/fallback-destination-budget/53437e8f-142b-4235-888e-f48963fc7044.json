@@ -1,0 +1,661 @@
+{
+  "scenario": "A fallback that cannot hold the request is refused before dispatch",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "credentials_in_requests": false,
+  "fallback_window": 4096,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/providers/openai/test",
+      "request": {
+        "model": "gpt-5.4-mini",
+        "output_token_cap": 128
+      },
+      "status": 200,
+      "response": "{\"ok\":true,\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\",\"latency_ms\":331,\"received_text\":true}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/providers",
+      "request": {
+        "id": "budgetsmall",
+        "display_name": "Small-window fallback",
+        "base_url": "http://127.0.0.1:49791/v1",
+        "protocol": "chat",
+        "default_model": "budget-small-model",
+        "enabled": true,
+        "models": [
+          {
+            "id": "budget-small-model",
+            "display_name": "budget-small-model",
+            "context_window": 4096,
+            "supports_tools": true,
+            "enabled": true
+          }
+        ]
+      },
+      "status": 201,
+      "response": "{\"id\":\"budgetsmall\",\"display_name\":\"Small-window fallback\",\"base_url\":\"http://127.0.0.1:49791/v1\",\"protocol\":\"chat\",\"default_model\":\"budget-small-model\",\"models\":[{\"id\":\"budget-small-model\",\"execution_profile\":{\"profile\":{\"id\":\"uar.openai-compatible-chat.settings-v1\",\"revision\":1},\"settingsRevision\":1,\"reasoning\":{\"mode\":\"off\"}},\"display_name\":\"budget-small-model\",\"context_window\":4096,\"supports_vision\":false,\"supports_tools\":true,\"supports_reasoning\":false,\"supports_structured_output\":false,\"supports_streaming\":true,\"max_output_tokens\":null,\"enabled\":true}],\"enabled\":true,\"credential_configured\":false,\"model_verifications\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/providers/budgetsmall",
+      "status": 200,
+      "response": "{\"id\":\"budgetsmall\",\"display_name\":\"Small-window fallback\",\"base_url\":\"http://127.0.0.1:49791/v1\",\"protocol\":\"chat\",\"default_model\":\"budget-small-model\",\"models\":[{\"id\":\"budget-small-model\",\"execution_profile\":{\"profile\":{\"id\":\"uar.openai-compatible-chat.settings-v1\",\"revision\":1},\"settingsRevision\":1,\"reasoning\":{\"mode\":\"off\"}},\"display_name\":\"budget-small-model\",\"context_window\":4096,\"supports_vision\":false,\"supports_tools\":true,\"supports_reasoning\":false,\"supports_structured_output\":false,\"supports_streaming\":true,\"max_output_tokens\":null,\"enabled\":true}],\"enabled\":true,\"credential_configured\":false,\"model_verifications\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/providers/budgetsmall/test",
+      "request": {
+        "model": "budget-small-model",
+        "output_token_cap": 128
+      },
+      "status": 200,
+      "response": "{\"ok\":true,\"provider_id\":\"budgetsmall\",\"model_id\":\"budget-small-model\",\"latency_ms\":53,\"received_text\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-fallback-budget-53437e8f",
+        "metadata": {
+          "title": "Disposable fallback budget agent",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "openai",
+              "model": "gpt-5.4-mini"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Answer the final request. Treat earlier depot records as background. Fallback budget probe: reply with FALLBACK-OK.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "context_strategy": {
+              "type": "none"
+            },
+            "memory_enabled": false,
+            "skills": {
+              "mode": "none"
+            },
+            "tools": {
+              "mode": "none"
+            },
+            "mcp_servers": {
+              "mode": "none"
+            },
+            "knowledge_bases": {
+              "mode": "none"
+            },
+            "presentations": {
+              "mode": "none"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-fallback-budget-53437e8f\",\"metadata\":{\"title\":\"Disposable fallback budget agent\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"openai\",\"model\":\"gpt-5.4-mini\"},\"fallbacks\":[]},\"tools\":{\"allow\":[],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Answer the final request. Treat earlier depot records as background. Fallback budget probe: reply with FALLBACK-OK.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}},\"uar.run_policy\":{\"version\":1,\"context_strategy\":{\"type\":\"none\"},\"memory_enabled\":false,\"skills\":{\"mode\":\"none\"},\"tools\":{\"mode\":\"none\"},\"mcp_servers\":{\"mode\":\"none\"},\"knowledge_bases\":{\"mode\":\"none\"},\"presentations\":{\"mode\":\"none\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/runs",
+      "request": {
+        "agent_id": "disposable-fallback-budget-53437e8f",
+        "session_id": "b86ac3b4-8493-49c1-ae04-c49a728305f1",
+        "input": "Fallback budget probe: reply with FALLBACK-OK.",
+        "history": {
+          "session_id": "b86ac3b4-8493-49c1-ae04-c49a728305f1",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Record 1: user note for depot 1. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 1: assistant note for depot 1. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 2: user note for depot 2. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 2: assistant note for depot 2. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 3: user note for depot 3. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 3: assistant note for depot 3. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 4: user note for depot 4. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 4: assistant note for depot 4. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 5: user note for depot 5. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 5: assistant note for depot 5. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 6: user note for depot 6. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 6: assistant note for depot 6. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 7: user note for depot 7. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 7: assistant note for depot 7. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 8: user note for depot 8. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 8: assistant note for depot 8. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 9: user note for depot 9. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 9: assistant note for depot 9. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 10: user note for depot 10. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 10: assistant note for depot 10. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 11: user note for depot 11. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 11: assistant note for depot 11. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 12: user note for depot 12. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 12: assistant note for depot 12. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 13: user note for depot 13. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 13: assistant note for depot 13. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 14: user note for depot 14. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 14: assistant note for depot 14. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 15: user note for depot 15. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 15: assistant note for depot 15. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 16: user note for depot 16. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 16: assistant note for depot 16. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 17: user note for depot 17. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 17: assistant note for depot 17. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 18: user note for depot 18. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 18: assistant note for depot 18. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 19: user note for depot 19. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 19: assistant note for depot 19. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 20: user note for depot 20. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 20: assistant note for depot 20. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 21: user note for depot 21. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 21: assistant note for depot 21. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 22: user note for depot 22. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 22: assistant note for depot 22. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 23: user note for depot 23. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 23: assistant note for depot 23. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 24: user note for depot 24. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 24: assistant note for depot 24. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 25: user note for depot 25. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 25: assistant note for depot 25. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 26: user note for depot 26. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 26: assistant note for depot 26. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 27: user note for depot 27. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 27: assistant note for depot 27. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 28: user note for depot 28. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 28: assistant note for depot 28. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 29: user note for depot 29. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 29: assistant note for depot 29. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "user",
+              "content": "Record 30: user note for depot 30. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            },
+            {
+              "role": "assistant",
+              "content": "Record 30: assistant note for depot 30. Pallets, crates, drums and spools were counted twice and reconciled against the ledger, then the variance was explained in writing and filed with the harbor office for review."
+            }
+          ]
+        }
+      },
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"stream_url\":\"/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9/stream\",\"history\":\"seeded\",\"seeded_messages\":60}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"running\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"error\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "status": 200,
+      "response": "{\"run_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"conversation_id\":\"b86ac3b4-8493-49c1-ae04-c49a728305f1\",\"status\":\"error\",\"agent_revision\":\"sha256:5c061dca672e018e81f34163c2df26b1b9ae75d7981f6046de8d9b750b1afe02\",\"effective_model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-fallback-budget-53437e8f\",\"model\":{\"provider_id\":\"openai\",\"model_id\":\"gpt-5.4-mini\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"none\"},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"agent\",\"chat_mode\":\"agent\",\"context_strategy\":\"agent\",\"memory_enabled\":\"agent\",\"model\":\"agent\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"none\"},\"source_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"prepared_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e12aee56d5f\",\"source_messages\":62,\"prepared_messages\":62,\"source_tokens\":3181,\"prepared_tokens\":3181,\"eligible_spans\":61,\"changed\":false,\"summary_generated\":false,\"tier_calls\":[],\"final_sha256\":\"sha256:da56992f8dd5be15a696826d4a73f75a62443627ad96960ed31a5e1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/463341a5-7a72-425f-aa7c-c480b110b0f9/events",
+      "status": 200,
+      "response": "{\"version\":1,\"runId\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"after\":0,\"cursor\":11,\"retention\":\"process-local-bounded\",\"firstAvailableEventId\":1,\"gapReason\":null,\"events\":[{\"eventId\":1,\"eventName\":\"agui.artifact\",\"data\":{\"kind\":\"artifact\",\"phase\":\"complete\",\"request_id\":\"463341a5-7a72-425f-aa7c-c480b110b0f9\",\"artifact_id\":\"run-policy-463341a5-7a72-425f-aa7c-c480b110b0f9\",\"artifact_type\":\"effective_run_policy\",\"title\":\"Effective run policy\",\"content\":\"[{\\\"version\\\":\\\"v0.9.1\\\",\\\"createSurface\\\":{\\\"surfaceId\\\":\\\"run-policy-463341a5-7a72-425f-aa7c-c480b110b0f9\\\",\\\"catalogId\\\":\\\"urn:uar:a2ui:catalog:1\\\"}},{\\\"version\\\":\\\"v0.9.1\\\",\\\"updateComponents\\\":{\\\"surfaceId\\\":\\\"run-policy-463341a5-7a72-425f-aa7c-c480b110b0f9\\\",\\\"components\\\":[{\\\"id\\\":\\\"title\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/title\\\"},\\\"variant\\\":\\\"h2\\\"},{\\\"id\\\":\\\"subtitle\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/subtitle\\\"},\\\"variant\\\":\\\"caption\\\"},{\\\"id\\\":\\\"overview-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Execution\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"chat-mode\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/chatMode\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"model\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/model\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"agent\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/agent\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"overview-column\\\",\\\"component\\\":\\\"Column\\\",\\\"children\\\":[\\\"overview-heading\\\",\\\"chat-mode\\\",\\\"model\\\",\\\"agent\\\"]},{\\\"id\\\":\\\"overview-card\\\",\\\"component\\\":\\\"Card\\\",\\\"child\\\":\\\"overview-column\\\"},{\\\"id\\\":\\\"capabilities-heading\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":\\\"Available capabilities\\\",\\\"variant\\\":\\\"h3\\\"},{\\\"id\\\":\\\"skills\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/skills\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"tools\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/tools\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"mcp-servers\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/mcpServers\\\"},\\\"variant\\\":\\\"body\\\"},{\\\"id\\\":\\\"knowledge-bases\\\",\\\"component\\\":\\\"Text\\\",\\\"text\\\":{\\\"path\\\":\\\"/kn"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/b86ac3b4-8493-49c1-ae04-c49a728305f1",
+      "status": 404,
+      "response": "{\"error\":\"session not found\"}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-fallback-budget-53437e8f",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/providers/budgetsmall",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/fallback-destination-budget/2563f370-d731-4083-a2ad-2a82f5aca3cd",
+    "backend": "postgres",
+    "container": "uar-bdd-postgres-2563f370",
+    "database_image": "tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c",
+    "runtime_url": "http://127.0.0.1:49787/",
+    "base_url": "http://127.0.0.1:49789/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:49786",
+    "stub_llm": {
+      "model": "openai/gpt-5.4-mini",
+      "fixtures": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/fallback-destination-budget/53437e8f-142b-4235-888e-f48963fc7044/stub-llm.json",
+      "base_url": "http://127.0.0.1:49791/v1"
+    },
+    "uar_pid": 33014,
+    "proxy_pid": 33242
+  },
+  "agent": {
+    "id": "disposable-fallback-budget-53437e8f",
+    "context_strategy": {
+      "type": "none"
+    }
+  },
+  "run_id": "463341a5-7a72-425f-aa7c-c480b110b0f9",
+  "status": "PASSED",
+  "seeded_chars": 12714,
+  "context_fits": [],
+  "errors": [
+    {
+      "kind": "error",
+      "request_id": "463341a5-7a72-425f-aa7c-c480b110b0f9",
+      "message": "primary: service unavailable: provider unavailable; fallbacks: budgetsmall/budget-small-model: context_overflow: context requires 3514 tokens but the input allowance is 3096",
+      "code": "context_overflow"
+    }
+  ],
+  "answer": "",
+  "primary_attempts": 12,
+  "fallback_requests": 0,
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "duration_ms": 40720
+}

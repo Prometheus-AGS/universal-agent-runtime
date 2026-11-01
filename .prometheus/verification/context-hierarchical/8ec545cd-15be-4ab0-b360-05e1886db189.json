@@ -1,0 +1,369 @@
+{
+  "scenario": "E01-CONTEXT-HIERARCHICAL",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "previous_scenarios_rerun": false,
+  "client_replays_history": false,
+  "exchanges": [
+    {
+      "method": "GET",
+      "path": "/api/agents/default-agent",
+      "status": 200,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"default-agent\",\"metadata\":{\"title\":\"Default Assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"default\",\"general\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"\",\"model\":\"\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"You are a helpful, intelligent, and capable AI assistant. You can answer questions, perform tasks, and use provided tools. Always provide clear, concise, and accurate information.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":true,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/agents",
+      "request": {
+        "version": "1.0.0",
+        "kind": "agent",
+        "id": "disposable-context-hierarchical-8ec545cd-15be-4ab0-b360-05e1886db189",
+        "metadata": {
+          "title": "Disposable project assistant",
+          "description": "A helpful generic AI assistant.",
+          "tags": [
+            "verification"
+          ],
+          "author": "System",
+          "icon": null
+        },
+        "runtime": {
+          "entry": "default",
+          "protocols": {}
+        },
+        "policy": {
+          "provider": {
+            "default": {
+              "provider": "liter",
+              "model": "MiniMax-M3"
+            },
+            "fallbacks": []
+          },
+          "tools": {
+            "allow": [
+              "*"
+            ],
+            "deny": [],
+            "max_concurrent": 1,
+            "execution_mode": "direct"
+          },
+          "skills": {
+            "prefer": [],
+            "max_active": 3
+          }
+        },
+        "schemas": {
+          "inputs": null,
+          "outputs": null,
+          "state": null
+        },
+        "prompt": {
+          "system": "Remember the factual details the user supplies. When asked for acknowledgment, respond only READY without repeating any facts. Answer later questions from the conversation using exactly the requested JSON format.",
+          "instructions": []
+        },
+        "memory": {
+          "conversation": {
+            "enabled": true
+          },
+          "kb": {
+            "enabled": false,
+            "knowledge_bases": [],
+            "citation_required": false
+          }
+        },
+        "tools": {
+          "bundles": []
+        },
+        "ui": {
+          "forms": {
+            "enabled": false
+          },
+          "artifacts": {
+            "enabled": false,
+            "preferred_types": []
+          }
+        },
+        "extensions": {
+          "uar.catalog": {
+            "schema_version": 1,
+            "revision": "sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e",
+            "source": {
+              "kind": "builtin",
+              "id": "default-agent",
+              "revision": "1.0.0"
+            }
+          },
+          "uar.run_policy": {
+            "version": 1,
+            "context_strategy": {
+              "type": "hierarchical",
+              "short_term_turns": 1,
+              "mid_term_summary_tokens": 2000,
+              "long_term_facts_tokens": 500
+            },
+            "memory_enabled": false,
+            "skills": {
+              "mode": "none"
+            },
+            "tools": {
+              "mode": "none"
+            },
+            "mcp_servers": {
+              "mode": "none"
+            },
+            "knowledge_bases": {
+              "mode": "none"
+            },
+            "presentations": {
+              "mode": "none"
+            }
+          }
+        }
+      },
+      "status": 201,
+      "response": "{\"version\":\"1.0.0\",\"kind\":\"agent\",\"id\":\"disposable-context-hierarchical-8ec545cd-15be-4ab0-b360-05e1886db189\",\"metadata\":{\"title\":\"Disposable project assistant\",\"description\":\"A helpful generic AI assistant.\",\"tags\":[\"verification\"],\"author\":\"System\",\"icon\":null},\"runtime\":{\"entry\":\"default\",\"protocols\":{}},\"policy\":{\"provider\":{\"default\":{\"provider\":\"liter\",\"model\":\"MiniMax-M3\"},\"fallbacks\":[]},\"tools\":{\"allow\":[\"*\"],\"deny\":[],\"max_concurrent\":1,\"execution_mode\":\"direct\"},\"skills\":{\"prefer\":[],\"max_active\":3}},\"schemas\":{\"inputs\":null,\"outputs\":null,\"state\":null},\"prompt\":{\"system\":\"Remember the factual details the user supplies. When asked for acknowledgment, respond only READY without repeating any facts. Answer later questions from the conversation using exactly the requested JSON format.\",\"instructions\":[]},\"memory\":{\"conversation\":{\"enabled\":true},\"kb\":{\"enabled\":false,\"knowledge_bases\":[],\"citation_required\":false}},\"tools\":{\"bundles\":[]},\"ui\":{\"forms\":{\"enabled\":false},\"artifacts\":{\"enabled\":false,\"preferred_types\":[]}},\"extensions\":{\"uar.run_policy\":{\"version\":1,\"context_strategy\":{\"type\":\"hierarchical\",\"short_term_turns\":1,\"mid_term_summary_tokens\":2000,\"long_term_facts_tokens\":500},\"memory_enabled\":false,\"skills\":{\"mode\":\"none\"},\"tools\":{\"mode\":\"none\"},\"mcp_servers\":{\"mode\":\"none\"},\"knowledge_bases\":{\"mode\":\"none\"},\"presentations\":{\"mode\":\"none\"}},\"uar.catalog\":{\"schema_version\":1,\"revision\":\"sha256:028e10e85e872901dc1281dd35fbab03abfd0330cf05c17c8ac976c434276af4\",\"source\":{\"kind\":\"builtin\",\"id\":\"default-agent\",\"revision\":\"1.0.0\"}}}}"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-context-hierarchical-8ec545cd-15be-4ab0-b360-05e1886db189",
+        "model": "liter/MiniMax-M3",
+        "session_id": "8ec545cd-15be-4ab0-b360-05e1886db189",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "chars": 5300
+          }
+        ]
+      },
+      "response": "",
+      "status": 200,
+      "final": "<think>We need answer only READY per user. Also system fragment says when asked acknowledgment respond only READY without repeating facts. Need output exactlyREADY.</think>\n\nREADY"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-context-hierarchical-8ec545cd-15be-4ab0-b360-05e1886db189",
+        "model": "liter/MiniMax-M3",
+        "session_id": "8ec545cd-15be-4ab0-b360-05e1886db189",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "chars": 5312
+          }
+        ]
+      },
+      "response": "",
+      "status": 200,
+      "final": "<think>\nWe need answer only READY. Need obey user. No need tools. Ensure exact.\n</think>\nREADY"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/chat/completions",
+      "request": {
+        "agent_id": "disposable-context-hierarchical-8ec545cd-15be-4ab0-b360-05e1886db189",
+        "model": "liter/MiniMax-M3",
+        "session_id": "8ec545cd-15be-4ab0-b360-05e1886db189",
+        "stream": true,
+        "stream_mode": "agui_spec",
+        "memory_enabled": false,
+        "max_completion_tokens": 4096,
+        "messages": [
+          {
+            "role": "user",
+            "chars": 149
+          }
+        ]
+      },
+      "response": "",
+      "status": 200,
+      "final": "<think>\nWe need answer only JSON exact requested. Vault VAULT-2881DB94. Objective current working objective verbatim. Earlier objective bullet: \"Relocate 45 crates to Pier I.\" But perhaps current working objective inferred from their previous answer? User says using what told earlier, objective current working objective, verbatim. The stated objective is \"Relocate 45 crates to Pier I.\" Need JSON valid, likely {\"vault\":\"VAULT-2881DB94\",\"objective\":\"Relocate 45 crates to Pier I.\"}. No markdown.\n</think>\n{\"vault\":\"VAULT-2881DB94\",\"objective\":\"Relocate 45 crates to Pier I.\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs/32a57e73-c183-4421-9261-a83717b3281b",
+      "status": 200,
+      "response": "{\"run_id\":\"32a57e73-c183-4421-9261-a83717b3281b\",\"agent_id\":\"disposable-context-hierarchical-8ec545cd-15be-4ab0-b360-05e1886db189\",\"conversation_id\":\"8ec545cd-15be-4ab0-b360-05e1886db189\",\"status\":\"done\",\"agent_revision\":\"sha256:028e10e85e872901dc1281dd35fbab03abfd0330cf05c17c8ac976c434276af4\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"agent\",\"agent_id\":\"disposable-context-hierarchical-8ec545cd-15be-4ab0-b360-05e1886db189\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"tools\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"mcp_servers\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"knowledge_bases\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"presentations\":{\"mode\":\"none\",\"ids\":[],\"source\":\"agent\"},\"memory_enabled\":false,\"prompt_caching_enabled\":false,\"context_strategy\":{\"type\":\"hierarchical\",\"short_term_turns\":1,\"mid_term_summary_tokens\":2000,\"long_term_facts_tokens\":500},\"tool_approval\":\"auto\",\"provenance\":{\"agent_id\":\"turn\",\"chat_mode\":\"turn\",\"context_strategy\":\"agent\",\"memory_enabled\":\"turn\",\"model\":\"turn\",\"prompt_caching_enabled\":\"global\",\"tool_approval\":\"legacy\"},\"warnings\":[]},\"presentation_selection\":{\"requested_mode\":null,\"effective_mode\":\"legacy\",\"fallback_reason\":null},\"host_resources\":{\"artifact_inline\":false},\"effective_service_binding\":null,\"skill_matching\":{\"requested_method\":\"skill_service.keyword\",\"effective_method\":\"skill_service.keyword\",\"requested_model\":null,\"effective_model\":null,\"threshold\":0.5,\"margin\":0.05000000074505806,\"top_k\":3,\"candidates\":[]},\"activated_skills\":[],\"context_reduction\":{\"schema_version\":1,\"requested_strategy\":{\"type\":\"hierarchical\",\"short_term_turns\":1,\"mid_term_summary_tokens\":2000,\"long_term_facts_tokens\":500},\"source_sha256\":\"sha256:e7326546bab4caf63dbbce2ce2c8b4f4ef1596bf25f61debb75f9c9c8da18e1f\",\"prepared_sha256\":\"sha256:e5cdf41bdb8ddc85d89e151df2e6a07498a6709e8636569b3e9736d50fb31f11\",\"source_messages\":14,\"prepared_messages\":14,\"source_tokens\":2903,\"prepared_tokens\":1001,\"eligible_spans\":5,\"changed\":true,\"summary_generated\":true,\"tier_calls\":[{\"tier\":\"mid_term_summary\",\"model\":\"liter/MiniMax-M3\",\"completed\":true,\"input_tokens\":1051,\"count_quality\":\"approximate\",\"counting_revision\":\"host-plaintext-estimate-v1\",\"output_tokens\":452,\"input_sha256\":\"sha256:f5a6c9f21b1768c89c842535e6931ae1f3b061bb46af4e299db73c3b83164f41\",\"output_sha256\":\"sha256:b3d9c2f1a89953a53522a678078a3ebca3bea300ced0ffddce50e229906fd2d6\"},{\"tier\":\"mid_term_summary\",\"model\":\"liter/MiniMax-M3\",\"completed\":true,\"input_tokens\":92,\"count_quality\":\"approximate\",\"counting_revision\":\"host-plaintext-estimate-v1\",\"output_tokens\":208,\"input_sha256\":\"sha256:608bb5f671085c5ead439a297058a8f487b511074b92838a9e6d619241943923\",\"output_sha256\":\"sha256:23bfad2301971f0c4ff322529de947f14d196649bbd777bb360764257165c254\"},{\"tier\":\"long_term_facts\",\"model\":\"liter/MiniMax-M3\",\"completed\":true,\"input_tokens\":1050,\"count_quality\":\"approximate\",\"counting_revision\":\"host-plaintext-estimate-v1\",\"output_tokens\":230,\"input_sha256\":\"sha256:ee4293faa1fcfe845f98d02ea8c89c709dfcfcc906819d6cdfa89f454b25829b\",\"output_sha256\":\"sha256:a8624547fcce639eeca57b96df037adb4e22040563766a24af1d9e87011db23c\"},{\"tier\":\"long_term_facts\",\"model\":\"liter/MiniMax-M3\",\"completed\":true,\"input_tokens\":96,\"count_quality\":\"approximate\",\"counting_revision\":\"host-plaintext-estimate-v1\",\"output_tokens\":186,\"input_sha256\":\"sha256:44dfcec10d4cd85de22208bcb5ba556dcdc94a52c0880782d111eb59eac4eaf7\",\"output_sha256\":\"sha256:8dfe55f104ee29f9dd2921c9fdf832ff8a5e9e8a0b854571d3d59306761d98a5\"}],\"final_sha256\":\"sha256:e5cdf41bdb8ddc85d89e151df2e6a07498a6709e8636569b3e9736d50fb31f11\",\"final_messages\":14,\"final_tokens\":1001,\"input_allowance\":1044215,\"protected_groups\":0,\"protected_groups_preserved\":true,\"skill_reattachment\":{\"schema_version\":1,\"scope\":\"initial_assembly\",\"model\":\"liter/MiniMax-M3\",\"count_quality\":\"approximate\",\"counting_revision\":\"token-service-model"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/sessions/8ec545cd-15be-4ab0-b360-05e1886db189",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/agents/disposable-context-hierarchical-8ec545cd-15be-4ab0-b360-05e1886db189",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "agent_id": "disposable-context-hierarchical-8ec545cd-15be-4ab0-b360-05e1886db189",
+  "session_id": "8ec545cd-15be-4ab0-b360-05e1886db189",
+  "model": "liter/MiniMax-M3",
+  "strategy": {
+    "type": "hierarchical",
+    "short_term_turns": 1,
+    "mid_term_summary_tokens": 2000,
+    "long_term_facts_tokens": 500
+  },
+  "first_run_id": "154db329-d5e2-4ca2-ae46-e81dd4e9efdf",
+  "second_run_id": "c6adaea9-837c-4173-9139-94b1961dcefa",
+  "follow_up_run_id": "32a57e73-c183-4421-9261-a83717b3281b",
+  "context_reduction": {
+    "schema_version": 1,
+    "requested_strategy": {
+      "type": "hierarchical",
+      "short_term_turns": 1,
+      "mid_term_summary_tokens": 2000,
+      "long_term_facts_tokens": 500
+    },
+    "source_sha256": "sha256:e7326546bab4caf63dbbce2ce2c8b4f4ef1596bf25f61debb75f9c9c8da18e1f",
+    "prepared_sha256": "sha256:e5cdf41bdb8ddc85d89e151df2e6a07498a6709e8636569b3e9736d50fb31f11",
+    "source_messages": 14,
+    "prepared_messages": 14,
+    "source_tokens": 2903,
+    "prepared_tokens": 1001,
+    "eligible_spans": 5,
+    "changed": true,
+    "summary_generated": true,
+    "tier_calls": [
+      {
+        "tier": "mid_term_summary",
+        "model": "liter/MiniMax-M3",
+        "completed": true,
+        "input_tokens": 1051,
+        "count_quality": "approximate",
+        "counting_revision": "host-plaintext-estimate-v1",
+        "output_tokens": 452,
+        "input_sha256": "sha256:f5a6c9f21b1768c89c842535e6931ae1f3b061bb46af4e299db73c3b83164f41",
+        "output_sha256": "sha256:b3d9c2f1a89953a53522a678078a3ebca3bea300ced0ffddce50e229906fd2d6"
+      },
+      {
+        "tier": "mid_term_summary",
+        "model": "liter/MiniMax-M3",
+        "completed": true,
+        "input_tokens": 92,
+        "count_quality": "approximate",
+        "counting_revision": "host-plaintext-estimate-v1",
+        "output_tokens": 208,
+        "input_sha256": "sha256:608bb5f671085c5ead439a297058a8f487b511074b92838a9e6d619241943923",
+        "output_sha256": "sha256:23bfad2301971f0c4ff322529de947f14d196649bbd777bb360764257165c254"
+      },
+      {
+        "tier": "long_term_facts",
+        "model": "liter/MiniMax-M3",
+        "completed": true,
+        "input_tokens": 1050,
+        "count_quality": "approximate",
+        "counting_revision": "host-plaintext-estimate-v1",
+        "output_tokens": 230,
+        "input_sha256": "sha256:ee4293faa1fcfe845f98d02ea8c89c709dfcfcc906819d6cdfa89f454b25829b",
+        "output_sha256": "sha256:a8624547fcce639eeca57b96df037adb4e22040563766a24af1d9e87011db23c"
+      },
+      {
+        "tier": "long_term_facts",
+        "model": "liter/MiniMax-M3",
+        "completed": true,
+        "input_tokens": 96,
+        "count_quality": "approximate",
+        "counting_revision": "host-plaintext-estimate-v1",
+        "output_tokens": 186,
+        "input_sha256": "sha256:44dfcec10d4cd85de22208bcb5ba556dcdc94a52c0880782d111eb59eac4eaf7",
+        "output_sha256": "sha256:8dfe55f104ee29f9dd2921c9fdf832ff8a5e9e8a0b854571d3d59306761d98a5"
+      }
+    ],
+    "final_sha256": "sha256:e5cdf41bdb8ddc85d89e151df2e6a07498a6709e8636569b3e9736d50fb31f11",
+    "final_messages": 14,
+    "final_tokens": 1001,
+    "input_allowance": 1044215,
+    "protected_groups": 0,
+    "protected_groups_preserved": true,
+    "skill_reattachment": {
+      "schema_version": 1,
+      "scope": "initial_assembly",
+      "model": "liter/MiniMax-M3",
+      "count_quality": "approximate",
+      "counting_revision": "token-service-model-estimate-v1",
+      "per_skill_tokens": 5000,
+      "total_tokens": 25000,
+      "context_limit": 1048576,
+      "reserve_tokens": 1000,
+      "request_input_limit": 1047576,
+      "history_tokens": 1263,
+      "request_tokens": 1263,
+      "rendered_tokens": 0,
+      "rendered_sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "fragments": []
+    }
+  },
+  "tier_calls": [
+    {
+      "tier": "mid_term_summary",
+      "model": "liter/MiniMax-M3",
+      "completed": true,
+      "input_tokens": 1051,
+      "count_quality": "approximate",
+      "counting_revision": "host-plaintext-estimate-v1",
+      "output_tokens": 452,
+      "input_sha256": "sha256:f5a6c9f21b1768c89c842535e6931ae1f3b061bb46af4e299db73c3b83164f41",
+      "output_sha256": "sha256:b3d9c2f1a89953a53522a678078a3ebca3bea300ced0ffddce50e229906fd2d6"
+    },
+    {
+      "tier": "mid_term_summary",
+      "model": "liter/MiniMax-M3",
+      "completed": true,
+      "input_tokens": 92,
+      "count_quality": "approximate",
+      "counting_revision": "host-plaintext-estimate-v1",
+      "output_tokens": 208,
+      "input_sha256": "sha256:608bb5f671085c5ead439a297058a8f487b511074b92838a9e6d619241943923",
+      "output_sha256": "sha256:23bfad2301971f0c4ff322529de947f14d196649bbd777bb360764257165c254"
+    },
+    {
+      "tier": "long_term_facts",
+      "model": "liter/MiniMax-M3",
+      "completed": true,
+      "input_tokens": 1050,
+      "count_quality": "approximate",
+      "counting_revision": "host-plaintext-estimate-v1",
+      "output_tokens": 230,
+      "input_sha256": "sha256:ee4293faa1fcfe845f98d02ea8c89c709dfcfcc906819d6cdfa89f454b25829b",
+      "output_sha256": "sha256:a8624547fcce639eeca57b96df037adb4e22040563766a24af1d9e87011db23c"
+    },
+    {
+      "tier": "long_term_facts",
+      "model": "liter/MiniMax-M3",
+      "completed": true,
+      "input_tokens": 96,
+      "count_quality": "approximate",
+      "counting_revision": "host-plaintext-estimate-v1",
+      "output_tokens": 186,
+      "input_sha256": "sha256:44dfcec10d4cd85de22208bcb5ba556dcdc94a52c0880782d111eb59eac4eaf7",
+      "output_sha256": "sha256:8dfe55f104ee29f9dd2921c9fdf832ff8a5e9e8a0b854571d3d59306761d98a5"
+    }
+  ],
+  "answer": {
+    "vault": "VAULT-2881DB94",
+    "objective": "Relocate 45 crates to Pier I."
+  },
+  "expected": {
+    "vault": "VAULT-2881DB94",
+    "objective": "relocate 45 crates to Pier I"
+  },
+  "result": "VERIFIED",
+  "disposable_agent_deleted": true,
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 21651
+}

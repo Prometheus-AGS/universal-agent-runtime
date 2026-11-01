@@ -1,0 +1,106 @@
+{
+  "scenario": "ISSUE-441-REMOTE-SURREAL-RESTART",
+  "platform": "darwin",
+  "authentication_supplied_by_test": false,
+  "uar_restarted_by_test": false,
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "remote-surreal-before-1e7b449e",
+        "description": "Restart probe before",
+        "triggers": {
+          "keywords": [
+            "remote-surreal-before-1e7b449e"
+          ]
+        },
+        "prompt_overlay": "Probe before."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"remote-surreal-before-1e7b449e\",\"title\":\"remote-surreal-before-1e7b449e\",\"description\":\"Restart probe before\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"remote-surreal-before-1e7b449e\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe before.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/skills/remote-surreal-before-1e7b449e",
+      "status": 200,
+      "response": "{\"skill_id\":\"remote-surreal-before-1e7b449e\",\"title\":\"remote-surreal-before-1e7b449e\",\"description\":\"Restart probe before\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"remote-surreal-before-1e7b449e\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe before.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/uar/skills",
+      "request": {
+        "name": "remote-surreal-after-37c1aa60",
+        "description": "Restart probe after",
+        "triggers": {
+          "keywords": [
+            "remote-surreal-after-37c1aa60"
+          ]
+        },
+        "prompt_overlay": "Probe after."
+      },
+      "status": 201,
+      "response": "{\"skill_id\":\"remote-surreal-after-37c1aa60\",\"title\":\"remote-surreal-after-37c1aa60\",\"description\":\"Restart probe after\",\"version\":\"1.0.0\",\"enabled\":true,\"origin\":\"user\",\"provider_id\":\"api\",\"triggers\":{\"keywords\":[\"remote-surreal-after-37c1aa60\"],\"semantic\":null},\"preferred_tools\":[],\"prompt_overlay\":\"Probe after.\",\"execution_config\":{}}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/remote-surreal-after-37c1aa60",
+      "status": 204,
+      "response": ""
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/uar/skills/remote-surreal-before-1e7b449e",
+      "status": 204,
+      "response": ""
+    }
+  ],
+  "readiness": [
+    {
+      "elapsed_ms": 5,
+      "status": 503,
+      "body": "{\"status\":\"not_ready\",\"checks\":{\"persistence\":{\"backend\":\"surreal\",\"status\":\"failed\"},\"surrealdb\":\"not_configured\",\"mcp\":{\"status\":\"ok\",\"tools\":7}}}"
+    },
+    {
+      "elapsed_ms": 1010,
+      "status": 503,
+      "body": "{\"status\":\"not_ready\",\"checks\":{\"persistence\":{\"backend\":\"surreal\",\"status\":\"failed\"},\"surrealdb\":\"not_configured\",\"mcp\":{\"status\":\"ok\",\"tools\":7}}}"
+    },
+    {
+      "elapsed_ms": 2016,
+      "status": 503,
+      "body": "{\"status\":\"not_ready\",\"checks\":{\"persistence\":{\"backend\":\"surreal\",\"status\":\"failed\"},\"surrealdb\":\"not_configured\",\"mcp\":{\"status\":\"ok\",\"tools\":7}}}"
+    },
+    {
+      "elapsed_ms": 3531,
+      "status": 200,
+      "body": "{\"status\":\"ready\",\"checks\":{\"persistence\":{\"backend\":\"surreal\",\"status\":\"ok\"},\"surrealdb\":\"not_configured\",\"mcp\":{\"status\":\"ok\",\"tools\":7}}}"
+    }
+  ],
+  "fixture": {
+    "fixture_root": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/dedicated-runtime/remote-surreal-restart/72fd0c25-3a1c-4bee-a27b-224129bf72b9",
+    "backend": "surreal",
+    "container": "uar-bdd-surreal-72fd0c25",
+    "database_image": "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20",
+    "runtime_url": "http://127.0.0.1:58000/",
+    "base_url": "http://127.0.0.1:58002/",
+    "credentials_generated_by_fixture": true,
+    "credentials_seen_by_steps": false,
+    "database_url_host": "127.0.0.1:57999",
+    "uar_pid": 11565,
+    "proxy_pid": 12249
+  },
+  "restart_started_at": "2026-10-31T20:44:19.863Z",
+  "restart_completed_at": "2026-10-31T20:44:20.912Z",
+  "recovered_after_ms": 3531,
+  "skill_after": "remote-surreal-after-37c1aa60",
+  "log": {
+    "lost_index": 2433,
+    "recovered_index": 2455,
+    "reconnect_failures": 3
+  },
+  "result": "VERIFIED",
+  "cleanup_errors": [],
+  "status": "PASSED",
+  "duration_ms": 30221
+}

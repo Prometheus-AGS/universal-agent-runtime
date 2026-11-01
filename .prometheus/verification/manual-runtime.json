@@ -4,7 +4,7 @@
   "method": "Manual BDD; authentication supplied externally, never by test scripts",
   "base_url": "http://127.0.0.1:60675",
   "runtime_url": "http://127.0.0.1:53587",
-  "runtime_pid": 48316,
+  "runtime_pid": 67731,
   "external_identity_pid": 3923,
   "model": "liter/MiniMax-M3",
   "workspace_id": "uar-user-outcomes-007-supporting-workspace",
@@ -13,7 +13,7 @@
   "status": "C33 PASS; provider configuration restored; disposable resources cleaned up; UAR running; stopped for operator direction",
   "evidence": ".prometheus/verification/rest-model-restart/246c766c-a558-4048-a119-71f521acdcc2.json",
   "static_dir": "/Users/gqadonis/Projects/prometheus/universal-agent-runtime/target/manual-a2ui-browser-ui",
-  "binary_sha256": "810617af310514416e13f7048fa17f2f6068670e1ea22620730a89588db93ba7",
+  "binary_sha256": "999c7e8a25553f0e432f0ae13a9f271a2bf0f024c2f6a650afa7b1c2b3769ada",
   "last_receipt": ".prometheus/verification/c33-rest-model-restart-macos-pass.json",
   "available_models": [
     "liter/MiniMax-M3 (default)",

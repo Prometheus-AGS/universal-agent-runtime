@@ -1,0 +1,99 @@
+{
+  "scenario": "I20-I05-ANTHROPIC-IMPLICIT-DEFAULT",
+  "client_platform": "darwin",
+  "session_id": "0cc9bb31-c9f9-4bb8-b278-64b9cd22c284",
+  "model": "liter/MiniMax-M3",
+  "agent_id_sent": false,
+  "authentication_supplied_by_test": false,
+  "follow_up_contract": "client-supplied transcript (Anthropic Messages is stateless)",
+  "exchanges": [
+    {
+      "method": "POST",
+      "path": "/v1/messages",
+      "request": {
+        "model": "liter/MiniMax-M3",
+        "session_id": "0cc9bb31-c9f9-4bb8-b278-64b9cd22c284",
+        "max_tokens": 4096,
+        "stream": true,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is (36 multiplied by 20) plus 132? Reply with only the number."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_baf59b37fcd94a8497f87d64f7afc094\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"liter/MiniMax-M3\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"852\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"input_tokens\":16259,\"output_tokens\":3,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/messages",
+      "request": {
+        "model": "liter/MiniMax-M3",
+        "session_id": "0cc9bb31-c9f9-4bb8-b278-64b9cd22c284",
+        "max_tokens": 4096,
+        "stream": true,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What is (36 multiplied by 20) plus 132? Reply with only the number."
+          },
+          {
+            "role": "assistant",
+            "content": "852"
+          },
+          {
+            "role": "user",
+            "content": "Add 35 to that result. Reply with only the number."
+          }
+        ]
+      },
+      "status": 200,
+      "response": "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_75e5990b65444f35a1aec3645c654d57\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"liter/MiniMax-M3\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"887\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"input_tokens\":16271,\"output_tokens\":3,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n"
+    },
+    {
+      "method": "GET",
+      "path": "/api/uar/runs?limit=100",
+      "status": 200,
+      "response": "[{\"run_id\":\"0b846764-48f0-4b71-afea-b298fb53002d\",\"agent_id\":\"default-agent\",\"conversation_id\":\"94e9a46c-6ca3-470f-a19e-d23e4c589388\",\"status\":\"done\",\"agent_revision\":\"sha256:0fe1339ff18b0d2abdf24fc3b1ee8ac766b8eb2bfc14c6468ddea4bb0f72943e\",\"effective_model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"effective_run_policy\":{\"version\":1,\"chat_mode\":\"uar\",\"agent_id\":\"default-agent\",\"model\":{\"provider_id\":\"liter\",\"model_id\":\"MiniMax-M3\"},\"skills\":{\"mode\":\"auto\",\"ids\":[\"actor-model\",\"adversarial-review\",\"android-compose-adaptive\",\"android-edge-to-edge\",\"api-connector-builder\",\"argocd-multicloud\",\"async-patterns\",\"atproto-lexicon\",\"atproto-oauth\",\"atproto-publish-lexicon\",\"axum-patterns\",\"bdd-cucumber-js\",\"bdd-cucumber-rs\",\"bdd-lifecycle-loop\",\"bdd-testing\",\"bdd-video-proof\",\"better-accessibility\",\"better-colors\",\"better-interface\",\"better-layout\",\"better-typography\",\"better-ui\",\"better-writing\",\"break\",\"carrier-relationship-management\",\"ck\",\"clean-architecture\",\"clone-skill\",\"continuous-learning-v2\",\"cowork-management\",\"create-native-agent\",\"create-skill\",\"customs-trade-compliance\",\"dashboard-builder\",\"deep-research\",\"defi-amm-security\",\"delivery-gate\",\"design-taste-frontend\",\"design-taste-frontend-v1\",\"disk-space-guardian\",\"ecc-recipes\",\"energy-procurement\",\"entity-audit\",\"entity-crud-form\",\"entity-crud-page\",\"entity-crud-relations\",\"entity-crud-table\",\"entity-gc\",\"entity-gql-hooks\",\"entity-gql-setup\",\"entity-gql-subscription\",\"entity-graph-crud\",\"entity-graph-detect\",\"entity-graph-graphql\",\"entity-graph-init\",\"entity-graph-migrate\",\"entity-graph-optimize\",\"entity-graph-prisma\",\"entity-graph-realtime\",\"entity-graph-setup\",\"entity-perf\",\"entity-prisma-api\",\"entity-prisma-generator\",\"entity-prisma-migrate\",\"entity-prisma-setup\",\"entity-realtime-channel\",\"entity-realtime-local-first\",\"entity-realtime-setup\",\"entity-realtime-surreal-live\",\"error-handling\",\"evm-token-decimals\",\"evolve\",\"evolve-analyze\",\"evolve-assess\",\"evolve-execute\",\"evolve-plan\",\"evolve-report\",\"evolve-status\",\"explain-interface\",\"expo-animation\",\"expo-design-system\",\"expo-native-ui\",\"expo-router\",\"expo-ui\",\"extend-skill\",\"fabric-integration\",\"feynman-loop\",\"flint-sdk-csharp\",\"flint-sdk-dart\",\"flint-sdk-go\",\"flint-sdk-kotlin\",\"flint-sdk-swift\",\"flint-sdk-ts\",\"flutter-build-responsive-layout\",\"flutter-fix-layout-issues\",\"flutter-rust-ffi\",\"flutter-setup-declarative-routing\",\"flutter-setup-localization\",\"full-output-enforcement\",\"gitops-bootstrap\",\"gitops-transform\",\"go-base-patterns\",\"gpt-taste\",\"growth-log\",\"healthcare-cdss-patterns\",\"healthcare-emr-patterns\",\"healthcare-eval-harness\",\"healthcare-phi-compliance\",\"high-end-visual-design\",\"hipaa-compliance\",\"htmx-alpine-lit\",\"ideation-mindmap\",\"impeccable\",\"industrial-brutalist-ui\",\"interface-review\",\"inventory-demand-planning\",\"iterative-evolver\",\"karpathy-progress-memory\",\"karpathy-tokenizer\",\"kbd-analyze\",\"kbd-apply\",\"kbd-assess\",\"kbd-audit\",\"kbd-bottleneck-detector\",\"kbd-cancel\",\"kbd-child-exit\",\"kbd-doctor\",\"kbd-evolve\",\"kbd-e"
+    }
+  ],
+  "expected": [
+    852,
+    887
+  ],
+  "turns": [
+    {
+      "deltas": 1,
+      "final": "852"
+    },
+    {
+      "deltas": 1,
+      "final": "887"
+    }
+  ],
+  "runs": [
+    {
+      "run_id": "20df001e-8f48-4f76-a29c-c3b17bc488d2",
+      "agent_id": "default-agent",
+      "status": "done",
+      "effective_model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      }
+    },
+    {
+      "run_id": "ae8aad81-bfae-42d5-8517-3131b9d12858",
+      "agent_id": "default-agent",
+      "status": "done",
+      "effective_model": {
+        "provider_id": "liter",
+        "model_id": "MiniMax-M3"
+      }
+    }
+  ],
+  "result": "VERIFIED",
+  "mode": "stream",
+  "scenario_status": "PASSED",
+  "duration_ms": 6156
+}

@@ -758,6 +758,16 @@ pub struct SecurityConfig {
     #[serde(default)]
     #[schemars(with = "Option<String>")]
     pub settings_admin_key: Option<secrecy::SecretString>,
+    /// Opt-in (default false): treat a credential-less request whose TCP peer
+    /// is loopback, and which names a loopback `Host`/`Origin`, as the single
+    /// `local-host` owner instead of anonymous. Only for single-user desktop or
+    /// host installs. Never enable it behind a same-host reverse proxy, tunnel
+    /// or mesh sidecar: their forwarded traffic arrives from loopback (Istio
+    /// forwards from 127.0.0.6) and a client can send `Host: localhost`, so
+    /// every remote caller would become the local owner. Ignored unless
+    /// `deployment_profile` is `trusted_local` and `jwt_required` is false.
+    #[serde(default)]
+    pub local_loopback_owner: bool,
 }
 
 impl std::fmt::Debug for SecurityConfig {
@@ -777,6 +787,7 @@ impl std::fmt::Debug for SecurityConfig {
                 &self.settings_mutation_auth_required,
             )
             .field("settings_admin_key", &redact_opt(&self.settings_admin_key))
+            .field("local_loopback_owner", &self.local_loopback_owner)
             .finish()
     }
 }
@@ -2665,6 +2676,7 @@ persistence:
             jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
             settings_admin_key: None,
+            local_loopback_owner: false,
         };
 
         let error = config
@@ -2692,6 +2704,7 @@ persistence:
             jwt_validate_nbf: true,
             settings_mutation_auth_required: true,
             settings_admin_key: Some("configured-admin-key".to_owned().into()),
+            local_loopback_owner: false,
         };
 
         config
