@@ -728,6 +728,15 @@ pub struct SecurityConfig {
     pub api_key_admin_principals: Vec<ApiKeyAdminPrincipal>,
     #[serde(default)]
     pub trusted_host_principals: Vec<TrustedHostPrincipal>,
+    /// OAuth client ids of hosts allowed to send host-trusted run
+    /// instructions and read the governance status without the admin key.
+    /// A caller is a registered host only when its signature-verified bearer
+    /// names one of these ids as its host actor: the RFC 8693 `act.sub` claim
+    /// when `act` is present, otherwise `sub`. Default empty: no host is
+    /// registered. Being registered never grants `mcp_servers`,
+    /// `run_credentials`, `tool_admission` or `working_directory`.
+    #[serde(default)]
+    pub registered_hosts: Vec<String>,
     pub jwt_required: bool,
     /// The JWT signing secret. Wrapped in `SecretString` (rather than a
     /// plain `String`) so the value cannot be accidentally logged or
@@ -776,6 +785,7 @@ impl std::fmt::Debug for SecurityConfig {
             .field("deployment_profile", &self.deployment_profile)
             .field("jwt_algorithm", &self.jwt_algorithm)
             .field("workspace_authority_count", &self.workspace_authorities.len())
+            .field("registered_hosts", &self.registered_hosts)
             .field("jwt_required", &self.jwt_required)
             .field("jwt_secret", &REDACTED)
             .field("jwks_url", &self.jwks_url)
@@ -824,6 +834,9 @@ impl SecurityConfig {
                 || [&entry.issuer, &entry.subject, &entry.tenant_id, &entry.host_id].iter()
                     .any(|value| value.trim().is_empty() || value.as_str() != value.trim())
         }) { return Err("security.trusted_host_principals requires exact configured issuer/subject/tenant and host identifiers"); }
+        if self.registered_hosts.iter().any(|id| id.trim().is_empty() || id.as_str() != id.trim()) {
+            return Err("security.registered_hosts requires exact non-empty client identifiers");
+        }
         let expected = if self.jwks_url.is_some() { JwtAlgorithm::RS256 } else { JwtAlgorithm::HS256 };
         if self.jwt_algorithm.is_some_and(|algorithm| algorithm != expected) {
             return Err("security.jwt_algorithm does not match the configured verifier");
@@ -1871,6 +1884,7 @@ impl AppConfig {
                 .separator("__")
                 .list_separator(",")
                 .with_list_parse_key("server.cors_allowed_origins")
+                .with_list_parse_key("security.registered_hosts")
                 .try_parsing(true),
         );
 
@@ -2668,6 +2682,7 @@ persistence:
             api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
             api_key_admin_principals: Vec::new(),
             trusted_host_principals: Vec::new(),
+            registered_hosts: Vec::new(),
             jwt_required: false,
             jwt_secret: FALLBACK_JWT_SECRET.to_owned().into(),
             jwks_url: None,
@@ -2696,6 +2711,7 @@ persistence:
             api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
             api_key_admin_principals: Vec::new(),
             trusted_host_principals: Vec::new(),
+            registered_hosts: Vec::new(),
             jwt_required: false,
             jwt_secret: FALLBACK_JWT_SECRET.to_owned().into(),
             jwks_url: None,
