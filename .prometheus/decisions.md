@@ -2729,3 +2729,7 @@ time of recording (verification lock CLOSED).
   - Headers only ever refuse. The peer address comes from the socket alone
     (`ConnectInfo`). This does not protect against a proxy, which is why the
     flag defaults off.
+
+### 2026-11-03 — Issue #386 media scope and recovery
+
+The operator selected UAR plus a mock peer and explicit scoped session approval. The host attests user confirmation and worker identity. The grant binds an exact action/modality/capability tuple to an immutable scope. An effect claim commits an unknown receipt before handoff. Retrying an unknown attempt can duplicate an effect, so recovery must reconcile the original attempt using peer evidence.
