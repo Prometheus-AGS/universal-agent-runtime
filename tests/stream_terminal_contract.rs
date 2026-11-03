@@ -98,6 +98,7 @@ async fn user() -> UserContext {
             universal_agent_runtime::config::SecurityConfig::default_api_key_delegable_roles(),
         api_key_admin_principals: Vec::new(),
         trusted_host_principals: Vec::new(),
+        registered_hosts: Vec::new(),
         jwt_required: true,
         jwt_secret: secret.to_owned().into(),
         jwks_url: None,

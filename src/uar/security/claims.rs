@@ -64,12 +64,26 @@ pub struct VerifiedIdentity {
     subject: String,
     tenant_id: Option<TenantId>,
     roles: Option<Vec<String>>,
+    /// Host actor from a signature-verified JWT (`act.sub`, else `sub`).
+    /// Always `None` for API keys, loopback owners and synthetic contexts.
+    host_actor: Option<String>,
 }
 
 impl VerifiedIdentity {
     pub(in crate::uar::security) fn new(issuer: Option<&str>, claims: &UserClaims, tenant_id: Option<TenantId>, credential_kind: CredentialKind) -> Self {
-        Self { credential_kind, api_key_id: None, captured_principal: None, issuer: issuer.map(str::to_owned), subject: claims.sub.clone(), tenant_id, roles: claims.roles.clone() }
+        Self { credential_kind, api_key_id: None, captured_principal: None, issuer: issuer.map(str::to_owned), subject: claims.sub.clone(), tenant_id, roles: claims.roles.clone(), host_actor: None }
     }
+
+    /// Attach the host actor read inside the JWT verifier. Only the verifier
+    /// calls this; no request field or header reaches it.
+    #[cfg(feature = "server")]
+    pub(in crate::uar::security) fn with_host_actor(mut self, host_actor: Option<String>) -> Self {
+        self.host_actor = host_actor;
+        self
+    }
+
+    /// Host actor of the verified bearer token, when the token named one.
+    pub fn host_actor(&self) -> Option<&str> { self.host_actor.as_deref() }
 
     #[cfg(feature = "server")]
     pub(in crate::uar::security) fn for_scoped_delegation(context: &UserContext) -> anyhow::Result<Self> {
@@ -185,6 +199,34 @@ impl UserContext {
         self.authority.as_ref().filter(|authority| authority.matches(self))
     }
 
+    /// Whether this context's signature-verified bearer names a registered
+    /// host: its host actor (`act.sub` when present, otherwise `sub`) is one of
+    /// `registered_hosts`. Unverified headers, synthetic or role-only
+    /// contexts, API keys, loopback owners and the settings admin key never
+    /// qualify. A sidecar launch (`HostAuthenticated`) is checked separately
+    /// by [`is_registered_host`].
+    pub fn bearer_names_registered_host(&self, registered_hosts: &[String]) -> bool {
+        self.verified_identity()
+            .and_then(VerifiedIdentity::host_actor)
+            .is_some_and(|actor| registered_hosts.iter().any(|host| host == actor))
+    }
+}
+
+/// The single registered-host rule. A request is a registered host when it is
+/// an authenticated sidecar launch, or when its verified bearer's host actor
+/// is listed in `security.registered_hosts`. Being a registered host never
+/// widens `host_authenticated` resources (`mcp_servers`, `run_credentials`,
+/// `tool_admission`, `working_directory`).
+pub fn is_registered_host(
+    registered_hosts: &[String],
+    user: Option<&UserContext>,
+    sidecar_launch_authenticated: bool,
+) -> bool {
+    sidecar_launch_authenticated
+        || user.is_some_and(|user| user.bearer_names_registered_host(registered_hosts))
+}
+
+impl UserContext {
     /// The single owner of a trusted-local installation, for a caller that
     /// presented no credential over a loopback TCP connection. It resolves to
     /// the same `local-host` principal as an authenticated sidecar launch, so

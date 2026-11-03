@@ -43,6 +43,44 @@ are neither echoed in `RUN_STARTED` nor persisted in the wire correlation row.
 The row stores a request digest for exact retry equality. Authentication headers
 may be renewed independently.
 
+### Host-trusted instructions
+
+`forwardedProps.uar.instructions` carries run-scoped system guidance from a
+**registered host**: an array of non-empty strings, at most 16 entries, each at
+most 8 KiB and 32 KiB in total (UTF-8 bytes). A caller is a registered host when
+its signature-verified bearer names a client listed in
+`security.registered_hosts` as its host actor (`act.sub` when the token carries
+an RFC 8693 `act` claim, otherwise `sub`), or when it is an authenticated
+sidecar launch. API keys, unverified headers and the settings admin key never
+qualify, and registration grants no other host-only resource (`mcp_servers`,
+`run_credentials`, `tool_admission`, `working_directory`).
+
+- A wrong type or an out-of-bounds value is 400 `invalid_host_instructions`.
+- A non-empty list from any other caller is 403
+  `host_instructions_host_authentication_required`. Instructions are never
+  dropped silently and never moved into the untrusted context block.
+- Both checks run before the wire run is reserved, so a refused request leaves
+  no AG-UI run row behind.
+- Admitted instructions are rendered as host-authority system fragments
+  (`host.run_instruction.NNNN`) immediately after the agent definition's own
+  standing instructions. They are part of the request digest, so a retry or
+  reconnect with different instructions is a `run_identity_conflict`.
+- A caller-tool continuation (a new wire run with `parentRunId` and tool
+  results) is a new admission: send the instructions again; they apply to that
+  segment.
+- An interrupt `resume` continues the run already admitted, with the
+  instructions it was admitted with, and refuses `instructions` like the other
+  protected keys (400 `resume_uses_protected_history_and_identity`). A run
+  admitted with host instructions is recorded as host-resource bound, so after
+  a restart its cold checkpoint continuation is refused rather than resumed
+  without them.
+
+`GET /api/uar/settings/governance/status` reports whether this channel is
+available: `host_instructions: {"supported": true, "registered_hosts_configured":
+<bool>, "caller_registered": <bool>}`. A registered host may read that route
+with its bearer and no admin key; a server gateway may read it with only
+`X-UAR-Admin-Key` and no bearer when an admin key is configured.
+
 ## Interrupt and resume
 
 A pending host approval closes the current SSE segment with:

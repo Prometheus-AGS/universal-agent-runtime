@@ -6,6 +6,15 @@ contracts identified in the product support matrix.
 
 ## 1.4.0-rc.2 — unreleased (release candidate; Mac validated)
 
+- Host integration: `security.registered_hosts` (default empty) lists the
+  client ids of registered hosts, identified by a verified bearer's `act.sub`
+  (else `sub`). A registered host may send `forwardedProps.uar.instructions` on
+  the AG-UI endpoint as trusted run guidance (400 `invalid_host_instructions`,
+  403 `host_instructions_host_authentication_required`). `GET
+  /api/uar/settings/governance/status` adds `host_tools` (`global_mcp_servers`,
+  `native_tools`, `tool_admission`) and `host_instructions`, admits a
+  registered host without the admin key, and admits `X-UAR-Admin-Key` without a
+  bearer. See `docs/AGUI_V1.md`.
 - PostgreSQL 18 on the flint-forge image (`tribehealth/flint-forge-pg:18`) is a
   supported UAR store, in its own `uar` database. Settings keep their source
   across restarts (#389), session expiry reads canonical owner keys (#390),

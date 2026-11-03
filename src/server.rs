@@ -2592,6 +2592,10 @@ async fn run_server_with_listener(
                     embedding_backend: Some(Arc::clone(&embedding_backend)),
                     embedding_base_config: Some(embedding_config.clone()),
                     embedding_failover: embedding_failover.clone(),
+                    registered_hosts: config.security.registered_hosts.clone(),
+                    host_tools: Some(Arc::new(
+                        uar::api::effective_settings::AppHostToolFacts(state.clone()),
+                    )),
                 },
             )),
         )

@@ -152,6 +152,7 @@ fn minimal_config() -> AppConfig {
             api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
             api_key_admin_principals: Vec::new(),
             trusted_host_principals: Vec::new(),
+            registered_hosts: Vec::new(),
             jwt_required: false,
             jwt_secret: "test-secret".to_string().into(),
             jwks_url: None,
@@ -851,6 +852,8 @@ async fn prompt_caching_admin_namespace_has_no_generic_read_bypass() -> Result<(
         embedding_backend: None,
         embedding_base_config: None,
         embedding_failover: None,
+        registered_hosts: Vec::new(),
+        host_tools: None,
     }));
 
     let list_response = app
@@ -1409,6 +1412,8 @@ async fn governance_api_returns_per_key_results_and_authoritative_status_token()
         embedding_backend: None,
         embedding_base_config: None,
         embedding_failover: None,
+        registered_hosts: Vec::new(),
+        host_tools: None,
     }));
 
     let response = app
@@ -1580,6 +1585,8 @@ async fn governance_status_api_reports_mutation_unavailable_as_fail_closed() -> 
         embedding_backend: None,
         embedding_base_config: None,
         embedding_failover: None,
+        registered_hosts: Vec::new(),
+        host_tools: None,
     }));
 
     let response = app

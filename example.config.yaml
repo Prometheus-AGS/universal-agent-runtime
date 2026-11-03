@@ -50,6 +50,13 @@ security:
   trusted_host_principals: []
   # Entries: issuer, subject, tenant_id, host_id (all exact nonempty strings).
   # host_id must also be allowed by the registered destination trusted_hosts.
+  # OAuth client ids of registered hosts (default: none). A signature-verified
+  # bearer whose host actor (RFC 8693 act.sub, else sub) is listed may send
+  # forwardedProps.uar.instructions on AG-UI runs and read
+  # /api/uar/settings/governance/status without the admin key. It grants no
+  # mcp_servers, run_credentials, tool_admission or working_directory.
+  # Env: UAR_SECURITY__REGISTERED_HOSTS=client-a,client-b
+  registered_hosts: []
   # Remote mapping example (no external IdP is selected by this example):
   # workspace_authorities:
   #   - issuer: "application-issuer"

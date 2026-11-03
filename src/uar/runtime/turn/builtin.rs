@@ -37,6 +37,30 @@ pub fn artifact_fragments(artifact: &AgentArtifact) -> Vec<PromptFragment> {
     fragments
 }
 
+/// Fragment-id prefix of host-trusted, run-scoped instructions.
+pub const RUN_HOST_INSTRUCTION_PREFIX: &str = "host.run_instruction.";
+
+/// Run-scoped instructions admitted from a registered host. They are trusted
+/// system-level guidance placed after the artifact's standing instructions,
+/// never untrusted context.
+pub fn run_instruction_fragments(instructions: &[String]) -> Vec<PromptFragment> {
+    instructions
+        .iter()
+        .enumerate()
+        .map(|(index, instruction)| {
+            PromptFragment::new(
+                format!("{RUN_HOST_INSTRUCTION_PREFIX}{index:04}"),
+                PromptSection::HostInstructions,
+                "host.run_instructions",
+                Authority::Host,
+                PromptRole::System,
+                Retention::Turn,
+                instruction.clone(),
+            )
+        })
+        .collect()
+}
+
 pub fn policy_fragment(policy: &EffectiveRunPolicy) -> PromptFragment {
     PromptFragment::new(
         "policy.effective",
@@ -87,22 +111,28 @@ impl ArtifactInstructionsContributor for ArtifactStage {
         inputs: &AssemblyInputs,
         _: &AssemblyState,
     ) -> Result<Contribution, AssemblyError> {
-        let mut fragments = artifact_fragments(&inputs.artifact);
-        fragments.extend(
-            inputs
-                .prepared_fragments
-                .iter()
-                .filter(|fragment| {
-                    fragment.id == "presentation.output"
-                        && fragment.section == PromptSection::HostInstructions
-                })
-                .cloned(),
-        );
         Ok(Contribution {
-            fragments,
+            fragments: artifact_stage_fragments(&inputs.artifact, &inputs.prepared_fragments),
             ..Contribution::default()
         })
     }
+}
+
+/// The artifact's identity and standing instructions, followed by the
+/// host-prepared run instructions and presentation guidance in prepared order.
+fn artifact_stage_fragments(artifact: &AgentArtifact, prepared: &[PromptFragment]) -> Vec<PromptFragment> {
+    let mut fragments = artifact_fragments(artifact);
+    fragments.extend(
+        prepared
+            .iter()
+            .filter(|fragment| {
+                (fragment.id == "presentation.output"
+                    || fragment.id.starts_with(RUN_HOST_INSTRUCTION_PREFIX))
+                    && fragment.section == PromptSection::HostInstructions
+            })
+            .cloned(),
+    );
+    fragments
 }
 
 struct PolicyStage;
@@ -380,5 +410,43 @@ pub fn registry_with_tool_tokens(context: ContextStage, tool_tokens: usize) -> C
         mcp_tools: vec![Arc::new(ToolsStage)],
         context: vec![Arc::new(context), Arc::new(bodies)],
         lifecycle: vec![Arc::new(LifecycleStage)],
+    }
+}
+
+#[cfg(test)]
+mod run_instruction_tests {
+    use super::*;
+
+    #[test]
+    fn run_instructions_follow_artifact_instructions_as_host_system_guidance() {
+        let mut artifact = crate::uar::defaults::default_agent();
+        artifact.prompt.instructions = vec!["standing rule".to_owned()];
+        let mut prepared = artifact_fragments(&artifact);
+        prepared.extend(run_instruction_fragments(&["host rule one".to_owned(), "host rule two".to_owned()]));
+        prepared.push(policy_fragment_placeholder());
+
+        let fragments = artifact_stage_fragments(&artifact, &prepared);
+        let ids = fragments.iter().map(|fragment| fragment.id.as_str()).collect::<Vec<_>>();
+        assert_eq!(ids, ["agent.identity", "host.instruction.0000",
+            "host.run_instruction.0000", "host.run_instruction.0001"]);
+        let run = &fragments[2];
+        assert_eq!(run.authority, Authority::Host);
+        assert_eq!(run.role, PromptRole::System);
+        assert_eq!(run.section, PromptSection::HostInstructions);
+        assert_eq!(run.content, "host rule one");
+    }
+
+    #[test]
+    fn no_run_instructions_leaves_artifact_stage_unchanged() {
+        let artifact = crate::uar::defaults::default_agent();
+        assert!(run_instruction_fragments(&[]).is_empty());
+        let fragments = artifact_stage_fragments(&artifact, &artifact_fragments(&artifact));
+        assert_eq!(fragments.len(), artifact_fragments(&artifact).len());
+        assert!(fragments.iter().all(|fragment| !fragment.id.starts_with(RUN_HOST_INSTRUCTION_PREFIX)));
+    }
+
+    fn policy_fragment_placeholder() -> PromptFragment {
+        PromptFragment::new("policy.effective", PromptSection::EnforcedPolicy, "effective_run_policy",
+            Authority::Policy, PromptRole::System, Retention::Turn, "policy")
     }
 }

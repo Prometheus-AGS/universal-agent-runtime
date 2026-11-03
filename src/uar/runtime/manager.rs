@@ -3509,6 +3509,7 @@ impl RunManager {
             service_binding: None,
             skill_attachments: Vec::new(),
             working_directory: None,
+            host_instructions: Vec::new(),
         })
         .await
     }
@@ -4212,7 +4213,12 @@ impl RunManager {
                             .is_ok_and(|digest| binding.accounting_id == format!("a2a:{digest}"))
                 })
         });
+        // Run-scoped host instructions are not stored with a checkpoint, so a
+        // cold continuation could not re-apply them. Mark the checkpoint as
+        // host-resource bound: it then refuses cold restoration instead of
+        // continuing without the instructions it was admitted with.
         let checkpoint_has_host_resources = request.host_tool_admission.is_some()
+            || !request.host_instructions.is_empty()
             || (!checkpoint_a2a_renewable
                 && (request.host_usage_grant.is_some()
                     || request.host_budget_constraint.is_some()
@@ -4266,6 +4272,7 @@ impl RunManager {
             host_usage_grant,
             a2a_delegation,
             host_sandbox_constraint,
+            host_instructions,
         } = request;
         let output_token_cap = match (
             output_token_cap,
@@ -5486,6 +5493,11 @@ impl RunManager {
         let mut messages = Vec::new();
         let mut prompt_fragments =
             crate::uar::runtime::turn::builtin::artifact_fragments(&artifact);
+        // Host-trusted run instructions follow the artifact's own standing
+        // instructions in the same host-instruction section.
+        prompt_fragments.extend(
+            crate::uar::runtime::turn::builtin::run_instruction_fragments(&host_instructions),
+        );
         prompt_fragments.push(crate::uar::runtime::turn::builtin::policy_fragment(
             &effective_policy,
         ));

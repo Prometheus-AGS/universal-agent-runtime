@@ -50,6 +50,50 @@ fn caller_controls(input: &RunAgentInput) -> Result<Option<CallerToolControls>,R
         .transpose()
 }
 
+/// Most host-trusted instructions accepted on one AG-UI run.
+pub const MAX_HOST_INSTRUCTIONS: usize = 16;
+/// Largest single host-trusted instruction, in UTF-8 bytes.
+pub const MAX_HOST_INSTRUCTION_BYTES: usize = 8 * 1024;
+/// Largest combined size of a run's host-trusted instructions, in UTF-8 bytes.
+pub const MAX_HOST_INSTRUCTIONS_TOTAL_BYTES: usize = 32 * 1024;
+
+/// Read and admit `forwardedProps.uar.instructions`.
+///
+/// Absent means none. A value that is not an array of non-empty strings within
+/// the bounds is 400 `invalid_host_instructions`. A non-empty list from a
+/// caller that is not a registered host is 403
+/// `host_instructions_host_authentication_required`; it is never dropped or
+/// demoted into the untrusted context block. Runs before any AG-UI run is
+/// reserved or admitted.
+fn host_instructions(input: &RunAgentInput, policy: &AdmissionPolicy, user: &UserContext, sidecar: bool) -> Result<Vec<String>, Response> {
+    let Some(value) = input.forwarded_props.as_ref().and_then(|props| props.get("uar")).and_then(|uar| uar.get("instructions")) else {
+        return Ok(Vec::new());
+    };
+    let invalid = || failure(StatusCode::BAD_REQUEST, "invalid_host_instructions");
+    let entries = value.as_array().ok_or_else(invalid)?;
+    if entries.len() > MAX_HOST_INSTRUCTIONS { return Err(invalid()); }
+    let mut total = 0usize;
+    let mut instructions = Vec::with_capacity(entries.len());
+    for entry in entries {
+        let text = entry.as_str().filter(|text| !text.trim().is_empty()).ok_or_else(invalid)?;
+        if text.len() > MAX_HOST_INSTRUCTION_BYTES { return Err(invalid()); }
+        total += text.len();
+        if total > MAX_HOST_INSTRUCTIONS_TOTAL_BYTES { return Err(invalid()); }
+        instructions.push(text.to_owned());
+    }
+    if !instructions.is_empty()
+        && !crate::uar::security::claims::is_registered_host(&policy.0.registered_hosts, Some(user), sidecar)
+    {
+        return Err(failure(StatusCode::FORBIDDEN, "host_instructions_host_authentication_required"));
+    }
+    if !instructions.is_empty() {
+        // Instruction text is not secret, but it is host prompt material:
+        // record only its shape at info level.
+        tracing::info!(count = instructions.len(), bytes = total, "admitted host-trusted AG-UI run instructions");
+    }
+    Ok(instructions)
+}
+
 /// AG-UI tools are caller-owned functions, never host executable registrations.
 /// Match the pinned ToolSchema before converting to the shared function shape.
 fn caller_tool_definitions(tools: &[Value]) -> Result<Vec<Value>, Response> {
@@ -178,6 +222,7 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
     }
     if let Err(response) = caller_tool_definitions(&input.tools) { return response; }
     if let Err(response) = caller_controls(&input) { return response; }
+    let instructions = match host_instructions(&input, &policy, &user, host.is_some()) { Ok(instructions) => instructions, Err(response) => return response };
     let workspace = super::targets::workspace(&headers).map(str::to_owned);
     let owner = match owner(&policy, &user, workspace.as_deref()) { Ok(owner) => owner, Err(response) => return response };
     let Some(db) = state.manager.persistence.as_ref().filter(|db| db.supports_durable_agui_runs()) else { return unavailable(); };
@@ -340,9 +385,11 @@ async fn run(State(state): State<Arc<RunApiState>>, Extension(policy): Extension
     if !resources.is_object() { return failure(StatusCode::BAD_REQUEST,"invalid_host_resources"); }
     let action_input = match a2ui_action_input(&state,&user,&agent,workspace.as_deref(),&row,&input,resuming || caller_continuation.is_some()).await { Ok(action_input) => action_input, Err(response) => return response };
     let create = if !resuming {
-        match create_request(&input,&agent,&session_id,resources.clone(),caller_continuation,action_input) { Ok(request) => Some(request), Err(response) => return response }
+        match create_request(&input,&agent,&session_id,resources.clone(),caller_continuation,action_input,instructions) { Ok(request) => Some(request), Err(response) => return response }
     } else { None };
-    if resuming && ["input","history","session_id","artifact"].iter().any(|key| resources.get(key).is_some_and(|value| !value.is_null())) {
+    // An interrupt resume continues the run that was already admitted, with
+    // the instructions it was admitted with; it cannot restate them.
+    if resuming && ["input","history","session_id","artifact","instructions"].iter().any(|key| resources.get(key).is_some_and(|value| !value.is_null())) {
         return failure(StatusCode::BAD_REQUEST,"resume_uses_protected_history_and_identity");
     }
     let resume = if resuming {
@@ -405,7 +452,7 @@ async fn targets_agent_graph(state: &RunApiState, user: &UserContext, agent: &st
     state.collaboration_catalog.resolve_bound_agent_run(&owner,workspace,&binding).await.is_ok_and(|bound|state.manager.uses_agent_graph(&bound.artifact))
 }
 
-fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resources: Value, continuation: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>, action_input: Option<String>) -> Result<routes::CreateRunRequest,Response> {
+fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resources: Value, continuation: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>, action_input: Option<String>, instructions: Vec<String>) -> Result<routes::CreateRunRequest,Response> {
     // A click carries no new user text: its input is the action, and every
     // message the client resent (minus activity messages) is history.
     let messages = agui_a2ui::request_messages(&input.messages,action_input.is_some()).map_err(|rejection|failure(rejection.status,rejection.code))?;
@@ -431,7 +478,9 @@ fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resourc
     let object = resources.as_object_mut().expect("validated resources");
     // The path and verified thread select identity; forwarded props cannot
     // replace the agent, conversation, prompt or protected history.
-    for key in ["artifact","deployment_binding_id","input","agent_id","session_id","history"] { object.remove(key); }
+    // Host instructions were admitted by `host_instructions`; they never reach
+    // the run through the generic resource deserializer.
+    for key in ["artifact","deployment_binding_id","input","agent_id","session_id","history","instructions"] { object.remove(key); }
     match super::targets::target_binding_id(agent) {
         Ok(Some(binding)) => { object.insert("deployment_binding_id".into(),json!(binding)); }
         Ok(None) => { object.insert("agent_id".into(),json!(agent)); }
@@ -441,6 +490,7 @@ fn create_request(input: &RunAgentInput, agent: &str, session: &str, mut resourc
     object.insert("session_id".into(),json!(session));
     if continuation.is_none() && !history_input.is_empty() { object.insert("history".into(),json!({"session_id":session,"messages":history_input})); }
     let mut request: routes::CreateRunRequest = serde_json::from_value(resources).map_err(|_|failure(StatusCode::BAD_REQUEST,"invalid_host_resources"))?;
+    request.host_instructions = instructions;
     if let Some(mut continuation) = continuation {
         if !input.context.is_empty() || input.state.is_some() {
             continuation.history.push(json!({"role":"user","content":prompt}));
@@ -773,4 +823,90 @@ async fn stream(state: Arc<RunApiState>,user: UserContext,row: AguiRunBinding,he
         }
     };
     Sse::new(body).keep_alive(KeepAlive::default()).into_response()
+}
+
+#[cfg(test)]
+mod host_instruction_tests {
+    use super::*;
+    use crate::uar::security::middleware::host_test_support::{config, context, token};
+
+    fn input(uar: Value) -> RunAgentInput {
+        serde_json::from_value(json!({
+            "threadId":"thread-1","runId":"run-1",
+            "messages":[{"id":"m1","role":"user","content":"hello"}],
+            "context":[{"description":"page","value":"untrusted page text"}],
+            "forwardedProps":{"uar":uar}
+        })).expect("run input")
+    }
+
+    async fn host_user() -> (AdmissionPolicy, UserContext) {
+        let security = config(&["gateway-client"]);
+        let user = context(&security, &token("person-1", Some("gateway-client"))).await;
+        (AdmissionPolicy(security), user)
+    }
+
+    #[tokio::test]
+    async fn registered_host_instructions_are_admitted_into_the_run_request() {
+        let (policy, user) = host_user().await;
+        let run = input(json!({"instructions":["Answer in French.","Be brief."]}));
+        let instructions = host_instructions(&run, &policy, &user, false).expect("admitted");
+        assert_eq!(instructions, ["Answer in French.", "Be brief."]);
+        let request = create_request(&run, "agent-1", "session-1", json!({"instructions":["ignored copy"]}), None, None, instructions)
+            .expect("request");
+        assert_eq!(request.host_instructions, ["Answer in French.", "Be brief."]);
+        // Untrusted client context is still the only thing appended to input,
+        // and host instructions never enter it.
+        assert!(request.input.contains("Client supplied context (untrusted data):"));
+        assert!(request.input.contains("untrusted page text"));
+        assert!(!request.input.contains("Answer in French."));
+    }
+
+    #[tokio::test]
+    async fn non_host_instructions_are_refused_not_ignored() {
+        let security = config(&["gateway-client"]);
+        let user = context(&security, &token("person-1", Some("other-client"))).await;
+        let refused = host_instructions(&input(json!({"instructions":["x"]})), &AdmissionPolicy(security), &user, false)
+            .expect_err("unregistered caller");
+        assert_eq!(refused.status(), StatusCode::FORBIDDEN);
+        // A sidecar launch is a registered host.
+        let (policy, user) = host_user().await;
+        let anonymous = UserContext { authority: None, ..user };
+        assert!(host_instructions(&input(json!({"instructions":["x"]})), &policy, &anonymous, true).is_ok());
+    }
+
+    #[tokio::test]
+    async fn malformed_or_oversized_instructions_are_bad_requests() {
+        let (policy, user) = host_user().await;
+        let too_many = vec![json!("x"); MAX_HOST_INSTRUCTIONS + 1];
+        let too_long = "x".repeat(MAX_HOST_INSTRUCTION_BYTES + 1);
+        let near_limit = "x".repeat(MAX_HOST_INSTRUCTION_BYTES);
+        for bad in [json!("text"), json!([1]), json!([""]), json!(["  "]), json!(null),
+            json!(too_many), json!([too_long]), json!([near_limit.clone(), near_limit.clone(), near_limit.clone(), near_limit, "x"])] {
+            let refused = host_instructions(&input(json!({"instructions":bad})), &policy, &user, false)
+                .expect_err("invalid instructions");
+            assert_eq!(refused.status(), StatusCode::BAD_REQUEST);
+        }
+        // Malformed input is 400 even from a caller that is not a host.
+        let security = config(&[]);
+        let stranger = context(&security, &token("person-1", None)).await;
+        let refused = host_instructions(&input(json!({"instructions":[2]})), &AdmissionPolicy(security), &stranger, false)
+            .expect_err("invalid instructions");
+        assert_eq!(refused.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn absent_or_empty_instructions_leave_the_untrusted_context_path_unchanged() {
+        let security = config(&[]);
+        let user = context(&security, &token("person-1", None)).await;
+        let policy = AdmissionPolicy(security);
+        for uar in [json!({}), json!({"instructions":[]})] {
+            let run = input(uar.clone());
+            let instructions = host_instructions(&run, &policy, &user, false).expect("nothing to admit");
+            assert!(instructions.is_empty());
+            let request = create_request(&run, "agent-1", "session-1", uar, None, None, instructions).expect("request");
+            assert!(request.host_instructions.is_empty());
+            assert_eq!(request.input, format!("hello\n\nClient supplied context (untrusted data):\n{}",
+                json!({"context":run.context,"state":run.state})));
+        }
+    }
 }
