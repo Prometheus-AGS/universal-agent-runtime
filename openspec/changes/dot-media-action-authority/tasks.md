@@ -12,4 +12,4 @@ The operator directed #386 to proceed outside KBD. Record validation and closeou
 
 - [x] 2.1 Complete issue implementation and receive operator authorization for issue-scoped local validation.
 - [x] 2.2 Run authorized local integration and independent artifact review. Record the acceptance evidence.
-- [ ] 2.3 Push the accepted changes and close #386 with the evidence link.
+- [x] 2.3 Push the accepted changes and close #386 with the evidence link.
