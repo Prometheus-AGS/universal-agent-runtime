@@ -7,6 +7,7 @@ pub mod execution_capabilities;
 pub mod graph;
 pub mod knowledge;
 pub mod matching;
+pub mod media_effect;
 pub mod memory;
 pub mod policy;
 pub mod prompt_caching;

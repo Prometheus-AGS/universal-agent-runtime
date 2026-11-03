@@ -3,6 +3,7 @@
 mod bindings;
 mod reviewed_skills;
 mod connector_effect;
+pub mod media_effect;
 mod export;
 mod feedback_intake;
 mod grants;
