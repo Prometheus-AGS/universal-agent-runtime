@@ -17,7 +17,7 @@ path = "src/lib.rs"
 
 [features]
 default = ["embedded"]
-embedded = ["surrealdb/kv-rocksdb"]
+embedded = ["surrealdb/kv-surrealkv"]
 # Preserve the upstream cfg vocabulary without shipping the unintegrated
 # mempalace dependency. UAR never enables this empty compatibility marker.
 palace = []
@@ -45,8 +45,8 @@ metal = [
 tokio = { version = "1.50.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-surrealdb = "=3.3.0"
-surrealdb_types = { package = "surrealdb-types", version = "=3.3.0" }
+surrealdb = { version = "=4.0.0", features = ["parse"] }
+surrealdb_types = { package = "surrealdb-types", version = "=4.0.0" }
 anyhow = "1.0.102"
 thiserror = "2.0.18"
 sha2 = "0.11.0"

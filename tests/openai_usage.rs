@@ -18,6 +18,9 @@ fn run_done_with_usage(
         input_tokens: input,
         output_tokens: output,
         total_tokens: total,
+        cache_read_input_tokens: None,
+        cache_creation_input_tokens: None,
+        uncached_input_tokens: None,
         cost_usd_estimate: Some(0.0042),
         model: Some("qwen3.8-max".to_string()),
     }
@@ -83,4 +86,55 @@ fn an_unrelated_event_reports_no_usage() {
     };
 
     assert_eq!(from_run_done(&event), None);
+}
+
+#[test]
+fn cache_breakdowns_preserve_known_zero_and_omit_unknown() {
+    let mut event = run_done_with_usage(Some(120), Some(45), Some(165));
+    if let NormalizedEvent::RunDoneWithUsage {
+        cache_read_input_tokens,
+        cache_creation_input_tokens,
+        ..
+    } = &mut event
+    {
+        *cache_read_input_tokens = Some(20);
+        *cache_creation_input_tokens = Some(0);
+    }
+    let usage = from_run_done(&event).unwrap();
+    assert_eq!(usage["prompt_tokens"], 120);
+    assert_eq!(
+        usage["prompt_tokens_details"],
+        json!({"cached_tokens":20,"cache_creation_tokens":0})
+    );
+    let unknown = from_run_done(&run_done_with_usage(Some(120), Some(45), Some(165))).unwrap();
+    assert!(unknown.get("prompt_tokens_details").is_none());
+}
+
+#[test]
+fn legacy_terminal_usage_without_cache_fields_remains_readable() {
+    let event: NormalizedEvent = serde_json::from_value(json!({"type":"RunDoneWithUsage","data":{
+        "run_id":"old", "input_tokens":12, "output_tokens":3,"total_tokens":15,
+        "cost_usd_estimate":null,"model":null
+    }}))
+    .unwrap();
+    let back = serde_json::to_value(event).unwrap();
+    assert!(back["data"].get("cache_read_input_tokens").is_none());
+    assert!(back["data"].get("cache_creation_input_tokens").is_none());
+    assert!(back["data"].get("uncached_input_tokens").is_none());
+}
+
+
+#[test]
+fn openai_keeps_complete_raw_input_separate_from_native_uncached_evidence() {
+    let mut event = run_done_with_usage(Some(56), Some(18), Some(74));
+    if let NormalizedEvent::RunDoneWithUsage { uncached_input_tokens, cache_creation_input_tokens, .. } = &mut event {
+        *uncached_input_tokens = Some(18);
+        *cache_creation_input_tokens = Some(21);
+    }
+    let usage = from_run_done(&event).expect("complete raw input/output remain reported");
+    assert_eq!(usage["prompt_tokens"], 56);
+    assert_eq!(usage["completion_tokens"], 18);
+    assert_eq!(usage["total_tokens"], 74);
+    assert!(usage["prompt_tokens_details"].get("cached_tokens").is_none());
+    assert_eq!(usage["prompt_tokens_details"]["cache_creation_tokens"], 21);
 }

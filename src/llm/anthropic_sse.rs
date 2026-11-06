@@ -337,6 +337,7 @@ mod byte_partition_tests {
                 total_tokens: 67,
                 cached_tokens: None,
                 cache_creation_tokens: None,
+                uncached_input_tokens: Some(25),
             },
             NormalizedEvent::Done,
         ]

@@ -4,11 +4,134 @@ use opentelemetry::trace::TracerProvider as _;
 use opentelemetry_otlp::WithExportConfig;
 use opentelemetry_sdk::Resource;
 use opentelemetry_sdk::trace::SdkTracerProvider;
-use tracing_subscriber::{
-    EnvFilter, fmt::writer::BoxMakeWriter, layer::SubscriberExt, util::SubscriberInitExt,
-};
+use std::sync::Mutex;
+use std::time::Duration;
+use tracing_subscriber::{EnvFilter, fmt::writer::BoxMakeWriter, layer::SubscriberExt};
 
 use crate::config::LogFormat;
+
+// Install tracing independently of the optional log bridge: try_init() can
+// report a host log logger after it has already installed our subscriber.
+// A best-effort bridge preserves the existing logging behavior without treating
+// a foreign log logger as failure to own the tracing subscriber.
+fn install_subscriber<S>(subscriber: S) -> Result<(), tracing::dispatcher::SetGlobalDefaultError>
+where
+    S: tracing::Subscriber + Send + Sync + 'static,
+{
+    tracing::subscriber::set_global_default(subscriber)?;
+    use tracing_subscriber::util::SubscriberInitExt as _;
+    let dispatch = tracing::dispatcher::get_default(Clone::clone);
+    drop(dispatch.set_default());
+    Ok(())
+}
+
+/// Ownership of the process tracing subscriber.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SubscriberStatus {
+    /// UAR initialization has not run.
+    Uninitialized,
+    /// UAR installed the process subscriber.
+    Installed,
+    /// A host subscriber already owns the process slot.
+    HostOwned,
+    /// Initialization could not complete.
+    Unavailable,
+}
+
+impl SubscriberStatus {
+    /// Stable ownership diagnostic.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Uninitialized => "uninitialized",
+            Self::Installed => "installed",
+            Self::HostOwned => "host_owned",
+            Self::Unavailable => "unavailable",
+        }
+    }
+}
+
+/// UAR trace export configuration. Enabled does not attest collector delivery.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExportStatus {
+    /// No endpoint, explicitly disabled, or telemetry not compiled.
+    Disabled,
+    /// UAR's subscriber has an OTLP layer; delivery is best effort.
+    Enabled,
+    /// Only the host can arrange trace export.
+    HostOwned,
+    /// Exporter construction failed.
+    Unavailable,
+    /// The owned provider has been asked to shut down.
+    Shutdown,
+}
+
+impl ExportStatus {
+    /// Stable export diagnostic without endpoint or credential values.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Disabled => "disabled",
+            Self::Enabled => "enabled",
+            Self::HostOwned => "host_owned",
+            Self::Unavailable => "unavailable",
+            Self::Shutdown => "shutdown",
+        }
+    }
+}
+
+/// Last initialization disposition; not a collector health probe.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TelemetryStatus {
+    /// Process subscriber owner.
+    pub subscriber: SubscriberStatus,
+    /// UAR's export configuration.
+    pub export: ExportStatus,
+}
+
+static STATUS: Mutex<TelemetryStatus> = Mutex::new(TelemetryStatus {
+    subscriber: SubscriberStatus::Uninitialized,
+    export: ExportStatus::Disabled,
+});
+
+/// Snapshot ownership without installing telemetry or contacting an exporter.
+pub fn status() -> TelemetryStatus {
+    STATUS.lock().map_or(
+        TelemetryStatus {
+            subscriber: SubscriberStatus::Unavailable,
+            export: ExportStatus::Unavailable,
+        },
+        |status| *status,
+    )
+}
+
+/// SDK shutdown wait used by the owned helper and an unattached exporter.
+/// This bounds the SDK acknowledgement wait, not exporter-thread release.
+pub const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
+
+fn shutdown_provider(provider: &SdkTracerProvider) -> anyhow::Result<()> {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        provider.shutdown_with_timeout(SHUTDOWN_TIMEOUT)
+    })) {
+        Ok(result) => result.map_err(|_| anyhow::anyhow!("telemetry shutdown unconfirmed")),
+        Err(_) => Err(anyhow::anyhow!(
+            "telemetry shutdown panicked; release unconfirmed"
+        )),
+    }
+}
+
+/// Ask the owned provider to flush and shut down using the pinned SDK timeout.
+/// On timeout, full delivery and worker release remain unconfirmed. Call outside
+/// a Tokio current-thread runtime; see the operation contract.
+pub fn shutdown(provider: &SdkTracerProvider) -> anyhow::Result<()> {
+    let result = shutdown_provider(provider);
+    if let Ok(mut status) = STATUS.lock() {
+        status.export = if result.is_ok() {
+            ExportStatus::Shutdown
+        } else {
+            ExportStatus::Unavailable
+        };
+    }
+    result
+}
 
 /// Build an OTLP tracer provider when trace export is enabled.
 ///
@@ -17,13 +140,15 @@ use crate::config::LogFormat;
 /// Returns `None` otherwise so default/offline runs need no OTLP collector.
 /// Env is read directly because telemetry is initialized before full config load
 /// (env is the highest-precedence config source, so this is consistent).
-fn build_otlp_provider() -> Option<SdkTracerProvider> {
-    let endpoint = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT").ok()?;
+fn build_otlp_provider() -> (Option<SdkTracerProvider>, ExportStatus) {
+    let Ok(endpoint) = std::env::var("OTEL_EXPORTER_OTLP_ENDPOINT") else {
+        return (None, ExportStatus::Disabled);
+    };
     let tracing_enabled = std::env::var("UAR_LLM__TRACING")
         .map(|v| !matches!(v.to_lowercase().as_str(), "false" | "0" | "off" | "no"))
         .unwrap_or(true);
     if !tracing_enabled {
-        return None;
+        return (None, ExportStatus::Disabled);
     }
 
     // OTLP/HTTP (the crate's default `http-proto` feature). Endpoint example:
@@ -34,9 +159,9 @@ fn build_otlp_provider() -> Option<SdkTracerProvider> {
         .build()
     {
         Ok(e) => e,
-        Err(e) => {
-            eprintln!("OTLP span exporter build failed; tracing disabled: {e}");
-            return None;
+        Err(_) => {
+            eprintln!("OTLP span exporter unavailable; continuing without trace export");
+            return (None, ExportStatus::Unavailable);
         }
     };
 
@@ -48,7 +173,7 @@ fn build_otlp_provider() -> Option<SdkTracerProvider> {
                 .build(),
         )
         .build();
-    Some(provider)
+    (Some(provider), ExportStatus::Enabled)
 }
 
 /// Initialize application telemetry (Logging, Tracing, Metrics).
@@ -71,6 +196,16 @@ pub fn init(
     log_format: &LogFormat,
     default_directive: &str,
 ) -> anyhow::Result<Option<SdkTracerProvider>> {
+    let mut disposition = STATUS
+        .lock()
+        .map_err(|_| anyhow::anyhow!("telemetry initialization unavailable"))?;
+    if matches!(
+        disposition.subscriber,
+        SubscriberStatus::Installed | SubscriberStatus::HostOwned
+    ) {
+        return Ok(None);
+    }
+    disposition.subscriber = SubscriberStatus::Unavailable;
     let filter_layer =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(default_directive));
 
@@ -94,12 +229,12 @@ pub fn init(
         BoxMakeWriter::new(std::io::stdout)
     };
 
-    let otel_provider = build_otlp_provider();
+    let (otel_provider, export_status) = build_otlp_provider();
     let otel_layer = otel_provider
         .as_ref()
         .map(|p| tracing_opentelemetry::layer().with_tracer(p.tracer("universal-agent-runtime")));
 
-    match log_format {
+    let installed = match log_format {
         LogFormat::Json => {
             let fmt_layer = tracing_subscriber::fmt::layer()
                 .json()
@@ -108,11 +243,12 @@ pub fn init(
                 .with_line_number(true)
                 .with_writer(writer);
 
-            tracing_subscriber::registry()
-                .with(filter_layer)
-                .with(otel_layer)
-                .with(fmt_layer)
-                .init();
+            install_subscriber(
+                tracing_subscriber::registry()
+                    .with(filter_layer)
+                    .with(otel_layer)
+                    .with(fmt_layer),
+            )
         }
         LogFormat::Compact => {
             let fmt_layer = tracing_subscriber::fmt::layer()
@@ -122,11 +258,12 @@ pub fn init(
                 .compact()
                 .with_writer(writer);
 
-            tracing_subscriber::registry()
-                .with(filter_layer)
-                .with(otel_layer)
-                .with(fmt_layer)
-                .init();
+            install_subscriber(
+                tracing_subscriber::registry()
+                    .with(filter_layer)
+                    .with(otel_layer)
+                    .with(fmt_layer),
+            )
         }
         LogFormat::Pretty => {
             let fmt_layer = tracing_subscriber::fmt::layer()
@@ -136,13 +273,29 @@ pub fn init(
                 .pretty()
                 .with_writer(writer);
 
-            tracing_subscriber::registry()
-                .with(filter_layer)
-                .with(otel_layer)
-                .with(fmt_layer)
-                .init();
+            install_subscriber(
+                tracing_subscriber::registry()
+                    .with(filter_layer)
+                    .with(otel_layer)
+                    .with(fmt_layer),
+            )
         }
+    };
+
+    if installed.is_err() {
+        disposition.subscriber = SubscriberStatus::HostOwned;
+        disposition.export = ExportStatus::HostOwned;
+        drop(disposition);
+        if let Some(provider) = &otel_provider {
+            if shutdown_provider(provider).is_err() {
+                eprintln!("unattached telemetry exporter cleanup unconfirmed");
+            }
+        }
+        return Ok(None);
     }
+    disposition.subscriber = SubscriberStatus::Installed;
+    disposition.export = export_status;
+    drop(disposition);
 
     if otel_provider.is_some() {
         tracing::info!(name: "telemetry.otlp", "OTLP trace export enabled");

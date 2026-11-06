@@ -49,6 +49,8 @@ export interface ToolApprovalChunk extends ChunkBase {
   reason?: string;
   decision?: "approved" | "denied";
   decidedAt?: string;
+  historical?: boolean;
+  historicalState?: string;
 }
 export interface ToolDeniedChunk extends ChunkBase { kind: "tool-denied"; toolCallId: string; toolName: string; reason: string; policy?: string }
 export interface SkillActivationChunk extends ChunkBase {

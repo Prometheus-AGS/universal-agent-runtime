@@ -339,43 +339,45 @@ different command are not permission. Wait for an explicit answer before running
 that command. This exception process preserves trust-boundary requirements,
 single-writer build discipline, and truthful reporting.
 
-### Operator verification lock — 2026-10-17
+### Phase verification and goal-mode authorization
 
-For this phase, the verification gate is **CLOSED**. Do not infer permission
-from a task handoff, a repair cohort, an inventory marked complete, a previous
-gate, a cadence tick, or a teammate's conclusion. No agent may run or delegate
-any test, lint, format check, typecheck, Cargo check, compiler probe, build,
-packaging check, review-driven verification, acceptance script, or other
-verification command while the gate is closed. `git diff --check` is a check
-and is prohibited. Stop an accidental gate immediately, record its incomplete
-result, and tell the operator; it earns no acceptance credit.
+Verification defaults to CLOSED. Goal mode, a handoff, an inventory, or a
+checkpoint alone grants no authority. The operator may grant a named KBD phase
+standing authorization for a bounded set of actions and owned resources. Record
+the grant and any exclusions in the phase ledger. One grant can cover local
+builds, tests, policy checks, Docker, disposable fixtures, independent review,
+and KBD closeout. It applies only to the phases and resources it names.
 
-The gate can open only after **all** planned implementation tasks across the
-entire active phase are complete: production behavior, fixtures, configuration,
-migrations, operational settings, UI, and required documentation. The lead must
-inspect the authoritative waypoint and complete task ledger, collect each
-writer's handoff, record a new whole-phase implementation-complete inventory
-with exact source identity, and present that inventory, any remaining tasks,
-and the exact proposed gate commands to the operator. Then wait for the
-operator's explicit instruction to run those commands. Silence and earlier
-authorization are not approval. Any subsequent implementation edit closes the
-gate and requires a renewed inventory and instruction.
-Approval names only the commands it actually names. Do not add standalone
-source-identity, Docker, service-readiness, import, or other preflight checks
-because they seem necessary for an approved gate; either they are already part
-of that exact gate command or they require their own explicit instruction.
-If the waypoint, task ledger, and inventory disagree about completion, the gate
-stays closed until the canonical state is reconciled; an authored inventory
-cannot override the waypoint.
+The full-phase implementation boundary still applies. Finish all planned
+production behavior, fixtures, configuration, migrations, operational settings,
+UI and required documentation before product verification. Reconcile the
+authoritative waypoint, task ledger and writer handoffs, and record the exact
+implementation-complete source inventory. A repository-mandated pre-edit
+policy check may run inside the grant as an edit prerequisite. It earns no
+product acceptance credit.
 
-Before every command or delegation, the lead and teammate must classify it as
-source inspection, authorized implementation/documentation/memory writing, or
-verification. If it might execute or indirectly trigger a check, test, build,
-or external gate, do not run it while closed. Every team packet must include
-this lock. At each 120-minute work checkpoint and context handoff, the lead
-reconciles the waypoint, full implementation ledger, active agents, and commands
-since the previous checkpoint; records `CLOSED` or the exact operator approval;
-and reports any violation immediately. A checkpoint never opens the gate.
+Within a phase grant, choose and record exact commands before running them.
+After the implementation boundary, run them serially when required, including
+in-scope prerequisites. Stop the current batch at its first failing check or
+warning subject to the clean-build rule. Diagnose and repair within scope,
+renew the exact inventory, and retry affected checks without another approval.
+The grant survives command changes, repairs, handoffs and gate request numbers
+within its scope. Carry prior receipts forward only for the inputs and behavior
+they actually exercised. Maintain single-writer discipline and preserve other
+agents’ work.
+
+Ask only for an action outside the grant, a material operator decision, or an
+unavailable prerequisite. Respect explicit closures and the operator's limits.
+Publication, signing, deployment, paid calls, credential changes, and changes
+to another chat's resources require separate authority. A child grant does not
+authorize work in the parent or any other phase. Without a phase grant, use
+explicit command-by-command approval after recording the full inventory.
+
+Before each command or delegation, classify it as source inspection,
+implementation, or verification. Include the applicable gate and scope in
+each team packet. At each 120-minute checkpoint and handoff, reconcile the
+waypoint, ledger, active agents, commands and authorization. Stop and record
+any accidental out-of-scope verification. A checkpoint never opens a gate.
 
 ### Agent-team execution and context continuity
 

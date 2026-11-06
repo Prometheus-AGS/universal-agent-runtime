@@ -1,20 +1,26 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { getDbInstance } from "@/platform/pglite/client";
+import type { PersistedRun, PersistedRunEvent } from "@/platform/pglite/run-event-repository";
+import { isUarAguiEvent } from "@/platform/agui/agui-schema";
+import { completeAguiUsage, toRuntimeChunk } from "@/platform/agui/runtime-chunk-projection";
+import { aguiTerminalUsage } from "@/platform/agui/agui-normalizer";
 import { fetchSessionMessages } from "@/services/chat-sessions-api";
-import { missingServerMessages } from "@/features/chat/model/session-backfill";
+import { matchesServerHistory, missingServerMessages } from "@/features/chat/model/session-backfill";
 import type {
   ContextUpdateContentBlock,
+  ContentBlock,
   MessageUsage,
   RagCitationMarker,
   RichMessage,
   StreamingState,
   ToolCallContentBlock,
 } from "@/types/chat-content";
-import type { A2uiDisplayChunk, Chunk, SkillActivationChunk } from "@/features/chat/model/chunk";
+import type { Chunk, SkillActivationChunk } from "@/features/chat/model/chunk";
 import { toChunks } from "@/features/chat/model/to-chunks";
 import { A2UI_PROFILE } from "@/features/a2ui/a2ui-protocol";
 import { AGENT_SELECTION_MIME, agentSelectionChunk, portableSelection, selectionArtifact } from "@/shared/content/agent-selection";
+import { artifactDisplayChunk } from "@/shared/content/artifact-display";
 
 // UI hydration ownership only. Concurrent callers await the same database read.
 const historyLoads = new Map<string, Promise<void>>();
@@ -60,8 +66,8 @@ interface ChatMessageActions {
   addContextUpdate(threadId: string, runId: string, update: Omit<ContextUpdateContentBlock, "type">): void;
   /** Attach agent/model/usage metadata to the in-flight streaming message. Must run before finishStream so it is persisted. */
   setMessageMeta(threadId: string, runId: string, meta: MessageMeta): void;
-  finishStream(threadId: string): void;
-  setStreamError(threadId: string, error: string): void;
+  finishStream(threadId: string, status?: RichMessage["status"], nativeRunId?: string): Promise<void>;
+  setStreamError(threadId: string, error: string, runId?: string): void;
   clearThread(threadId: string): void;
 }
 
@@ -92,8 +98,9 @@ function ensureStreaming(state: ChatMessageState, threadId: string): StreamingSt
 // stream finishes, because the next send reloads history from PGlite.
 const streamBubbles = new Map<string, Set<string>>();
 
-function finalizeBubble(message: RichMessage, runId: string | undefined): RichMessage {
-  message.status = "complete";
+function finalizeBubble(message: RichMessage, runId: string | undefined, status: RichMessage["status"] = "complete"): RichMessage {
+  message.status = status;
+  message.runId = runId;
   for (const block of message.content) if (block.type === "skill" && block.status === "active") block.status = "complete";
   message.chunks = ensureMessageChunks(message, runId).map((chunk) => {
     if (chunk.kind === "skill-activation" && chunk.status === "active") (chunk as SkillActivationChunk).status = "complete";
@@ -109,15 +116,43 @@ function finalizeBubble(message: RichMessage, runId: string | undefined): RichMe
   return JSON.parse(JSON.stringify({ ...message, content: message.content })) as RichMessage;
 }
 
-function getOrCreateStreamingMessage(state: ChatMessageState, threadId: string, runId: string): RichMessage {
+function isSettledMessage(message: RichMessage): boolean {
+  return message.status === "complete" || message.status === "failed" || message.status === "cancelled";
+}
+
+function getOrCreateStreamingMessage(state: ChatMessageState, threadId: string, runId: string, replayContent = true): RichMessage | undefined {
   const messages = state.messagesByThread[threadId];
   const streaming = state.streamingByThread[threadId];
   if (streaming?.streamingMessageId) {
     const existing = messages?.find((m) => m.id === streaming.streamingMessageId);
-    if (existing) return existing;
+    if (existing) {
+      if (isSettledMessage(existing)) return;
+      // Reattachment may deliver only terminal metadata. Keep the saved partial
+      // until actual content replay starts, then rebuild it under the same ID.
+      if (existing.status === "interrupted" && replayContent) {
+        existing.content = [];
+        existing.chunks = [];
+        existing.status = "in_progress";
+      }
+      return existing;
+    }
   }
-  const msgId = `stream-${runId}-${Date.now()}`;
-  const newMsg: RichMessage = { id: msgId, role: "assistant", content: [], chunks: [], createdAt: new Date(), status: "in_progress" };
+  const msgId = `run-${runId}-assistant-${streamBubbles.get(threadId)?.size ?? 0}`;
+  const replayed = messages?.find((message) => message.id === msgId);
+  if (replayed) {
+    // Retain the cursor on this original bubble so subsequent replay frames
+    // cannot create a second bubble after observing settled history.
+    state.streamingByThread[threadId] = { ...defaultStreamingState, isStreaming: true, runId, streamingMessageId: msgId };
+    if (isSettledMessage(replayed)) return;
+    if (replayContent) {
+      replayed.content = [];
+      replayed.chunks = [];
+      replayed.status = "in_progress";
+    }
+    streamBubbles.set(threadId, (streamBubbles.get(threadId) ?? new Set<string>()).add(msgId));
+    return replayed;
+  }
+  const newMsg: RichMessage = { id: msgId, role: "assistant", runId, content: [], chunks: [], createdAt: new Date(), status: "in_progress" };
   if (!state.messagesByThread[threadId]) state.messagesByThread[threadId] = [];
   state.messagesByThread[threadId].push(newMsg);
   streamBubbles.set(threadId, (streamBubbles.get(threadId) ?? new Set<string>()).add(msgId));
@@ -149,10 +184,355 @@ function ensureMessageChunks(message: RichMessage, runId?: string): Chunk[] {
   return message.chunks;
 }
 
+/** Keep known rich boundaries; canonical model history has no card offsets. */
+function anchoredHistoryText(cached: string[], canonical: string): string[] {
+  const text = cached.join("");
+  if (canonical.startsWith(text) || text.startsWith(canonical)) {
+    let offset = 0;
+    return cached.map((part, index) => {
+      const end = index === cached.length - 1 ? canonical.length : offset + part.length;
+      const replacement = canonical.slice(offset, end);
+      offset = end;
+      return replacement;
+    });
+  }
+  const replacements = cached.map(() => "");
+  let first = 0;
+  let start = 0;
+  let last = cached.length - 1;
+  let end = canonical.length;
+  while (first <= last && canonical.slice(start, end).startsWith(cached[first])) {
+    replacements[first] = cached[first];
+    start += cached[first].length;
+    first += 1;
+  }
+  while (last >= first && canonical.slice(start, end).endsWith(cached[last])) {
+    replacements[last] = cached[last];
+    end -= cached[last].length;
+    last -= 1;
+  }
+  // No semantic guess: changed middle text occupies its first old text slot.
+  // Independent cards stay in order; unknown intra-text timing is unavailable.
+  if (first <= last) replacements[first] = canonical.slice(start, end);
+  return replacements;
+}
+
+function warmTextHistory(message: RichMessage, remote: RichMessage): Pick<RichMessage, "content" | "chunks"> {
+  const canonical = remote.content.flatMap(block => block.type === "text" ? [block.text] : []).join("");
+  const contentText = anchoredHistoryText(message.content.flatMap(block => block.type === "text" ? [block.text] : []), canonical);
+  let contentIndex = 0;
+  const content = message.content.flatMap((block): ContentBlock[] => {
+    if (block.type === "text") {
+      const text = contentText[contentIndex++];
+      return text ? [{ ...block, text }] : [];
+    }
+    return block.type === "artifact" && block.kind === "application/vnd.uar.history-provenance+json" ? [] : [block];
+  });
+  if (!contentText.length && canonical) content.unshift({ type: "text", text: canonical });
+  content.push(...remote.content.filter(block => block.type !== "text"));
+
+  const cached = ensureMessageChunks({ ...message }, message.runId);
+  const textChunks = cached.filter(chunk => chunk.kind === "text" || chunk.kind === "markdown");
+  const chunkTexts = anchoredHistoryText(textChunks.map(chunk => chunk.kind === "text" ? chunk.text : chunk.source), canonical);
+  const projected = toChunks(remote.content, { messageId: message.id, at: messageAt(remote), runId: remote.runId, finalized: true });
+  const remaining = projected.filter(chunk => chunk.kind !== "text" && chunk.kind !== "markdown");
+  let chunkIndex = 0;
+  const chunks = cached.flatMap((chunk): Chunk[] => {
+    if (chunk.kind === "text" || chunk.kind === "markdown") {
+      const source = chunkTexts[chunkIndex++];
+      return source ? [{ id: chunk.id, seq: chunk.seq, runId: remote.runId, at: messageAt(remote), kind: "markdown", source }] : [];
+    }
+    if (chunk.kind === "artifact" && chunk.mime === "application/vnd.uar.history-provenance+json") return [];
+    const index = remaining.findIndex(row => (chunk.kind === "usage" && row.kind === "usage")
+      || (chunk.kind === "tool-approval" && row.kind === "tool-approval" && chunk.approvalId === row.approvalId));
+    if (index < 0) return [chunk];
+    const [replacement] = remaining.splice(index, 1);
+    if (chunk.kind === "tool-approval" && replacement.kind === "tool-approval") {
+      return [{ ...chunk, ...replacement, id: chunk.id, seq: chunk.seq, args: chunk.args,
+        decision: replacement.decision ?? chunk.decision, decidedAt: replacement.decidedAt ?? chunk.decidedAt,
+        historicalState: replacement.historicalState === "unavailable" ? chunk.historicalState : replacement.historicalState }];
+    }
+    return [{ ...chunk, ...replacement, id: chunk.id, seq: chunk.seq }];
+  });
+  if (!textChunks.length && canonical) chunks.unshift(...projected.filter(chunk => chunk.kind === "markdown"));
+  chunks.push(...remaining);
+  return { content, chunks };
+}
+
 function chunkBase(message: RichMessage, runId: string) {
   const chunks = ensureMessageChunks(message, runId);
   const seq = chunks.length;
   return { id: `${message.id}:chunk:${seq}`, at: messageAt(message), runId, seq };
+}
+
+function chunkText(chunk: Chunk): string | undefined {
+  if (chunk.kind === "markdown") return chunk.source;
+  if (chunk.kind === "text" || chunk.kind === "thinking" || chunk.kind === "reasoning") return chunk.text;
+  return undefined;
+}
+
+function recoveryKey(chunk: Chunk): string {
+  switch (chunk.kind) {
+    case "text": case "markdown": return "text";
+    case "thinking": case "reasoning": return "thinking";
+    case "tool-call": case "tool-denied": return `${chunk.kind}:${chunk.toolCallId}`;
+    case "tool-approval": return `${chunk.kind}:${chunk.approvalId ?? chunk.toolCallId}`;
+    case "artifact": return `${chunk.kind}:${chunk.artifactId}`;
+    case "a2ui-input": return chunk.toolCallId ? `artifact:${chunk.toolCallId}` : `${chunk.kind}:${chunk.requestId}`;
+    case "a2ui-display": return chunk.toolCallId ? `artifact:${chunk.toolCallId}` : `${chunk.kind}:${JSON.stringify(chunk.payload)}`;
+    case "skill-activation": return `${chunk.kind}:${chunk.skillId}`;
+    case "citation": return `${chunk.kind}:${chunk.source}:${chunk.content}`;
+    case "rag-citations": return `${chunk.kind}:${JSON.stringify(chunk.citations)}`;
+    case "memory-recall": return `${chunk.kind}:${JSON.stringify(chunk.items)}`;
+    case "memory-mutation": return `${chunk.kind}:${chunk.memoryId}:${chunk.operation}`;
+    case "context-update": return `${chunk.kind}:${chunk.strategy}:${chunk.messagesRemoved}:${chunk.tokensSaved}`;
+    default: return `${chunk.kind}:${chunk.id}`;
+  }
+}
+
+function recoveryMatch(cached: Chunk, native: Chunk): boolean {
+  if (recoveryKey(cached) !== recoveryKey(native)) return false;
+  const text = chunkText(cached);
+  return text === undefined || chunkText(native)?.startsWith(text) === true;
+}
+
+/** ContextAction is host telemetry: its native adapter deliberately emits no
+ * run/thread identity. The journal's owning row is correlation, not run proof. */
+function isRunlessContextUpdate(event: Record<string, unknown>): boolean {
+  if (event.type !== "CUSTOM" || event.name !== "uar.context.updated"
+    || event.runId != null || event.threadId != null) return false;
+  const value = record(event.value);
+  return typeof value.strategy === "string"
+    && ["sliding_window", "progressive_summarization", "hierarchical_memory", "keep_first_last", "none"].includes(value.strategy)
+    && Number.isInteger(value.messagesRemoved) && (value.messagesRemoved as number) >= 0
+    && Number.isInteger(value.tokensSaved) && (value.tokensSaved as number) >= 0
+    && typeof value.wasApplied === "boolean" && typeof value.summaryGenerated === "boolean";
+}
+
+/** Original deltas are authoritative. Coalesced END rows summarize those same
+ * deltas and must never be appended a second time. Reject incomplete/foreign
+ * journals rather than turning an observer interruption into native proof. */
+function localJournal(run: PersistedRun, events: PersistedRunEvent[]): { chunks: Chunk[]; terminal?: PersistedRunEvent } | undefined {
+  const chunks: Chunk[] = [];
+  let previousSequence: number | undefined;
+  let previousMessage: string | undefined;
+  let terminal: PersistedRunEvent | undefined;
+  for (const row of events) {
+    const event = row.payload;
+    const runlessContext = isRunlessContextUpdate(event);
+    if (!isUarAguiEvent(event) || row.runId !== run.id || (!runlessContext && event.runId !== run.id)
+      || event.eventId !== row.eventId || event.type !== row.type || event.sequence !== row.wireSequence) return undefined;
+    if (event.coalesced === true) {
+      if (row.type !== "TEXT_MESSAGE_END" && row.type !== "REASONING_MESSAGE_END") return undefined;
+      // Synthetic summaries reuse the last delta's sequence. Real END frames
+      // have their own sequence and are still part of the native journal.
+      if (row.eventId.endsWith(":coalesced")) continue;
+    }
+    // Native sequence is source cursor * 16; one source event can emit several
+    // frames with the same sequence. Gaps and ties are legitimate producer data.
+    if (previousSequence === undefined ? row.type !== "RUN_STARTED" : row.wireSequence < previousSequence) return undefined;
+    if (row.type === "RUN_STARTED" && previousSequence !== undefined) return undefined;
+    if (!Number.isFinite(new Date(row.at).getTime())) return undefined;
+    previousSequence = row.wireSequence;
+    if (terminal) return undefined;
+    // Valid side data still participates in ordering/start/terminal checks, but
+    // cannot split text, create a card, or supply terminal/surface authority.
+    if (runlessContext) continue;
+    if (row.type === "RUN_FINISHED" || row.type === "RUN_ERROR") terminal = row;
+    if (row.type === "TEXT_MESSAGE_CONTENT" || row.type === "REASONING_MESSAGE_CONTENT") {
+      const messageId = `${run.id}:${row.type === "TEXT_MESSAGE_CONTENT" ? "assistant" : "reasoning"}`;
+      if (event.messageId !== messageId || typeof event.delta !== "string") return undefined;
+      const chunk = toRuntimeChunk(event, new Date(row.at).getTime());
+      if (!chunk) return undefined;
+      const last = chunks.at(-1);
+      if (last && previousMessage === event.messageId && last.kind === chunk.kind
+        && (last.kind === "text" || last.kind === "reasoning")) last.text += event.delta;
+      else chunks.push(chunk);
+      previousMessage = event.messageId;
+      continue;
+    }
+    // Runtime-only state/lifecycle frames do not split a chat text card. Rich
+    // additions do; a result updating an existing tool does not add a card.
+    const chunk = toRuntimeChunk(event, new Date(row.at).getTime());
+    if (!chunk) continue;
+    if ((chunk.kind === "raw" && row.type !== "RUN_FINISHED" && row.type !== "RUN_ERROR")
+      || chunk.kind === "state-snapshot" || chunk.kind === "state-delta" || chunk.kind === "step") continue;
+    if (chunk.kind === "a2ui-input") {
+      const value = record(event.value);
+      const artifactId = value.artifactId ?? value.artifact_id;
+      if (typeof artifactId === "string") chunk.toolCallId = artifactId;
+    }
+    if (chunk.kind === "tool-call") {
+      const existing = chunks.find((item) => item.kind === "tool-call" && item.toolCallId === chunk.toolCallId);
+      if (existing?.kind === "tool-call") {
+        if (row.type === "TOOL_CALL_RESULT") { existing.result = chunk.result; existing.status = chunk.status; }
+        else Object.assign(existing, chunk, { id: existing.id });
+        continue;
+      }
+    }
+    previousMessage = undefined;
+    chunks.push(chunk);
+  }
+  return previousSequence === undefined ? undefined : { chunks, terminal };
+}
+
+function portableRecoveryChunk(chunk: Chunk): ContentBlock[] {
+  switch (chunk.kind) {
+    case "text": return [{ type: "text", text: chunk.text }];
+    case "markdown": return [{ type: "text", text: chunk.source }];
+    case "thinking": case "reasoning": return [{ type: "thinking", text: chunk.text }];
+    case "tool-call": return [{ type: "toolUse", id: chunk.toolCallId, name: chunk.toolName, inputJson: JSON.stringify(chunk.args) },
+      ...(chunk.result === undefined ? [] : [{ type: "toolResult" as const, toolUseId: chunk.toolCallId, outputJson: chunk.result, isError: chunk.status === "failed" }])];
+    case "artifact": return [{ type: "artifact", id: chunk.artifactId, kind: chunk.mime, title: chunk.title, content: chunk.content ?? "" }];
+    case "a2ui-display": return [{ type: "artifact", id: chunk.toolCallId ?? chunk.id,
+      kind: "application/vnd.uar.a2ui+json", content: JSON.stringify({ profile: chunk.profile,
+        version: chunk.version, component: chunk.component, payload: chunk.payload,
+        validation: chunk.validation, validationError: chunk.validationError }) }];
+    case "error": return [{ type: "artifact", id: chunk.id, kind: "application/vnd.uar.error+json", content: JSON.stringify({ message: chunk.message, code: chunk.code }) }];
+    default: return [];
+  }
+}
+
+/** Merge ordered native segments into an original bubble, keeping cached-only
+ * evidence and IDs. A cached text that is not a prefix has no safe replay join. */
+function reconcileLocalBubble(message: RichMessage, replay: Chunk[], status: RichMessage["status"]): RichMessage | undefined {
+  const cached = ensureMessageChunks(message, message.runId);
+  if (cached.some((chunk) => chunk.runId !== undefined && chunk.runId !== message.runId)) return undefined;
+  const positions = new Map<number, number>();
+  let cursor = 0;
+  for (let index = 0; index < cached.length; index += 1) {
+    const chunk = cached[index];
+    const match = replay.findIndex((native, nativeIndex) => nativeIndex >= cursor && recoveryMatch(chunk, native));
+    if (match < 0) {
+      if (chunkText(chunk) !== undefined) return undefined;
+      continue;
+    }
+    positions.set(match, index);
+    cursor = match + 1;
+  }
+  // Associate portable blocks with their cached rich cards without rebuilding
+  // the cached content from text or discarding runtime-only approval evidence.
+  const blocks = new Map<number, ContentBlock[]>();
+  const updatedTextBlocks = new Map<ContentBlock, string>();
+  let textCursor = 0;
+  const pending: ContentBlock[] = [];
+  for (const block of message.content) {
+    if (block.type === "text" || block.type === "thinking") {
+      const key = block.type === "text" ? "text" : "thinking";
+      let aggregate = "";
+      let updated = "";
+      let first = -1;
+      let last = -1;
+      for (let index = textCursor; index < cached.length; index += 1) {
+        const chunk = cached[index];
+        if (recoveryKey(chunk) !== key) {
+          if (chunkText(chunk) !== undefined && first >= 0) break;
+          continue;
+        }
+        if (first < 0) first = index;
+        aggregate += chunkText(chunk) ?? "";
+        const nativeIndex = [...positions].find(([, cachedIndex]) => cachedIndex === index)?.[0];
+        updated += chunkText(nativeIndex === undefined ? chunk : replay[nativeIndex]) ?? "";
+        last = index;
+        if (aggregate === block.text || !block.text.startsWith(aggregate)) break;
+      }
+      if (first < 0 || aggregate !== block.text) return undefined;
+      updatedTextBlocks.set(block, updated);
+      blocks.set(first, [...(blocks.get(first) ?? []), ...pending.splice(0), block]);
+      textCursor = last + 1;
+      continue;
+    }
+    const projected = toChunks([block], { messageId: message.id, at: messageAt(message), runId: message.runId });
+    const index = cached.findIndex((chunk) => {
+      if (block.type === "toolResult") return chunk.kind === "tool-call" && chunk.toolCallId === block.toolUseId;
+      return projected.some((item) => recoveryKey(item) === recoveryKey(chunk));
+    });
+    if (index < 0) {
+      pending.push(block);
+      continue;
+    }
+    blocks.set(index, [...(blocks.get(index) ?? []), ...pending.splice(0), block]);
+  }
+  const chunks: Chunk[] = [];
+  const content: ContentBlock[] = [];
+  let cachedCursor = 0;
+  const retain = (index: number) => { chunks.push(cached[index]); content.push(...(blocks.get(index) ?? [])); };
+  replay.forEach((native, index) => {
+    const cachedIndex = positions.get(index);
+    if (cachedIndex === undefined) { chunks.push(native); content.push(...portableRecoveryChunk(native)); return; }
+    while (cachedCursor < cachedIndex) retain(cachedCursor++);
+    const original = cached[cachedIndex];
+    // A historical approval decision is independent evidence. Replay cannot
+    // replace it with an awaiting card from its earlier request event.
+    const merged: Chunk = chunkText(native) !== undefined
+      ? { ...native, id: original.id, at: original.at, seq: original.seq }
+      : original.kind === "tool-call" && native.kind === "tool-call"
+        && (original.status === "running" || original.status === "pending")
+        ? { ...original, result: native.result, status: native.status } : original;
+    chunks.push(merged);
+    const originalBlocks = blocks.get(cachedIndex) ?? [];
+    content.push(...originalBlocks.map((block) => {
+      if (block.type === "text" || block.type === "thinking") return { ...block, text: updatedTextBlocks.get(block) ?? block.text };
+      if (merged.kind === "tool-call" && block.type === "toolResult" && merged.result !== undefined)
+        return { ...block, outputJson: merged.result, isError: merged.status === "failed" };
+      return block;
+    }));
+    if (merged.kind === "tool-call" && merged.result !== undefined && !originalBlocks.some((block) => block.type === "toolResult"))
+      content.push({ type: "toolResult", toolUseId: merged.toolCallId, outputJson: merged.result, isError: merged.status === "failed" });
+    cachedCursor = cachedIndex + 1;
+  });
+  while (cachedCursor < cached.length) retain(cachedCursor++);
+  content.push(...pending);
+  const recovered = { ...message, content, chunks };
+  return status === "interrupted" ? { ...recovered, status } : finalizeBubble(recovered, message.runId, status);
+}
+
+function recoverLocalRun(run: PersistedRun, events: PersistedRunEvent[], messages: RichMessage[]): RichMessage[] {
+  const journal = localJournal(run, events);
+  if (!journal) return [];
+  const terminal = journal.terminal;
+  const terminalStatus = terminal?.type === "RUN_FINISHED" ? "finished"
+    : terminal?.payload.code === "CANCELLED" ? "cancelled" : terminal ? "error" : undefined;
+  const status: RichMessage["status"] = terminalStatus === run.status
+    ? run.status === "finished" ? "complete" : run.status === "error" ? "failed" : "cancelled" : "interrupted";
+  const owned = messages.filter((message) => message.role === "assistant" && message.runId === run.id);
+  if (!owned.length) {
+    if (!journal.chunks.some((chunk) => chunk.kind === "text")) return [];
+    const recovered = reconcileLocalBubble({ id: `run-${run.id}-assistant-0`, runId: run.id, role: "assistant",
+      content: [], chunks: [], createdAt: new Date(run.startedAt), status: "interrupted" }, journal.chunks, status);
+    return recovered ? [recovered] : [];
+  }
+  // Current native producer has one stable text ID per run; the store groups
+  // rich segments in deterministic bubbles. Multiple bubbles require unique
+  // ordered cached anchors, rather than assigning all text to the last one.
+  const starts: number[] = [];
+  let cursor = 0;
+  for (const message of owned) {
+    if (!/^\d+$/.test(message.id.slice(`run-${run.id}-assistant-`.length))
+      || !message.id.startsWith(`run-${run.id}-assistant-`)) return [];
+    const first = ensureMessageChunks(message, run.id).find((chunk) => chunkText(chunk) !== undefined
+      || journal.chunks.some((native) => recoveryMatch(chunk, native)));
+    if (!first) return [];
+    const matches = journal.chunks.flatMap((native, index) => index >= cursor && recoveryMatch(first, native) ? [index] : []);
+    if (matches.length !== 1) return [];
+    starts.push(matches[0]);
+    cursor = matches[0] + 1;
+  }
+  const updates: RichMessage[] = [];
+  for (let index = 0; index < owned.length; index += 1) {
+    const message = owned[index];
+    if (message.status !== "interrupted" && message.status !== "in_progress") continue;
+    const replay = journal.chunks.slice(index === 0 ? 0 : starts[index], starts[index + 1]);
+    const recovered = reconcileLocalBubble(message, replay, status);
+    if (!recovered) return [];
+    if (terminal && index === owned.length - 1) {
+      const usage = aguiTerminalUsage(terminal.payload);
+      recovered.usage = completeAguiUsage(usage);
+      if (typeof usage?.model === "string") recovered.model = usage.model;
+    }
+    updates.push(recovered);
+  }
+  return updates;
 }
 
 export const useChatMessageStore = create<ChatMessageStore>()(
@@ -165,7 +545,25 @@ export const useChatMessageStore = create<ChatMessageStore>()(
       const pending = historyLoads.get(threadId);
       if (pending) return pending;
       const load = (async () => {
-        const messages = await getDbInstance().getMessages(threadId);
+        const db = getDbInstance();
+        const messages: RichMessage[] = (await db.getMessages(threadId)).map((message) => ({ ...message,
+          chunks: message.chunks?.map((chunk) => chunk.kind === "tool-approval"
+            ? { ...chunk, historical: true, historicalState: chunk.decision ?? "unavailable" } : chunk) }));
+        const runs = (await db.getRuns()).filter((run) => run.threadId === threadId);
+        for (const run of runs) {
+          const events = await db.getRunEvents(run.id);
+          // A chunk-only legacy association is not original bubble ownership.
+          if (!messages.some((message) => message.runId === run.id)
+            && messages.some((message) => message.chunks?.some((chunk) => chunk.runId === run.id))) continue;
+          for (const recovered of recoverLocalRun(run, events, messages)) {
+            await db.insertMessage(threadId, recovered);
+            const index = messages.findIndex((message) => message.id === recovered.id);
+            if (index < 0) messages.push(recovered);
+            else messages[index] = recovered;
+          }
+        }
+        messages.sort((a, b) => a.historyPosition !== undefined && b.historyPosition !== undefined
+          ? a.historyPosition - b.historyPosition : new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         set((state) => {
           // A late mount refresh cannot replace an already-owned live stream.
           if (state.streamingByThread[threadId]?.isStreaming) return;
@@ -184,16 +582,97 @@ export const useChatMessageStore = create<ChatMessageStore>()(
       if (get().streamingByThread[threadId]?.isStreaming) return;
       const before = get().messagesByThread[threadId] ?? [];
       const server = await fetchSessionMessages(threadId);
-      if (!server) return;
+      if (!server || !matchesServerHistory(before, server)) return;
       const missing = missingServerMessages(before, server);
-      if (missing.length === 0) return;
+      const canonical = missingServerMessages([], server);
+      const canonicalUsers = canonical.filter((message) => message.role === "user");
+      let userIndex = -1;
+      const updates = before.flatMap((message): RichMessage[] => {
+        if (message.role === "user") userIndex += 1;
+        const remote = canonical.find((row) => row.id === message.id)
+          ?? (message.role === "user" ? canonicalUsers[userIndex] : undefined);
+        if (!remote) return [];
+        // The actual model-history producer supplies text/image content, not
+        // live card offsets. Text-only rows can reuse the warm rich anchors.
+        if (remote.content.every(block => block.type === "text"
+          || (block.type === "artifact" && block.kind === "application/vnd.uar.history-provenance+json"))) {
+          return [{ ...message, ...warmTextHistory(message, remote), createdAt: remote.createdAt,
+            status: remote.status, runId: remote.runId, clientTurnId: remote.clientTurnId,
+            createdAtKnown: remote.createdAtKnown, historyPosition: remote.historyPosition }];
+        }
+        const hasRemoteImage = remote.content.some((block) => block.type === "image");
+        const retained = message.content.filter((block) => block.type !== "text"
+          && (block.type !== "image" || !hasRemoteImage)
+          && (block.type !== "artifact" || block.kind !== "application/vnd.uar.history-provenance+json")
+          && !remote.content.some((row) =>
+            (block.type === "toolUse" && row.type === "toolUse" && block.id === row.id)
+            || (block.type === "toolResult" && row.type === "toolResult" && block.toolUseId === row.toolUseId)
+            || (block.type === "artifact" && row.type === "artifact" && block.id === row.id)));
+        const content = [...retained, ...remote.content];
+        const projected = toChunks(remote.content, { messageId: message.id, at: messageAt(remote), runId: remote.runId, finalized: true });
+        return [{ ...message, createdAt: remote.createdAt, status: remote.status, runId: remote.runId, clientTurnId: remote.clientTurnId, createdAtKnown: remote.createdAtKnown, historyPosition: remote.historyPosition, content,
+          chunks: [...ensureMessageChunks({ ...message, createdAt: remote.createdAt }, remote.runId).filter((chunk) => {
+            if (chunk.kind === "text" || chunk.kind === "markdown" || (chunk.kind === "image" && hasRemoteImage)) return false;
+            if (chunk.kind === "artifact" && chunk.mime === "application/vnd.uar.history-provenance+json") return false;
+            if (chunk.kind === "tool-call" && projected.some((row) => row.kind === "tool-call" && row.toolCallId === chunk.toolCallId)) return false;
+            if (chunk.kind === "artifact" && projected.some((row) => row.kind === "artifact" && row.artifactId === chunk.artifactId)) return false;
+            if (chunk.kind === "usage" && projected.some((row) => row.kind === "usage")) return false;
+            return chunk.kind !== "tool-approval" || !projected.some((row) => row.kind === "tool-approval" && row.approvalId === chunk.approvalId);
+          }), ...projected] }];
+      });
+      if (missing.length === 0 && updates.length === 0) return;
       // A send or another load during the request owns the history; leave it.
       if (get().streamingByThread[threadId]?.isStreaming || get().messagesByThread[threadId] !== before) return;
       const db = getDbInstance();
-      for (const message of missing) await db.insertMessage(threadId, message);
+      const reconciled = before.map((message) => updates.find((row) => row.id === message.id) ?? message);
+      for (const message of missing) {
+        const next = reconciled.findIndex((row) => row.historyPosition !== undefined
+          && row.historyPosition > message.historyPosition!);
+        if (next >= 0) reconciled.splice(next, 0, message);
+        else {
+          // Keep a restored final answer ahead of later local-only turns.
+          let previous = -1;
+          for (let index = reconciled.length - 1; index >= 0; index -= 1) {
+            const position = reconciled[index].historyPosition;
+            if (position !== undefined && position < message.historyPosition!) {
+              previous = index;
+              break;
+            }
+          }
+          reconciled.splice(previous < 0 ? reconciled.length : previous + 1, 0, message);
+        }
+      }
+      // Older backfills appended missing rows after later turns. Restore the
+      // canonical subsequence while keeping local-only evidence in its slots.
+      const ordered = reconciled.filter((message) => message.historyPosition !== undefined)
+        .sort((a, b) => a.historyPosition! - b.historyPosition!);
+      let orderedIndex = 0;
+      const chronological = reconciled.map((message) => message.historyPosition === undefined
+        ? message : ordered[orderedIndex++]);
+      const approvalsByRun = new Map<string, Set<string>>();
+      const usageRuns = new Set<string>();
+      const restored = chronological.map((message) => {
+        const projected = ensureMessageChunks({ ...message }, message.runId);
+        if (!message.runId) return { ...message, chunks: projected };
+        const approvals = approvalsByRun.get(message.runId) ?? new Set<string>();
+        approvalsByRun.set(message.runId, approvals);
+        const chunks = projected.filter((chunk) => {
+          if (chunk.kind === "tool-approval") {
+            if (approvals.has(chunk.approvalId)) return false;
+            approvals.add(chunk.approvalId);
+          }
+          if (chunk.kind === "usage") {
+            if (usageRuns.has(message.runId!)) return false;
+            usageRuns.add(message.runId!);
+          }
+          return true;
+        });
+        return { ...message, chunks };
+      });
+      for (const message of restored) await db.insertMessage(threadId, message);
       if (get().streamingByThread[threadId]?.isStreaming || get().messagesByThread[threadId] !== before) return;
       set((state) => {
-        state.messagesByThread[threadId] = [...before, ...missing];
+        state.messagesByThread[threadId] = restored;
       });
     },
 
@@ -206,10 +685,14 @@ export const useChatMessageStore = create<ChatMessageStore>()(
     beginStream: (threadId, runId) =>
       set((state) => {
         ensureThread(state, threadId);
+        const owned = state.messagesByThread[threadId].filter((message) => message.role === "assistant" && message.runId === runId);
+        const interrupted = owned.filter((message) => message.status === "interrupted");
+        const settled = owned.length > 0 && owned.every(isSettledMessage) ? owned[0] : undefined;
+        if (interrupted.length) streamBubbles.set(threadId, new Set(interrupted.map((message) => message.id)));
         state.streamingByThread[threadId] = {
           isStreaming: true,
           runId,
-          streamingMessageId: null,
+          streamingMessageId: interrupted.at(-1)?.id ?? settled?.id ?? null,
           awaitingFirstToken: true,
           retryAttempt: 0,
           retryMaxAttempts: 0,
@@ -259,6 +742,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
+        if (!msg) return;
         const messages = state.messagesByThread[threadId];
         const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === -1) return;
@@ -292,6 +776,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
+        if (!msg) return;
         const messages = state.messagesByThread[threadId];
         const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === -1) return;
@@ -325,6 +810,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
+        if (!msg) return;
         const messages = state.messagesByThread[threadId];
         const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === -1) return;
@@ -365,15 +851,11 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           return;
         }
         if (toolCall.toolName === "__a2ui_display__") {
-          const metadata = record(toolCall.args.metadata);
           const artifactType = typeof toolCall.args.artifactType === "string" ? toolCall.args.artifactType : "";
           const language = typeof toolCall.args.language === "string" ? toolCall.args.language : "";
-          // Declared A2UI intent wins even when its profile is missing/invalid
-          // or its language is JSON. Never infer an active surface from content.
-          const isA2ui = artifactType === "a2ui" || artifactType === "display" || artifactType.startsWith("a2ui/")
-            || ["a2ui", "application/a2ui+json", "application/vnd.uar.a2ui+json"].includes(language)
-            || (typeof metadata.profile === "string" && metadata.profile.startsWith("uar.a2ui/"));
-          if (!isA2ui) {
+          const displayChunk = artifactDisplayChunk({ ...toolCall.args, artifactId: toolCall.toolCallId,
+            content: toolCall.result }, base);
+          if (!displayChunk) {
             const mime = [artifactType, language].some((value) => value === "json" || value === "application/json")
               ? "application/json" : "text/plain";
             const title = typeof toolCall.args.title === "string" ? toolCall.args.title : undefined;
@@ -382,10 +864,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
             chunks.push({ ...base, kind: "artifact", artifactId: toolCall.toolCallId, mime, title, content });
             return;
           }
-          const declaredValidation = toolCall.args.validation;
-          const validation: A2uiDisplayChunk["validation"] = declaredValidation === "invalid" || declaredValidation === "unknown-component" ? declaredValidation : "valid";
-          const displayChunk = { ...base, kind: "a2ui-display" as const, toolCallId: toolCall.toolCallId, profile: typeof metadata.profile === "string" ? metadata.profile : "", version: typeof metadata.protocol_version === "string" ? metadata.protocol_version : undefined, component: String(toolCall.args.artifactType ?? "surface"), payload: { ...toolCall.args, content: toolCall.result }, validation, validationError: typeof toolCall.args.validationError === "string" ? toolCall.args.validationError : undefined };
-          message.content.push({ type: "artifact", id: toolCall.toolCallId, kind: "application/vnd.uar.a2ui+json", content: JSON.stringify({ profile: displayChunk.profile, component: displayChunk.component, payload: displayChunk.payload, validation: displayChunk.validation, validationError: displayChunk.validationError }) });
+          message.content.push(...portableRecoveryChunk(displayChunk));
           chunks.push(displayChunk);
           return;
         }
@@ -403,7 +882,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           // Validate before deduplication: a malformed reserved ID cannot hide
           // a later genuine notice. Check history before creating a new bubble.
           const duplicate = state.messagesByThread[threadId].some((message) =>
-            ensureMessageChunks(message).some((existing) => existing.kind === "agent-selection"
+            ensureMessageChunks({ ...message }).some((existing) => existing.kind === "agent-selection"
               && agentSelectionChunk(existing, existing)?.id === selection.id)
             || message.content.some((block) => block.type === "artifact"
               && block.kind === AGENT_SELECTION_MIME
@@ -424,6 +903,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           };
         }
         const message = getOrCreateStreamingMessage(state, threadId, runId);
+        if (!message) return;
         if (chunk.kind === "agent-selection") {
           message.content.push({ type: "artifact", id: chunk.id, kind: AGENT_SELECTION_MIME,
             content: portableSelection(chunk) });
@@ -436,6 +916,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         const messages = state.messagesByThread[threadId];
         if (!messages) return;
         for (const msg of messages) {
+          if (isSettledMessage(msg)) continue;
           const chunks = ensureMessageChunks(msg);
           const chunk = chunks.find((item) => (
             item.kind === "tool-call"
@@ -497,6 +978,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
+        if (!msg) return;
         const messages = state.messagesByThread[threadId];
         const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === undefined || idx === -1) return;
@@ -526,6 +1008,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
+        if (!msg) return;
         const messages = state.messagesByThread[threadId];
         const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === undefined || idx === -1) return;
@@ -555,6 +1038,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
+        if (!msg) return;
         const messages = state.messagesByThread[threadId];
         const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === undefined || idx === -1) return;
@@ -585,6 +1069,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
           streaming.retryDelayMs = 0;
         }
         const msg = getOrCreateStreamingMessage(state, threadId, runId);
+        if (!msg) return;
         const messages = state.messagesByThread[threadId];
         const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === undefined || idx === -1) return;
@@ -599,7 +1084,8 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         ensureStreaming(state, threadId);
         // Resolve (or create) the assistant message this run is producing, so
         // metadata attaches even if it arrives before the first content chunk.
-        const msg = getOrCreateStreamingMessage(state, threadId, runId);
+        const msg = getOrCreateStreamingMessage(state, threadId, runId, false);
+        if (!msg) return;
         const messages = state.messagesByThread[threadId];
         const idx = messages.findIndex((m) => m.id === msg.id);
         if (idx === -1) return;
@@ -615,7 +1101,7 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         }
       }),
 
-    finishStream: (threadId) => {
+    finishStream: async (threadId, status = "complete", nativeRunId) => {
       const snapshots: RichMessage[] = [];
       set((state) => {
         const streaming = state.streamingByThread[threadId];
@@ -624,31 +1110,43 @@ export const useChatMessageStore = create<ChatMessageStore>()(
         const bubbleIds = new Set(streamBubbles.get(threadId) ?? []);
         if (streaming.streamingMessageId) bubbleIds.add(streaming.streamingMessageId);
         for (const message of messages ?? []) {
-          if (bubbleIds.has(message.id)) snapshots.push(finalizeBubble(message, streaming.runId ?? undefined));
+          // Stop can clear observation ownership while a native terminal write
+          // is awaiting persistence. Its exact run still owns these partials.
+          const belongsToTerminal = nativeRunId !== undefined && message.role === "assistant" && message.runId === nativeRunId;
+          if ((nativeRunId !== undefined ? belongsToTerminal : bubbleIds.has(message.id)) && (message.status === "in_progress" || message.status === "interrupted")) {
+            snapshots.push(finalizeBubble(message, message.runId ?? streaming.runId ?? undefined, status));
+          }
         }
         state.streamingByThread[threadId] = { ...defaultStreamingState };
       });
       streamBubbles.delete(threadId);
       // Persist every completed assistant bubble of this stream to PGlite
-      for (const snapshot of snapshots) void getDbInstance().insertMessage(threadId, snapshot);
+      for (const snapshot of snapshots) await getDbInstance().insertMessage(threadId, snapshot);
       // Also update the thread's updated_at timestamp
-      void getDbInstance().touchThread(threadId);
+      await getDbInstance().touchThread(threadId);
     },
 
-    setStreamError: (threadId, error) => {
+    setStreamError: (threadId, error, runId) => {
+      let snapshot: RichMessage | undefined;
       set((state) => {
         if (!state.messagesByThread[threadId]) state.messagesByThread[threadId] = [];
         const messages = state.messagesByThread[threadId];
         const streaming = state.streamingByThread[threadId];
 
-        if (streaming?.streamingMessageId) {
+        const messageId = streaming?.streamingMessageId ?? (runId
+          ? messages.filter((message) => message.role === "assistant" && message.runId === runId && message.status === "failed").at(-1)?.id
+          : undefined);
+        if (messageId) {
           // In-flight message exists — mark it failed and append error block
-          const idx = messages.findIndex((m) => m.id === streaming.streamingMessageId);
+          const idx = messages.findIndex((m) => m.id === messageId);
           if (idx !== -1) {
+            if ((streaming?.isStreaming && isSettledMessage(messages[idx]))
+              || messages[idx].status === "complete" || messages[idx].status === "cancelled") return;
             messages[idx].status = "failed";
             const message = messages[idx];
             message.content.push({ type: "artifact", id: `${message.id}:error`, kind: "application/vnd.uar.error+json", content: JSON.stringify({ message: error }) });
-            ensureMessageChunks(message, streaming.runId ?? undefined).push({ ...chunkBase(message, streaming.runId ?? "error"), kind: "error", message: error });
+            ensureMessageChunks(message, runId ?? streaming?.runId ?? undefined).push({ ...chunkBase(message, runId ?? streaming?.runId ?? "error"), kind: "error", message: error });
+            snapshot = JSON.parse(JSON.stringify(message)) as RichMessage;
           }
         } else {
           // No in-flight message (error hit before stream started) — inject a fresh error bubble
@@ -661,9 +1159,12 @@ export const useChatMessageStore = create<ChatMessageStore>()(
             status: "failed",
           };
           messages.push(errMsg);
+          snapshot = errMsg;
         }
         state.streamingByThread[threadId] = { ...defaultStreamingState };
       });
+      streamBubbles.delete(threadId);
+      if (snapshot) void getDbInstance().insertMessage(threadId, snapshot).catch(() => {});
     },
 
     clearThread: (threadId) =>

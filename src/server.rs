@@ -29,8 +29,8 @@ use uuid::Uuid;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
 use tower_http::trace::TraceLayer;
-mod lifecycle_snapshot;
 mod lifecycle_graph;
+mod lifecycle_snapshot;
 mod process_signals;
 
 use tracing::{Instrument, info, warn};
@@ -146,16 +146,24 @@ impl ShutdownCoordinator {
     }
 
     fn record_cleanup_failure(&self, error: &anyhow::Error) {
-        self.cleanup_failure.lock().unwrap_or_else(|error| error.into_inner())
+        self.cleanup_failure
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
             .push(error.to_string());
     }
 
     fn cleanup_result(&self) -> anyhow::Result<()> {
-        let failures = self.cleanup_failure.lock().unwrap_or_else(|error| error.into_inner());
+        let failures = self
+            .cleanup_failure
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
         if failures.is_empty() {
             Ok(())
         } else {
-            Err(anyhow::anyhow!("Runtime shutdown remains unconfirmed: {}", failures.join("; ")))
+            Err(anyhow::anyhow!(
+                "Runtime shutdown remains unconfirmed: {}",
+                failures.join("; ")
+            ))
         }
     }
 
@@ -166,7 +174,8 @@ impl ShutdownCoordinator {
     }
 
     fn complete(&self) {
-        if self.started.is_cancelled() && !self.process_complete.is_cancelled()
+        if self.started.is_cancelled()
+            && !self.process_complete.is_cancelled()
             && self.cleanup_complete.is_cancelled()
             && self.cleanup_result().is_ok()
         {
@@ -226,10 +235,10 @@ fn emit_shutdown_marker_nonblocking(marker: &[u8]) {
 
 #[cfg(feature = "in-memory-backend")]
 use crate::uar::persistence::providers::memory::InMemoryProvider;
-#[cfg(feature = "in-memory-backend")]
-use crate::uar::security::api_keys::InMemoryApiKeyStorage;
 #[cfg(feature = "surreal-backend")]
 use crate::uar::persistence::providers::surreal::SurrealDbProvider;
+#[cfg(feature = "in-memory-backend")]
+use crate::uar::security::api_keys::InMemoryApiKeyStorage;
 
 #[cfg(feature = "postgres-backend")]
 use crate::uar::persistence::providers::postgres::PostgresProvider;
@@ -271,6 +280,7 @@ pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<
         true,
         None,
         None,
+        None,
     )
     .await
 }
@@ -291,6 +301,7 @@ pub(crate) async fn start_server_with_shutdown(
         true,
         None,
         None,
+        None,
     )
     .await
 }
@@ -306,11 +317,14 @@ async fn start_server_with_listener(
     enforce_process_deadline: bool,
     launch_token: Option<SidecarLaunchToken>,
     control: Option<ServerLifecycleControl>,
+    host_routes: Option<Router<AppState>>,
 ) -> anyhow::Result<()> {
     let mut shutdown_coordinator = ShutdownCoordinator::new(enforce_process_deadline);
     shutdown_coordinator.host_owns_reconnect = control.is_some();
     shutdown_coordinator.control = control.unwrap_or_default();
-    shutdown_coordinator.control.attach(shutdown_coordinator.supervisor.handle());
+    shutdown_coordinator
+        .control
+        .attach(shutdown_coordinator.supervisor.handle());
     // Windows service/sidecar hosts own their SCM/inherited-input cancellation.
     // Console hosts install their own subscription; Unix also retains SIGTERM.
     let owns_os_signals = cfg!(unix) || process_shutdown.is_none();
@@ -318,7 +332,9 @@ async fn start_server_with_listener(
     // The host task owns finalization even if its caller drops this wait.
     struct WaiterGuard(tokio_util::sync::CancellationToken);
     impl Drop for WaiterGuard {
-        fn drop(&mut self) { self.0.cancel(); }
+        fn drop(&mut self) {
+            self.0.cancel();
+        }
     }
     let _waiter = WaiterGuard(process_shutdown.clone());
     let owner = tokio::spawn(async move {
@@ -337,15 +353,14 @@ async fn start_server_with_listener(
             // Cancellation after registration remains accountable to the
             // supervisor. Do not publish readiness or start further startup
             // work once the lifecycle owner has requested cancellation.
-            startup_cancellation_checkpoint(
-                &startup_shutdown,
-                "configuration watcher readiness",
-            )?;
+            startup_cancellation_checkpoint(&startup_shutdown, "configuration watcher readiness")?;
             configuration_scope.mark_ready()?;
             if owns_os_signals {
                 process_signals::install(
-                    &shutdown_coordinator.supervisor, startup_shutdown.clone(),
-                ).await?;
+                    &shutdown_coordinator.supervisor,
+                    startup_shutdown.clone(),
+                )
+                .await?;
             }
             startup_cancellation_checkpoint(&startup_shutdown, "server initialization")?;
             run_server_with_listener(
@@ -358,6 +373,7 @@ async fn start_server_with_listener(
                 Some(process_shutdown),
                 shutdown_coordinator.clone(),
                 launch_token,
+                host_routes,
             )
             .await
         })
@@ -370,19 +386,29 @@ async fn start_server_with_listener(
             }
         }
         let report = shutdown_coordinator.supervisor.shutdown().await;
-        if !report.released || !report.failures.is_empty() || !report.unresolved_effects.is_empty() {
+        if !report.released || !report.failures.is_empty() || !report.unresolved_effects.is_empty()
+        {
             shutdown_coordinator.record_cleanup_failure(&anyhow::anyhow!(
-                "resource closure failed: {:?}; unresolved: {:?}", report.failures, report.unresolved_effects));
+                "resource closure failed: {:?}; unresolved: {:?}",
+                report.failures,
+                report.unresolved_effects
+            ));
         }
         let result = match result {
             Ok(result) => result,
-            Err(_) => Err(anyhow::anyhow!("runtime task panicked; registered resources were finalized")),
+            Err(_) => Err(anyhow::anyhow!(
+                "runtime task panicked; registered resources were finalized"
+            )),
         };
         let result = result.and(shutdown_coordinator.cleanup_result());
-        if result.is_ok() { shutdown_coordinator.complete(); }
+        if result.is_ok() {
+            shutdown_coordinator.complete();
+        }
         result
     });
-    owner.await.map_err(|error| anyhow::anyhow!("runtime owner failed: {error}"))?
+    owner
+        .await
+        .map_err(|error| anyhow::anyhow!("runtime owner failed: {error}"))?
 }
 
 /// A cancellation request prevents the next startup boundary from acquiring or
@@ -428,11 +454,15 @@ async fn run_server_with_listener(
     process_shutdown: Option<tokio_util::sync::CancellationToken>,
     shutdown_coordinator: ShutdownCoordinator,
     launch_token: Option<SidecarLaunchToken>,
+    host_routes: Option<Router<AppState>>,
 ) -> anyhow::Result<()> {
     if let Some(process_shutdown) = process_shutdown.as_ref() {
         startup_cancellation_checkpoint(process_shutdown, "startup resource registration")?;
     }
-    let startup_scope = shutdown_coordinator.supervisor.register("startup", "uar-host").await?;
+    let startup_scope = shutdown_coordinator
+        .supervisor
+        .register("startup", "uar-host")
+        .await?;
     if let Some(process_shutdown) = process_shutdown.as_ref() {
         // If cancellation won the race with registration, retain the scope so
         // the owner closes it, but do not admit initialization work into it.
@@ -1487,6 +1517,9 @@ async fn run_server_with_listener(
         if let Ok(Some(v)) = mgr.get_typed::<bool>("memory.inject_context").await {
             effective_memory.inject_context = v;
         }
+        if let Ok(Some(v)) = mgr.get_typed::<Option<f32>>("memory.injection_min_similarity").await {
+            effective_memory.injection_min_similarity = v;
+        }
         if let Ok(Some(v)) = mgr.get_typed::<u32>("memory.max_context_tokens").await {
             effective_memory.max_context_tokens = v;
         }
@@ -2370,7 +2403,9 @@ async fn run_server_with_listener(
     #[cfg(not(feature = "a2a-transport"))]
     let a2a_routes: axum::Router<AppState> = Router::new();
 
-    let app = Router::new();
+    // Compile-time trusted hosts may compose routes, but their handlers receive
+    // the same identity/governance middleware as built-in ordinary API routes.
+    let app = host_routes.unwrap_or_default();
     #[cfg(feature = "api-docs")]
     let app = app.merge(utoipa_swagger_ui::SwaggerUi::new("/api/docs").url(
         "/api/openapi.json",
@@ -2951,8 +2986,16 @@ async fn run_server_with_listener(
     let app = app
         .layer(axum::middleware::from_fn(
             |req: Request, next: Next| async move {
-                let method = req.method().to_string();
-                let path = req.uri().path().to_string();
+                let method = match req.method().as_str() {
+                    "GET" | "HEAD" | "POST" | "PUT" | "PATCH" | "DELETE" | "OPTIONS"
+                    | "CONNECT" | "TRACE" => req.method().to_string(),
+                    _ => "OTHER".to_owned(),
+                };
+                let path = req
+                    .extensions()
+                    .get::<axum::extract::MatchedPath>()
+                    .map_or("unmatched", axum::extract::MatchedPath::as_str)
+                    .to_owned();
                 let timer = telemetry_metrics::request_timer();
                 let response = next.run(req).await;
                 let status = response.status().as_u16();
@@ -3233,8 +3276,16 @@ pub async fn start_server_sidecar(
     ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
 ) -> anyhow::Result<()> {
-    start_server_sidecar_with_control(config_manager, listener, launch_token,
-        bound_principal, ready, http_shutdown, ServerLifecycleControl::default()).await
+    start_server_sidecar_with_control(
+        config_manager,
+        listener,
+        launch_token,
+        bound_principal,
+        ready,
+        http_shutdown,
+        ServerLifecycleControl::default(),
+    )
+    .await
 }
 
 /// Start a sidecar with an inherited-pipe host management capability.
@@ -3247,9 +3298,20 @@ pub async fn start_server_sidecar_with_control(
     http_shutdown: Option<tokio_util::sync::CancellationToken>,
     control: ServerLifecycleControl,
 ) -> anyhow::Result<()> {
-    start_server_with_listener(config_manager, Some(listener), None, None, Some(ready),
-        http_shutdown.clone(), http_shutdown, true,
-        Some(launch_token.with_bound_principal(bound_principal)), Some(control)).await
+    start_server_with_listener(
+        config_manager,
+        Some(listener),
+        None,
+        None,
+        Some(ready),
+        http_shutdown.clone(),
+        http_shutdown,
+        true,
+        Some(launch_token.with_bound_principal(bound_principal)),
+        Some(control),
+        None,
+    )
+    .await
 }
 
 /// Start the server with caller-provided, already-bound HTTP and A2A gRPC listeners.
@@ -3285,6 +3347,7 @@ pub async fn start_server_with_listeners(
         true,
         None,
         None,
+        None,
     )
     .await
 }
@@ -3317,6 +3380,37 @@ pub async fn start_server_with_listeners_and_shutdowns(
         false,
         None,
         None,
+        None,
+    )
+    .await
+}
+
+/// Compose trusted-host routes under the ordinary server's production identity,
+/// governance and resource lifecycle. Callers own both bound listeners and must
+/// await shutdown. This does not install routes from network or configuration
+/// input, grant a verified identity, or provide the sidecar's launch-token guard.
+pub async fn start_server_with_host_routes(
+    config_manager: Arc<ConfigManager>,
+    listener: tokio::net::TcpListener,
+    a2a_grpc_listener: tokio::net::TcpListener,
+    mcp_config_path: Option<std::path::PathBuf>,
+    ready: tokio::sync::oneshot::Sender<std::net::SocketAddr>,
+    http_shutdown: Option<tokio_util::sync::CancellationToken>,
+    process_shutdown: Option<tokio_util::sync::CancellationToken>,
+    host_routes: Router<AppState>,
+) -> anyhow::Result<()> {
+    start_server_with_listener(
+        config_manager,
+        Some(listener),
+        Some(a2a_grpc_listener),
+        mcp_config_path,
+        Some(ready),
+        http_shutdown,
+        process_shutdown,
+        false,
+        None,
+        None,
+        Some(host_routes),
     )
     .await
 }
@@ -3382,7 +3476,9 @@ async fn serve_on_listener(
             let blocking_cleanup = async move {
                 if let Some(cleanup) = cleanup_for_shutdown {
                     if let Err(e) = tokio::task::spawn_blocking(move || cleanup()).await {
-                        blocking_cleanup_coordinator.record_cleanup_failure(&anyhow::anyhow!("blocking cleanup panicked: {e}"));
+                        blocking_cleanup_coordinator.record_cleanup_failure(&anyhow::anyhow!(
+                            "blocking cleanup panicked: {e}"
+                        ));
                     }
                 }
                 info!(name: "server.shutdown.pool_drained", "Ingestion pool shut down");
@@ -3427,9 +3523,10 @@ async fn serve_on_listener(
     // which uses it (never a header) for the trusted-local loopback owner.
     let primary = axum::serve(
         listener,
-        app.clone().into_make_service_with_connect_info::<std::net::SocketAddr>(),
+        app.clone()
+            .into_make_service_with_connect_info::<std::net::SocketAddr>(),
     )
-        .with_graceful_shutdown(shutdown_future(true));
+    .with_graceful_shutdown(shutdown_future(true));
 
     let serving_result: std::io::Result<()> = match companion {
         Some(companion_listener) => {
@@ -3444,15 +3541,15 @@ async fn serve_on_listener(
                 companion_listener,
                 app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
             )
-                .with_graceful_shutdown(shutdown_future(false));
+            .with_graceful_shutdown(shutdown_future(false));
             tokio::try_join!(primary, secondary).map(|_| ())
         }
-        None => {
-            primary.await
-        }
+        None => primary.await,
     };
     serving_ended.cancel();
-    shutdown_handler.await.map_err(|error| anyhow::anyhow!("shutdown owner failed: {error}"))?;
+    shutdown_handler
+        .await
+        .map_err(|error| anyhow::anyhow!("shutdown owner failed: {error}"))?;
     serving_result?;
 
     info!(name: "server.http_stopped", "HTTP listeners stopped");
@@ -3533,9 +3630,13 @@ async fn handle_tool_call_approval(
         }
     };
     let Some(approved) = body.get("approved").and_then(|value| value.as_bool()) else {
-        return (StatusCode::BAD_REQUEST, Json(serde_json::json!({
-            "error": "approval_decision_required", "message": "approved must be a boolean"
-        }))).into_response();
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "error": "approval_decision_required", "message": "approved must be a boolean"
+            })),
+        )
+            .into_response();
     };
     if state
         .run_manager
@@ -3972,12 +4073,15 @@ async fn api_models(State(state): State<AppState>) -> Response {
             });
             models.insert(model.id.clone(), projected);
         }
-        root.insert(provider.id.clone(), json!({
-            "display_name": provider.display_name,
-            "base_url": provider.base_url,
-            "configured": provider.enabled,
-            "models": models
-        }));
+        root.insert(
+            provider.id.clone(),
+            json!({
+                "display_name": provider.display_name,
+                "base_url": provider.base_url,
+                "configured": provider.enabled,
+                "models": models
+            }),
+        );
     }
 
     Json(Value::Object(root)).into_response()
@@ -4084,30 +4188,26 @@ async fn api_route_model(
 ) -> Response {
     use crate::llm::router::RouteRequirements;
 
-    let requirements = RouteRequirements {
-        needs_tools: req
-            .get("needs_tools")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false),
-        needs_reasoning: req
-            .get("needs_reasoning")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false),
-        needs_vision: req
-            .get("needs_vision")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false),
-        needs_structured_output: req
-            .get("needs_structured_output")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false),
-        min_context: req.get("min_context").and_then(|v| v.as_u64()),
-        max_cost_per_1m_input: req.get("max_cost_per_1m_input").and_then(|v| v.as_f64()),
-        preferred_provider: req
-            .get("preferred_provider")
-            .and_then(|v| v.as_str())
-            .map(String::from),
+    let requirements: RouteRequirements = match serde_json::from_value(req) {
+        Ok(requirements) => requirements,
+        Err(_) => {
+            return openai_error_response(
+                StatusCode::BAD_REQUEST,
+                "Routing requirements must use their declared boolean, integer, number and string types",
+                Some("invalid_route_requirements"),
+            );
+        }
     };
+    if requirements
+        .max_cost_per_1m_input
+        .is_some_and(|cost| !cost.is_finite() || cost < 0.0)
+    {
+        return openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Routing cost ceiling must be a finite nonnegative number",
+            Some("invalid_route_requirements"),
+        );
+    }
 
     match state.model_router.route(&requirements).await {
         Some(model) => Json(json!({ "model": model })).into_response(),
@@ -4131,7 +4231,11 @@ pub(crate) async fn api_v1_models(
 ) -> Response {
     match uar::api::targets::catalog(&state, &user, &headers).await {
         Ok(models) => Json(json!({"object":"list","data":models})).into_response(),
-        Err(message) => openai_error_response(StatusCode::SERVICE_UNAVAILABLE,&message,Some("target_catalog_unavailable")),
+        Err(message) => openai_error_response(
+            StatusCode::SERVICE_UNAVAILABLE,
+            &message,
+            Some("target_catalog_unavailable"),
+        ),
     }
 }
 
@@ -4142,11 +4246,22 @@ async fn api_v1_model_detail(
     axum::extract::Path(model_id): axum::extract::Path<String>,
 ) -> Response {
     match uar::api::targets::catalog(&state, &user, &headers).await {
-        Ok(models) => match models.into_iter().find(|row|row["id"].as_str()==Some(model_id.as_str())) {
+        Ok(models) => match models
+            .into_iter()
+            .find(|row| row["id"].as_str() == Some(model_id.as_str()))
+        {
             Some(model) => Json(model).into_response(),
-            None => openai_error_response(StatusCode::NOT_FOUND,"Target is not installed or verified for this caller and workspace",Some("model_not_found")),
+            None => openai_error_response(
+                StatusCode::NOT_FOUND,
+                "Target is not installed or verified for this caller and workspace",
+                Some("model_not_found"),
+            ),
         },
-        Err(message) => openai_error_response(StatusCode::SERVICE_UNAVAILABLE,&message,Some("target_catalog_unavailable")),
+        Err(message) => openai_error_response(
+            StatusCode::SERVICE_UNAVAILABLE,
+            &message,
+            Some("target_catalog_unavailable"),
+        ),
     }
 }
 
@@ -4157,7 +4272,17 @@ async fn api_v1_model_detail(
 /// GET /metrics — Prometheus text exposition format.
 #[cfg(feature = "telemetry")]
 pub(crate) async fn api_metrics() -> Response {
-    let handle = crate::uar::telemetry::metrics::metrics_handle();
+    let Some(handle) = crate::uar::telemetry::metrics::scrape_handle() else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({
+                "code": "telemetry_scrape_unavailable",
+                "metrics_status": crate::uar::telemetry::metrics::status().as_str(),
+                "message": "UAR does not own an available metrics export; use the host exporter when host-owned"
+            })),
+        )
+            .into_response();
+    };
     let output = handle.render();
     (
         StatusCode::OK,
@@ -4406,19 +4531,45 @@ struct AnthropicMessagesRequest {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 enum AnthropicToolChoiceInput {
-    Auto { #[serde(default)] disable_parallel_tool_use: Option<bool> },
+    Auto {
+        #[serde(default)]
+        disable_parallel_tool_use: Option<bool>,
+    },
     None,
-    Any { #[serde(default)] disable_parallel_tool_use: Option<bool> },
-    Tool { name: String, #[serde(default)] disable_parallel_tool_use: Option<bool> },
+    Any {
+        #[serde(default)]
+        disable_parallel_tool_use: Option<bool>,
+    },
+    Tool {
+        name: String,
+        #[serde(default)]
+        disable_parallel_tool_use: Option<bool>,
+    },
 }
 
 impl AnthropicToolChoiceInput {
     fn normalize(&self) -> (crate::llm::ToolChoice, Option<bool>) {
         match self {
-            Self::Auto { disable_parallel_tool_use } => (crate::llm::ToolChoice::Auto, disable_parallel_tool_use.map(|disabled| !disabled)),
+            Self::Auto {
+                disable_parallel_tool_use,
+            } => (
+                crate::llm::ToolChoice::Auto,
+                disable_parallel_tool_use.map(|disabled| !disabled),
+            ),
             Self::None => (crate::llm::ToolChoice::None, None),
-            Self::Any { disable_parallel_tool_use } => (crate::llm::ToolChoice::Required, disable_parallel_tool_use.map(|disabled| !disabled)),
-            Self::Tool { name, disable_parallel_tool_use } => (crate::llm::ToolChoice::Named(name.clone()), disable_parallel_tool_use.map(|disabled| !disabled)),
+            Self::Any {
+                disable_parallel_tool_use,
+            } => (
+                crate::llm::ToolChoice::Required,
+                disable_parallel_tool_use.map(|disabled| !disabled),
+            ),
+            Self::Tool {
+                name,
+                disable_parallel_tool_use,
+            } => (
+                crate::llm::ToolChoice::Named(name.clone()),
+                disable_parallel_tool_use.map(|disabled| !disabled),
+            ),
         }
     }
 }
@@ -4516,8 +4667,63 @@ fn extract_anthropic_user_text(msg: &AnthropicMessageInput) -> Option<String> {
 struct AnthropicUsage {
     input_tokens: u32,
     output_tokens: u32,
-    cache_creation_input_tokens: u32,
-    cache_read_input_tokens: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cache_creation_input_tokens: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cache_read_input_tokens: Option<u32>,
+    #[serde(skip)]
+    input_tokens_available: bool,
+    #[serde(skip)]
+    output_tokens_available: bool,
+}
+
+impl AnthropicUsage {
+    fn from_reported(
+        input: Option<u32>,
+        output: Option<u32>,
+        read: Option<u32>,
+        creation: Option<u32>,
+        uncached_input: Option<u32>,
+    ) -> Self {
+        // An absent aggregate cache counter is not measured zero. Native
+        // providers can independently prove uncached input; otherwise only a
+        // complete checked split (or a measured total of zero) can derive it.
+        let known_cache = read.unwrap_or(0).checked_add(creation.unwrap_or(0));
+        let complete_cache = read.zip(creation).and_then(|(read, creation)| read.checked_add(creation));
+        let evidence_valid = match (input, uncached_input, known_cache, complete_cache) {
+            (Some(total), Some(uncached), _, Some(cache)) => uncached.checked_add(cache) == Some(total),
+            (Some(total), Some(uncached), Some(known), None) => {
+                uncached.checked_add(known).is_some_and(|count| count <= total)
+            }
+            _ => true,
+        };
+        let breakdown_valid = known_cache.is_some()
+            && input.zip(known_cache).is_none_or(|(total, known)| known <= total)
+            && evidence_valid;
+        let uncached = if breakdown_valid {
+            uncached_input
+                .or_else(|| input.zip(complete_cache).and_then(|(input, cache)| input.checked_sub(cache)))
+                .or_else(|| (input == Some(0)).then_some(0))
+        } else {
+            None
+        };
+        Self {
+            input_tokens: uncached.unwrap_or(0),
+            output_tokens: output.unwrap_or(0),
+            input_tokens_available: uncached.is_some(),
+            output_tokens_available: output.is_some(),
+            cache_read_input_tokens: if breakdown_valid { read } else { None },
+            cache_creation_input_tokens: if breakdown_valid { creation } else { None },
+        }
+    }
+
+    fn availability(&self) -> Value {
+        let counter = |available| {
+            json!({"available":available,
+            "source":if available { "provider_reported" } else { "unavailable" }})
+        };
+        json!({"input_tokens":counter(self.input_tokens_available), "output_tokens":counter(self.output_tokens_available)})
+    }
 }
 
 fn provider_anthropic_usage(
@@ -4525,23 +4731,22 @@ fn provider_anthropic_usage(
     completion_tokens: u32,
     cached_tokens: Option<u32>,
     cache_creation_tokens: Option<u32>,
+    uncached_input_tokens: Option<u32>,
 ) -> AnthropicUsage {
-    AnthropicUsage {
-        input_tokens: prompt_tokens,
-        output_tokens: completion_tokens,
-        cache_creation_input_tokens: cache_creation_tokens.unwrap_or(0),
-        cache_read_input_tokens: cached_tokens.unwrap_or(0),
-    }
+    AnthropicUsage::from_reported(
+        Some(prompt_tokens),
+        Some(completion_tokens),
+        cached_tokens,
+        cache_creation_tokens,
+        uncached_input_tokens,
+    )
 }
 
 fn finalized_anthropic_usage(
     provider_usage: Option<AnthropicUsage>,
-    estimated_output_tokens: u32,
+    _estimated_output_tokens: u32,
 ) -> AnthropicUsage {
-    provider_usage.unwrap_or_else(|| AnthropicUsage {
-        output_tokens: estimated_output_tokens,
-        ..AnthropicUsage::default()
-    })
+    provider_usage.unwrap_or_default()
 }
 
 #[derive(Debug, Clone)]
@@ -4581,12 +4786,19 @@ async fn owner_sessions_snapshot(
     State(state): State<AppState>,
     axum::Extension(user): axum::Extension<UserContext>,
 ) -> Response {
-    let Ok(owner) = user.session_owner_key() else { return StatusCode::UNAUTHORIZED.into_response(); };
-    let Some(store) = state.persistence.as_ref() else { return StatusCode::SERVICE_UNAVAILABLE.into_response(); };
+    let Ok(owner) = user.session_owner_key() else {
+        return StatusCode::UNAUTHORIZED.into_response();
+    };
+    let Some(store) = state.persistence.as_ref() else {
+        return StatusCode::SERVICE_UNAVAILABLE.into_response();
+    };
     match store.list_sessions(&owner).await {
         Ok(sessions) => Json(sessions).into_response(),
-        Err(_) => (StatusCode::SERVICE_UNAVAILABLE,
-            Json(json!({"error": "owner_session_snapshot_unavailable"}))).into_response(),
+        Err(_) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "owner_session_snapshot_unavailable"})),
+        )
+            .into_response(),
     }
 }
 
@@ -4595,7 +4807,11 @@ async fn persistence_info_handler(State(state): State<AppState>) -> impl IntoRes
     let config = &state.config.persistence;
     use uar::persistence::providers::surreal::SurrealEndpoint;
     let endpoint = SurrealEndpoint::parse(&config.database_url);
-    let mode = if endpoint.is_remote() { "remote" } else { "embedded" };
+    let mode = if endpoint.is_remote() {
+        "remote"
+    } else {
+        "embedded"
+    };
     let mut label = endpoint.connection_string();
     if endpoint.is_remote() {
         if let Ok(mut url) = url::Url::parse(&label) {
@@ -4617,7 +4833,9 @@ async fn sync_stream_handler(
     State(state): State<AppState>,
     axum::Extension(user): axum::Extension<UserContext>,
 ) -> Response {
-    if user.session_owner_key().is_err() { return StatusCode::UNAUTHORIZED.into_response(); }
+    if user.session_owner_key().is_err() {
+        return StatusCode::UNAUTHORIZED.into_response();
+    }
     use uar::persistence::providers::surreal::SurrealEndpoint;
     if SurrealEndpoint::parse(&state.config.persistence.database_url).is_remote() {
         return StatusCode::NOT_FOUND.into_response();
@@ -4625,9 +4843,13 @@ async fn sync_stream_handler(
     let Some(bus) = state.live_bus.as_ref() else {
         return StatusCode::SERVICE_UNAVAILABLE.into_response();
     };
-    let mut streams: Vec<Pin<Box<dyn futures::Stream<Item = Result<Event, std::convert::Infallible>> + Send>>> = Vec::new();
+    let mut streams: Vec<
+        Pin<Box<dyn futures::Stream<Item = Result<Event, std::convert::Infallible>> + Send>>,
+    > = Vec::new();
     for &topic in uar::realtime::EntityTopic::ALL {
-        if !topic.is_public() { continue; }
+        if !topic.is_public() {
+            continue;
+        }
         if let Some(receiver) = bus.subscribe(topic) {
             let initial = bus.topic_state(topic);
             let stream = async_stream::stream! {
@@ -4659,7 +4881,8 @@ async fn sync_stream_handler(
         }
     }
     Sse::new(futures::stream::select_all(streams))
-        .keep_alive(KeepAlive::default()).into_response()
+        .keep_alive(KeepAlive::default())
+        .into_response()
 }
 
 fn anthropic_sse_event(name: &str, payload: Value) -> Event {
@@ -4768,6 +4991,158 @@ fn anthropic_image_to_openai_part(block: &AnthropicContentBlockInput) -> Option<
             "detail": "auto"
         }
     }))
+}
+
+/// Admit actual image bytes before the lossy compatibility converter can run.
+/// Unsupported blocks and image-bearing tool results must never become a
+/// successful text-only request or descriptive JSON in place of an image.
+async fn validate_anthropic_content(req: &AnthropicMessagesRequest) -> Result<(), Response> {
+    use crate::llm::inline_image::{
+        MAX_INLINE_IMAGE_BYTES, MAX_INLINE_IMAGES, validate_inline_image,
+    };
+    let invalid = || {
+        anthropic_error_response(
+            StatusCode::BAD_REQUEST,
+            "Unsupported or malformed Messages content block",
+        )
+    };
+    if let Some(AnthropicSystemInput::Blocks(blocks)) = &req.system {
+        if blocks.iter().any(|block| {
+            block.block_type != "text"
+                || block.text.is_none()
+                || !block._extra.is_empty()
+                || block.source.is_some()
+                || block.content.is_some()
+                || block.input.is_some()
+        }) {
+            return Err(invalid());
+        }
+    }
+    let mut images = Vec::new();
+    let mut encoded_bytes = 0usize;
+    for message in &req.messages {
+        if !message._extra.is_empty()
+            || !matches!(message.role.as_str(), "user" | "assistant" | "system")
+        {
+            return Err(invalid());
+        }
+        let AnthropicContentInput::Blocks(blocks) = &message.content else {
+            continue;
+        };
+        for block in blocks {
+            if !block._extra.is_empty() {
+                return Err(invalid());
+            }
+            match block.block_type.as_str() {
+                "text"
+                    if block.text.is_some()
+                        && block.source.is_none()
+                        && block.id.is_none()
+                        && block.name.is_none()
+                        && block.input.is_none()
+                        && block.content.is_none()
+                        && block.tool_use_id.is_none() => {}
+                "tool_use"
+                    if message.role == "assistant"
+                        && block.source.is_none()
+                        && block.text.is_none()
+                        && block.content.is_none()
+                        && block.tool_use_id.is_none() => {}
+                "tool_result"
+                    if message.role == "user"
+                        && block.source.is_none()
+                        && block.text.is_none()
+                        && block.id.is_none()
+                        && block.name.is_none()
+                        && block.input.is_none() =>
+                {
+                    if block
+                        .content
+                        .as_ref()
+                        .and_then(|content| content.get("type"))
+                        .and_then(Value::as_str)
+                        .is_some_and(|kind| matches!(kind, "image" | "image_url" | "document"))
+                    {
+                        return Err(invalid());
+                    }
+                    if block
+                        .content
+                        .as_ref()
+                        .and_then(Value::as_array)
+                        .is_some_and(|parts| {
+                            parts.iter().any(|part| {
+                                !part.is_string()
+                                    && (part.get("type").and_then(Value::as_str) != Some("text")
+                                        || part.get("text").and_then(Value::as_str).is_none()
+                                        || part.as_object().is_some_and(|object| {
+                                            object
+                                                .keys()
+                                                .any(|key| !matches!(key.as_str(), "type" | "text"))
+                                        }))
+                            })
+                        })
+                    {
+                        return Err(invalid());
+                    }
+                }
+                "image"
+                    if message.role == "user"
+                        && block.text.is_none()
+                        && block.id.is_none()
+                        && block.name.is_none()
+                        && block.input.is_none()
+                        && block.content.is_none()
+                        && block.tool_use_id.is_none() =>
+                {
+                    let source = block
+                        .source
+                        .as_ref()
+                        .and_then(Value::as_object)
+                        .ok_or_else(&invalid)?;
+                    if source.len() != 3
+                        || source.get("type").and_then(Value::as_str) != Some("base64")
+                        || source
+                            .keys()
+                            .any(|key| !matches!(key.as_str(), "type" | "media_type" | "data"))
+                    {
+                        return Err(invalid());
+                    }
+                    let media = source
+                        .get("media_type")
+                        .and_then(Value::as_str)
+                        .ok_or_else(&invalid)?;
+                    let data = source
+                        .get("data")
+                        .and_then(Value::as_str)
+                        .ok_or_else(&invalid)?;
+                    let url = format!("data:{media};base64,{data}");
+                    encoded_bytes = encoded_bytes.checked_add(url.len()).ok_or_else(&invalid)?;
+                    if images.len() >= MAX_INLINE_IMAGES || encoded_bytes > MAX_INLINE_IMAGE_BYTES {
+                        return Err(invalid());
+                    }
+                    images.push(crate::llm::ImageUrl {
+                        url,
+                        detail: Some("auto".into()),
+                    });
+                }
+                _ => return Err(invalid()),
+            }
+        }
+    }
+    for image in images {
+        validate_inline_image(&image).await.map_err(|error| {
+            let status = if matches!(
+                error.code,
+                "image_decoder_busy" | "image_decoder_unavailable"
+            ) {
+                StatusCode::SERVICE_UNAVAILABLE
+            } else {
+                StatusCode::BAD_REQUEST
+            };
+            anthropic_error_response(status, error.message)
+        })?;
+    }
+    Ok(())
 }
 
 fn flush_user_parts(messages: &mut Vec<Value>, parts: &mut Vec<Value>) {
@@ -4948,25 +5323,27 @@ async fn resolve_anthropic_model(
     requested_model: &str,
 ) -> Result<ResolvedModel, Response> {
     let requested_model = requested_model.trim();
-    let (provider_id, mut model_id) = if let Some((provider, model)) = requested_model.split_once('/') {
-        if provider.trim().is_empty() || model.trim().is_empty()
-            || state.provider_registry.get(provider.trim()).await.is_none()
-        {
-            return Err(anthropic_error_response(
-                StatusCode::UNPROCESSABLE_ENTITY,
-                "Select a configured provider and explicit model",
-            ));
-        }
-        (provider.trim().to_owned(), model.trim().to_owned())
-    } else {
-        let provider = state.provider_registry.default_id().await.ok_or_else(|| {
-            anthropic_error_response(
-                StatusCode::UNPROCESSABLE_ENTITY,
-                "Select a default provider and model in settings",
-            )
-        })?;
-        (provider, requested_model.to_owned())
-    };
+    let (provider_id, mut model_id) =
+        if let Some((provider, model)) = requested_model.split_once('/') {
+            if provider.trim().is_empty()
+                || model.trim().is_empty()
+                || state.provider_registry.get(provider.trim()).await.is_none()
+            {
+                return Err(anthropic_error_response(
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    "Select a configured provider and explicit model",
+                ));
+            }
+            (provider.trim().to_owned(), model.trim().to_owned())
+        } else {
+            let provider = state.provider_registry.default_id().await.ok_or_else(|| {
+                anthropic_error_response(
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    "Select a default provider and model in settings",
+                )
+            })?;
+            (provider, requested_model.to_owned())
+        };
 
     if model_id.is_empty()
         && let Some(provider) = state.provider_registry.get(&provider_id).await
@@ -4998,24 +5375,52 @@ async fn authorized_http_model(
     model: &str,
     session_id: Option<&str>,
 ) -> Result<crate::config::LlmConfig, (StatusCode, &'static str)> {
-    let config = state.provider_registry.resolve_to_llm_config(provider, model).await
-        .ok_or((StatusCode::UNPROCESSABLE_ENTITY, "provider_configuration_unavailable"))?;
-    let principal = user.map(uar::security::claims::CredentialPrincipal::from_verified_context)
-        .transpose().map_err(|_| (StatusCode::FORBIDDEN, "credential_identity_required"))?;
-    let decision = state.credential_policy.resolve_source(
-        state.provider_service.as_deref(), principal.as_ref(), provider,
-        config.base_url.as_deref().unwrap_or("configured-provider"), session_id, None,
-        config.api_key.as_deref(),
-    ).await.map_err(|error| {
-        use uar::security::credentials::CredentialPolicyError;
-        match error.downcast_ref::<CredentialPolicyError>() {
-            Some(CredentialPolicyError::IdentityRequired) => (StatusCode::FORBIDDEN, "credential_identity_required"),
-            Some(CredentialPolicyError::InstallationIdRequired) => (StatusCode::SERVICE_UNAVAILABLE, "credential_installation_id_required"),
-            Some(CredentialPolicyError::MigrationRequired) => (StatusCode::CONFLICT, "credential_migration_required"),
-            Some(CredentialPolicyError::SourceDenied) => (StatusCode::FORBIDDEN, "credential_source_denied"),
-            None => (StatusCode::SERVICE_UNAVAILABLE, "credential_source_unavailable"),
-        }
-    })?;
+    let config = state
+        .provider_registry
+        .resolve_to_llm_config(provider, model)
+        .await
+        .ok_or((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "provider_configuration_unavailable",
+        ))?;
+    let principal = user
+        .map(uar::security::claims::CredentialPrincipal::from_verified_context)
+        .transpose()
+        .map_err(|_| (StatusCode::FORBIDDEN, "credential_identity_required"))?;
+    let decision = state
+        .credential_policy
+        .resolve_source(
+            state.provider_service.as_deref(),
+            principal.as_ref(),
+            provider,
+            config.base_url.as_deref().unwrap_or("configured-provider"),
+            session_id,
+            None,
+            config.api_key.as_deref(),
+        )
+        .await
+        .map_err(|error| {
+            use uar::security::credentials::CredentialPolicyError;
+            match error.downcast_ref::<CredentialPolicyError>() {
+                Some(CredentialPolicyError::IdentityRequired) => {
+                    (StatusCode::FORBIDDEN, "credential_identity_required")
+                }
+                Some(CredentialPolicyError::InstallationIdRequired) => (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    "credential_installation_id_required",
+                ),
+                Some(CredentialPolicyError::MigrationRequired) => {
+                    (StatusCode::CONFLICT, "credential_migration_required")
+                }
+                Some(CredentialPolicyError::SourceDenied) => {
+                    (StatusCode::FORBIDDEN, "credential_source_denied")
+                }
+                None => (
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    "credential_source_unavailable",
+                ),
+            }
+        })?;
     uar::runtime::turn::bindings::apply_credential_decision(config, &decision)
         .map_err(|_| (StatusCode::FORBIDDEN, "credential_source_denied"))
 }
@@ -5037,43 +5442,100 @@ async fn api_bound_anthropic_messages(
     caching_enabled: bool,
 ) -> Response {
     let Some(user) = user else {
-        return anthropic_error_response(StatusCode::UNAUTHORIZED, "Authenticated owner required for bound-agent Messages");
+        return anthropic_error_response(
+            StatusCode::UNAUTHORIZED,
+            "Authenticated owner required for bound-agent Messages",
+        );
     };
     let owner = match user.session_owner_key() {
         Ok(owner) => owner,
-        Err(_) => return anthropic_error_response(StatusCode::FORBIDDEN, "Invalid Messages principal"),
+        Err(_) => {
+            return anthropic_error_response(StatusCode::FORBIDDEN, "Invalid Messages principal");
+        }
     };
-    let Some(store) = state.persistence.as_ref().cloned().filter(|store| store.supports_durable_client_tools()) else {
-        return anthropic_error_response(StatusCode::SERVICE_UNAVAILABLE, "Durable caller-tool persistence is unavailable");
+    let Some(store) = state
+        .persistence
+        .as_ref()
+        .cloned()
+        .filter(|store| store.supports_durable_client_tools())
+    else {
+        return anthropic_error_response(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Durable caller-tool persistence is unavailable",
+        );
     };
     let input = crate::uar::runtime::turn::client_tools::ClientToolInput {
-        tools: convert_anthropic_tools_to_openai(&req.tools), tool_choice, parallel_tool_calls,
-        history, visible_history: None, graph_state: None, output_token_cap: req.max_tokens,
-        budget_snapshot: None, delegation: None, protocol: "anthropic".to_owned(),
+        tools: convert_anthropic_tools_to_openai(&req.tools),
+        tool_choice,
+        parallel_tool_calls,
+        history,
+        visible_history: None,
+        graph_state: None,
+        output_token_cap: req.max_tokens,
+        budget_snapshot: None,
+        delegation: None,
+        protocol: "anthropic".to_owned(),
     };
     if let Err(error) = input.validate() {
         return anthropic_error_response(StatusCode::BAD_REQUEST, &error.to_string());
     }
-    if let Some(call_id) = input.history.last()
+    if let Some(call_id) = input
+        .history
+        .last()
         .filter(|message| message.get("role").and_then(Value::as_str) == Some("tool"))
-        .and_then(|message| message.get("tool_call_id")).and_then(Value::as_str)
+        .and_then(|message| message.get("tool_call_id"))
+        .and_then(Value::as_str)
     {
-        match crate::uar::api::client_tools::load_by_call_id(store.as_ref(), &owner,
-            user.tenant_id.as_ref().map(|tenant| tenant.as_str()), &artifact.id, call_id).await {
-            Ok(Some(row)) if row.protocol == "anthropic"
-                && req.session_id.as_ref().is_none_or(|session| row.session_id.as_ref() == Some(session)) => {}
-            Ok(_) => return anthropic_error_response(StatusCode::CONFLICT, "Caller-tool session binding mismatch"),
-            Err(error) => return anthropic_error_response(StatusCode::BAD_REQUEST, &error.to_string()),
+        match crate::uar::api::client_tools::load_by_call_id(
+            store.as_ref(),
+            &owner,
+            user.tenant_id.as_ref().map(|tenant| tenant.as_str()),
+            &artifact.id,
+            call_id,
+        )
+        .await
+        {
+            Ok(Some(row))
+                if row.protocol == "anthropic"
+                    && req
+                        .session_id
+                        .as_ref()
+                        .is_none_or(|session| row.session_id.as_ref() == Some(session)) => {}
+            Ok(_) => {
+                return anthropic_error_response(
+                    StatusCode::CONFLICT,
+                    "Caller-tool session binding mismatch",
+                );
+            }
+            Err(error) => {
+                return anthropic_error_response(StatusCode::BAD_REQUEST, &error.to_string());
+            }
         }
     }
-    let (input, claim) = match crate::uar::api::client_tools::prepare(state.run_manager.as_ref(), store.as_ref(), &owner,
-        user.tenant_id.as_ref().map(|tenant| tenant.as_str()), &artifact.id, &input).await {
+    let (input, claim) = match crate::uar::api::client_tools::prepare(
+        state.run_manager.as_ref(),
+        store.as_ref(),
+        &owner,
+        user.tenant_id.as_ref().map(|tenant| tenant.as_str()),
+        &artifact.id,
+        &input,
+    )
+    .await
+    {
         Ok(crate::uar::api::client_tools::ClientToolPreparation::Fresh(input)) => (input, None),
-        Ok(crate::uar::api::client_tools::ClientToolPreparation::Continue { input, claim }) => (input, Some(claim)),
+        Ok(crate::uar::api::client_tools::ClientToolPreparation::Continue { input, claim }) => {
+            (input, Some(claim))
+        }
         Ok(crate::uar::api::client_tools::ClientToolPreparation::Replay { response, events }) => {
-            if !req.stream { return Json(response).into_response(); }
+            if !req.stream {
+                return Json(response).into_response();
+            }
             let replay = futures::stream::iter(events.into_iter().map(|event| {
-                let name = event.get("event").and_then(Value::as_str).unwrap_or("error").to_owned();
+                let name = event
+                    .get("event")
+                    .and_then(Value::as_str)
+                    .unwrap_or("error")
+                    .to_owned();
                 let payload = event.get("data").cloned().unwrap_or(Value::Null);
                 Ok::<Event, std::convert::Infallible>(anthropic_sse_event(&name, payload))
             }));
@@ -5082,32 +5544,48 @@ async fn api_bound_anthropic_messages(
         Err(error) => return anthropic_error_response(StatusCode::BAD_REQUEST, &error.to_string()),
     };
     let caller_agent_id = artifact.id.clone();
-    let mut request = match crate::uar::runtime::turn::RunExecutionRequest::new(artifact, String::new()).with_user_context(&user) {
-        Ok(request) => request,
-        Err(error) => return anthropic_error_response(StatusCode::FORBIDDEN, &error.to_string()),
-    };
-    request.session_id = claim.as_ref().map_or(req.session_id, |claim| claim.session_id.clone());
+    let mut request =
+        match crate::uar::runtime::turn::RunExecutionRequest::new(artifact, String::new())
+            .with_user_context(&user)
+        {
+            Ok(request) => request,
+            Err(error) => {
+                return anthropic_error_response(StatusCode::FORBIDDEN, &error.to_string());
+            }
+        };
+    request.session_id = claim
+        .as_ref()
+        .map_or(req.session_id, |claim| claim.session_id.clone());
     request.client_tools = Some(input);
     request.output_token_cap = req.max_tokens;
     request.host_policy_constraint = Some(crate::uar::domain::policy::RunPolicy {
         model: Some(crate::uar::domain::policy::ModelRoute {
-            provider_id: model.provider_id.clone(), model_id: model.model_id.clone(),
+            provider_id: model.provider_id.clone(),
+            model_id: model.model_id.clone(),
         }),
         prompt_caching_enabled: Some(caching_enabled),
         ..Default::default()
     });
-    let (run_id, startup, mut receiver) = match state.run_manager.execute_request_observed(request).await {
-        Ok(observed) => observed,
-        Err(error) => return anthropic_error_response(StatusCode::BAD_GATEWAY, &error.to_string()),
+    let (run_id, startup, mut receiver) =
+        match state.run_manager.execute_request_observed(request).await {
+            Ok(observed) => observed,
+            Err(error) => {
+                return anthropic_error_response(StatusCode::BAD_GATEWAY, &error.to_string());
+            }
+        };
+    let response_model = if req.model.is_empty() {
+        model.model_id
+    } else {
+        req.model
     };
-    let response_model = if req.model.is_empty() { model.model_id } else { req.model };
     let projection = async_stream::stream! {
         use crate::uar::domain::events::NormalizedEvent as RunEvent;
         let message_id = format!("msg_{}", Uuid::new_v4().simple());
         let mut recorded = Vec::<Value>::new();
         let start = json!({"type":"message_start","message":{
             "id":message_id,"type":"message","role":"assistant","model":response_model,
-            "content":[],"stop_reason":null,"stop_sequence":null,"usage":AnthropicUsage::default()
+            "content":[],"stop_reason":null,"stop_sequence":null,"usage":AnthropicUsage::default(),
+            "uar_usage":AnthropicUsage::default().availability()
         }});
         recorded.push(json!({"event":"message_start","data":start}));
         yield Ok::<_, anyhow::Error>(BoundAnthropicProjection::Wire("message_start", start));
@@ -5158,9 +5636,8 @@ async fn api_bound_anthropic_messages(
                 }
                 RunEvent::Error { code, message, .. } => failed = Some(format!("{code}: {message}")),
                 RunEvent::Cancelled { .. } => { failed = Some("Run cancelled".to_owned()); terminal = true; }
-                RunEvent::RunDoneWithUsage { input_tokens, output_tokens, .. } => {
-                    usage.input_tokens = input_tokens.unwrap_or(0);
-                    usage.output_tokens = output_tokens.unwrap_or(0);
+                RunEvent::RunDoneWithUsage { input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens, uncached_input_tokens, .. } => {
+                    usage = AnthropicUsage::from_reported(input_tokens, output_tokens, cache_read_input_tokens, cache_creation_input_tokens, uncached_input_tokens);
                     terminal = true;
                 }
                 RunEvent::RunDone { .. } => terminal = true,
@@ -5212,8 +5689,8 @@ async fn api_bound_anthropic_messages(
             if !text.is_empty() { content.push(json!({"type":"text","text":text})); }
             content.extend(tool_blocks);
             let response = json!({"id":message_id,"type":"message","role":"assistant","model":response_model,
-                "content":content,"stop_reason":stop,"stop_sequence":null,"usage":usage});
-            let delta = json!({"type":"message_delta","delta":{"stop_reason":stop,"stop_sequence":null},"usage":usage});
+                "content":content,"stop_reason":stop,"stop_sequence":null,"usage":usage,"uar_usage":usage.availability()});
+            let delta = json!({"type":"message_delta","delta":{"stop_reason":stop,"stop_sequence":null},"usage":usage,"uar_usage":usage.availability()});
             let end = json!({"type":"message_stop"});
             recorded.push(json!({"event":"message_delta","data":delta}));
             recorded.push(json!({"event":"message_stop","data":end}));
@@ -5248,12 +5725,19 @@ async fn api_bound_anthropic_messages(
         futures::pin_mut!(projection);
         while let Some(item) = projection.next().await {
             match item {
-                Ok(BoundAnthropicProjection::Complete(response)) => return Json(response).into_response(),
+                Ok(BoundAnthropicProjection::Complete(response)) => {
+                    return Json(response).into_response();
+                }
                 Ok(_) => {}
-                Err(error) => return anthropic_error_response(StatusCode::BAD_GATEWAY, &error.to_string()),
+                Err(error) => {
+                    return anthropic_error_response(StatusCode::BAD_GATEWAY, &error.to_string());
+                }
             }
         }
-        anthropic_error_response(StatusCode::BAD_GATEWAY, "Messages run ended without a response")
+        anthropic_error_response(
+            StatusCode::BAD_GATEWAY,
+            "Messages run ended without a response",
+        )
     }
 }
 
@@ -5271,6 +5755,9 @@ async fn api_messages(
             StatusCode::BAD_REQUEST,
             "messages must contain at least one message",
         );
+    }
+    if let Err(response) = validate_anthropic_content(&req).await {
+        return response;
     }
 
     // Input guardrails: screen the last user message for injection/PII before
@@ -5298,9 +5785,7 @@ async fn api_messages(
             };
             if should_block {
                 let code = match finding.category {
-                    uar::guardrails::GuardrailCategory::Injection => {
-                        "guardrail_injection_blocked"
-                    }
+                    uar::guardrails::GuardrailCategory::Injection => "guardrail_injection_blocked",
                     uar::guardrails::GuardrailCategory::Pii => "guardrail_pii_blocked",
                 };
                 return anthropic_error_response(StatusCode::BAD_REQUEST, code);
@@ -5314,9 +5799,14 @@ async fn api_messages(
     };
 
     let resolved_llm_config = match authorized_http_model(
-        &state, user_ctx.as_ref().map(|user| &user.0), &resolved_model.provider_id,
-        &resolved_model.model_id, req.session_id.as_deref(),
-    ).await {
+        &state,
+        user_ctx.as_ref().map(|user| &user.0),
+        &resolved_model.provider_id,
+        &resolved_model.model_id,
+        req.session_id.as_deref(),
+    )
+    .await
+    {
         Ok(config) => config,
         Err((status, code)) => return anthropic_error_response(status, code),
     };
@@ -5381,11 +5871,15 @@ async fn api_messages(
 
     // Registered-agent binding: the explicit request `agent_id` wins; else the
     // persisted conversation policy's `agent_id`; else the default agent.
-    let agent_selector = req.agent_id.as_deref().or_else(|| {
-        conversation_policy
-            .as_ref()
-            .and_then(|policy| policy.agent_id.as_deref())
-    }).or(Some("default-agent"));
+    let agent_selector = req
+        .agent_id
+        .as_deref()
+        .or_else(|| {
+            conversation_policy
+                .as_ref()
+                .and_then(|policy| policy.agent_id.as_deref())
+        })
+        .or(Some("default-agent"));
     let bound_agent = match agent_selector {
         // Bound targets need the full resolve_bound/admit_bound path with the
         // workspace header (see the chat-completions glue); reject instead of
@@ -5405,23 +5899,48 @@ async fn api_messages(
         None => None,
     };
 
-    let controls = req.tool_choice.as_ref().map(AnthropicToolChoiceInput::normalize);
+    let controls = req
+        .tool_choice
+        .as_ref()
+        .map(AnthropicToolChoiceInput::normalize);
     let parallel = controls.as_ref().and_then(|(_, parallel)| *parallel);
-    if parallel.is_some() && req.parallel_tool_calls.is_some() && parallel != req.parallel_tool_calls {
-        return anthropic_error_response(StatusCode::BAD_REQUEST, "Conflicting parallel tool controls");
+    if parallel.is_some()
+        && req.parallel_tool_calls.is_some()
+        && parallel != req.parallel_tool_calls
+    {
+        return anthropic_error_response(
+            StatusCode::BAD_REQUEST,
+            "Conflicting parallel tool controls",
+        );
     }
     if req.tools.iter().any(|tool| !tool._extra.is_empty()) {
-        return anthropic_error_response(StatusCode::BAD_REQUEST, "Unsupported Anthropic tool definition fields");
+        return anthropic_error_response(
+            StatusCode::BAD_REQUEST,
+            "Unsupported Anthropic tool definition fields",
+        );
     }
     let tool_choice = controls.map(|(choice, _)| choice);
     let parallel_tool_calls = parallel.or(req.parallel_tool_calls);
     let openai_messages = convert_anthropic_messages_to_openai(&req);
     if let Some(agent) = bound_agent.clone() {
         if !req._extra.is_empty() {
-            return anthropic_error_response(StatusCode::BAD_REQUEST, "Unsupported request fields for bound-agent Messages execution");
+            return anthropic_error_response(
+                StatusCode::BAD_REQUEST,
+                "Unsupported request fields for bound-agent Messages execution",
+            );
         }
-        return api_bound_anthropic_messages(state, user_ctx.map(|user| user.0), req, agent,
-            resolved_model, openai_messages, tool_choice, parallel_tool_calls, effective_caching.enabled).await;
+        return api_bound_anthropic_messages(
+            state,
+            user_ctx.map(|user| user.0),
+            req,
+            agent,
+            resolved_model,
+            openai_messages,
+            tool_choice,
+            parallel_tool_calls,
+            effective_caching.enabled,
+        )
+        .await;
     }
     let mut llm_request = crate::llm::LlmRequest {
         messages: openai_messages,
@@ -5463,7 +5982,8 @@ async fn api_messages(
     let driver_stream = match driver.stream(llm_request).await {
         Ok(stream) => stream,
         Err(error) => {
-            if error.downcast_ref::<crate::llm::ProviderError>()
+            if error
+                .downcast_ref::<crate::llm::ProviderError>()
                 .is_some_and(|error| error.kind == crate::llm::ProviderErrorKind::InvalidRequest)
             {
                 return anthropic_error_response(StatusCode::BAD_REQUEST, &error.to_string());
@@ -5517,6 +6037,7 @@ async fn api_messages(
                     completion_tokens,
                     cached_tokens,
                     cache_creation_tokens,
+                    uncached_input_tokens,
                     ..
                 }) => {
                     provider_usage = Some(provider_anthropic_usage(
@@ -5524,6 +6045,7 @@ async fn api_messages(
                         completion_tokens,
                         cached_tokens,
                         cache_creation_tokens,
+                        uncached_input_tokens,
                     ));
                 }
                 Ok(DriverEvent::Done) => break,
@@ -5564,7 +6086,8 @@ async fn api_messages(
                 "end_turn"
             },
             "stop_sequence": Value::Null,
-            "usage": usage
+            "usage": usage,
+            "uar_usage": usage.availability()
         }))
         .into_response();
     }
@@ -5589,12 +6112,8 @@ async fn api_messages(
                 "content": [],
                 "stop_reason": Value::Null,
                 "stop_sequence": Value::Null,
-                "usage": AnthropicUsage {
-                    input_tokens: 0,
-                    output_tokens: 0,
-                    cache_creation_input_tokens: 0,
-                    cache_read_input_tokens: 0,
-                }
+                "usage": AnthropicUsage::default(),
+                "uar_usage": AnthropicUsage::default().availability()
             }
         })));
 
@@ -5795,6 +6314,7 @@ async fn api_messages(
                     completion_tokens,
                     cached_tokens,
                     cache_creation_tokens,
+                    uncached_input_tokens,
                     ..
                 }) => {
                     provider_usage = Some(provider_anthropic_usage(
@@ -5802,6 +6322,7 @@ async fn api_messages(
                         completion_tokens,
                         cached_tokens,
                         cache_creation_tokens,
+                        uncached_input_tokens,
                     ));
                 }
                 Ok(DriverEvent::Done) => {
@@ -5826,7 +6347,8 @@ async fn api_messages(
                             "stop_reason": if saw_tool_use { "tool_use" } else { "end_turn" },
                             "stop_sequence": Value::Null
                         },
-                        "usage": usage
+                        "usage": usage,
+                        "uar_usage": usage.availability()
                     })));
                     yield Ok(anthropic_sse_event("message_stop", json!({
                         "type": "message_stop"
@@ -5856,7 +6378,8 @@ async fn api_messages(
                             "stop_reason": "error",
                             "stop_sequence": Value::Null
                         },
-                        "usage": usage
+                        "usage": usage,
+                        "uar_usage": usage.availability()
                     })));
                     yield Ok(anthropic_sse_event("message_stop", json!({
                         "type": "message_stop"
@@ -5886,7 +6409,8 @@ async fn api_messages(
                             "stop_reason": "error",
                             "stop_sequence": Value::Null
                         },
-                        "usage": usage
+                        "usage": usage,
+                        "uar_usage": usage.availability()
                     })));
                     yield Ok(anthropic_sse_event("message_stop", json!({
                         "type": "message_stop"
@@ -5919,7 +6443,8 @@ async fn api_messages(
                     "stop_reason": if saw_tool_use { "tool_use" } else { "end_turn" },
                     "stop_sequence": Value::Null
                 },
-                "usage": usage
+                "usage": usage,
+                "uar_usage": usage.availability()
             })));
             yield Ok(anthropic_sse_event("message_stop", json!({
                 "type": "message_stop"
@@ -5991,6 +6516,11 @@ impl StreamMode {
 /// Raw caller content deliberately has no Debug projection.
 #[derive(Deserialize)]
 pub(crate) struct ChatCompletionRequest {
+    /// Native-chat logical identity, durably retained by the client before POST.
+    #[serde(default)]
+    client_turn_id: Option<String>,
+    #[serde(default)]
+    user_message_id: Option<String>,
     #[serde(default)]
     response_format: Option<crate::llm::response_format::ResponseFormat>,
     /// Model name (`gpt-5.2`) or provider-scoped (`openai/gpt-5.2`).
@@ -6058,6 +6588,51 @@ pub(crate) struct ChatCompletionRequest {
 #[inline]
 fn default_true() -> bool {
     true
+}
+
+/// Original caller intent only. The durable reservation stores its digest,
+/// never this rich content or an authentication credential. Resolved mutable
+/// catalog/settings state cannot turn a retry into a second logical turn.
+fn native_chat_semantic_payload(req: &ChatCompletionRequest, headers: &HeaderMap) -> Value {
+    json!({
+        "model": req.model, "agent_id": req.agent_id,
+        "message": req.message,
+        "messages": req.messages.iter().map(|message| json!({
+            "role":message.role,"content":message.content,
+            "tool_calls":message.tool_calls,"tool_call_id":message.tool_call_id,
+        })).collect::<Vec<_>>(),
+        "attachments": req.attachments.iter().map(|attachment| json!({
+            "id":attachment.id,"filename":attachment.filename,"content_type":attachment.content_type,
+            "url":attachment.url,"text_content":attachment.text_content,
+        })).collect::<Vec<_>>(),
+        "temperature":req.temperature,"tools":req.tools,"tool_choice":req.tool_choice,
+        "parallel_tool_calls":req.parallel_tool_calls,"max_tokens":req.max_tokens,
+        "max_completion_tokens":req.max_completion_tokens,"response_format":req.response_format,
+        "memory_enabled":req.memory_enabled,"prompt_caching_enabled":req.prompt_caching_enabled,
+        "run_policy":req.run_policy,"presentation":req.presentation_negotiation,
+        "stream":req.stream,"stream_mode":req.stream_mode.cursor_format(),
+        "workspace_id":uar::api::targets::workspace(headers),
+    })
+}
+
+fn native_chat_admission_error(error: &anyhow::Error) -> Response {
+    let (status, code) = match error.to_string().as_str() {
+        "native_chat_turn_conflict" => (StatusCode::CONFLICT, "native_chat_turn_conflict"),
+        "invalid_native_chat_identity" => (StatusCode::BAD_REQUEST, "invalid_native_chat_identity"),
+        "native_chat_recovery_unavailable" => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "native_chat_recovery_unavailable",
+        ),
+        _ => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "native_chat_admission_unconfirmed",
+        ),
+    };
+    openai_error_response(
+        status,
+        "Native chat admission was not confirmed; reconcile the original turn before any new submission",
+        Some(code),
+    )
 }
 
 #[derive(Debug, Serialize)]
@@ -6201,9 +6776,13 @@ fn openai_error_response(status: StatusCode, message: &str, code: Option<&str>) 
 fn parse_current_chat_content(value: &Value) -> Result<crate::llm::MessageContent, Response> {
     use crate::llm::{ContentPart, ImageUrl, MessageContent};
 
-    let invalid = || openai_error_response(StatusCode::BAD_REQUEST,
-        "Content must be text or ordered text/image_url parts with supported fields",
-        Some("invalid_content_part"));
+    let invalid = || {
+        openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Content must be text or ordered text/image_url parts with supported fields",
+            Some("invalid_content_part"),
+        )
+    };
     match value {
         Value::String(text) => Ok(MessageContent::text(text.clone())),
         Value::Array(parts) => {
@@ -6212,21 +6791,35 @@ fn parse_current_chat_content(value: &Value) -> Result<crate::llm::MessageConten
                 let object = part.as_object().ok_or_else(&invalid)?;
                 match object.get("type").and_then(Value::as_str) {
                     Some("text") if object.len() == 2 => {
-                        let text = object.get("text").and_then(Value::as_str).ok_or_else(&invalid)?;
+                        let text = object
+                            .get("text")
+                            .and_then(Value::as_str)
+                            .ok_or_else(&invalid)?;
                         content.push(ContentPart::text(text));
                     }
                     Some("image_url") if object.len() == 2 => {
-                        let image = object.get("image_url").and_then(Value::as_object).ok_or_else(&invalid)?;
+                        let image = object
+                            .get("image_url")
+                            .and_then(Value::as_object)
+                            .ok_or_else(&invalid)?;
                         if image.keys().any(|key| key != "url" && key != "detail") {
                             return Err(invalid());
                         }
-                        let url = image.get("url").and_then(Value::as_str).ok_or_else(&invalid)?;
+                        let url = image
+                            .get("url")
+                            .and_then(Value::as_str)
+                            .ok_or_else(&invalid)?;
                         let detail = match image.get("detail") {
                             None => None,
                             Some(Value::String(detail)) => Some(detail.clone()),
                             Some(_) => return Err(invalid()),
                         };
-                        content.push(ContentPart::ImageUrl { image_url: ImageUrl { url: url.to_owned(), detail } });
+                        content.push(ContentPart::ImageUrl {
+                            image_url: ImageUrl {
+                                url: url.to_owned(),
+                                detail,
+                            },
+                        });
                     }
                     _ => return Err(invalid()),
                 }
@@ -6239,23 +6832,39 @@ fn parse_current_chat_content(value: &Value) -> Result<crate::llm::MessageConten
 
 /// Admit one current user turn; earlier caller history is not a multimodal replay
 /// API. Never discard an image while accepting the remaining text as success.
-async fn admit_current_chat_content(req: &ChatCompletionRequest) -> Result<(crate::llm::MessageContent, String), Response> {
+async fn admit_current_chat_content(
+    req: &ChatCompletionRequest,
+) -> Result<(crate::llm::MessageContent, String), Response> {
+    use crate::llm::inline_image::{
+        MAX_INLINE_IMAGE_BYTES, MAX_INLINE_IMAGES, validate_inline_image,
+    };
     use crate::llm::{ContentPart, MessageContent};
-    use crate::llm::inline_image::{MAX_INLINE_IMAGE_BYTES, MAX_INLINE_IMAGES, validate_inline_image};
 
     // Preserve legacy text precedence: a nonblank convenience message wins;
     // a blank one falls through to the last user message. Ignored multimodal
     // input still refuses below rather than being silently discarded.
-    let convenience_message = req.message.as_ref().filter(|message| !message.trim().is_empty());
-    if req.attachments.iter().any(|attachment| attachment.content_type.to_ascii_lowercase().starts_with("image/")) {
-        return Err(openai_error_response(StatusCode::BAD_REQUEST,
+    let convenience_message = req
+        .message
+        .as_ref()
+        .filter(|message| !message.trim().is_empty());
+    if req.attachments.iter().any(|attachment| {
+        attachment
+            .content_type
+            .to_ascii_lowercase()
+            .starts_with("image/")
+    }) {
+        return Err(openai_error_response(
+            StatusCode::BAD_REQUEST,
             "Image attachments are unsupported; use inline current-user image_url parts",
-            Some("unsupported_image_attachment")));
+            Some("unsupported_image_attachment"),
+        ));
     }
     let current_index = if convenience_message.is_some() {
         None
     } else {
-        req.messages.iter().rposition(|message| message.role.eq_ignore_ascii_case("user"))
+        req.messages
+            .iter()
+            .rposition(|message| message.role.eq_ignore_ascii_case("user"))
     };
     for (index, message) in req.messages.iter().enumerate() {
         if Some(index) == current_index {
@@ -6263,20 +6872,28 @@ async fn admit_current_chat_content(req: &ChatCompletionRequest) -> Result<(crat
         }
         let text_only = match &message.content {
             Value::Null | Value::String(_) => true,
-            Value::Array(parts) => parts.iter().all(|part| part.as_object().is_some_and(|object|
-                object.len() == 2 && object.get("type").and_then(Value::as_str) == Some("text")
-                    && object.get("text").is_some_and(Value::is_string))),
+            Value::Array(parts) => parts.iter().all(|part| {
+                part.as_object().is_some_and(|object| {
+                    object.len() == 2
+                        && object.get("type").and_then(Value::as_str) == Some("text")
+                        && object.get("text").is_some_and(Value::is_string)
+                })
+            }),
             _ => false,
         };
         if !text_only {
             if convenience_message.is_some() {
-                return Err(openai_error_response(StatusCode::BAD_REQUEST,
+                return Err(openai_error_response(
+                    StatusCode::BAD_REQUEST,
                     "Convenience message would discard supplied image or unsupported content",
-                    Some("ambiguous_message_input")));
+                    Some("ambiguous_message_input"),
+                ));
             }
-            return Err(openai_error_response(StatusCode::BAD_REQUEST,
+            return Err(openai_error_response(
+                StatusCode::BAD_REQUEST,
                 "Only the current user message may contain images; caller multimodal history replay is unsupported",
-                Some("unsupported_multimodal_history")));
+                Some("unsupported_multimodal_history"),
+            ));
         }
     }
     let mut content = if let Some(message) = convenience_message {
@@ -6284,14 +6901,23 @@ async fn admit_current_chat_content(req: &ChatCompletionRequest) -> Result<(crat
     } else if let Some(index) = current_index {
         parse_current_chat_content(&req.messages[index].content)?
     } else {
-        return Err(openai_error_response(StatusCode::BAD_REQUEST,
-            "Request must include message or a current user message in messages", Some("invalid_request")));
+        return Err(openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Request must include message or a current user message in messages",
+            Some("invalid_request"),
+        ));
     };
 
     // Document text remains context before the user's original ordered parts.
-    let mut attachments: Vec<ContentPart> = req.attachments.iter().filter_map(|attachment|
-        attachment.text_content.as_ref().map(|text|
-            ContentPart::text(format!("[{}]\n{}", attachment.filename, text))))
+    let mut attachments: Vec<ContentPart> = req
+        .attachments
+        .iter()
+        .filter_map(|attachment| {
+            attachment
+                .text_content
+                .as_ref()
+                .map(|text| ContentPart::text(format!("[{}]\n{}", attachment.filename, text)))
+        })
         .collect();
     if !attachments.is_empty() {
         match content {
@@ -6302,34 +6928,55 @@ async fn admit_current_chat_content(req: &ChatCompletionRequest) -> Result<(crat
     }
     let text = match &content {
         MessageContent::Text { content } => content.clone(),
-        MessageContent::Parts { content } => content.iter().filter_map(|part| match part {
-            ContentPart::Text { text } => Some(text.as_str()),
-            ContentPart::ImageUrl { .. } => None,
-        }).collect::<Vec<_>>().join("\n"),
+        MessageContent::Parts { content } => content
+            .iter()
+            .filter_map(|part| match part {
+                ContentPart::Text { text } => Some(text.as_str()),
+                ContentPart::ImageUrl { .. } => None,
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
     };
     if text.trim().is_empty() && !content.has_images() {
-        return Err(openai_error_response(StatusCode::BAD_REQUEST,
-            "Current user content must contain text or an inline image", Some("invalid_request")));
+        return Err(openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Current user content must contain text or an inline image",
+            Some("invalid_request"),
+        ));
     }
     if let MessageContent::Parts { content: parts } = &content {
-        let images: Vec<_> = parts.iter().filter_map(|part| match part {
-            ContentPart::ImageUrl { image_url } => Some(image_url),
-            ContentPart::Text { .. } => None,
-        }).collect();
+        let images: Vec<_> = parts
+            .iter()
+            .filter_map(|part| match part {
+                ContentPart::ImageUrl { image_url } => Some(image_url),
+                ContentPart::Text { .. } => None,
+            })
+            .collect();
         if images.len() > MAX_INLINE_IMAGES {
-            return Err(openai_error_response(StatusCode::BAD_REQUEST,
-                "Current user content permits at most 8 images", Some("too_many_images")));
+            return Err(openai_error_response(
+                StatusCode::BAD_REQUEST,
+                "Current user content permits at most 8 images",
+                Some("too_many_images"),
+            ));
         }
         // Bound the combined encoded input before any decoding, including for
         // internal callers that do not pass through the HTTP body limit.
-        let encoded_bytes = images.iter().try_fold(0usize, |sum, image| sum.checked_add(image.url.len()));
+        let encoded_bytes = images
+            .iter()
+            .try_fold(0usize, |sum, image| sum.checked_add(image.url.len()));
         if encoded_bytes.is_none_or(|bytes| bytes > MAX_INLINE_IMAGE_BYTES) {
-            return Err(openai_error_response(StatusCode::BAD_REQUEST,
-                "Inline images exceed the 10 MiB encoded limit", Some("image_too_large")));
+            return Err(openai_error_response(
+                StatusCode::BAD_REQUEST,
+                "Inline images exceed the 10 MiB encoded limit",
+                Some("image_too_large"),
+            ));
         }
         for image in images {
             let metadata = validate_inline_image(image).await.map_err(|error| {
-                let status = if matches!(error.code, "image_decoder_busy" | "image_decoder_unavailable") {
+                let status = if matches!(
+                    error.code,
+                    "image_decoder_busy" | "image_decoder_unavailable"
+                ) {
                     StatusCode::SERVICE_UNAVAILABLE
                 } else {
                     StatusCode::BAD_REQUEST
@@ -6411,19 +7058,51 @@ fn resolve_session_id(
     Ok(None)
 }
 
-async fn resolve_requested_model(state: &AppState, requested_model: Option<&str>) -> Result<ResolvedModel, Response> {
+async fn resolve_requested_model(
+    state: &AppState,
+    requested_model: Option<&str>,
+) -> Result<ResolvedModel, Response> {
     let requested = requested_model.unwrap_or("").trim();
-    let selector = if requested.contains('/') { requested.to_owned() } else {
-        let id = state.provider_registry.default_id().await.ok_or_else(|| openai_error_response(
-            StatusCode::UNPROCESSABLE_ENTITY,"Select and verify a default provider/model in settings",Some("model_not_configured")))?;
-        let provider = state.provider_registry.get(&id).await.ok_or_else(|| openai_error_response(
-            StatusCode::UNPROCESSABLE_ENTITY,"Default provider is unavailable",Some("model_not_configured")))?;
-        let model = if requested.is_empty() { provider.default_model.as_deref().unwrap_or("") } else { requested };
+    let selector = if requested.contains('/') {
+        requested.to_owned()
+    } else {
+        let id = state.provider_registry.default_id().await.ok_or_else(|| {
+            openai_error_response(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "Select and verify a default provider/model in settings",
+                Some("model_not_configured"),
+            )
+        })?;
+        let provider = state.provider_registry.get(&id).await.ok_or_else(|| {
+            openai_error_response(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "Default provider is unavailable",
+                Some("model_not_configured"),
+            )
+        })?;
+        let model = if requested.is_empty() {
+            provider.default_model.as_deref().unwrap_or("")
+        } else {
+            requested
+        };
         format!("{id}/{model}")
     };
-    let (route, _) = state.run_manager.target_sources().verified_model(&selector).await.map_err(|message|
-        openai_error_response(StatusCode::UNPROCESSABLE_ENTITY,&message,Some("model_not_verified")))?;
-    Ok(ResolvedModel {provider_id:route.provider_id,model_id:route.model_id})
+    let (route, _) = state
+        .run_manager
+        .target_sources()
+        .verified_model(&selector)
+        .await
+        .map_err(|message| {
+            openai_error_response(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                &message,
+                Some("model_not_verified"),
+            )
+        })?;
+    Ok(ResolvedModel {
+        provider_id: route.provider_id,
+        model_id: route.model_id,
+    })
 }
 
 /// Cursor for one runtime event and, optionally, one projected SSE frame.
@@ -6466,40 +7145,82 @@ impl ChatStreamCursor {
 fn caller_openai_request(
     req: &ChatCompletionRequest,
 ) -> Result<Option<uar::api::openai::types::ChatCompletionRequest>, Response> {
-    let caller = req.tools.is_some() || req.tool_choice.is_some() || req.parallel_tool_calls.is_some()
-        || req.messages.iter().any(|message| !message.tool_calls.is_empty() || message.tool_call_id.is_some() || message.role == "tool");
-    if !caller { return Ok(None); }
+    let caller = req.tools.is_some()
+        || req.tool_choice.is_some()
+        || req.parallel_tool_calls.is_some()
+        || req.messages.iter().any(|message| {
+            !message.tool_calls.is_empty()
+                || message.tool_call_id.is_some()
+                || message.role == "tool"
+        });
+    if !caller {
+        return Ok(None);
+    }
     if req.message.is_some() {
-        return Err(openai_error_response(StatusCode::BAD_REQUEST,
-            "Caller tools require messages without the legacy message alias", Some("ambiguous_client_tool_history")));
+        return Err(openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Caller tools require messages without the legacy message alias",
+            Some("ambiguous_client_tool_history"),
+        ));
     }
     if !matches!(req.stream_mode, StreamMode::Openai) || !req.attachments.is_empty() {
-        return Err(openai_error_response(StatusCode::BAD_REQUEST,
-            "Caller tools require the OpenAI stream format and message-contained text history", Some("unsupported_client_tool_payload")));
+        return Err(openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Caller tools require the OpenAI stream format and message-contained text history",
+            Some("unsupported_client_tool_payload"),
+        ));
     }
     if req.messages.is_empty() {
-        return Err(openai_error_response(StatusCode::BAD_REQUEST, "Caller tools require a complete messages history", Some("invalid_messages")));
+        return Err(openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Caller tools require a complete messages history",
+            Some("invalid_messages"),
+        ));
     }
     let mut messages = Vec::with_capacity(req.messages.len());
     for message in &req.messages {
         let content = match &message.content {
             Value::String(text) => Some(text.clone()),
             Value::Null => None,
-            _ => return Err(openai_error_response(StatusCode::BAD_REQUEST,
-                "Caller-tool message content must be text or assistant null content with calls", Some("unsupported_client_tool_content"))),
+            _ => {
+                return Err(openai_error_response(
+                    StatusCode::BAD_REQUEST,
+                    "Caller-tool message content must be text or assistant null content with calls",
+                    Some("unsupported_client_tool_content"),
+                ));
+            }
         };
         messages.push(uar::api::openai::types::OpenAIMessage {
-            role: message.role.clone(), content, tool_calls: message.tool_calls.clone(), tool_call_id: message.tool_call_id.clone(),
+            role: message.role.clone(),
+            content,
+            tool_calls: message.tool_calls.clone(),
+            tool_call_id: message.tool_call_id.clone(),
         });
     }
     let tools = serde_json::from_value(Value::Array(req.tools.clone().unwrap_or_default()))
-        .map_err(|error| openai_error_response(StatusCode::BAD_REQUEST, &error.to_string(), Some("invalid_client_tools")))?;
+        .map_err(|error| {
+            openai_error_response(
+                StatusCode::BAD_REQUEST,
+                &error.to_string(),
+                Some("invalid_client_tools"),
+            )
+        })?;
     let caller = uar::api::openai::types::ChatCompletionRequest {
-        model: req.model.clone().unwrap_or_default(), messages, tools, stream: req.stream,
-        tool_choice: req.tool_choice.clone(), parallel_tool_calls: req.parallel_tool_calls,
+        model: req.model.clone().unwrap_or_default(),
+        messages,
+        tools,
+        stream: req.stream,
+        tool_choice: req.tool_choice.clone(),
+        parallel_tool_calls: req.parallel_tool_calls,
         presentation_negotiation: req.presentation_negotiation.clone(),
     };
-    caller.client_tool_input().map_err(|error| openai_error_response(StatusCode::BAD_REQUEST, &error, Some("invalid_client_tools")))?;
+    caller.client_tool_input().map_err(|error| {
+        openai_error_response(
+            StatusCode::BAD_REQUEST,
+            &error,
+            Some("invalid_client_tools"),
+        )
+    })?;
     Ok(Some(caller))
 }
 
@@ -6544,17 +7265,99 @@ pub(crate) async fn api_chat_completion(
     };
     if let Some(format) = &req.response_format {
         if let Err(error) = format.validate() {
-            return openai_error_response(StatusCode::BAD_REQUEST, &error.to_string(), Some("invalid_response_format"));
+            return openai_error_response(
+                StatusCode::BAD_REQUEST,
+                &error.to_string(),
+                Some("invalid_response_format"),
+            );
         }
     }
     if caller_request.is_some() && resume.is_some() {
-        return openai_error_response(StatusCode::BAD_REQUEST, "Caller-tool retries use the exact messages/result batch", Some("unsupported_client_tool_cursor"));
+        return openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Caller-tool retries use the exact messages/result batch",
+            Some("unsupported_client_tool_cursor"),
+        );
     }
-    if req.max_tokens == Some(0) || req.max_completion_tokens == Some(0)
-        || matches!((req.max_tokens, req.max_completion_tokens), (Some(first), Some(second)) if first != second) {
-        return openai_error_response(StatusCode::BAD_REQUEST, "Output token caps must be positive and consistent", Some("invalid_output_token_cap"));
+    if req.max_tokens == Some(0)
+        || req.max_completion_tokens == Some(0)
+        || matches!((req.max_tokens, req.max_completion_tokens), (Some(first), Some(second)) if first != second)
+    {
+        return openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Output token caps must be positive and consistent",
+            Some("invalid_output_token_cap"),
+        );
     }
     let resuming = resume.is_some();
+    if req.client_turn_id.is_some() != req.user_message_id.is_some() {
+        return openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Native chat requires both client_turn_id and user_message_id",
+            Some("invalid_native_chat_identity"),
+        );
+    }
+    if req.client_turn_id.is_some() && caller_request.is_some() {
+        return openai_error_response(
+            StatusCode::BAD_REQUEST,
+            "Caller-tool continuations use their existing durable batch identity",
+            Some("unsupported_native_chat_identity"),
+        );
+    }
+    if req.client_turn_id.is_some() && !resuming {
+        match resolve_session_id(&req, &headers) {
+            Ok(Some(session_id)) => {
+                if uar::security::claims::CredentialPrincipal::from_verified_context(&user_ctx)
+                    .is_err()
+                {
+                    return openai_error_response(
+                        StatusCode::UNAUTHORIZED,
+                        "Native chat recovery requires a verified principal",
+                        Some("invalid_run_principal"),
+                    );
+                }
+                let Some(db) = state.persistence.as_ref() else {
+                    return openai_error_response(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "Durable native chat recovery is unavailable",
+                        Some("native_chat_recovery_unavailable"),
+                    );
+                };
+                if let (Some(turn), Some(message)) = (&req.client_turn_id, &req.user_message_id) {
+                    match uar::api::chat_turns::find_existing_native_chat_turn(
+                        db.as_ref(),
+                        &user_ctx,
+                        &session_id,
+                        turn,
+                        message,
+                        uar::api::targets::workspace(&headers).map(str::to_owned),
+                        &native_chat_semantic_payload(&req, &headers),
+                    )
+                    .await
+                    {
+                        Ok(Some(binding)) => {
+                            return uar::api::chat_turns::native_chat_receipt(
+                                &state.run_manager,
+                                &user_ctx,
+                                &binding,
+                            )
+                            .await;
+                        }
+                        Ok(None) => {}
+                        Err(error) => return native_chat_admission_error(&error),
+                    }
+                }
+            }
+            Ok(None) => {
+                return openai_error_response(
+                    StatusCode::BAD_REQUEST,
+                    "A stable session is required for native chat recovery",
+                    Some("invalid_native_chat_identity"),
+                );
+            }
+            Err(response) => return response,
+        }
+    }
     let cursor = resume.as_ref().map(|(_, cursor)| *cursor);
     let cursor_format = req.stream_mode.cursor_format();
     if cursor.is_some_and(|cursor| cursor.format.is_some_and(|format| format != cursor_format)) {
@@ -6568,461 +7371,716 @@ pub(crate) async fn api_chat_completion(
         tracing::debug!(temperature = temp, "temperature received");
     }
     if let Some(tools) = &req.tools {
-        tracing::debug!(tool_count = tools.len(), "caller function declarations received");
+        tracing::debug!(
+            tool_count = tools.len(),
+            "caller function declarations received"
+        );
     }
 
-    let (
-        run_id,
-        session_id,
-        model_name,
-        agent_id_for_policy,
-        effective_input,
-        stream_memory_ctx_count,
-        response_timeout_ms,
-    ) = if let Some((run_id, _)) = &resume {
-        let owner =
-            match uar::runtime::actor::messages::ActorOwner::from_verified_context(&user_ctx) {
-                Ok(owner) => owner,
-                Err(_) => {
+    let (run_id, session_id, model_name, agent_id_for_policy, effective_input, response_timeout_ms) =
+        if let Some((run_id, _)) = &resume {
+            let owner =
+                match uar::runtime::actor::messages::ActorOwner::from_verified_context(&user_ctx) {
+                    Ok(owner) => owner,
+                    Err(_) => {
+                        return openai_error_response(
+                            StatusCode::UNAUTHORIZED,
+                            "Chat replay requires authenticated identity",
+                            Some("invalid_run_principal"),
+                        );
+                    }
+                };
+            let Some(run) = state.run_manager.get_run_for_owner(&owner, run_id).await else {
+                return openai_error_response(
+                    StatusCode::NOT_FOUND,
+                    "Replay run is unavailable",
+                    Some("run_not_found"),
+                );
+            };
+            let Some(session_id) = run.conversation_id else {
+                return openai_error_response(
+                    StatusCode::CONFLICT,
+                    "Run has no chat session",
+                    Some("chat_replay_unavailable"),
+                );
+            };
+            let requested_session = match resolve_session_id(&req, &headers) {
+                Ok(session) => session,
+                Err(response) => return response,
+            };
+            if requested_session.is_some_and(|requested| requested != session_id) {
+                return openai_error_response(
+                    StatusCode::BAD_REQUEST,
+                    "Replay session does not match the original run",
+                    Some("replay_session_mismatch"),
+                );
+            }
+            let model = run
+                .context
+                .get("effective_run_policy")
+                .and_then(|policy| policy.get("model"));
+            let route = model.and_then(|model| {
+                Some((
+                    model.get("provider_id")?.as_str()?,
+                    model.get("model_id")?.as_str()?,
+                ))
+            });
+            let Some((provider, model)) = route else {
+                return openai_error_response(
+                    StatusCode::CONFLICT,
+                    "Original chat model metadata is unavailable",
+                    Some("chat_replay_unavailable"),
+                );
+            };
+            (
+                run_id.clone(),
+                session_id,
+                format!("{provider}/{model}"),
+                run.agent_id,
+                String::new(),
+                None,
+            )
+        } else {
+            let (current_user_content, input_message) = match admit_current_chat_content(&req).await
+            {
+                Ok(admitted) => admitted,
+                Err(response) => return response,
+            };
+
+            // Input guardrails: screen for prompt-injection / PII before the LLM call.
+            // Detect-only by default (the finding is emitted on the run stream after it
+            // starts); injection is blocked here only when explicitly enabled. The
+            // finding carries a category + short reason — never the raw input.
+            let input_finding =
+                uar::guardrails::screen_input(&input_message, &state.config.guardrails);
+            if let Some(ref finding) = input_finding {
+                uar::telemetry::metrics::record_guardrail_flagged(finding.category.as_str());
+                tracing::warn!(
+                    category = %finding.category.as_str(),
+                    reason = %finding.reason,
+                    "Chat input flagged by guardrail"
+                );
+                let g = &state.config.guardrails;
+                let should_block = match finding.category {
+                    uar::guardrails::GuardrailCategory::Injection => g.block_on_injection,
+                    uar::guardrails::GuardrailCategory::Pii => g.block_on_pii,
+                };
+                if should_block {
+                    let code = match finding.category {
+                        uar::guardrails::GuardrailCategory::Injection => {
+                            "guardrail_injection_blocked"
+                        }
+                        uar::guardrails::GuardrailCategory::Pii => "guardrail_pii_blocked",
+                    };
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        Json(json!({
+                            "error": {
+                                "message": "Input rejected by guardrail policy",
+                                "type": "guardrail_blocked",
+                                "code": code
+                            }
+                        })),
+                    )
+                        .into_response();
+                }
+            }
+
+            let mut session_id = match resolve_session_id(&req, &headers) {
+                Ok(Some(value)) => value,
+                Ok(None) => Uuid::new_v4().to_string(),
+                Err(resp) => return resp,
+            };
+
+            let mut turn_policy = req.run_policy.clone().unwrap_or_default();
+            let target_selector = req
+                .model
+                .as_deref()
+                .filter(|model| model.starts_with("uar:agent:"))
+                .or_else(|| {
+                    req.agent_id
+                        .as_deref()
+                        .filter(|agent| agent.starts_with("uar:agent:"))
+                });
+            let mut selected_bound = None;
+            let mut target_receipt = None;
+            if let Some(selector) = target_selector {
+                let binding_id = match uar::api::targets::target_binding_id(selector) {
+                    Ok(Some(id)) => id,
+                    _ => {
+                        return openai_error_response(
+                            StatusCode::BAD_REQUEST,
+                            "Invalid agent target",
+                            Some("target_invalid"),
+                        );
+                    }
+                };
+                let Some(workspace) = uar::api::targets::workspace(&headers) else {
                     return openai_error_response(
-                        StatusCode::UNAUTHORIZED,
-                        "Chat replay requires authenticated identity",
-                        Some("invalid_run_principal"),
+                        StatusCode::BAD_REQUEST,
+                        "Agent target requires x-uar-workspace-id",
+                        Some("workspace_required"),
+                    );
+                };
+                let bound = match uar::api::targets::resolve_bound(
+                    &state.collaboration_catalog,
+                    &user_ctx,
+                    workspace,
+                    &binding_id,
+                )
+                .await
+                {
+                    Ok(bound) => bound,
+                    Err(message) => {
+                        return openai_error_response(
+                            StatusCode::CONFLICT,
+                            &message,
+                            Some("target_binding_unavailable"),
+                        );
+                    }
+                };
+                if req
+                    .agent_id
+                    .as_deref()
+                    .is_some_and(|agent| agent != selector && agent != bound.artifact.id)
+                    || turn_policy
+                        .agent_id
+                        .as_deref()
+                        .is_some_and(|agent| agent != bound.artifact.id)
+                    || (req
+                        .model
+                        .as_deref()
+                        .is_some_and(|model| model.starts_with("uar:agent:") && model != selector))
+                {
+                    return openai_error_response(
+                        StatusCode::BAD_REQUEST,
+                        "Contradictory agent and model selections",
+                        Some("target_selection_conflict"),
                     );
                 }
-            };
-        let Some(run) = state.run_manager.get_run_for_owner(&owner, run_id).await else {
-            return openai_error_response(
-                StatusCode::NOT_FOUND,
-                "Replay run is unavailable",
-                Some("run_not_found"),
-            );
-        };
-        let Some(session_id) = run.conversation_id else {
-            return openai_error_response(
-                StatusCode::CONFLICT,
-                "Run has no chat session",
-                Some("chat_replay_unavailable"),
-            );
-        };
-        let requested_session = match resolve_session_id(&req, &headers) {
-            Ok(session) => session,
-            Err(response) => return response,
-        };
-        if requested_session.is_some_and(|requested| requested != session_id) {
-            return openai_error_response(
-                StatusCode::BAD_REQUEST,
-                "Replay session does not match the original run",
-                Some("replay_session_mismatch"),
-            );
-        }
-        let model = run
-            .context
-            .get("effective_run_policy")
-            .and_then(|policy| policy.get("model"));
-        let route = model.and_then(|model| {
-            Some((
-                model.get("provider_id")?.as_str()?,
-                model.get("model_id")?.as_str()?,
-            ))
-        });
-        let Some((provider, model)) = route else {
-            return openai_error_response(
-                StatusCode::CONFLICT,
-                "Original chat model metadata is unavailable",
-                Some("chat_replay_unavailable"),
-            );
-        };
-        (
-            run_id.clone(),
-            session_id,
-            format!("{provider}/{model}"),
-            run.agent_id,
-            String::new(),
-            0,
-            None,
-        )
-    } else {
-        let (current_user_content, input_message) = match admit_current_chat_content(&req).await {
-            Ok(admitted) => admitted,
-            Err(response) => return response,
-        };
-
-        // Input guardrails: screen for prompt-injection / PII before the LLM call.
-        // Detect-only by default (the finding is emitted on the run stream after it
-        // starts); injection is blocked here only when explicitly enabled. The
-        // finding carries a category + short reason — never the raw input.
-        let input_finding = uar::guardrails::screen_input(&input_message, &state.config.guardrails);
-        if let Some(ref finding) = input_finding {
-            uar::telemetry::metrics::record_guardrail_flagged(finding.category.as_str());
-            tracing::warn!(
-                category = %finding.category.as_str(),
-                reason = %finding.reason,
-                "Chat input flagged by guardrail"
-            );
-            let g = &state.config.guardrails;
-            let should_block = match finding.category {
-                uar::guardrails::GuardrailCategory::Injection => g.block_on_injection,
-                uar::guardrails::GuardrailCategory::Pii => g.block_on_pii,
-            };
-            if should_block {
-                let code = match finding.category {
-                    uar::guardrails::GuardrailCategory::Injection => "guardrail_injection_blocked",
-                    uar::guardrails::GuardrailCategory::Pii => "guardrail_pii_blocked",
+                let override_model = req
+                    .model
+                    .as_deref()
+                    .filter(|model| !model.starts_with("uar:agent:"));
+                let target = match state
+                    .run_manager
+                    .target_sources()
+                    .admit_bound(&bound, override_model, workspace)
+                    .await
+                {
+                    Ok(target) => target,
+                    Err(message) => {
+                        return openai_error_response(
+                            StatusCode::UNPROCESSABLE_ENTITY,
+                            &message,
+                            Some("model_not_verified"),
+                        );
+                    }
                 };
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Json(json!({
-                        "error": {
-                            "message": "Input rejected by guardrail policy",
-                            "type": "guardrail_blocked",
-                            "code": code
-                        }
-                    })),
-                )
-                    .into_response();
+                turn_policy.agent_id = Some(bound.artifact.id.clone());
+                turn_policy.model = Some(uar::domain::policy::ModelRoute {
+                    provider_id: target.provider_id.clone(),
+                    model_id: target.model_id.clone(),
+                });
+                target_receipt = Some(target);
+                selected_bound = Some(bound);
+            } else {
+                if let Some(agent_id) = &req.agent_id {
+                    turn_policy.agent_id = Some(agent_id.clone());
+                    turn_policy.chat_mode = Some(
+                        if matches!(agent_id.as_str(), "default-agent" | "orchestrator-agent") {
+                            uar::domain::policy::ChatMode::Uar
+                        } else {
+                            uar::domain::policy::ChatMode::Agent
+                        },
+                    );
+                } else if req.model.is_some() {
+                    turn_policy.agent_id = Some("default-agent".into());
+                }
+                if let Some(requested_model) = req.model.as_deref() {
+                    let resolved =
+                        match resolve_requested_model(&state, Some(requested_model)).await {
+                            Ok(model) => model,
+                            Err(response) => return response,
+                        };
+                    turn_policy.model = Some(uar::domain::policy::ModelRoute {
+                        provider_id: resolved.provider_id,
+                        model_id: resolved.model_id,
+                    });
+                }
             }
-        }
-
-        let mut session_id = match resolve_session_id(&req, &headers) {
-            Ok(Some(value)) => value,
-            Ok(None) => Uuid::new_v4().to_string(),
-            Err(resp) => return resp,
-        };
-
-        let mut turn_policy = req.run_policy.clone().unwrap_or_default();
-        let target_selector = req.model.as_deref().filter(|model|model.starts_with("uar:agent:"))
-            .or_else(||req.agent_id.as_deref().filter(|agent|agent.starts_with("uar:agent:")));
-        let mut selected_bound = None;
-        let mut target_receipt = None;
-        if let Some(selector) = target_selector {
-            let binding_id = match uar::api::targets::target_binding_id(selector) {
-                Ok(Some(id)) => id,
-                _ => return openai_error_response(StatusCode::BAD_REQUEST,"Invalid agent target",Some("target_invalid")),
-            };
-            let Some(workspace) = uar::api::targets::workspace(&headers) else {
-                return openai_error_response(StatusCode::BAD_REQUEST,"Agent target requires x-uar-workspace-id",Some("workspace_required"));
-            };
-            let bound = match uar::api::targets::resolve_bound(&state.collaboration_catalog,&user_ctx,workspace,&binding_id).await {
-                Ok(bound) => bound,
-                Err(message) => return openai_error_response(StatusCode::CONFLICT,&message,Some("target_binding_unavailable")),
-            };
-            if req.agent_id.as_deref().is_some_and(|agent|agent != selector && agent != bound.artifact.id)
-                || turn_policy.agent_id.as_deref().is_some_and(|agent|agent != bound.artifact.id)
-                || (req.model.as_deref().is_some_and(|model|model.starts_with("uar:agent:") && model != selector)) {
-                return openai_error_response(StatusCode::BAD_REQUEST,"Contradictory agent and model selections",Some("target_selection_conflict"));
+            if !req.memory_enabled {
+                turn_policy.memory_enabled = Some(false);
             }
-            let override_model = req.model.as_deref().filter(|model|!model.starts_with("uar:agent:"));
-            let target = match state.run_manager.target_sources().admit_bound(&bound,override_model,workspace).await {
-                Ok(target) => target,
-                Err(message) => return openai_error_response(StatusCode::UNPROCESSABLE_ENTITY,&message,Some("model_not_verified")),
+            let initial_agent_id = turn_policy.agent_id.as_deref().unwrap_or("default-agent");
+            let mut agent = match &selected_bound {
+                Some(bound) => bound.artifact.clone(),
+                None => match uar::api::discovery::resolve_agent_for_run(&state, initial_agent_id)
+                    .await
+                {
+                    Ok(agent) => agent,
+                    Err(error) => return error.into_response(),
+                },
             };
-            turn_policy.agent_id = Some(bound.artifact.id.clone());
-            turn_policy.model = Some(uar::domain::policy::ModelRoute {provider_id:target.provider_id.clone(),model_id:target.model_id.clone()});
-            target_receipt = Some(target);
-            selected_bound = Some(bound);
-        } else {
-            if let Some(agent_id) = &req.agent_id {
-                turn_policy.agent_id = Some(agent_id.clone());
-                turn_policy.chat_mode = Some(if matches!(agent_id.as_str(), "default-agent" | "orchestrator-agent") {
-                    uar::domain::policy::ChatMode::Uar
-                } else { uar::domain::policy::ChatMode::Agent });
-            } else if req.model.is_some() {
-                turn_policy.agent_id = Some("default-agent".into());
-            }
-            if let Some(requested_model) = req.model.as_deref() {
-                let resolved = match resolve_requested_model(&state,Some(requested_model)).await {Ok(model)=>model,Err(response)=>return response};
-                turn_policy.model = Some(uar::domain::policy::ModelRoute {provider_id:resolved.provider_id,model_id:resolved.model_id});
-            }
-        }
-        if !req.memory_enabled { turn_policy.memory_enabled = Some(false); }
-        let initial_agent_id = turn_policy.agent_id.as_deref().unwrap_or("default-agent");
-        let mut agent = match &selected_bound {
-            Some(bound) => bound.artifact.clone(),
-            None => match uar::api::discovery::resolve_agent_for_run(&state,initial_agent_id).await {
-                Ok(agent)=>agent,Err(error)=>return error.into_response(),
-            },
-        };
-        if let Some(call_id) = caller_request.as_ref().and_then(|request| request.messages.last())
-            .filter(|message| message.role == "tool").and_then(|message| message.tool_call_id.as_deref()) {
-            let owner = match user_ctx.session_owner_key() {
-                Ok(owner) => owner,
-                Err(_) => return openai_error_response(StatusCode::UNAUTHORIZED, "Invalid caller-tool principal", Some("invalid_run_principal")),
-            };
-            let Some(store) = state.persistence.as_ref() else {
-                return openai_error_response(StatusCode::SERVICE_UNAVAILABLE, "Durable caller-tool persistence is unavailable", Some("durable_client_tools_unsupported"));
-            };
-            let row = match uar::api::client_tools::load_by_call_id(store.as_ref(), &owner,
-                user_ctx.tenant_id.as_ref().map(|tenant|tenant.as_str()), &agent.id, call_id).await {
-                Ok(Some(row)) => row,
-                Ok(None) => return openai_error_response(StatusCode::CONFLICT, "Caller-tool continuation is unavailable", Some("client_tool_continuation_rejected")),
-                Err(error) => return openai_error_response(StatusCode::CONFLICT, &error.to_string(), Some("client_tool_continuation_rejected")),
-            };
-            let Some(saved_session) = row.session_id else {
-                return openai_error_response(StatusCode::CONFLICT, "Caller-tool session is unavailable", Some("client_tool_continuation_rejected"));
-            };
-            match resolve_session_id(&req, &headers) {
-                Ok(Some(requested)) if requested != saved_session => return openai_error_response(StatusCode::CONFLICT,
-                    "Caller-tool session does not match the pending batch", Some("client_tool_continuation_rejected")),
-                Err(response) => return response,
-                _ => session_id = saved_session,
-            }
-        }
-        let mut effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
-            &state,
-            &user_ctx,
-            &session_id,
-            &agent,
-            Some(turn_policy.clone()),
-        )
-        .await;
-        if let Some(effective_agent_id) = effective_run_policy.agent_id.clone()
-            && effective_agent_id != agent.id
-        {
-            if selected_bound.is_some() {
-                return openai_error_response(StatusCode::CONFLICT,"Policy cannot replace an admitted agent target",Some("target_policy_conflict"));
-            }
-            agent = match uar::api::discovery::resolve_agent_for_run(&state, &effective_agent_id)
-                .await
+            if let Some(call_id) = caller_request
+                .as_ref()
+                .and_then(|request| request.messages.last())
+                .filter(|message| message.role == "tool")
+                .and_then(|message| message.tool_call_id.as_deref())
             {
-                Ok(agent) => agent,
-                Err(error) => return error.into_response(),
-            };
-            effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
+                let owner = match user_ctx.session_owner_key() {
+                    Ok(owner) => owner,
+                    Err(_) => {
+                        return openai_error_response(
+                            StatusCode::UNAUTHORIZED,
+                            "Invalid caller-tool principal",
+                            Some("invalid_run_principal"),
+                        );
+                    }
+                };
+                let Some(store) = state.persistence.as_ref() else {
+                    return openai_error_response(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "Durable caller-tool persistence is unavailable",
+                        Some("durable_client_tools_unsupported"),
+                    );
+                };
+                let row = match uar::api::client_tools::load_by_call_id(
+                    store.as_ref(),
+                    &owner,
+                    user_ctx.tenant_id.as_ref().map(|tenant| tenant.as_str()),
+                    &agent.id,
+                    call_id,
+                )
+                .await
+                {
+                    Ok(Some(row)) => row,
+                    Ok(None) => {
+                        return openai_error_response(
+                            StatusCode::CONFLICT,
+                            "Caller-tool continuation is unavailable",
+                            Some("client_tool_continuation_rejected"),
+                        );
+                    }
+                    Err(error) => {
+                        return openai_error_response(
+                            StatusCode::CONFLICT,
+                            &error.to_string(),
+                            Some("client_tool_continuation_rejected"),
+                        );
+                    }
+                };
+                let Some(saved_session) = row.session_id else {
+                    return openai_error_response(
+                        StatusCode::CONFLICT,
+                        "Caller-tool session is unavailable",
+                        Some("client_tool_continuation_rejected"),
+                    );
+                };
+                match resolve_session_id(&req, &headers) {
+                    Ok(Some(requested)) if requested != saved_session => {
+                        return openai_error_response(
+                            StatusCode::CONFLICT,
+                            "Caller-tool session does not match the pending batch",
+                            Some("client_tool_continuation_rejected"),
+                        );
+                    }
+                    Err(response) => return response,
+                    _ => session_id = saved_session,
+                }
+            }
+            let mut effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
                 &state,
                 &user_ctx,
                 &session_id,
                 &agent,
-                Some(turn_policy),
+                Some(turn_policy.clone()),
             )
             .await;
-        }
+            if let Some(effective_agent_id) = effective_run_policy.agent_id.clone()
+                && effective_agent_id != agent.id
+            {
+                if selected_bound.is_some() {
+                    return openai_error_response(
+                        StatusCode::CONFLICT,
+                        "Policy cannot replace an admitted agent target",
+                        Some("target_policy_conflict"),
+                    );
+                }
+                agent =
+                    match uar::api::discovery::resolve_agent_for_run(&state, &effective_agent_id)
+                        .await
+                    {
+                        Ok(agent) => agent,
+                        Err(error) => return error.into_response(),
+                    };
+                effective_run_policy = uar::api::discovery::resolve_effective_run_policy(
+                    &state,
+                    &user_ctx,
+                    &session_id,
+                    &agent,
+                    Some(turn_policy),
+                )
+                .await;
+            }
 
-        let effective_model_name = effective_run_policy
-            .model
-            .as_ref()
-            .map(|model| format!("{}/{}", model.provider_id, model.model_id));
-        let resolved_model =
-            match resolve_requested_model(&state, effective_model_name.as_deref()).await {
-                Ok(model) => model,
-                Err(response) => return response,
-            };
-        if selected_bound.is_none() {
-            agent.policy.provider.default.provider = resolved_model.provider_id.clone();
-            agent.policy.provider.default.model = resolved_model.model_id.clone();
-        }
-        effective_run_policy.model = Some(uar::domain::policy::ModelRoute {
-            provider_id: resolved_model.provider_id.clone(),
-            model_id: resolved_model.model_id.clone(),
-        });
-        if target_receipt.is_none() {
-            let selector = format!("{}/{}",resolved_model.provider_id,resolved_model.model_id);
-            let (_, proof) = match state.run_manager.target_sources().verified_model(&selector).await {
-                Ok(value)=>value,
-                Err(message)=>return openai_error_response(StatusCode::UNPROCESSABLE_ENTITY,&message,Some("model_not_verified")),
-            };
-            target_receipt = Some(uar::api::targets::TargetReceipt {
-                version:1,id:selector,kind:"model".into(),agent_id:agent.id.clone(),
-                provider_id:resolved_model.provider_id.clone(),model_id:resolved_model.model_id.clone(),
-                verified_at:proof.verified_at,configuration_digest:proof.configuration_digest,
-                definition:None,binding:None,workspace_id:uar::api::targets::workspace(&headers).map(str::to_owned),instance_id:None,
+            let effective_model_name = effective_run_policy
+                .model
+                .as_ref()
+                .map(|model| format!("{}/{}", model.provider_id, model.model_id));
+            let resolved_model =
+                match resolve_requested_model(&state, effective_model_name.as_deref()).await {
+                    Ok(model) => model,
+                    Err(response) => return response,
+                };
+            if selected_bound.is_none() {
+                agent.policy.provider.default.provider = resolved_model.provider_id.clone();
+                agent.policy.provider.default.model = resolved_model.model_id.clone();
+            }
+            effective_run_policy.model = Some(uar::domain::policy::ModelRoute {
+                provider_id: resolved_model.provider_id.clone(),
+                model_id: resolved_model.model_id.clone(),
             });
-        }
+            if target_receipt.is_none() {
+                let selector =
+                    format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
+                let (_, proof) = match state
+                    .run_manager
+                    .target_sources()
+                    .verified_model(&selector)
+                    .await
+                {
+                    Ok(value) => value,
+                    Err(message) => {
+                        return openai_error_response(
+                            StatusCode::UNPROCESSABLE_ENTITY,
+                            &message,
+                            Some("model_not_verified"),
+                        );
+                    }
+                };
+                target_receipt = Some(uar::api::targets::TargetReceipt {
+                    version: 1,
+                    id: selector,
+                    kind: "model".into(),
+                    agent_id: agent.id.clone(),
+                    provider_id: resolved_model.provider_id.clone(),
+                    model_id: resolved_model.model_id.clone(),
+                    verified_at: proof.verified_at,
+                    configuration_digest: proof.configuration_digest,
+                    definition: None,
+                    binding: None,
+                    workspace_id: uar::api::targets::workspace(&headers).map(str::to_owned),
+                    instance_id: None,
+                });
+            }
 
-        let agent_id_for_policy = agent.id.clone();
-        let (effective_resilience_policy, policy_source) =
-            resolve_effective_resilience_policy(&state, &agent_id_for_policy).await;
+            let agent_id_for_policy = agent.id.clone();
+            let (effective_resilience_policy, policy_source) =
+                resolve_effective_resilience_policy(&state, &agent_id_for_policy).await;
 
-        tracing::info!(
-            name: "resilience.policy.effective",
-            agent_id = %agent_id_for_policy,
-            source = ?policy_source,
-            request_timeout_ms = effective_resilience_policy.request_timeout_ms,
-            retries_enabled = effective_resilience_policy.retries_enabled,
-            retry_max_attempts = effective_resilience_policy.retry_max_attempts,
-            retry_base_delay_ms = effective_resilience_policy.retry_base_delay_ms,
-            retry_max_delay_ms = effective_resilience_policy.retry_max_delay_ms,
-            "Resolved effective resilience policy"
-        );
+            tracing::info!(
+                name: "resilience.policy.effective",
+                agent_id = %agent_id_for_policy,
+                source = ?policy_source,
+                request_timeout_ms = effective_resilience_policy.request_timeout_ms,
+                retries_enabled = effective_resilience_policy.retries_enabled,
+                retry_max_attempts = effective_resilience_policy.retry_max_attempts,
+                retry_base_delay_ms = effective_resilience_policy.retry_base_delay_ms,
+                retry_max_delay_ms = effective_resilience_policy.retry_max_delay_ms,
+                "Resolved effective resilience policy"
+            );
 
-        // Text-only projection feeds memory/run context. The independently admitted
-        // typed content is attached to the host request below without serialization.
-        let effective_input = input_message;
+            // Text-only projection feeds memory/run context. The independently admitted
+            // typed content is attached to the host request below without serialization.
+            let effective_input = input_message;
 
-        // --- Prompt caching: resolve effective setting for this request ---
-        let global_prompt_caching = match &state.settings_manager {
-            Some(manager) => manager
-                .get_typed::<bool>("prompt_caching.enabled")
-                .await
-                .ok()
-                .flatten()
-                .unwrap_or(false),
-            None => false,
-        };
-        let request_override = req.prompt_caching_enabled.or_else(|| {
-            (effective_run_policy
+            // --- Prompt caching: resolve effective setting for this request ---
+            let global_prompt_caching = match &state.settings_manager {
+                Some(manager) => manager
+                    .get_typed::<bool>("prompt_caching.enabled")
+                    .await
+                    .ok()
+                    .flatten()
+                    .unwrap_or(false),
+                None => false,
+            };
+            let request_override = req.prompt_caching_enabled.or_else(|| {
+                (effective_run_policy
+                    .provenance
+                    .get("prompt_caching_enabled")
+                    == Some(&uar::domain::policy::PolicyScope::Turn))
+                .then_some(effective_run_policy.prompt_caching_enabled)
+            });
+            let session_override = (effective_run_policy
                 .provenance
                 .get("prompt_caching_enabled")
-                == Some(&uar::domain::policy::PolicyScope::Turn))
-            .then_some(effective_run_policy.prompt_caching_enabled)
-        });
-        let session_override = (effective_run_policy
-            .provenance
-            .get("prompt_caching_enabled")
-            == Some(&uar::domain::policy::PolicyScope::Conversation))
-        .then_some(effective_run_policy.prompt_caching_enabled);
-        let jwt_principal = headers
-            .get(axum::http::header::AUTHORIZATION)
-            .and_then(|value| value.to_str().ok())
-            .filter(|value| value.starts_with("Bearer "))
-            .filter(|_| !headers.contains_key("x-api-key"))
-            .and_then(|_| uar::api::user_settings::principal_storage_key(&user_ctx));
-        let user_override = if let Some(principal_id) = jwt_principal {
-            match state
-                .user_settings_store
-                .caching_enabled_for(&principal_id)
-                .await
-            {
-                Ok(value) => value,
-                Err(error) => {
-                    tracing::error!(%error, "failed to resolve user prompt-caching preference");
-                    return openai_error_response(
-                        StatusCode::SERVICE_UNAVAILABLE,
-                        "User settings persistence unavailable",
-                        Some("user_settings_unavailable"),
-                    );
+                == Some(&uar::domain::policy::PolicyScope::Conversation))
+            .then_some(effective_run_policy.prompt_caching_enabled);
+            let jwt_principal = headers
+                .get(axum::http::header::AUTHORIZATION)
+                .and_then(|value| value.to_str().ok())
+                .filter(|value| value.starts_with("Bearer "))
+                .filter(|_| !headers.contains_key("x-api-key"))
+                .and_then(|_| uar::api::user_settings::principal_storage_key(&user_ctx));
+            let user_override = if let Some(principal_id) = jwt_principal {
+                match state
+                    .user_settings_store
+                    .caching_enabled_for(&principal_id)
+                    .await
+                {
+                    Ok(value) => value,
+                    Err(error) => {
+                        tracing::error!(%error, "failed to resolve user prompt-caching preference");
+                        return openai_error_response(
+                            StatusCode::SERVICE_UNAVAILABLE,
+                            "User settings persistence unavailable",
+                            Some("user_settings_unavailable"),
+                        );
+                    }
                 }
-            }
-        } else {
-            None
-        };
-        let effective_prompt_caching =
-            crate::uar::domain::prompt_caching::resolve_effective_caching(
-                request_override,
-                session_override,
-                user_override,
-                global_prompt_caching,
-            );
-        effective_run_policy.prompt_caching_enabled = effective_prompt_caching.enabled;
-        tracing::debug!(
-            prompt_caching_enabled = effective_prompt_caching.enabled,
-            source = ?effective_prompt_caching.source,
-            user_id = %user_ctx.user_id,
-            "Resolved effective prompt-caching setting"
-        );
-
-        // --- Memory: context injection (pre-LLM-call) ---
-        // Build context block and collect the raw hits so we can stream them to the client.
-        let memory_recall_items = if effective_run_policy.memory_enabled {
-            if let Some(svc) = &state.memory_service {
-                let result = context_builder::build_context_with_hits(
-                    svc,
-                    &effective_input,
-                    &user_ctx,
-                    Some(&agent.id),
-                    Some(&session_id),
-                    &resolved_model.model_id,
-                )
-                .await;
-                if !result.block.is_empty() {
-                    tracing::debug!(
-                        chars = result.block.len(),
-                        hits = result.hits.len(),
-                        "Memory context block assembled"
-                    );
-                }
-                // Convert surreal_memory::Memory → MemoryItem for the stream event.
-                let items: Vec<MemoryItem> = result
-                    .hits
-                    .iter()
-                    .map(|mem| {
-                        let scope_label = format!("{:?}", mem.scope).to_lowercase();
-                        let type_label = format!("{:?}", mem.memory_type).to_lowercase();
-                        MemoryItem {
-                            key: mem
-                                .id
-                                .as_ref()
-                                .and_then(|r| {
-                                    serde_json::to_value(r)
-                                        .ok()
-                                        .and_then(|v| v.as_str().map(str::to_string))
-                                })
-                                .unwrap_or_else(|| format!("{scope_label}/{type_label}")),
-                            value: mem.content.clone(),
-                            source: "memory_context".to_string(),
-                            scope: Some(scope_label),
-                            memory_type: Some(type_label),
-                            importance: Some(mem.importance),
-                        }
-                    })
-                    .collect();
-                items
             } else {
-                vec![]
-            }
-        } else {
-            vec![]
-        };
+                None
+            };
+            let effective_prompt_caching =
+                crate::uar::domain::prompt_caching::resolve_effective_caching(
+                    request_override,
+                    session_override,
+                    user_override,
+                    global_prompt_caching,
+                );
+            effective_run_policy.prompt_caching_enabled = effective_prompt_caching.enabled;
+            tracing::debug!(
+                prompt_caching_enabled = effective_prompt_caching.enabled,
+                source = ?effective_prompt_caching.source,
+                user_id = %user_ctx.user_id,
+                "Resolved effective prompt-caching setting"
+            );
 
-        let stream_memory_ctx_count = usize::from(!memory_recall_items.is_empty());
-        let bound_execution = selected_bound.is_some();
-        let candidate = match selected_bound {
-            Some(bound) => uar::runtime::turn::RunExecutionRequest::from_bound_agent(bound,effective_input.clone(),
-                uar::api::user_settings::principal_storage_key(&user_ctx).unwrap_or_default(),
-                uar::api::targets::workspace(&headers).unwrap_or_default().to_owned(),Arc::clone(&state.collaboration_catalog)),
-            None => uar::runtime::turn::RunExecutionRequest::new(agent,effective_input.clone()),
-        };
-        let candidate = candidate.with_admitted_current_user_content(current_user_content);
-        let mut run_request = match candidate.with_user_context(&user_ctx) {
-            Ok(request)=>request,
-            Err(_)=>return openai_error_response(StatusCode::UNAUTHORIZED,"Invalid run principal",Some("invalid_run_principal")),
-        };
-        run_request.target_selection = target_receipt.map(|receipt|json!(receipt));
-        run_request = run_request.with_credential_capture(credential_capture.map(|axum::Extension(capture)| capture));
-        run_request.session_id = Some(session_id.clone());
-        run_request.memory_hits = memory_recall_items;
-        run_request.resolved_policy = Some(effective_run_policy);
-        run_request.presentation_negotiation = req.presentation_negotiation.clone();
-        run_request.output_token_cap = req.max_completion_tokens.or(req.max_tokens);
-        run_request.response_format = req.response_format.clone();
-        if let Some(mut caller) = caller_request.take() {
-            caller.model = format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
-            return uar::api::openai::routes::execute_prepared_chat_completion(state, user_ctx, caller, run_request, input_finding,
-                Some(effective_resilience_policy.request_timeout_ms)).await;
-        }
-        let run_id = if bound_execution {
-            match state.run_manager.execute_bound_request(run_request).await {
-                Ok(id)=>id,
-                Err(error)=>return openai_error_response(StatusCode::CONFLICT,&error.to_string(),Some("target_binding_changed")),
-            }
-        } else { state.run_manager.execute_request(run_request).await };
+            // --- Memory: context injection (pre-LLM-call) ---
+            // Build context block and collect the raw hits so we can stream them to the client.
+            let (memory_recall_items, memory_context_provenance) =
+                if effective_run_policy.memory_enabled {
+                    if let Some(svc) = &state.memory_service {
+                        let result = context_builder::build_context_with_hits(
+                            svc,
+                            &effective_input,
+                            &user_ctx,
+                            Some(&agent.id),
+                            Some(&session_id),
+                            &resolved_model.model_id,
+                        )
+                        .await;
+                        if !result.block.is_empty() {
+                            tracing::debug!(
+                                chars = result.block.len(),
+                                hits = result.hits.len(),
+                                "Memory context block assembled"
+                            );
+                        }
+                        // Convert surreal_memory::Memory → MemoryItem for the stream event.
+                        let items: Vec<MemoryItem> = result
+                            .hits
+                            .iter()
+                            .map(|mem| {
+                                let scope_label = format!("{:?}", mem.scope).to_lowercase();
+                                let type_label = format!("{:?}", mem.memory_type).to_lowercase();
+                                MemoryItem {
+                                    key: mem
+                                        .id
+                                        .as_ref()
+                                        .and_then(|r| {
+                                            serde_json::to_value(r)
+                                                .ok()
+                                                .and_then(|v| v.as_str().map(str::to_string))
+                                        })
+                                        .unwrap_or_else(|| format!("{scope_label}/{type_label}")),
+                                    value: mem.content.clone(),
+                                    source: "memory_context".to_string(),
+                                    scope: Some(scope_label),
+                                    memory_type: Some(type_label),
+                                    importance: Some(mem.importance),
+                                }
+                            })
+                            .collect();
+                        (items, result.provenance)
+                    } else {
+                        (
+                            vec![],
+                            context_builder::MemoryContextProvenance::excluded(
+                                context_builder::MemoryContextStatus::Unavailable,
+                                "memory_service_unavailable",
+                            ),
+                        )
+                    }
+                } else {
+                    (
+                        vec![],
+                        context_builder::MemoryContextProvenance::excluded(
+                            if req.memory_enabled {
+                                context_builder::MemoryContextStatus::Disabled
+                            } else {
+                                context_builder::MemoryContextStatus::OptOut
+                            },
+                            if req.memory_enabled {
+                                "memory_injection_disabled"
+                            } else {
+                                "memory_turn_opt_out"
+                            },
+                        ),
+                    )
+                };
 
-        // Surface a non-blocking input-guardrail finding on the run's event stream
-        // (recorded in history before the client subscribes, so it replays).
-        if let Some(finding) = input_finding {
-            state
-                .run_manager
-                .emit_to_run(
-                    &run_id,
-                    uar::domain::events::NormalizedEvent::GuardrailFlagged {
-                        run_id: Some(run_id.clone()),
-                        category: finding.category.as_str().to_string(),
-                        reason: finding.reason,
-                    },
+            let bound_execution = selected_bound.is_some();
+            let candidate = match selected_bound {
+                Some(bound) => uar::runtime::turn::RunExecutionRequest::from_bound_agent(
+                    bound,
+                    effective_input.clone(),
+                    uar::api::user_settings::principal_storage_key(&user_ctx).unwrap_or_default(),
+                    uar::api::targets::workspace(&headers)
+                        .unwrap_or_default()
+                        .to_owned(),
+                    Arc::clone(&state.collaboration_catalog),
+                ),
+                None => {
+                    uar::runtime::turn::RunExecutionRequest::new(agent, effective_input.clone())
+                }
+            };
+            let candidate = candidate.with_admitted_current_user_content(current_user_content);
+            let mut run_request = match candidate.with_user_context(&user_ctx) {
+                Ok(request) => request,
+                Err(_) => {
+                    return openai_error_response(
+                        StatusCode::UNAUTHORIZED,
+                        "Invalid run principal",
+                        Some("invalid_run_principal"),
+                    );
+                }
+            };
+            run_request.target_selection = target_receipt.map(|receipt| json!(receipt));
+            run_request = run_request.with_credential_capture(
+                credential_capture.map(|axum::Extension(capture)| capture),
+            );
+            run_request.session_id = Some(session_id.clone());
+            run_request.memory_hits = memory_recall_items;
+            run_request.memory_context_provenance = Some(memory_context_provenance);
+            run_request.client_turn_id = req.client_turn_id.clone();
+            run_request.user_message_id = req.user_message_id.clone();
+            run_request.resolved_policy = Some(effective_run_policy);
+            run_request.presentation_negotiation = req.presentation_negotiation.clone();
+            run_request.output_token_cap = req.max_completion_tokens.or(req.max_tokens);
+            run_request.response_format = req.response_format.clone();
+            if let Some(mut caller) = caller_request.take() {
+                caller.model =
+                    format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);
+                return uar::api::openai::routes::execute_prepared_chat_completion(
+                    state,
+                    user_ctx,
+                    caller,
+                    run_request,
+                    input_finding,
+                    Some(effective_resilience_policy.request_timeout_ms),
                 )
                 .await;
-        }
+            }
+            let reserved_run_id =
+                if let (Some(turn), Some(message)) = (&req.client_turn_id, &req.user_message_id) {
+                    let Some(db) = state.persistence.as_ref() else {
+                        return openai_error_response(
+                            StatusCode::SERVICE_UNAVAILABLE,
+                            "Durable native chat recovery is unavailable",
+                            Some("native_chat_recovery_unavailable"),
+                        );
+                    };
+                    match uar::api::chat_turns::reserve_native_chat_turn(
+                        db.as_ref(),
+                        &user_ctx,
+                        &session_id,
+                        turn,
+                        message,
+                        uar::api::targets::workspace(&headers).map(str::to_owned),
+                        &native_chat_semantic_payload(&req, &headers),
+                    )
+                    .await
+                    {
+                        Ok(uar::api::chat_turns::NativeChatReservation::New(binding)) => {
+                            Some(binding.native_run_id)
+                        }
+                        Ok(uar::api::chat_turns::NativeChatReservation::Existing(binding)) => {
+                            return uar::api::chat_turns::native_chat_receipt(
+                                &state.run_manager,
+                                &user_ctx,
+                                &binding,
+                            )
+                            .await;
+                        }
+                        Err(error) => return native_chat_admission_error(&error),
+                    }
+                } else {
+                    None
+                };
+            let run_id = if let Some(run_id) = reserved_run_id {
+                if bound_execution {
+                    match state
+                        .run_manager
+                        .execute_bound_request_with_run_id(run_request, run_id)
+                        .await
+                    {
+                        Ok(id) => id,
+                        Err(_) => {
+                            return openai_error_response(
+                                StatusCode::CONFLICT,
+                                "Target binding changed after turn reservation; reconcile the original turn",
+                                Some("target_binding_changed"),
+                            );
+                        }
+                    }
+                } else {
+                    state
+                        .run_manager
+                        .execute_request_with_run_id(run_request, run_id)
+                        .await
+                }
+            } else if bound_execution {
+                match state.run_manager.execute_bound_request(run_request).await {
+                    Ok(id) => id,
+                    Err(error) => {
+                        return openai_error_response(
+                            StatusCode::CONFLICT,
+                            &error.to_string(),
+                            Some("target_binding_changed"),
+                        );
+                    }
+                }
+            } else {
+                state.run_manager.execute_request(run_request).await
+            };
 
-        (
-            run_id,
-            session_id,
-            format!("{}/{}", resolved_model.provider_id, resolved_model.model_id),
-            agent_id_for_policy,
-            effective_input,
-            stream_memory_ctx_count,
-            Some(effective_resilience_policy.request_timeout_ms),
-        )
-    };
+            // Surface a non-blocking input-guardrail finding on the run's event stream
+            // (recorded in history before the client subscribes, so it replays).
+            if let Some(finding) = input_finding {
+                state
+                    .run_manager
+                    .emit_to_run(
+                        &run_id,
+                        uar::domain::events::NormalizedEvent::GuardrailFlagged {
+                            run_id: Some(run_id.clone()),
+                            category: finding.category.as_str().to_string(),
+                            reason: finding.reason,
+                        },
+                    )
+                    .await;
+            }
+
+            (
+                run_id,
+                session_id,
+                format!("{}/{}", resolved_model.provider_id, resolved_model.model_id),
+                agent_id_for_policy,
+                effective_input,
+                Some(effective_resilience_policy.request_timeout_ms),
+            )
+        };
 
     let Some(mut rx) = state.run_manager.subscribe(&run_id).await else {
         return (
@@ -7041,7 +8099,21 @@ pub(crate) async fn api_chat_completion(
     let created = Utc::now().timestamp();
 
     // Capture per-request values needed inside the stream closure.
-    let req_memory_enabled = req.memory_enabled && !resuming;
+    // The manager may narrow memory policy for a representation or team run.
+    // A client's opt-in alone cannot authorize the post-stream memory write.
+    let req_memory_enabled = req.memory_enabled
+        && !resuming
+        && state
+            .run_manager
+            .get_run_for_context(&user_ctx, &run_id)
+            .await
+            .and_then(|run| {
+                run.context
+                    .get("effective_run_policy")
+                    .and_then(|policy| policy.get("memory_enabled"))
+                    .and_then(Value::as_bool)
+            })
+            == Some(true);
     let stream_user_ctx = user_ctx.clone();
 
     if req.stream {
@@ -7098,7 +8170,6 @@ pub(crate) async fn api_chat_completion(
         // Clone into stream-owned variables.
         let stream_memory_service = state.memory_service.clone();
         let stream_agent_id = agent_id_for_policy.clone();
-        let _stream_memory_ctx_count = stream_memory_ctx_count;
         // Last-subscriber-drop guard: owned by the stream generator so a client
         // disconnect (generator dropped) cancels the run iff no subscriber
         // remains after a short grace period.
@@ -7109,34 +8180,8 @@ pub(crate) async fn api_chat_completion(
 
         let stream = async_stream::stream! {
             let _disconnect_guard = disconnect_guard;
-            // Emit agui.memory.context event so frontend can show indicator.
-            // No formal AG-UI event covers this UAR-specific signal, so spec
-            // mode maps it to CUSTOM (same convention as to_agui_spec_event's
-            // other UAR-only events) rather than dropping it silently.
-            if (emit_agui_chunks || emit_agui_spec_chunks) && _stream_memory_ctx_count > 0 {
-                let event_name = if emit_agui_spec_chunks { "CUSTOM" } else { "agui.memory.context" };
-                let payload = if emit_agui_spec_chunks {
-                    enrich_agui_spec_payload(
-                        "CUSTOM",
-                        serde_json::json!({
-                            "name": "uar.memory.context_injected",
-                            "value": { "count": _stream_memory_ctx_count },
-                        }),
-                        "0",
-                        0,
-                    )
-                } else {
-                    serde_json::json!({
-                        "kind": "memory",
-                        "phase": "injected",
-                        "count": _stream_memory_ctx_count
-                    })
-                };
-                let mem_event = Event::default()
-                    .event(event_name)
-                    .data(serde_json::to_string(&payload).unwrap_or_default());
-                yield Ok::<Event, std::convert::Infallible>(mem_event);
-            }
+            // Selection/submission provenance comes from persisted host events.
+            // Nonempty retrieval hits are not evidence of provider submission.
 
             if emit_openai_chunks && !resuming {
                 let first = OpenAiChunk {
@@ -7873,17 +8918,13 @@ pub(crate) async fn api_chat_completion(
                     replay_result = Some(Ok(()));
                     break;
                 }
-                uar::domain::events::NormalizedEvent::Cancelled { usage: cancel_usage, .. } => {
+                uar::domain::events::NormalizedEvent::Cancelled {
+                    usage: cancel_usage,
+                    ..
+                } => {
                     // Capture usage from cancelled runs too (#329).
                     if let Some(u) = cancel_usage {
-                        let prompt = u.input_tokens.unwrap_or(0);
-                        let completion = u.output_tokens.unwrap_or(0);
-                        let total = u.total_tokens.unwrap_or_else(|| prompt.saturating_add(completion));
-                        usage = Some(serde_json::json!({
-                            "prompt_tokens": prompt,
-                            "completion_tokens": completion,
-                            "total_tokens": total,
-                        }));
+                        usage = uar::api::openai::usage::from_usage(&u);
                     }
                     replay_result = Some(Ok(()));
                     break;
@@ -7920,16 +8961,12 @@ pub(crate) async fn api_chat_completion(
                                 usage = uar::api::openai::usage::from_run_done(&done);
                                 break Ok::<(), String>(());
                             }
-                            uar::domain::events::NormalizedEvent::Cancelled { usage: cancel_usage, .. } => {
+                            uar::domain::events::NormalizedEvent::Cancelled {
+                                usage: cancel_usage,
+                                ..
+                            } => {
                                 if let Some(u) = cancel_usage {
-                                    let prompt = u.input_tokens.unwrap_or(0);
-                                    let completion = u.output_tokens.unwrap_or(0);
-                                    let total = u.total_tokens.unwrap_or_else(|| prompt.saturating_add(completion));
-                                    usage = Some(serde_json::json!({
-                                        "prompt_tokens": prompt,
-                                        "completion_tokens": completion,
-                                        "total_tokens": total,
-                                    }));
+                                    usage = uar::api::openai::usage::from_usage(&u);
                                 }
                                 break Ok::<(), String>(());
                             }

@@ -2,7 +2,7 @@ import type { PGlitePersistenceClient } from "@/platform/entities";
 import type { RunPhaseTimings } from "@/platform/agui/agui-normalizer";
 import type { LiveNamespace } from "@electric-sql/pglite/live";
 
-export type PersistedRunStatus = "running" | "finished" | "error" | "cancelled";
+export type PersistedRunStatus = "running" | "finished" | "error" | "cancelled" | "interrupted";
 
 export type PersistedRunEventKind =
   | "lifecycle"
@@ -66,6 +66,8 @@ export interface FinishPersistedRunInput {
   phaseTimings?: RunPhaseTimings;
   usage?: Record<string, unknown> | null;
   costUsd?: number | null;
+  /** Only an already-persisted, exactly correlated native terminal can settle a run. */
+  nativeTerminal?: { runId: string; eventId: string };
 }
 
 export interface AppendPersistedRunEventInput {
@@ -177,7 +179,23 @@ export class RunEventRepository {
               usage = COALESCE($5::jsonb, usage),
               cost_usd = COALESCE($6, cost_usd)
         WHERE id = $1
-          AND status = 'running'`,
+          AND ((status = 'running' AND $2 = 'interrupted') OR (
+            status IN ('running', 'interrupted')
+            AND $7::text = id
+            AND EXISTS (
+              SELECT 1 FROM run_event
+               WHERE run_id = run.id AND event_id = $8::text
+                 AND payload->>'profile' = 'uar.agui/1'
+                 AND payload->>'runId' = run.id
+                 AND payload->>'eventId' = event_id
+                 AND payload->>'type' = type
+                 AND (
+                   ($2 = 'finished' AND type = 'RUN_FINISHED') OR
+                   ($2 = 'cancelled' AND type = 'RUN_ERROR' AND payload->>'code' = 'CANCELLED') OR
+                   ($2 = 'error' AND type = 'RUN_ERROR' AND payload->>'code' IS DISTINCT FROM 'CANCELLED')
+                 )
+            )
+          ))`,
       [
         input.id,
         input.status,
@@ -185,6 +203,8 @@ export class RunEventRepository {
         input.phaseTimings ? JSON.stringify(input.phaseTimings) : null,
         input.usage ? JSON.stringify(input.usage) : null,
         input.costUsd ?? null,
+        input.nativeTerminal?.runId ?? null,
+        input.nativeTerminal?.eventId ?? null,
       ],
     );
   }

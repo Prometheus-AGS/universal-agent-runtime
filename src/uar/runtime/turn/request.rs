@@ -111,6 +111,12 @@ pub struct RunExecutionRequest {
     pub(crate) host_resources_marker: super::host::HostResourcesMarker,
     pub(crate) host_secret_scrubber: super::host::RunSecretScrubber,
     pub memory_hits: Vec<MemoryItem>,
+    /// Stable native-chat identity captured by the trusted ingress adapter.
+    pub client_turn_id: Option<String>,
+    pub user_message_id: Option<String>,
+    /// Content-free retrieval outcome; selection alone does not prove submission.
+    pub memory_context_provenance:
+        Option<crate::uar::memory::context_builder::MemoryContextProvenance>,
     pub resolved_policy: Option<EffectiveRunPolicy>,
     /// Safe admitted target identity, never a mutable definition.
     pub(crate) target_selection: Option<serde_json::Value>,
@@ -194,6 +200,9 @@ impl RunExecutionRequest {
             host_resources_marker: Default::default(),
             host_secret_scrubber: Default::default(),
             memory_hits: Vec::new(),
+            client_turn_id: None,
+            user_message_id: None,
+            memory_context_provenance: None,
             resolved_policy: None,
             target_selection: None,
             presentation_negotiation: Default::default(),

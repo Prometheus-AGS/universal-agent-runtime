@@ -1,12 +1,19 @@
 # Verify release evidence
 
-Release evidence is produced locally from a clean checkout by
-`scripts/prepare-release-evidence-local.sh`. The output includes
+This is the evidence procedure, not a current artifact receipt. The selected
+Linux amd64 image/whole-set source remains unverified; use the [finite final
+checklist](releases/v1.4.0-final.md) and [canonical recovery table](product-support-matrix.md#execution-and-recovery-guarantees).
+
+Release evidence can be produced locally from a clean checkout by
+`scripts/prepare-release-evidence-local.sh`. Its expected output includes
 `release-manifest.json`, `SHA256SUMS`, archive/binary/source/image SBOMs,
 Sigstore bundles, SLSA provenance, and the exact product support matrix. The
 manifest binds hashed local test and security-audit receipts to the release
-source SHA. GitHub Actions are not a product-test, build, certification, or
-signing runner; they are reserved for deployment execution and validation.
+source SHA. The checked-in deployment workflow builds/pushes container images
+and sidecars as deployment execution. GitHub Actions are not a routine product
+test/security-check or release-certification runner. Local evidence generation,
+actual installed execution, registry publication and signature verification are
+distinct results; none follows from the others or script presence.
 
 Before archiving or signing, the local evidence script generates
 `release-input-provenance.json`. The existing manifest's `evidence.files` hashes
@@ -47,6 +54,11 @@ the existing unpacked, empty-cache, network-disabled `--locked --offline` gate.
 
 The supporting public-CLI integration test uses temporary real Git repositories,
 submodules and filesystem inputs. Run it locally at the completed-change boundary:
+
+The active #462–475 operator lock supersedes that generic timing: every phase
+implementation item must be complete, and the operator must explicitly approve
+the exact final batch. No command shown in this document is authorization to run
+it while the gate is CLOSED.
 
 ```bash
 node --test scripts/test-release-input-provenance.mjs

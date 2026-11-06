@@ -14,6 +14,115 @@
 use crate::uar::domain::events::NormalizedEvent;
 use serde_json::{Value, json};
 
+/// Content-free projection of host memory provenance. Invalid host JSON cannot
+/// manufacture a submitted claim or carry arbitrary memory facts onto the wire.
+pub(crate) fn memory_context_value(value: Option<&Value>) -> Value {
+    fn label(value: Option<&Value>) -> Option<&str> {
+        value.and_then(Value::as_str).filter(|text| {
+            !text.is_empty()
+                && text.len() <= 96
+                && text
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-'))
+        })
+    }
+    let invalid = || {
+        json!({"status":"unavailable", "reason_code":"invalid_memory_context_provenance",
+        "retrieval_method":"unavailable", "memory_ids":[]})
+    };
+    let Some(value) = value.and_then(Value::as_object) else {
+        return invalid();
+    };
+    let Some(status) = label(value.get("status")) else {
+        return invalid();
+    };
+    if !matches!(
+        status,
+        "disabled"
+            | "opt_out"
+            | "no_match"
+            | "bounded_out"
+            | "unavailable"
+            | "refused"
+            | "selected_prepared"
+            | "submitted"
+    ) {
+        return invalid();
+    }
+    let (Some(reason), Some(method), Some(ids)) = (
+        label(value.get("reason_code")),
+        label(value.get("retrieval_method")),
+        value.get("memory_ids").and_then(Value::as_array),
+    ) else {
+        return invalid();
+    };
+    if ids.len() > 20
+        || ids.iter().any(|id| {
+            !id.as_str().is_some_and(|id| {
+                !id.is_empty()
+                    && id.len() <= 256
+                    && id.bytes().all(|byte| {
+                        byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b':')
+                    })
+            })
+        })
+    {
+        return invalid();
+    }
+    let mut projected =
+        json!({"status":status, "reason_code":reason, "retrieval_method":method, "memory_ids":ids});
+    if status == "submitted" {
+        let basis = value.get("evidence_basis").and_then(Value::as_str);
+        let hash = value.get("request_content_sha256").and_then(Value::as_str);
+        let model = value.get("model").and_then(Value::as_str);
+        if basis != Some("final_driver_request_and_provider_response")
+            || !hash.is_some_and(|hash| {
+                hash.len() == 64 && hash.bytes().all(|byte| byte.is_ascii_hexdigit())
+            })
+            || !model.is_some_and(|model| {
+                !model.is_empty()
+                    && model.len() <= 256
+                    && model.bytes().all(|byte| {
+                        byte.is_ascii_alphanumeric()
+                            || matches!(byte, b'_' | b'-' | b'.' | b'/' | b':')
+                    })
+            })
+            || ids.is_empty()
+        {
+            return invalid();
+        }
+        projected["evidence_basis"] = json!(basis);
+        projected["request_content_sha256"] = json!(hash);
+        projected["model"] = json!(model);
+    }
+    projected
+}
+
+pub(crate) fn sanitize_memory_context_patch(
+    patch: &[crate::uar::domain::events::StatePatchOp],
+) -> Vec<crate::uar::domain::events::StatePatchOp> {
+    patch
+        .iter()
+        .map(|operation| {
+            if operation.path == "/memory_context" || operation.path.starts_with("/memory_context/")
+            {
+                crate::uar::domain::events::StatePatchOp {
+                    op: "add".into(),
+                    path: "/memory_context".into(),
+                    value: Some(memory_context_value(
+                        (operation.path == "/memory_context"
+                            && matches!(operation.op.as_str(), "add" | "replace"))
+                        .then_some(operation.value.as_ref())
+                        .flatten(),
+                    )),
+                }
+            } else {
+                operation.clone()
+            }
+        })
+        .collect()
+}
+
 pub fn to_ag_ui(event: &NormalizedEvent) -> Value {
     match event {
         NormalizedEvent::ChatDelta { run_id, text_delta } => json!({
@@ -45,6 +154,9 @@ pub fn to_ag_ui(event: &NormalizedEvent) -> Value {
                 "component": "artifact",
                 "props": artifact
             }
+        }),
+        NormalizedEvent::StatePatch { run_id, patch } => json!({
+            "type":"StatePatch", "data":{"run_id":run_id,"patch":sanitize_memory_context_patch(patch)}
         }),
         // Default fallthrough to raw event
         other => serde_json::to_value(other).unwrap_or(json!({"error": "serialization_failed"})),
@@ -81,8 +193,13 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
     };
 
     let mapped = match event {
-        NormalizedEvent::ClientToolsRequested { run_id, batch_id, calls } => custom(
-            "uar.client_tools.requested", Some(run_id),
+        NormalizedEvent::ClientToolsRequested {
+            run_id,
+            batch_id,
+            calls,
+        } => custom(
+            "uar.client_tools.requested",
+            Some(run_id),
             serde_json::json!({"batchId":batch_id,"calls":calls}),
         ),
         NormalizedEvent::RunStart { run_id, agent_id } => (
@@ -135,10 +252,16 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
             serde_json::json!({ "items": items, "count": items.len() }),
         ),
         NormalizedEvent::AgentSelected {
-            run_id, source_agent_id, selected_agent_id, selected_agent_name,
-            selected_thread_id, selection_method, roster_revision,
+            run_id,
+            source_agent_id,
+            selected_agent_id,
+            selected_agent_name,
+            selected_thread_id,
+            selection_method,
+            roster_revision,
         } => custom(
-            "uar.agent.selected", Some(run_id),
+            "uar.agent.selected",
+            Some(run_id),
             serde_json::json!({
                 "sourceAgentId": source_agent_id,
                 "agent": { "id": selected_agent_id, "title": selected_agent_name },
@@ -256,14 +379,31 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
                 "threadId": run_id, "runId": run_id
             }),
         ),
-        NormalizedEvent::Cancelled { run_id, .. } => (
-            "RUN_ERROR",
-            serde_json::json!({
+        NormalizedEvent::Cancelled { run_id, usage } => {
+            let mut payload = json!({
                 "type": "RUN_ERROR", "profile": PROFILE,
                 "threadId": run_id, "runId": run_id,
                 "code": "CANCELLED", "message": "Run cancelled"
-            }),
-        ),
+            });
+            if let Some(usage) = usage {
+                let mut reported = json!({
+                    "inputTokens": usage.input_tokens, "outputTokens": usage.output_tokens,
+                    "totalTokens": usage.total_tokens, "costUsdEstimate": usage.cost_usd_estimate,
+                    "model": usage.model
+                });
+                if let Some(count) = usage.uncached_input_tokens {
+                    reported["uncachedInputTokens"] = count.into();
+                }
+                if let Some(count) = usage.cache_read_input_tokens {
+                    reported["cacheReadInputTokens"] = count.into();
+                }
+                if let Some(count) = usage.cache_creation_input_tokens {
+                    reported["cacheCreationInputTokens"] = count.into();
+                }
+                payload["result"] = json!({"usage": reported});
+            }
+            ("RUN_ERROR", payload)
+        }
         NormalizedEvent::SycophancyFlagged {
             run_id,
             sycophancy_score,
@@ -333,7 +473,7 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
             "STATE_DELTA",
             serde_json::json!({
                 "type": "STATE_DELTA", "profile": PROFILE,
-                "delta": patch, "threadId": run_id, "runId": run_id
+                "delta": sanitize_memory_context_patch(patch), "threadId": run_id, "runId": run_id
             }),
         ),
         NormalizedEvent::ContextAction(action) => custom(
@@ -414,20 +554,34 @@ pub fn to_agui_spec_event(event: &NormalizedEvent) -> Option<(&'static str, serd
             input_tokens,
             output_tokens,
             total_tokens,
+            cache_read_input_tokens,
+            cache_creation_input_tokens,
+            uncached_input_tokens,
             cost_usd_estimate,
             model,
-        } => (
-            "RUN_FINISHED",
-            serde_json::json!({
-                "type": "RUN_FINISHED", "profile": PROFILE,
-                "threadId": run_id, "runId": run_id,
-                "result": { "usage": {
-                    "inputTokens": input_tokens, "outputTokens": output_tokens,
-                    "totalTokens": total_tokens, "costUsdEstimate": cost_usd_estimate,
-                    "model": model
-                }}
-            }),
-        ),
+        } => {
+            let mut usage = serde_json::json!({
+                "inputTokens": input_tokens, "outputTokens": output_tokens,
+                "totalTokens": total_tokens, "costUsdEstimate": cost_usd_estimate, "model": model
+            });
+            if let Some(count) = uncached_input_tokens {
+                usage["uncachedInputTokens"] = (*count).into();
+            }
+            if let Some(count) = cache_read_input_tokens {
+                usage["cacheReadInputTokens"] = (*count).into();
+            }
+            if let Some(count) = cache_creation_input_tokens {
+                usage["cacheCreationInputTokens"] = (*count).into();
+            }
+            (
+                "RUN_FINISHED",
+                serde_json::json!({
+                    "type": "RUN_FINISHED", "profile": PROFILE,
+                    "threadId": run_id, "runId": run_id,
+                    "result": { "usage": usage }
+                }),
+            )
+        }
     };
     Some(mapped)
 }

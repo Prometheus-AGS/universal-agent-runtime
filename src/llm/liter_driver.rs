@@ -910,6 +910,7 @@ impl LlmDriver for LiterLlmDriver {
         req: LlmRequest,
     ) -> anyhow::Result<std::pin::Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>>
     {
+        super::orchestrator::record_provider_preparation();
         let has_image_parts = request_contains_image_parts(&req);
         let prepared = build_chat_request(
             &self.model,
@@ -965,6 +966,7 @@ impl LlmDriver for LiterLlmDriver {
         // a per-call latency histogram when the returned stream finishes.
         let call_start = std::time::Instant::now();
         let call_span = tracing::Span::current();
+        super::orchestrator::record_provider_submission();
         let mut chunk_stream = self
             .client
             .chat_stream(chat_req)
@@ -1070,6 +1072,7 @@ impl LlmDriver for LiterLlmDriver {
                             completion_tokens: usage.completion_tokens as u32,
                             total_tokens: usage.total_tokens as u32,
                             cached_tokens: cached_read.map(|t| t as u32),
+                            uncached_input_tokens: None,
                             cache_creation_tokens: None,
                         });
                     }

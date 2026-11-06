@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomInt, randomUUID } from 'node:crypto';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { expect } from '@playwright/test';
 import { test as base, createBdd } from 'playwright-bdd';
@@ -19,6 +19,9 @@ export const test = base.extend({
         exchanges: [], streams: [] } };
     const errors = [];
     try { await use(state); } finally {
+      if (state.historyContext) {
+        try { await state.historyContext.close(); } catch (error) { errors.push(`Fresh context cleanup: ${error}`); }
+      }
       if (state.created) {
         try {
           await api(state, 'DELETE', `/api/agents/${state.agentId}`, undefined, 204);
@@ -174,6 +177,7 @@ When('I give the agent a fresh fact in the browser', async ({ page, scenario: s 
   s.threadId = s.first.sessionHeader;
   assert.ok(s.threadId, 'The browser must send its conversation id');
   assert.equal(s.first.request.message, s.factMessage);
+  assert.ok(s.first.request.client_turn_id && s.first.request.user_message_id, "Original turn and message identities must be sent");
   assert.match(s.first.text, /^READY\b/i, `Fact acknowledgement: ${s.first.text.slice(0, 200)}`);
   s.evidence.thread_id = s.threadId;
   s.evidence.fact_run_id = s.first.runId;
@@ -229,6 +233,8 @@ When('I send a follow-up that contains none of the earlier facts', async ({ page
   assert.equal(s.second.request.message, s.followUp);
   assert.equal(s.second.sessionHeader, s.threadId, 'The follow-up must continue the reopened conversation');
   assert.notEqual(s.second.runId, s.first.runId);
+  assert.notEqual(s.second.request.client_turn_id, s.first.request.client_turn_id);
+  assert.notEqual(s.second.request.user_message_id, s.first.request.user_message_id);
   s.evidence.follow_up_request = s.second.request;
   s.evidence.follow_up_run_id = s.second.runId;
 });
@@ -258,4 +264,286 @@ Then('the follow-up answer uses the earlier fact from the saved server history',
   s.evidence.fact_source = 'server session history: follow-up request carried only the new question; memory, retrieval and context strategy disabled by run policy';
   s.evidence.result = 'VERIFIED';
   await shot(page, s, 'follow-up-answer.png');
+});
+
+When('the server admits my browser turn but its response is lost', async ({ page, scenario: s }) => {
+  s.reference = `LOST-${randomUUID()}`;
+  s.factMessage = `Remember reference ${s.reference}. Acknowledge only READY.`;
+  let delivered;
+  const admitted = new Promise((resolve, reject) => { delivered = { resolve, reject }; });
+  await page.route('**/api/chat/completion', async route => {
+    try {
+      const request = route.request();
+      const body = request.postDataJSON();
+      assert.ok(body.client_turn_id && body.user_message_id, 'Stable original IDs must be sent');
+      s.threadId = request.headers()['x-uar-session-id'];
+      assert.ok(s.threadId);
+      s.lostTurn = body;
+      const response = await route.fetch();
+      assert.equal(response.status(), 200);
+      const text = await response.text();
+      assert.ok(text.includes('RUN_FINISHED'), 'The actual server run must finish before its response is lost');
+      s.evidence.lost_response = { request: body, session_id: s.threadId, server_response: text };
+      await route.abort('failed');
+      delivered.resolve();
+    } catch (error) { delivered.reject(error); }
+  }, { times: 1 });
+  await page.getByRole('textbox', { name: 'Message input', exact: true }).fill(s.factMessage);
+  await page.getByRole('button', { name: 'Send message', exact: true }).click();
+  await admitted;
+  s.postsBeforeReload = s.completionPosts.length;
+  assert.equal(s.postsBeforeReload, 1);
+});
+When('I reload after losing that admission response', async ({ page }) => {
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(threadList(page)).toHaveAttribute('aria-busy', 'false');
+});
+Then('the original turn receipt and history recover without a second completion POST', async ({ page, scenario: s }) => {
+  const receipt = await api(s, 'GET', `/api/uar/chat-turns/${encodeURIComponent(s.lostTurn.client_turn_id)}?session_id=${encodeURIComponent(s.threadId)}`);
+  assert.equal(receipt.client_turn_id, s.lostTurn.client_turn_id);
+  assert.equal(receipt.user_message_id, s.lostTurn.user_message_id);
+  assert.equal(receipt.retry_allowed, false);
+  assert.equal(receipt.state, 'complete');
+  const history = await api(s, 'GET', `/api/uar/sessions/${encodeURIComponent(s.threadId)}`);
+  const user = history.history.filter(row => row.message_id === s.lostTurn.user_message_id);
+  assert.equal(user.length, 1);
+  assert.equal(user[0].client_turn_id, s.lostTurn.client_turn_id);
+  assert.ok(history.history.some(row => row.run_id === receipt.run_id && row.role === 'assistant' && row.status === 'complete'));
+  await expect(userMessages(page).filter({ hasText: s.reference })).toHaveCount(1);
+  await expect(assistantMessages(page).filter({ hasText: /READY/i })).toHaveCount(1);
+  assert.equal(s.completionPosts.length, s.postsBeforeReload, 'Receipt/history recovery cannot start a second run');
+  s.evidence.recovered_turn = { receipt, history, completion_posts: s.completionPosts.length };
+  await shot(page, s, 'lost-admission-recovered.png');
+});
+
+// These cases consume the existing externally provisioned native fixture. They
+// never start peers, change provider configuration or carry authentication.
+const historyText = row => typeof row.content === 'string' ? row.content
+  : row.content.filter(block => block.type === 'text').map(block => block.text).join('');
+const conversationMessages = page => page.locator('[data-slot="aui_user-message-root"][data-role="user"], [data-slot="aui_assistant-message-root"][data-role="assistant"]');
+async function historyJournals(s) {
+  const lines = async path => (await readFile(path, 'utf8')).split('\n').filter(Boolean).map(line => JSON.parse(line));
+  return { provider: await lines(s.fixture.peer.journal), effects: await lines(s.fixture.peer.recordLog) };
+}
+function observeHistoryPage(page, s) {
+  page.on('pageerror', error => s.evidence.page_errors.push(String(error)));
+  page.on('request', request => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === COMPLETION_PATH)
+      s.completionPosts.push({ at: new Date().toISOString(), body: request.postData() });
+  });
+}
+
+Given('the externally provisioned governed tool agent is selected in a fresh browser conversation', async ({ page, scenario: s }) => {
+  assert.ok(process.env.UAR_NATIVE_CHAT_FIXTURE && process.env.UAR_BASE_URL && process.env.UAR_WORKSPACE_ID && evidenceDir());
+  s.fixture = JSON.parse(await readFile(process.env.UAR_NATIVE_CHAT_FIXTURE, 'utf8'));
+  assert.equal(s.fixture.protocol, 'uar.native-chat-admission-fixture/v1');
+  assert.equal(s.fixture.dedicated, true);
+  assert.match(s.fixture.namespace, /^native-chat-[A-Za-z0-9_-]{1,64}$/);
+  assert.match(s.fixture.identity.sourceCommit, /^[a-f0-9]{40}$/);
+  assert.match(s.fixture.identity.imageDigest, /^sha256:[a-f0-9]{64}$/);
+  assert.match(s.fixture.identity.configDigest, /^[a-f0-9]{64}$/);
+  assert.equal(s.fixture.identity.platform, 'linux/amd64');
+  assert.equal(s.fixture.peer.protocol, 'uar.native-chat-admission-peer/v1');
+  for (const flag of ['retriesDisabled', 'fallbacksDisabled', 'visionEnabled']) assert.equal(s.fixture.peer[flag], true);
+  for (const path of [s.fixture.peer.journal, s.fixture.peer.recordLog]) assert.ok(path?.startsWith('/'));
+  assert.ok(s.fixture.peer.toolName && s.fixture.peer.wireModel && s.fixture.model && s.fixture.agents.effect);
+  const base = new URL(process.env.UAR_BASE_URL);
+  assert.ok(['http:', 'https:'].includes(base.protocol) && ['127.0.0.1', '[::1]'].includes(base.hostname));
+  assert.ok(!base.username && !base.password && !base.search && !base.hash);
+  s.agentId = s.fixture.agents.effect;
+  const agent = await api(s, 'GET', `/api/agents/${encodeURIComponent(s.agentId)}`);
+  assert.equal(agent.id, s.agentId);
+  s.inheritedModel = { provider_id: agent.policy.provider.default.provider, model_id: agent.policy.provider.default.model };
+  assert.equal(`${s.inheritedModel.provider_id}/${s.inheritedModel.model_id}`, s.fixture.model);
+  s.title = agent.metadata.title;
+  assert.ok(s.title);
+  Object.assign(s.evidence, { scenario: 'C35-CANONICAL-TOOL-LOOP-RELOAD', identity: s.fixture.identity,
+    namespace: s.fixture.namespace, external_services_started_by_test: false, page_errors: [] });
+  observeHistoryPage(page, s);
+  await page.goto('/threads', { waitUntil: 'domcontentloaded' });
+  await page.getByRole('button', { name: 'New thread', exact: true }).click();
+  const selected = observeResponse(page, r => r.request().method() === 'POST' && /\/api\/uar\/sessions\/[^/]+\/agent-config$/.test(new URL(r.url()).pathname));
+  await page.getByRole('button', { name: 'Select agent', exact: true }).click();
+  await page.getByPlaceholder('Search agents...').fill(s.title);
+  await page.getByRole('option').filter({ hasText: s.title }).click();
+  const selectionResponse = await selected();
+  assert.equal(selectionResponse.status(), 200);
+  const savedConfig = await selectionResponse.json();
+  assert.equal(savedConfig.agent_id, s.agentId);
+  assert.equal(savedConfig.model, null, 'The fresh session must inherit the selected agent model policy');
+  s.evidence.saved_model_policy = { path: new URL(selectionResponse.url()).pathname, config: savedConfig,
+    agent_default: s.inheritedModel };
+  await expect(page.getByRole('button', { name: 'Select agent', exact: true })).toContainText(s.title);
+  s.journalsBefore = await historyJournals(s);
+  s.historyPage = page;
+});
+
+When('I complete a controlled {string} tool-loop and a later browser turn', async ({ page, scenario: s }, intermediate) => {
+  assert.ok(['preamble', 'tool-only'].includes(intermediate));
+  s.intermediate = intermediate;
+  s.toolCase = randomUUID();
+  s.followCase = randomUUID();
+  const mode = intermediate === 'preamble' ? 'effect-preamble' : 'effect';
+  s.toolPrompt = `UAR_NATIVE_CHAT:${s.fixture.namespace}:${s.toolCase}:${mode}`;
+  s.finalText = `NATIVE-CHAT-OK:${s.toolCase}`;
+  s.preambleText = `NATIVE-CHAT-PREAMBLE:${s.toolCase}`;
+  const title = observeResponse(page, r => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/generate-title');
+  // Capture the actual durable pre-dispatch UI state before any server reply.
+  // The shipped DB uses idb://uar-threads, so IndexedDB must be included.
+  await page.route('**/api/chat/completion', async route => {
+    assert.equal(route.request().postDataJSON().message, s.toolPrompt);
+    await expect(assistantMessages(page)).toHaveCount(0);
+    assert.deepEqual(await historyJournals(s), s.journalsBefore, 'No provider arrival or tool effect may precede the captured original dispatch');
+    const snapshot = await page.context().storageState({ indexedDB: true });
+    const origin = snapshot.origins.find(row => row.origin === new URL(process.env.UAR_BASE_URL).origin);
+    assert.ok(origin?.indexedDB?.length, 'The pre-reply snapshot must capture the shipped IndexedDB backing store');
+    // The gateway supplies identity; transfer only local browser data, no cookies.
+    s.preReplySnapshot = { cookies: [], origins: snapshot.origins };
+    s.evidence.pre_reply_snapshot = { assistant_messages: 0, indexed_databases: origin.indexedDB.length,
+      captured_before_completion_dispatch: true, run_text_events: 0, event_basis: 'original POST held before dispatch in fresh scenario context', includes_registry_user_intent: 'asserted again in fresh context before history/receipt reads' };
+    await route.continue();
+  }, { times: 1 });
+  const completed = observeResponse(page, isCompletion);
+  await page.getByRole('textbox', { name: 'Message input', exact: true }).fill(s.toolPrompt);
+  await page.getByRole('button', { name: 'Send message', exact: true }).click();
+  s.toolTurn = await stream(s, 'controlled-tool-loop', await completed());
+  s.threadId = s.toolTurn.sessionHeader;
+  assert.ok(s.threadId && s.toolTurn.request.client_turn_id && s.toolTurn.request.user_message_id);
+  assert.equal(s.toolTurn.request.agent_id, s.agentId);
+  assert.equal(Object.hasOwn(s.toolTurn.request, 'model'), false, 'Normal Send must not override the saved model policy');
+  assert.equal(s.evidence.saved_model_policy.path, `/api/uar/sessions/${encodeURIComponent(s.threadId)}/agent-config`);
+  await expect(assistantMessages(page).filter({ hasText: s.finalText })).toHaveCount(1);
+  assert.equal((await title()).status(), 200);
+  const active = threadList(page).locator('button[aria-current="page"] p.truncate');
+  await expect(active).not.toHaveText('New conversation');
+  s.threadTitle = (await active.innerText()).trim();
+  s.followPrompt = `UAR_NATIVE_CHAT:${s.fixture.namespace}:${s.followCase}:success`;
+  const follow = observeResponse(page, isCompletion);
+  await page.getByRole('textbox', { name: 'Message input', exact: true }).fill(s.followPrompt);
+  await page.getByRole('button', { name: 'Send message', exact: true }).click();
+  s.followTurn = await stream(s, 'later-turn', await follow());
+  assert.equal(s.followTurn.sessionHeader, s.threadId);
+  assert.notEqual(s.followTurn.runId, s.toolTurn.runId);
+  assert.equal(s.followTurn.text, `NATIVE-CHAT-OK:${s.followCase}`);
+  assert.equal(s.completionPosts.length, 2);
+  s.evidence.admitted_model_policy = [];
+  for (const turn of [s.toolTurn, s.followTurn]) {
+    assert.equal(Object.hasOwn(turn.request, 'model'), false, 'Both normal Send turns must inherit model policy');
+    const admitted = await api(s, 'GET', `/api/uar/runs/${encodeURIComponent(turn.runId)}`);
+    assert.equal(admitted.run_id, turn.runId);
+    assert.equal(admitted.agent_id, s.agentId);
+    assert.equal(admitted.conversation_id, s.threadId);
+    assert.deepEqual(admitted.effective_model, s.inheritedModel, 'The admitted logical model must match the selected agent policy');
+    s.evidence.admitted_model_policy.push({ run_id: admitted.run_id, effective_model: admitted.effective_model });
+  }
+  const history = await api(s, 'GET', `/api/uar/sessions/${encodeURIComponent(s.threadId)}`);
+  assert.equal(history.history_version, 1);
+  const segments = history.history.filter(row => row.role === 'assistant' && row.run_id === s.toolTurn.runId);
+  assert.deepEqual(segments.map(row => row.message_id), [`run-${s.toolTurn.runId}-assistant-0`, `run-${s.toolTurn.runId}-assistant-1`]);
+  assert.deepEqual(segments.map(historyText), [intermediate === 'preamble' ? s.preambleText : '', s.finalText]);
+  assert.ok(segments.every(row => row.status === 'complete'));
+  assert.ok(segments.every(row => typeof row.content === 'string' || row.content.every(block => ['text', 'image_url', 'image'].includes(block.type))),
+    'Use the real canonical text/image history projection, not portable tool argument/result mocks');
+  s.canonicalIds = history.history.map(row => row.message_id);
+  assert.equal(history.history.filter(row => row.message_id === s.toolTurn.request.user_message_id).length, 1);
+  assert.equal(history.history.filter(row => row.message_id === s.followTurn.request.user_message_id).length, 1);
+  const journals = await historyJournals(s);
+  const arrivals = journals.provider.slice(s.journalsBefore.provider.length).filter(row => row.kind === 'provider');
+  assert.deepEqual(arrivals.map(row => [row.case_id, row.stage]), [[s.toolCase, 'tool_request'], [s.toolCase, 'after_tool'], [s.followCase, 'success']]);
+  assert.ok(arrivals.every(row => row.namespace === s.fixture.namespace && row.model === s.fixture.peer.wireModel));
+  const effects = journals.effects.slice(s.journalsBefore.effects.length).filter(row => row.tool === 'record_write' && !row.response_dropped);
+  assert.equal(effects.length, 1);
+  assert.equal(effects[0].arguments.key, `${s.fixture.namespace}:${s.toolCase}`);
+  assert.equal(effects[0].result.stored, true);
+  assert.equal(effects[0].result.revision, 1);
+  s.journalsSettled = journals;
+  s.postsSettled = s.completionPosts.length;
+  Object.assign(s.evidence, { intermediate, thread_id: s.threadId, canonical_before_reload: history,
+    independent_before_reload: journals, original_completion_posts: s.postsSettled });
+  await shot(page, s, `tool-loop-${intermediate}-before-reload-${s.id}.png`);
+});
+
+When('I reopen that tool-loop conversation with {string} browser history', async ({ browser, scenario: s }, cache) => {
+  assert.ok(['warm-cache', 'fresh-context'].includes(cache));
+  let page = s.historyPage;
+  if (cache === 'fresh-context') {
+    assert.ok(s.preReplySnapshot, 'Use the actual pre-reply local snapshot, never a completed-history snapshot');
+    s.historyContext = await browser.newContext({ baseURL: process.env.UAR_BASE_URL,
+      viewport: { width: 1280, height: 900 }, extraHTTPHeaders: { 'x-uar-workspace-id': process.env.UAR_WORKSPACE_ID },
+      storageState: s.preReplySnapshot });
+    page = await s.historyContext.newPage();
+    s.historyPage = page;
+    observeHistoryPage(page, s);
+    let release;
+    const readsReleased = new Promise(done => { release = done; });
+    const sessionPath = `/api/uar/sessions/${encodeURIComponent(s.threadId)}`;
+    await page.route('**/api/uar/**', async route => {
+      const request = route.request();
+      const url = new URL(request.url());
+      const receipt = url.pathname.startsWith('/api/uar/chat-turns/') && url.searchParams.get('session_id') === s.threadId;
+      if (request.method() === 'GET' && (url.pathname === sessionPath || receipt)) await readsReleased;
+      await route.continue();
+    });
+    try {
+      await page.goto('/threads', { waitUntil: 'domcontentloaded' });
+      await expect(threadList(page)).toHaveAttribute('aria-busy', 'false');
+      const entry = threadList(page).getByRole('button');
+      await expect(entry).toHaveCount(1);
+      await entry.click();
+      await expect(entry).toHaveAttribute('aria-current', 'page');
+      // This positive registry/user assertion prevents treating a failed or empty
+      // IndexedDB export as an empty-assistant-cache acceptance result.
+      await expect(userMessages(page).filter({ hasText: s.toolPrompt })).toHaveCount(1);
+      await expect(assistantMessages(page)).toHaveCount(0);
+      s.evidence.fresh_context_pre_recovery = { registry_entries: 1, original_user_visible: true,
+        assistant_messages: 0, server_reads_held: true, snapshot: 'pre-reply local IndexedDB; not zero local data' };
+    } finally { release(); }
+  } else {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(threadList(page)).toHaveAttribute('aria-busy', 'false');
+    const entry = threadList(page).getByRole('button').filter({ has: page.getByText(s.threadTitle, { exact: true }) });
+    await expect(entry).toHaveCount(1);
+    await entry.click();
+    await expect(entry).toHaveAttribute('aria-current', 'page');
+  }
+  s.lastHistoryCache = cache;
+});
+
+Then('every canonical assistant segment and final answer appears once in order without another run or effect', async ({ scenario: s }) => {
+  const page = s.historyPage;
+  const messages = conversationMessages(page);
+  await expect(messages).toHaveCount(s.canonicalIds.length);
+  await expect.poll(async () => messages.evaluateAll(rows => rows.map(row => row.getAttribute('data-message-id')))).toEqual(s.canonicalIds);
+  const final = assistantMessages(page).filter({ hasText: s.finalText });
+  await expect(final).toHaveCount(1);
+  await expect(final).toBeVisible();
+  const visibleAnswers = await assistantMessages(page).allInnerTexts();
+  assert.equal(visibleAnswers.join('\n').split(s.finalText).length - 1, 1, 'Final answer text must occur exactly once');
+  if (s.intermediate === 'preamble') {
+    await expect(assistantMessages(page).filter({ hasText: s.preambleText })).toHaveCount(1);
+    assert.equal(visibleAnswers.join('\n').split(s.preambleText).length - 1, 1);
+  }
+  await expect(userMessages(page)).toHaveCount(2);
+  await expect(assistantMessages(page)).toHaveCount(3);
+  const history = await api(s, 'GET', `/api/uar/sessions/${encodeURIComponent(s.threadId)}`);
+  assert.deepEqual(history.history.map(row => row.message_id), s.canonicalIds);
+  for (const turn of [s.toolTurn, s.followTurn]) {
+    const receipt = await api(s, 'GET', `/api/uar/chat-turns/${encodeURIComponent(turn.request.client_turn_id)}?session_id=${encodeURIComponent(s.threadId)}`);
+    assert.equal(receipt.run_id, turn.runId);
+    assert.equal(receipt.state, 'complete');
+    assert.equal(receipt.retry_allowed, false);
+    assert.equal(receipt.user_message_id, turn.request.user_message_id);
+  }
+  assert.equal(s.completionPosts.length, s.postsSettled, 'Read-only history/receipt recovery cannot issue another completion POST');
+  const runs = await api(s, 'GET', '/api/uar/runs');
+  const owned = runs.filter(row => row.conversation_id === s.threadId).map(row => row.run_id);
+  assert.ok(owned.every(id => [s.toolTurn.runId, s.followTurn.runId].includes(id)), 'Reload must not create any extra run');
+  const journals = await historyJournals(s);
+  assert.deepEqual(journals.provider, s.journalsSettled.provider, 'Reload/recovery must cause zero provider arrivals');
+  assert.deepEqual(journals.effects, s.journalsSettled.effects, 'Reload/recovery must cause zero extra effects');
+  s.evidence.reloads ??= [];
+  s.evidence.reloads.push({ cache: s.lastHistoryCache, visible_ids: s.canonicalIds, assistant_text: visibleAnswers,
+    completion_posts: s.completionPosts.length, retained_runs: owned, provider_rows: journals.provider.length,
+    effect_rows: journals.effects.length, canonical_history: history });
+  await shot(page, s, `tool-loop-${s.intermediate}-${s.lastHistoryCache}-${s.evidence.reloads.length}-${s.id}.png`);
 });

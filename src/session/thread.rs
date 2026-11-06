@@ -1,6 +1,6 @@
 //! Conversation thread and session storage.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
@@ -27,6 +27,7 @@ fn anonymous_session_owner() -> String {
 #[derive(Debug)]
 pub struct Session {
     inner: Arc<SessionInner>,
+    history_run: Option<(String, Option<String>)>,
 }
 
 #[derive(Debug)]
@@ -37,6 +38,7 @@ struct SessionInner {
     owner_id: String,
     /// Conversation messages.
     messages: RwLock<Vec<Message>>,
+    message_metadata: RwLock<BTreeMap<usize, super::SessionMessageMetadata>>,
     /// Session creation time.
     #[allow(dead_code)]
     created_at: DateTime<Utc>,
@@ -59,6 +61,8 @@ pub struct SessionState {
     #[serde(default = "anonymous_session_owner")]
     pub owner_id: String,
     pub messages: Vec<Message>,
+    #[serde(default)]
+    pub message_metadata: BTreeMap<usize, super::SessionMessageMetadata>,
     pub created_at: String,    // RFC3339
     pub last_activity: String, // RFC3339
     pub system_prompt: Option<String>,
@@ -95,6 +99,7 @@ impl Clone for Session {
     fn clone(&self) -> Self {
         Self {
             inner: Arc::clone(&self.inner),
+            history_run: self.history_run.clone(),
         }
     }
 }
@@ -117,6 +122,7 @@ impl Session {
                 id,
                 owner_id,
                 messages: RwLock::new(Vec::new()),
+                message_metadata: RwLock::new(BTreeMap::new()),
                 created_at: now,
                 last_activity: RwLock::new(now),
                 system_prompt: RwLock::new(None),
@@ -124,21 +130,29 @@ impl Session {
                 project_instructions: RwLock::new(None),
                 activity_generation,
             }),
+            history_run: None,
         }
     }
 
     pub fn to_state(&self) -> SessionState {
+        let messages = self.inner.messages.read().unwrap();
+        let metadata = self.inner.message_metadata.read().unwrap();
         SessionState {
             id: self.inner.id.clone(),
             owner_id: self.inner.owner_id.clone(),
-            messages: self.inner.messages.read().unwrap().clone(),
+            messages: messages.clone(),
+            message_metadata: metadata.clone(),
             created_at: self.inner.created_at.to_rfc3339(),
             last_activity: self.inner.last_activity.read().unwrap().to_rfc3339(),
             system_prompt: self.inner.system_prompt.read().unwrap().clone(),
         }
     }
 
-    pub fn from_state(state: SessionState) -> Self {
+    pub fn from_state(mut state: SessionState) -> Self {
+        let message_count = state.messages.len();
+        state
+            .message_metadata
+            .retain(|index, _| *index < message_count);
         let created_at = DateTime::parse_from_rfc3339(&state.created_at)
             .unwrap_or_else(|_| DateTime::parse_from_rfc3339("1970-01-01T00:00:00Z").unwrap())
             .with_timezone(&Utc);
@@ -151,6 +165,7 @@ impl Session {
                 id: state.id,
                 owner_id: state.owner_id,
                 messages: RwLock::new(state.messages),
+                message_metadata: RwLock::new(state.message_metadata),
                 created_at,
                 last_activity: RwLock::new(last_activity),
                 system_prompt: RwLock::new(state.system_prompt),
@@ -158,7 +173,49 @@ impl Session {
                 project_instructions: RwLock::new(None),
                 activity_generation: None,
             }),
+            history_run: None,
         }
+    }
+
+    /// A run-local handle to the same conversation. Concurrent runs never share
+    /// this append context; it is not serialized or used as authority.
+    pub fn with_run_context(&self, run_id: &str, client_turn_id: Option<String>) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+            history_run: Some((run_id.to_owned(), client_turn_id)),
+        }
+    }
+
+    /// Replace redacted message content while preserving existing positional IDs.
+    /// Only same-length projection is allowed; this cannot erase pending tools.
+    pub fn project_message_content(&self, messages: Vec<Message>) -> anyhow::Result<()> {
+        let mut current = self.inner.messages.write().unwrap();
+        anyhow::ensure!(
+            messages.len() == current.len(),
+            "session_projection_length_mismatch"
+        );
+        *current = messages;
+        drop(current);
+        self.touch();
+        Ok(())
+    }
+
+    /// Publish protected replacement history without regenerating its persisted IDs.
+    /// The host must already have authorized the source history; ownership cannot move.
+    pub fn replace_message_history_from(&self, source: &Self) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            self.id() == source.id() && self.owner_id() == source.owner_id(),
+            "session_history_partition_mismatch"
+        );
+        let source = source.to_state();
+        let mut messages = self.inner.messages.write().unwrap();
+        let mut identities = self.inner.message_metadata.write().unwrap();
+        *messages = source.messages;
+        *identities = source.message_metadata;
+        drop(identities);
+        drop(messages);
+        self.touch();
+        Ok(())
     }
 
     /// Get the session ID.
@@ -270,10 +327,103 @@ impl Session {
 
     /// Add a message to the conversation.
     pub fn add_message(&self, message: Message) {
-        let mut guard = self.inner.messages.write().unwrap();
-        guard.push(message);
-        drop(guard);
+        let message_id = if self.history_run.is_some() && message.role == MessageRole::Assistant {
+            String::new()
+        } else {
+            Uuid::new_v4().to_string()
+        };
+        self.add_message_with_metadata(
+            message,
+            super::SessionMessageMetadata {
+                message_id,
+                run_id: self.history_run.as_ref().map(|(run, _)| run.clone()),
+                client_turn_id: self.history_run.as_ref().and_then(|(_, turn)| turn.clone()),
+                created_at: Some(Utc::now().to_rfc3339()),
+                status: if self.history_run.is_some() {
+                    super::SessionMessageStatus::Running
+                } else {
+                    super::SessionMessageStatus::Unknown
+                },
+            },
+        );
+    }
+
+    /// Append canonical content and its presentation identity under the same lock.
+    pub fn add_message_with_metadata(
+        &self,
+        message: Message,
+        mut metadata: super::SessionMessageMetadata,
+    ) {
+        let mut messages = self.inner.messages.write().unwrap();
+        let mut identities = self.inner.message_metadata.write().unwrap();
+        if metadata.message_id.is_empty()
+            && let Some(run_id) = metadata.run_id.as_deref()
+        {
+            let ordinal = messages
+                .iter()
+                .enumerate()
+                .filter(|(index, message)| {
+                    message.role == MessageRole::Assistant
+                        && identities
+                            .get(index)
+                            .is_some_and(|identity| identity.run_id.as_deref() == Some(run_id))
+                })
+                .count();
+            metadata.message_id = format!("run-{run_id}-assistant-{ordinal}");
+        }
+        identities.insert(messages.len(), metadata);
+        messages.push(message);
+        drop(identities);
+        drop(messages);
         self.touch();
+    }
+
+    /// Update only messages already bound to the exact host run.
+    pub fn set_run_history_status(&self, run_id: &str, status: super::SessionMessageStatus) {
+        let mut identities = self.inner.message_metadata.write().unwrap();
+        for metadata in identities
+            .values_mut()
+            .filter(|metadata| metadata.run_id.as_deref() == Some(run_id))
+        {
+            metadata.status = status;
+        }
+        drop(identities);
+        self.touch();
+    }
+
+    /// Safe presentation history. Legacy IDs are deterministic and time/outcome stay unknown.
+    pub fn history(&self) -> Vec<super::SessionHistoryMessage> {
+        let messages = self.inner.messages.read().unwrap();
+        let identities = self.inner.message_metadata.read().unwrap();
+        messages
+            .iter()
+            .enumerate()
+            .filter(|(_, message)| {
+                matches!(message.role, MessageRole::User | MessageRole::Assistant)
+            })
+            .map(|(index, message)| {
+                let metadata = identities.get(&index);
+                super::SessionHistoryMessage {
+                    message_id: metadata.map_or_else(
+                        || super::history::legacy_message_id(self.owner_id(), self.id(), index),
+                        |metadata| metadata.message_id.clone(),
+                    ),
+                    role: message.role.clone(),
+                    content: message.content.clone(),
+                    run_id: metadata.and_then(|metadata| metadata.run_id.clone()),
+                    client_turn_id: metadata.and_then(|metadata| metadata.client_turn_id.clone()),
+                    created_at: metadata.and_then(|metadata| metadata.created_at.clone()),
+                    status: metadata.map_or(super::SessionMessageStatus::Unknown, |metadata| {
+                        metadata.status
+                    }),
+                    provenance: if metadata.is_some_and(|metadata| metadata.run_id.is_some()) {
+                        "available"
+                    } else {
+                        "unavailable"
+                    },
+                }
+            })
+            .collect()
     }
 
     /// Seed a cold session under one write lock. Concurrent first turns cannot
@@ -288,6 +438,28 @@ impl Session {
         drop(guard);
         self.touch();
         SeedOutcome::Seeded { messages: seeded }
+    }
+
+    /// Restore a cold same-owner session including original message metadata.
+    /// Concurrent warm sessions retain their current append authority.
+    pub fn seed_persisted_history_if_empty(&self, source: &Self) -> anyhow::Result<SeedOutcome> {
+        anyhow::ensure!(
+            self.id() == source.id() && self.owner_id() == source.owner_id(),
+            "session_history_partition_mismatch"
+        );
+        let source = source.to_state();
+        let mut messages = self.inner.messages.write().unwrap();
+        if !messages.is_empty() {
+            return Ok(SeedOutcome::IgnoredWarmSession);
+        }
+        let count = source.messages.len();
+        let mut identities = self.inner.message_metadata.write().unwrap();
+        *messages = source.messages;
+        *identities = source.message_metadata;
+        drop(identities);
+        drop(messages);
+        self.touch();
+        Ok(SeedOutcome::Seeded { messages: count })
     }
 
     /// Get all messages in the conversation.
@@ -325,6 +497,7 @@ impl Session {
     pub fn clear(&self) {
         let mut guard = self.inner.messages.write().unwrap();
         guard.clear();
+        self.inner.message_metadata.write().unwrap().clear();
         *self.inner.world_state.write().unwrap() = Default::default();
         *self.inner.project_instructions.write().unwrap() = None;
         self.touch();
@@ -685,6 +858,99 @@ impl SessionStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn original_identity_and_typed_content_survive_history_roundtrip() {
+        let session = Session::new("rich-history".into(), "owner".into());
+        let content = MessageContent::Parts {
+            content: vec![
+                crate::llm::ContentPart::text("original text"),
+                crate::llm::ContentPart::image_url("https://example.invalid/original.png"),
+            ],
+        };
+        session.add_message_with_metadata(
+            Message {
+                role: MessageRole::User,
+                content,
+                tool_call_id: None,
+                tool_calls: None,
+            },
+            super::super::SessionMessageMetadata::for_run(
+                "original-user-message".into(),
+                "original-run".into(),
+                Some("original-turn".into()),
+                super::super::SessionMessageStatus::Running,
+            ),
+        );
+        let restored: Session =
+            serde_json::from_value(serde_json::to_value(&session).unwrap()).unwrap();
+        let history = restored.history();
+        assert_eq!(history[0].message_id, "original-user-message");
+        assert_eq!(history[0].run_id.as_deref(), Some("original-run"));
+        assert_eq!(
+            serde_json::to_value(&history[0].content).unwrap(),
+            serde_json::to_value(&session.messages()[0].content).unwrap()
+        );
+        assert_eq!(history[0].created_at, session.history()[0].created_at);
+    }
+
+    #[test]
+    fn legacy_history_has_repeatable_ids_without_invented_terminal_or_time() {
+        let session = Session::new("legacy-history".into(), "owner".into());
+        session.seed_if_empty(&[Message {
+            role: MessageRole::Assistant,
+            content: MessageContent::text("legacy partial"),
+            tool_call_id: None,
+            tool_calls: None,
+        }]);
+        let first = session.history();
+        let restored = Session::from_state(session.to_state());
+        let second = restored.history();
+        assert_eq!(first[0].message_id, second[0].message_id);
+        assert_eq!(
+            second[0].status,
+            super::super::SessionMessageStatus::Unknown
+        );
+        assert_eq!(second[0].created_at, None);
+        assert_eq!(second[0].provenance, "unavailable");
+    }
+
+    #[test]
+    fn run_handles_keep_distinct_identity_and_actual_terminal_outcomes() {
+        let session = Session::new("shared".into(), "owner".into());
+        let first = session.with_run_context("run-first", Some("turn-first".into()));
+        let second = session.with_run_context("run-second", Some("turn-second".into()));
+        first.add_assistant_message("cancelled partial");
+        second.add_assistant_message("failed partial");
+        first.set_run_history_status("run-first", super::super::SessionMessageStatus::Cancelled);
+        second.set_run_history_status("run-second", super::super::SessionMessageStatus::Error);
+        let history = Session::from_state(session.to_state()).history();
+        assert_eq!(history[0].message_id, "run-run-first-assistant-0");
+        assert_eq!(
+            history[0].status,
+            super::super::SessionMessageStatus::Cancelled
+        );
+        assert_eq!(history[1].status, super::super::SessionMessageStatus::Error);
+        assert_eq!(history[1].client_turn_id.as_deref(), Some("turn-second"));
+    }
+
+    #[test]
+    fn content_projection_preserves_ids_and_does_not_drop_pending_tool_messages() {
+        let session = Session::new("projection".into(), "owner".into());
+        session.add_user_message("source");
+        session.add_tool_result("pending-tool", "result");
+        let before = session.history()[0].message_id.clone();
+        let mut messages = session.messages();
+        messages[0].content = MessageContent::text("redacted");
+        session.project_message_content(messages).unwrap();
+        assert_eq!(session.history()[0].message_id, before);
+        assert_eq!(
+            session.messages()[1].tool_call_id.as_deref(),
+            Some("pending-tool")
+        );
+        assert!(session.project_message_content(Vec::new()).is_err());
+        assert_eq!(session.message_count(), 2);
+    }
 
     #[test]
     fn test_session_lifecycle() {

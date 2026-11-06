@@ -99,8 +99,16 @@ async function press(w, note) {
 }
 
 async function clickRun(w, label, envelope) {
+  const forwarded = structuredClone(envelope.forwardedProps);
+  const snapshot = [...w.messages].reverse().find(message => message.role === 'activity'
+    && message.content?.a2ui_operations?.some(operation => operation.createSurface?.surfaceId === w.surfaceId));
+  assert.equal(typeof snapshot?.content?.surface_generation, 'string', 'Server publishes an authoritative surface generation');
+  forwarded.a2uiAction.interaction_id = randomUUID();
+  forwarded.a2uiAction.surface_generation = snapshot.content.surface_generation;
   const payload = { threadId: w.threadId, runId: randomUUID(), parentRunId: w.lastRunId, protocolVersion: '1.0',
-    messages: w.messages, tools: [], context: [], forwardedProps: envelope.forwardedProps };
+    messages: w.messages, tools: [], context: [], forwardedProps: forwarded };
+  w.actionPayloads ??= {};
+  w.actionPayloads[label] = structuredClone(payload);
   const result = await exchange(w, label, { payload });
   w.lastRunId = payload.runId;
   remember(w, result.events, result.text);
@@ -199,11 +207,36 @@ Then('that client renders the same surface without the agent running again', fun
 });
 
 Then('an action naming a button the surface never declared is refused', async function () {
-  const forged = structuredClone(this.firstEnvelope.forwardedProps);
+  const forged = structuredClone(this.actionPayloads['first-click'].forwardedProps);
+  forged.a2uiAction.interaction_id = randomUUID();
   forged.a2uiAction.userAction.name = 'doesNotExist';
   await exchange(this, 'forged', { expected: 422, payload: { threadId: this.threadId, runId: randomUUID(), parentRunId: this.lastRunId,
     protocolVersion: '1.0', messages: this.messages, tools: [], context: [], forwardedProps: forged } });
   this.evidence.result = 'VERIFIED';
+});
+
+Then('a lost-response retry with a fresh wire id reuses the original admitted click', async function () {
+  const original = this.actionPayloads['first-click'];
+  const retry = { ...structuredClone(original), runId: randomUUID() };
+  const replay = await exchange(this, 'logical-retry', { payload: retry });
+  const firstStarted = this.firstClick.events.find(event => event.type === 'RUN_STARTED');
+  const replayStarted = replay.events.find(event => event.type === 'RUN_STARTED');
+  assert.equal(replayStarted?.runId, firstStarted?.runId, 'Fresh transport id attaches the original durable admission');
+  assert.notEqual(replayStarted?.runId, retry.runId, 'Retry did not become a new run');
+  assert.equal(replay.text, this.firstClick.text, 'Settled result is retained');
+  const receipt = await request(this, 'GET', `${this.route}/threads/${this.threadId}/actions/${original.forwardedProps.a2uiAction.interaction_id}`);
+  assert.equal(receipt.wire_run_id, original.runId);
+  assert.equal(receipt.retry_protected, true);
+  assert.equal(receipt.outcome, 'completed');
+  this.evidence.logical_interaction = { interaction_id: receipt.interaction_id, native_run_id: receipt.continuation_run_id,
+    original_wire_run_id: original.runId, attempted_retry_wire_run_id: retry.runId, outcome: receipt.outcome };
+});
+
+Then('reusing that interaction identity with changed semantic input is refused', async function () {
+  const changed = structuredClone(this.actionPayloads['first-click']);
+  changed.runId = randomUUID();
+  changed.forwardedProps.a2uiAction.userAction.context = { changed: 'conflicting-intent' };
+  await exchange(this, 'logical-conflict', { payload: changed, expected: 409 });
 });
 
 After(async function ({ result }) {

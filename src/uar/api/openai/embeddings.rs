@@ -11,7 +11,7 @@
 //! shared by every `/v1/*` route.
 
 use crate::AppState;
-use crate::uar::rag::embeddings::{EmbeddingBackend, EmbeddingError};
+use crate::uar::rag::embeddings::{EmbeddingBackend, EmbeddingError, EmbeddingTokenUsage};
 use crate::uar::security::claims::UserContext;
 use axum::{
     Json,
@@ -73,12 +73,65 @@ struct EmbeddingUsage {
 }
 
 #[derive(Debug, Serialize)]
+struct CounterProvenance {
+    available: bool,
+    source: &'static str,
+}
+
+impl CounterProvenance {
+    fn from_count(count: Option<u64>) -> Self {
+        Self {
+            available: count.is_some(),
+            source: if count.is_some() {
+                "provider_reported"
+            } else {
+                "unavailable"
+            },
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+struct EmbeddingUsageProvenance {
+    prompt_tokens: CounterProvenance,
+    total_tokens: CounterProvenance,
+    billed_input_tokens: BilledInputTokens,
+}
+
+#[derive(Debug, Serialize)]
+struct BilledInputTokens {
+    value: Option<u64>,
+    available: bool,
+    source: &'static str,
+}
+
+impl From<EmbeddingTokenUsage> for EmbeddingUsageProvenance {
+    fn from(usage: EmbeddingTokenUsage) -> Self {
+        Self {
+            prompt_tokens: CounterProvenance::from_count(usage.prompt_tokens),
+            total_tokens: CounterProvenance::from_count(usage.total_tokens),
+            billed_input_tokens: BilledInputTokens {
+                value: usage.billed_input_tokens,
+                available: usage.billed_input_tokens.is_some(),
+                source: if usage.billed_input_tokens.is_some() {
+                    "provider_billed_units"
+                } else {
+                    "unavailable"
+                },
+            },
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
 struct EmbeddingResponse {
     object: &'static str,
     data: Vec<EmbeddingRow>,
     model: String,
-    /// UAR embedding backends do not report token counts; both fields are 0.
+    /// Missing counters retain numeric zero for compatibility. `uar_usage`
+    /// distinguishes those placeholders from provider-reported measured zero.
     usage: EmbeddingUsage,
+    uar_usage: EmbeddingUsageProvenance,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -247,14 +300,14 @@ async fn embed_request(backend: Arc<dyn EmbeddingBackend>, request: EmbeddingReq
     }
 
     let texts: Vec<&str> = inputs.iter().map(String::as_str).collect();
-    let vectors = match backend.embed(&texts).await {
-        Ok(vectors) => vectors,
+    let batch = match backend.embed_with_usage(&texts).await {
+        Ok(batch) => batch,
         Err(error) => {
             tracing::warn!(
                 backend = %backend.backend_name(),
                 model = %backend.model_id(),
                 inputs = texts.len(),
-                error = %error,
+                category = embedding_error_category(&error),
                 "Embedding request failed"
             );
             return match error {
@@ -266,9 +319,9 @@ async fn embed_request(backend: Arc<dyn EmbeddingBackend>, request: EmbeddingReq
                         "embedding_backend_unavailable",
                     )
                 }
-                EmbeddingError::InvalidInput(message) => error_response(
+                EmbeddingError::InvalidInput(_) => error_response(
                     StatusCode::BAD_REQUEST,
-                    &message,
+                    "The embedding backend rejected the input",
                     Some("input"),
                     "invalid_input",
                 ),
@@ -283,9 +336,14 @@ async fn embed_request(backend: Arc<dyn EmbeddingBackend>, request: EmbeddingReq
             };
         }
     };
+    let vectors = batch.vectors;
     // The provider response is external data: refuse an answer that does not
     // give exactly one vector of the served size per input.
-    if vectors.len() != texts.len() || vectors.iter().any(|vector| vector.len() != dimension) {
+    if vectors.len() != texts.len()
+        || vectors.iter().any(|vector| {
+            vector.len() != dimension || vector.iter().any(|value| !value.is_finite())
+        })
+    {
         tracing::warn!(
             backend = %backend.backend_name(),
             model = %backend.model_id(),
@@ -318,11 +376,24 @@ async fn embed_request(backend: Arc<dyn EmbeddingBackend>, request: EmbeddingReq
         data,
         model: served,
         usage: EmbeddingUsage {
-            prompt_tokens: 0,
-            total_tokens: 0,
+            prompt_tokens: batch.usage.prompt_tokens.unwrap_or(0),
+            total_tokens: batch.usage.total_tokens.unwrap_or(0),
         },
+        uar_usage: batch.usage.into(),
     })
     .into_response()
+}
+
+/// Fixed categories only: backend errors may contain provider bodies or URLs.
+fn embedding_error_category(error: &EmbeddingError) -> &'static str {
+    match error {
+        EmbeddingError::BackendUnavailable(_) => "backend_unavailable",
+        EmbeddingError::MissingApiKey { .. } => "missing_api_key",
+        EmbeddingError::InvalidInput(_) => "invalid_input",
+        EmbeddingError::RequestFailed(_) => "request_failed",
+        EmbeddingError::EmptyResponse => "empty_response",
+        EmbeddingError::DimensionMismatch { .. } => "dimension_mismatch",
+    }
 }
 
 #[cfg(test)]
@@ -332,6 +403,40 @@ mod tests {
     use crate::uar::rag::embeddings::UnavailableEmbeddingBackend;
     use async_trait::async_trait;
     use serde_json::Value;
+
+    #[derive(Debug)]
+    struct UsageBackend {
+        usage: EmbeddingTokenUsage,
+        non_finite: bool,
+    }
+
+    #[async_trait]
+    impl EmbeddingBackend for UsageBackend {
+        fn backend_name(&self) -> &str {
+            "owned"
+        }
+        fn vector_dimension(&self) -> usize {
+            2
+        }
+        fn model_id(&self) -> &str {
+            "usage-fixture"
+        }
+
+        async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+            let value = if self.non_finite { f32::NAN } else { 1.0 };
+            Ok(texts.iter().map(|_| vec![value, 0.0]).collect())
+        }
+
+        async fn embed_with_usage(
+            &self,
+            texts: &[&str],
+        ) -> Result<crate::uar::rag::embeddings::EmbeddingBatch, EmbeddingError> {
+            Ok(crate::uar::rag::embeddings::EmbeddingBatch {
+                vectors: self.embed(texts).await?,
+                usage: self.usage,
+            })
+        }
+    }
 
     /// Deterministic backend: vector `i` of a batch is `[len(text_i), i, 0, …]`.
     #[derive(Debug)]
@@ -581,5 +686,114 @@ mod tests {
             serde_json::json!({"model": "m", "input": [1, 2, 3]}),
         );
         assert!(parsed.is_err());
+    }
+
+    #[tokio::test]
+    async fn usage_preserves_independent_availability_and_measured_zero() {
+        for (prompt, total) in [
+            (Some(7), Some(9)),
+            (Some(0), Some(0)),
+            (None, None),
+            (Some(3), None),
+            (None, Some(5)),
+        ] {
+            let backend: Arc<dyn EmbeddingBackend> = Arc::new(UsageBackend {
+                usage: EmbeddingTokenUsage {
+                    prompt_tokens: prompt,
+                    total_tokens: total,
+                    ..EmbeddingTokenUsage::default()
+                },
+                non_finite: false,
+            });
+            let (status, body) = call(
+                backend,
+                serde_json::json!({"model": "usage-fixture", "input": "owned"}),
+            )
+            .await;
+            assert_eq!(status, StatusCode::OK);
+            assert_eq!(body["usage"]["prompt_tokens"], prompt.unwrap_or(0));
+            assert_eq!(body["usage"]["total_tokens"], total.unwrap_or(0));
+            for (name, count) in [("prompt_tokens", prompt), ("total_tokens", total)] {
+                assert_eq!(body["uar_usage"][name]["available"], count.is_some());
+                assert_eq!(
+                    body["uar_usage"][name]["source"],
+                    if count.is_some() {
+                        "provider_reported"
+                    } else {
+                        "unavailable"
+                    }
+                );
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn vector_only_backend_uses_unavailable_usage_default() {
+        let (status, body) = call(
+            StubBackend::ok(2),
+            serde_json::json!({"model": "text-embedding-3-small", "input": "owned"}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["usage"]["prompt_tokens"], 0);
+        assert_eq!(body["uar_usage"]["prompt_tokens"]["available"], false);
+        assert_eq!(body["uar_usage"]["total_tokens"]["available"], false);
+    }
+
+    #[tokio::test]
+    async fn native_billed_input_is_explicitly_separate_from_unknown_usage() {
+        let backend: Arc<dyn EmbeddingBackend> = Arc::new(UsageBackend {
+            usage: EmbeddingTokenUsage {
+                billed_input_tokens: Some(17),
+                ..EmbeddingTokenUsage::default()
+            },
+            non_finite: false,
+        });
+        let (status, body) = call(
+            backend,
+            serde_json::json!({"model": "usage-fixture", "input": "owned"}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["usage"]["prompt_tokens"], 0);
+        assert_eq!(body["uar_usage"]["prompt_tokens"]["available"], false);
+        assert_eq!(body["uar_usage"]["billed_input_tokens"]["value"], 17);
+        assert_eq!(
+            body["uar_usage"]["billed_input_tokens"]["source"],
+            "provider_billed_units"
+        );
+    }
+
+    #[tokio::test]
+    async fn non_finite_backend_result_cannot_be_encoded_as_success() {
+        let backend: Arc<dyn EmbeddingBackend> = Arc::new(UsageBackend {
+            usage: EmbeddingTokenUsage::default(),
+            non_finite: true,
+        });
+        let (status, body) = call(backend, serde_json::json!({"model": "usage-fixture", "input": "owned", "encoding_format": "base64"})).await;
+        assert_eq!(status, StatusCode::BAD_GATEWAY);
+        assert_eq!(body["error"]["code"], "embedding_provider_error");
+    }
+
+    #[tokio::test]
+    async fn backend_invalid_input_detail_stays_private() {
+        let backend: Arc<dyn EmbeddingBackend> = Arc::new(StubBackend {
+            dimension: 2,
+            drop_last: false,
+            fail: Some(|| {
+                EmbeddingError::InvalidInput("synthetic-credential-provider-body".into())
+            }),
+        });
+        let (status, body) = call(
+            backend,
+            serde_json::json!({"model": "text-embedding-3-small", "input": "owned"}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert!(
+            !body
+                .to_string()
+                .contains("synthetic-credential-provider-body")
+        );
     }
 }

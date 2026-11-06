@@ -1525,6 +1525,7 @@ fn metadata_usage(total: u32) -> NormalizedEvent {
         total_tokens: total,
         cached_tokens: None,
         cache_creation_tokens: None,
+        uncached_input_tokens: None,
     }
 }
 

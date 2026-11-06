@@ -1,3 +1,4 @@
+import { aguiTerminalUsage } from "@/platform/agui/agui-normalizer";
 import type {
   AguiEventRow,
   RunPhaseTimings,
@@ -18,6 +19,8 @@ export interface RunEventPersistenceStore {
 export interface RunEventPersistenceContext {
   threadId: string;
   fallbackRunId: string;
+  /** Response header or read-only reattach receipt identity, when available. */
+  nativeRunId?: string | null;
   messageId?: string | null;
   model?: string | null;
 }
@@ -30,12 +33,6 @@ interface BufferedContent {
   count: number;
   first: AguiEventRow;
   last: AguiEventRow;
-}
-
-function record(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
 }
 
 function kindOf(type: string): PersistedRunEventKind {
@@ -64,8 +61,8 @@ function usageOf(row: AguiEventRow): {
   usage?: Record<string, unknown>;
   costUsd?: number;
 } {
-  if (row.type !== "RUN_FINISHED") return {};
-  const usage = record(record(row.payload.result).usage);
+  const usage = aguiTerminalUsage(row.payload);
+  if (!usage) return {};
   const cost = usage.costUsdEstimate;
   return {
     usage,
@@ -73,25 +70,50 @@ function usageOf(row: AguiEventRow): {
   };
 }
 
+export class RunEventIdentityError extends Error {
+  constructor() {
+    super("Run event identity conflicts with the attached native run");
+    this.name = "RunEventIdentityError";
+  }
+}
+
 export class RunEventPersistence {
   private readonly ensuredRuns = new Set<string>();
   private readonly buffers = new Map<string, BufferedContent>();
   private activeRunId: string;
+  private nativeRunId: string | null;
 
   constructor(
     private readonly store: RunEventPersistenceStore,
     private readonly context: RunEventPersistenceContext,
   ) {
     this.activeRunId = context.fallbackRunId;
+    this.nativeRunId = context.nativeRunId ?? null;
+  }
+
+  /** Check before adapter sequence/phase bookkeeping; this never adopts an ID. */
+  assertIdentity(runId: string | undefined, wireRunId: string | undefined = runId): void {
+    if (runId === "" || wireRunId === ""
+      || (runId !== undefined && wireRunId !== undefined && runId !== wireRunId)
+      || (this.nativeRunId && runId !== undefined && runId !== this.nativeRunId)
+      || (this.nativeRunId && wireRunId !== undefined && wireRunId !== this.nativeRunId)) {
+      throw new RunEventIdentityError();
+    }
   }
 
   async ingest(row: AguiEventRow, phaseTimings?: RunPhaseTimings): Promise<void> {
+    const wireRunId = typeof row.payload.runId === "string" ? row.payload.runId : undefined;
+    this.assertIdentity(row.runId, wireRunId);
+    const status = terminalStatus(row);
+    this.nativeRunId ??= row.runId ?? wireRunId ?? null;
     const runId = row.runId ?? this.activeRunId;
     this.activeRunId = runId;
     await this.ensureRun(runId, row.receivedAt);
 
     if (row.type === "TEXT_MESSAGE_CONTENT" || row.type === "REASONING_MESSAGE_CONTENT") {
       this.bufferContent(runId, row);
+      // Persist the original delta before returning, including abrupt page loss.
+      await this.persistRow(runId, row);
       return;
     }
 
@@ -109,7 +131,6 @@ export class RunEventPersistence {
       return;
     }
 
-    const status = terminalStatus(row);
     if (status) {
       await this.flushBuffers(runId, "message", row.receivedAt);
       await this.flushBuffers(runId, "reasoning", row.receivedAt);
@@ -119,18 +140,25 @@ export class RunEventPersistence {
 
     if (status) {
       const usage = usageOf(row);
+      const nativeTerminal = row.payload.profile === "uar.agui/1"
+        && row.runId === this.nativeRunId && wireRunId === runId
+        && row.payload.eventId === row.id && row.payload.type === row.type
+        ? { runId, eventId: row.id }
+        : undefined;
       await this.store.finishRun({
         id: runId,
-        status,
+        status: nativeTerminal ? status : "interrupted",
         finishedAt: new Date(row.receivedAt).toISOString(),
         phaseTimings,
         usage: usage.usage,
         costUsd: usage.costUsd,
+        nativeTerminal,
       });
     }
   }
 
-  async finish(status: FinishPersistedRunInput["status"]): Promise<void> {
+  /** Local observer shutdown is provisional; only ingest can supply native proof. */
+  async finish(): Promise<void> {
     const runId = this.activeRunId;
     const receivedAt = Date.now();
     await this.ensureRun(runId, receivedAt);
@@ -138,7 +166,7 @@ export class RunEventPersistence {
     await this.flushBuffers(runId, "reasoning", receivedAt);
     await this.store.finishRun({
       id: runId,
-      status,
+      status: "interrupted",
       finishedAt: new Date(receivedAt).toISOString(),
     });
   }

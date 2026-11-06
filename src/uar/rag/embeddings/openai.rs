@@ -1,4 +1,6 @@
-use crate::uar::rag::embeddings::{EmbeddingBackend, EmbeddingConfig, EmbeddingError};
+use crate::uar::rag::embeddings::{
+    EmbeddingBackend, EmbeddingBatch, EmbeddingConfig, EmbeddingError, EmbeddingTokenUsage,
+};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -63,22 +65,43 @@ impl EmbeddingBackend for OpenAiEmbeddingBackend {
     }
 
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+        Ok(self.embed_with_usage(texts).await?.vectors)
+    }
+
+    async fn embed_with_usage(&self, texts: &[&str]) -> Result<EmbeddingBatch, EmbeddingError> {
         if texts.is_empty() {
-            return Ok(vec![]);
+            return Ok(EmbeddingBatch {
+                vectors: Vec::new(),
+                usage: EmbeddingTokenUsage::default(),
+            });
         }
 
         let mut embeddings = Vec::with_capacity(texts.len());
+        let mut usage = EmbeddingTokenUsage {
+            prompt_tokens: Some(0),
+            total_tokens: Some(0),
+            ..EmbeddingTokenUsage::default()
+        };
         for chunk in texts.chunks(self.batch_size) {
-            embeddings.extend(self.embed_chunk(chunk).await?);
+            let batch = self.embed_chunk(chunk).await?;
+            embeddings.extend(batch.vectors);
+            // A missing report or overflow invalidates only that complete-batch
+            // counter. A later chunk cannot restore a partial sum as complete.
+            usage.prompt_tokens =
+                add_reported_counter(usage.prompt_tokens, batch.usage.prompt_tokens);
+            usage.total_tokens = add_reported_counter(usage.total_tokens, batch.usage.total_tokens);
         }
-        Ok(embeddings)
+        Ok(EmbeddingBatch {
+            vectors: embeddings,
+            usage,
+        })
     }
 }
 
 impl OpenAiEmbeddingBackend {
     /// One `/embeddings` request for at most `batch_size` inputs, returned in
     /// input order.
-    async fn embed_chunk(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+    async fn embed_chunk(&self, texts: &[&str]) -> Result<EmbeddingBatch, EmbeddingError> {
         let body = OpenAiRequest {
             model: self.model.clone(),
             input: texts.iter().map(|s| s.to_string()).collect(),
@@ -96,36 +119,62 @@ impl OpenAiEmbeddingBackend {
             .json(&body)
             .send()
             .await
-            .map_err(|e| EmbeddingError::RequestFailed(format!("HTTP request failed: {e}")))?;
+            .map_err(|_| {
+                EmbeddingError::RequestFailed("Embedding provider transport failed".into())
+            })?;
 
         let status = resp.status();
         if !status.is_success() {
-            let text = resp
-                .text()
-                .await
-                .unwrap_or_else(|_| "<unreadable>".to_string());
+            // Provider bodies and request URLs may contain credentials or input.
+            // Keep only the numeric status across this trust boundary.
             return Err(EmbeddingError::RequestFailed(format!(
-                "OpenAI returned {status}: {text}"
+                "Embedding provider returned HTTP {}",
+                status.as_u16()
             )));
         }
 
-        let resp: OpenAiResponse = resp
-            .json()
-            .await
-            .map_err(|e| EmbeddingError::RequestFailed(format!("failed to parse response: {e}")))?;
+        let resp: OpenAiResponse = resp.json().await.map_err(|_| {
+            EmbeddingError::RequestFailed(
+                "Embedding provider returned invalid JSON or fields".into(),
+            )
+        })?;
 
         let mut data = resp.data;
+        if data.len() != texts.len() {
+            return Err(EmbeddingError::RequestFailed(
+                "Embedding provider returned an incomplete batch".into(),
+            ));
+        }
         data.sort_by_key(|d| d.index);
-        for embedding in &data {
+        for (expected_index, embedding) in data.iter().enumerate() {
+            if embedding.index != expected_index {
+                return Err(EmbeddingError::RequestFailed(
+                    "Embedding provider returned invalid batch indices".into(),
+                ));
+            }
             if embedding.embedding.len() != self.vector_dimension {
                 return Err(EmbeddingError::DimensionMismatch {
                     expected: self.vector_dimension,
                     actual: embedding.embedding.len(),
                 });
             }
+            if embedding.embedding.iter().any(|value| !value.is_finite()) {
+                return Err(EmbeddingError::RequestFailed(
+                    "Embedding provider returned a non-finite vector".into(),
+                ));
+            }
         }
-        Ok(data.into_iter().map(|d| d.embedding).collect())
+        Ok(EmbeddingBatch {
+            vectors: data.into_iter().map(|d| d.embedding).collect(),
+            usage: resp.usage.unwrap_or_default(),
+        })
     }
+}
+
+fn add_reported_counter(current: Option<u64>, next: Option<u64>) -> Option<u64> {
+    current
+        .zip(next)
+        .and_then(|(current, next)| current.checked_add(next))
 }
 
 #[derive(Serialize)]
@@ -139,11 +188,12 @@ struct OpenAiRequest {
 #[derive(Deserialize)]
 struct OpenAiResponse {
     data: Vec<OpenAiEmbedding>,
+    #[serde(default)]
+    usage: Option<EmbeddingTokenUsage>,
 }
 
 #[derive(Deserialize)]
 struct OpenAiEmbedding {
-    #[serde(default)]
     index: usize,
     embedding: Vec<f32>,
 }

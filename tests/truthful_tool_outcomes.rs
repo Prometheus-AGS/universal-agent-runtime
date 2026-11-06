@@ -8,6 +8,9 @@ mod peer;
 #[path = "support/truthful_tool_outcome_process.rs"]
 mod process;
 
+#[path = "support/external_identity_host.rs"]
+mod external_identity_host;
+
 use axum::{
     Extension, Router,
     body::{Body, to_bytes},
@@ -55,7 +58,6 @@ use universal_agent_runtime::{
 
 const CHILD: &str = "UAR_DOT04_CHILD";
 const ROOT: &str = "UAR_DOT04_ROOT";
-const EVIDENCE_ROOT: &str = "UAR_DOT04_EVIDENCE_ROOT";
 const WAIT: Duration = Duration::from_secs(60);
 
 fn expected(mode: &str) -> ToolOutcome {
@@ -83,36 +85,23 @@ struct Stores {
 }
 
 async fn store(root: &Path, shared: bool) -> Stores {
-    let provider = if shared {
-        let path = std::env::var("UAR_DOT04_INFRA_FILE")
-            .expect("shared gate requires private infrastructure manifest");
-        let input: Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
-        let infrastructure = &input["surreal"];
-        let namespace = std::env::var("UAR_DOT04_NAMESPACE").unwrap();
-        Arc::new(
-            SurrealDbProvider::new(
-                infrastructure["url"].as_str().unwrap(),
-                infrastructure["username"].as_str(),
-                infrastructure["password"].as_str(),
-                Some(&namespace),
-                Some("truthful_outcomes"),
-            )
-            .await
-            .expect("isolated shared durable store"),
+    let profile = external_identity_host::profile("dot04", shared);
+    assert_eq!(profile.root, root);
+    let database = profile
+        .databases
+        .get("component")
+        .expect("owned component store inspection profile");
+    let provider = Arc::new(
+        SurrealDbProvider::new(
+            &database.inspection_url,
+            None,
+            None,
+            Some(&database.namespace),
+            Some(&database.name),
         )
-    } else {
-        Arc::new(
-            SurrealDbProvider::new(
-                &format!("surrealkv://{}", root.join("database").display()),
-                None,
-                None,
-                None,
-                None,
-            )
-            .await
-            .unwrap(),
-        )
-    };
+        .await
+        .expect("credential-free owned inspection endpoint"),
+    );
     let catalog = Arc::new(SurrealCollaborationStorage::new(
         provider.client(),
         if shared { "surrealdb" } else { "surrealkv" },
@@ -124,13 +113,12 @@ async fn store(root: &Path, shared: bool) -> Stores {
 }
 
 fn llm(peer: &peer::Peer) -> LlmConfig {
-    LlmConfig {
-        model: "openai/gpt-4o-mini".into(),
-        base_url: Some(peer.url.clone()),
-        api_key: Some(peer::SECRET.into()),
-        host_supplied_connection: true,
-        ..LlmConfig::default()
-    }
+    let shared = std::env::var("UAR_DOT04_SHARED").as_deref() == Ok("1");
+    let mut config = external_identity_host::llm_config("dot04", shared, "component");
+    assert_eq!(config.model, "openai/gpt-4o-mini");
+    config.base_url = Some(peer.url.clone());
+    config.host_supplied_connection = true;
+    config
 }
 
 fn fixture_peer_pids(trace: &Path) -> Vec<u32> {
@@ -969,7 +957,15 @@ async fn run_child_outcome_boundary(stage: String) {
         receipts.push(json!({"mode":mode,"run":direct}));
         let (scoped, scoped_store) = process::scoped_outcome_run(&root, shared, mode).await;
         assert_receipt(&scoped_store, &scoped, mode).await;
-        settle_dependency(&catalog, &stores.catalog, &scoped_store, &scoped, mode, "scoped").await;
+        settle_dependency(
+            &catalog,
+            &stores.catalog,
+            &scoped_store,
+            &scoped,
+            mode,
+            "scoped",
+        )
+        .await;
         receipts.push(json!({"mode":mode,"run":scoped,"scopedDatabase":true}));
     }
     std::fs::write(
@@ -1003,6 +999,11 @@ fn child(root: &Path, stage: &str, shared: bool, namespace: &str) -> std::proces
         .env("PATH", "/usr/bin:/bin")
         .env(CHILD, stage)
         .env(ROOT, root)
+        .env(
+            "UAR_EXTERNAL_IDENTITY_FIXTURE",
+            std::env::var_os("UAR_EXTERNAL_IDENTITY_FIXTURE")
+                .expect("external nonsecret fixture manifest"),
+        )
         .current_dir(root)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -1010,13 +1011,12 @@ fn child(root: &Path, stage: &str, shared: bool, namespace: &str) -> std::proces
     if shared {
         command
             .env("UAR_DOT04_SHARED", "1")
-            .env("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED", "1")
-            .env("UAR_DOT04_NAMESPACE", namespace)
             .env(
-                "UAR_DOT04_INFRA_FILE",
-                std::env::var("UAR_DOT04_INFRA_FILE")
-                    .expect("shared acceptance infrastructure is mandatory"),
-            );
+                "UAR_REMOTE_SURREAL_DURABILITY_ATTESTED",
+                std::env::var("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED")
+                    .expect("external owner must attest isolated shared-store durability"),
+            )
+            .env("UAR_DOT04_NAMESPACE", namespace);
     }
     command.spawn().unwrap()
 }
@@ -1043,39 +1043,40 @@ fn finish(child: std::process::Child, root: &Path) {
 }
 
 fn profile_root(shared: bool) -> (PathBuf, Option<tempfile::TempDir>) {
-    match std::env::var_os(EVIDENCE_ROOT) {
-        Some(base) => {
-            let base = PathBuf::from(base);
-            std::fs::create_dir_all(&base).unwrap();
-            let root = base.join(format!(
-                "{}-{}",
-                if shared { "shared" } else { "local" },
-                uuid::Uuid::new_v4().simple()
-            ));
-            std::fs::create_dir(&root).unwrap();
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::PermissionsExt;
-                std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
-            }
-            eprintln!(
-                "Private dot04 profile evidence retained at {}",
-                root.display()
-            );
-            (root, None)
-        }
-        None => {
-            let directory = tempfile::tempdir().unwrap();
-            (directory.path().to_path_buf(), Some(directory))
-        }
+    let root = external_identity_host::profile("dot04", shared).root;
+    std::fs::create_dir(&root)
+        .expect("externally assigned fresh private root; never reuse another fixture");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
     }
+    // Child hosts retain the same checked-in policies; no authentication policy
+    // is manufactured or disabled to admit a test principal.
+    std::fs::create_dir(root.join("policies")).unwrap();
+    for name in [
+        "default.cedar",
+        "tool-approval.cedar",
+        "skill-mutation.cedar",
+    ] {
+        std::fs::copy(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("policies")
+                .join(name),
+            root.join("policies").join(name),
+        )
+        .unwrap();
+    }
+    (root, None)
 }
 
 #[test]
 fn actual_mcp_outcomes_are_truthful_locally_and_between_shared_runtimes() {
     for shared in [false, true] {
         let (root, _temporary) = profile_root(shared);
-        let namespace = format!("dot04_{}", uuid::Uuid::new_v4().simple());
+        let namespace = external_identity_host::profile("dot04", shared).databases["component"]
+            .namespace
+            .clone();
         let mut writer = child(&root, "exercise", shared, &namespace);
         if shared {
             // The shared sequence boots 26 real binaries, including concurrent

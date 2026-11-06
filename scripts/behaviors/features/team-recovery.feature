@@ -9,6 +9,7 @@ Feature: A team recovers after cancellation and restart without duplicate work
     When I restart the owned UAR
     Then the settled tally artifact, attempt and model calls are byte-identical after the restart
     And the cancelled note is still reported honestly with no new model calls
+    And repeated reconciliation inspection retains original accounting identity and team capacity
     When I ask the team to recover only what its recovery design permits
     Then recovery re-dispatches nothing and the dependent of the cancelled note stays blocked
     When I submit an explicit replacement note and a replacement join over the settled tally artifact

@@ -1,6 +1,7 @@
 import { isUarAguiEvent, type UarAguiEvent } from "@/platform/agui/agui-schema";
 import {
   UarAguiNormalizer,
+  aguiTerminalUsage,
   type AguiConsumerProjections,
 } from "@/platform/agui/agui-normalizer";
 
@@ -96,9 +97,15 @@ function customToLegacy(wire: UarAguiEvent): [string, Record<string, unknown>] {
     case "uar.memory.mutation":
       return ["agui.memory.mutation", { kind: "memory", phase: "mutation", request_id, ...value }];
     case "uar.artifact.available":
-      return ["agui.artifact", { kind: "artifact", phase: "complete", request_id, ...value }];
+      return ["agui.artifact", { kind: "artifact", phase: "complete", request_id, ...value,
+        artifact_id: value.artifactId ?? value.artifact_id,
+        artifact_type: value.artifactType ?? value.artifact_type,
+      }];
     case "uar.artifact.input_required":
-      return ["agui.artifact_input_request", { kind: "artifact_input_request", request_id, ...value }];
+      return ["agui.artifact_input_request", { kind: "artifact_input_request", request_id, ...value,
+        artifact_id: value.artifactId ?? value.artifact_id,
+        artifact_type: value.artifactType ?? value.artifact_type,
+      }];
     case "uar.skill.activated":
       return ["agui.skill.activated", { kind: "skill", phase: "activated", request_id, ...value }];
     case "uar.agent.selected":
@@ -120,7 +127,7 @@ function officialToLegacy(wire: UarAguiEvent): [string, Record<string, unknown>]
     case "RUN_STARTED":
       return ["agui.stream.start", { kind: "stream", phase: "start", request_id, agent_id: record(wire.input).agentId }];
     case "RUN_FINISHED": {
-      const usage = record(record(wire.result).usage);
+      const usage = aguiTerminalUsage(wire) ?? {};
       return ["agui.done", {
         kind: "done", request_id,
         usage: {
@@ -132,10 +139,14 @@ function officialToLegacy(wire: UarAguiEvent): [string, Record<string, unknown>]
         },
       }];
     }
-    case "RUN_ERROR":
-      return wire.code === "CANCELLED"
-        ? ["agui.cancelled", { kind: "cancelled", request_id }]
-        : ["agui.error", { kind: "error", request_id, code: wire.code, message: wire.message }];
+    case "RUN_ERROR": {
+      if (wire.code !== "CANCELLED") return ["agui.error", { kind: "error", request_id, code: wire.code, message: wire.message }];
+      const usage = aguiTerminalUsage(wire);
+      return ["agui.cancelled", { kind: "cancelled", request_id, ...(usage ? { usage: {
+        input_tokens: usage.inputTokens, output_tokens: usage.outputTokens, total_tokens: usage.totalTokens,
+        cost_usd_estimate: usage.costUsdEstimate, model: usage.model,
+      } } : {}) }];
+    }
     case "TEXT_MESSAGE_CONTENT":
       return ["agui.message.delta", { kind: "message", phase: "delta", request_id, delta: { text: wire.delta } }];
     case "REASONING_MESSAGE_CONTENT":

@@ -26,40 +26,16 @@ use universal_agent_runtime::{
     uar::{
         domain::policy::{PolicyResolutionInput, PolicyUniverse, resolve_run_policy},
         runtime::actor::messages::ActorOwner,
-        security::claims::{UserClaims, UserContext},
+        security::claims::UserContext,
     },
 };
 
 pub const TOOL: &str = "outcomes__effect";
 pub const OWNER: &str = "dot04-outcome-owner";
-pub const SECRET: &str = "dot04-synthetic-provider-key";
 
 pub async fn user() -> UserContext {
-    let secret = "dot04-signed-principal-fixture";
-    let config = universal_agent_runtime::config::SecurityConfig {
-        provider_credentials: Default::default(),
-        deployment_profile: Default::default(), jwt_algorithm: None,
-        workspace_authorities: Vec::new(),
-        skill_required_roles: Default::default(),
-        api_key_delegable_roles: universal_agent_runtime::config::SecurityConfig::default_api_key_delegable_roles(),
-        api_key_admin_principals: Vec::new(), trusted_host_principals: Vec::new(),
-        jwt_required: true, jwt_secret: secret.to_owned().into(), jwks_url: None,
-        jwt_issuer: None, jwt_audience: None, jwt_validate_nbf: true,
-        settings_mutation_auth_required: true, settings_admin_key: None,
-        local_loopback_owner: false,
-    };
-    // Initialize crypto through the production verifier before signing, and
-    // obtain identity only by verifying the resulting fixture credential.
-    assert!(matches!(universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(
-        &config, "dot04-malformed-synthetic-token").await, Err(status) if status == axum::http::StatusCode::UNAUTHORIZED),
-        "production verifier must reject malformed fixture credentials before signing");
-    let token = jsonwebtoken::encode(&jsonwebtoken::Header::default(), &UserClaims {
-        sub: OWNER.into(), name: None, roles: Some(vec!["user".into()]),
-        tenant_id: None, uar_instance_id: None,
-        exp: (chrono::Utc::now().timestamp() + 3600) as usize,
-    }, &jsonwebtoken::EncodingKey::from_secret(secret.as_bytes())).unwrap();
-    universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(&config, &token)
-        .await.expect("actual signed fixture principal verification")
+    let shared = std::env::var("UAR_DOT04_SHARED").as_deref() == Ok("1");
+    super::external_identity_host::user("dot04", shared, OWNER).await
 }
 
 pub fn configuration(trace: &Path) -> McpConfig {
@@ -179,6 +155,14 @@ impl Drop for Peer {
 
 impl Peer {
     pub async fn start(root: &Path) -> Self {
+        Self::start_at(root, "127.0.0.1:0".parse().unwrap()).await
+    }
+
+    pub async fn start_at(root: &Path, address: std::net::SocketAddr) -> Self {
+        assert!(
+            address.ip().is_loopback(),
+            "controlled model peer stays on loopback"
+        );
         let log_directory = root.join("liter-requests");
         std::fs::create_dir_all(&log_directory).unwrap();
         #[cfg(unix)]
@@ -200,7 +184,7 @@ impl Peer {
             request_log,
             ..Seen::default()
         });
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let listener = tokio::net::TcpListener::bind(address).await.unwrap();
         let url = format!("http://{}/v1", listener.local_addr().unwrap());
         let app = Router::new()
             .route("/v1/chat/completions", post(completion))

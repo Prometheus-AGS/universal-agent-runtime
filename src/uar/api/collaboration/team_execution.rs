@@ -31,6 +31,10 @@ pub(super) fn build_router() -> Router<Arc<CollaborationApiState>> {
         )
         .route("/team-instances/{id}/execution", get(execution))
         .route(
+            "/team-instances/{id}/attempts/{attempt}/reconciliation",
+            get(reconciliation),
+        )
+        .route(
             "/team-instances/{id}/attempts/{attempt}/run-registration",
             get(run_registration),
         )
@@ -176,7 +180,12 @@ async fn run_registration(
         Ok(owner) => owner,
         Err(_) => return StatusCode::UNAUTHORIZED.into_response(),
     };
-    result_response(state.runtime.await_run_registration(&owner, &workspace, &team, &attempt).await)
+    result_response(
+        state
+            .runtime
+            .await_run_registration(&owner, &workspace, &team, &attempt)
+            .await,
+    )
 }
 
 async fn execution(
@@ -218,6 +227,61 @@ async fn cancel(
             .cancel(&owner, &workspace, &team, &attempt, request)
             .await,
     )
+}
+
+/// Correlation only: neither inspection nor provider billing settles a team effect.
+async fn reconciliation(
+    State(state): State<Arc<CollaborationApiState>>,
+    Extension(user): Extension<UserContext>,
+    headers: HeaderMap,
+    Path((team, attempt_id)): Path<(String, String)>,
+) -> Response {
+    let (owner, workspace) = match private_scope(&user, &headers) {
+        Ok(scope) => scope,
+        Err(response) => return response,
+    };
+    let summary = match state
+        .service
+        .team_execution_summary(&owner, &workspace, &team)
+        .await
+    {
+        Ok(summary) => summary,
+        Err(error) => return error_response(error),
+    };
+    let Some(attempt) = summary
+        .attempts
+        .iter()
+        .find(|attempt| attempt.id == attempt_id)
+    else {
+        return error_response(
+            crate::uar::compiler::collaboration::CollaborationError::NotFound(attempt_id),
+        );
+    };
+    Json(serde_json::json!({
+        "schemaVersion": 1,
+        "attemptId": attempt.id,
+        "runId": attempt.run_id,
+        "rootId": attempt.root_id,
+        "executionEpoch": attempt.execution_epoch,
+        "ownershipEpoch": attempt.ownership_epoch,
+        "executionOutcome": attempt.execution_outcome,
+        "accountingState": attempt.accounting_state,
+        "effectDisposition": attempt.effect_disposition,
+        "usageRevision": attempt.usage_revision,
+        "teamReservation": attempt.reservation,
+        "teamUsage": attempt.usage,
+        "teamCapacityRetained": attempt.usage.is_none(),
+        "accountingInspection": {
+            "pathTemplate": "/api/uar/accounting/calls/{run_id}",
+            "runId": attempt.run_id,
+            "callIdentitySource": "owner_scoped_accounting_records",
+            "settlementAuthority": "trusted_host_with_confirmed_provider_evidence"
+        },
+        "automaticTeamProjection": false,
+        "effectReplayAllowed": false,
+        "procedure": "docs/operations/team-control-reconciliation.md",
+        "disposition": if attempt.usage.is_none() { "manual_evidence_required_team_capacity_retained" } else { "team_usage_settled" }
+    })).into_response()
 }
 
 async fn recover(

@@ -557,9 +557,216 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
             }
         }
     });
+    extend_current_contracts(&mut spec);
     super::delegation_grants::extend_openapi(&mut spec);
-    serde_json::from_value(spec)
-    .expect("OpenAPI spec JSON is valid")
+    serde_json::from_value(spec).expect("OpenAPI spec JSON is valid")
+}
+
+/// Add source-authored contracts without replacing the existing route inventory.
+/// These schemas describe wire availability and recovery limits, not acceptance.
+fn extend_current_contracts(spec: &mut serde_json::Value) {
+    use serde_json::json;
+    // Utoipa deserializes a null `type` as AnyValue and omits it on the wire.
+    let json_value = json!({"type": null});
+    let schemas = json!({
+        "UsageCounterAvailability": {
+            "type":"object", "required":["available","source"],
+            "properties": {
+                "available":{"type":"boolean","description":"False means a compatible numeric zero is an unavailable placeholder, not measured or billed zero"},
+                "source":{"type":"string","enum":["provider_reported","unavailable"]}
+            }
+        },
+        "EmbeddingResponse": {
+            "type":"object", "required":["object","data","model","usage","uar_usage"],
+            "properties": {
+                "object":{"type":"string","enum":["list"]},
+                "model":{"type":"string"},
+                "data":{"type":"array","items":{"type":"object","required":["object","index","embedding"],"properties":{
+                    "object":{"type":"string","enum":["embedding"]},
+                    "index":{"type":"integer","minimum":0},
+                    "embedding":{"oneOf":[{"type":"array","items":{"type":"number"}},{"type":"string","description":"base64-encoded float32 values"}]}
+                }}},
+                "usage":{"type":"object","required":["prompt_tokens","total_tokens"],"properties":{
+                    "prompt_tokens":{"type":"integer","minimum":0},"total_tokens":{"type":"integer","minimum":0}
+                }},
+                "uar_usage":{"type":"object","required":["prompt_tokens","total_tokens","billed_input_tokens"],"properties":{
+                    "prompt_tokens":{"$ref":"#/components/schemas/UsageCounterAvailability"},
+                    "total_tokens":{"$ref":"#/components/schemas/UsageCounterAvailability"},
+                    "billed_input_tokens":{"type":"object","required":["value","available","source"],"properties":{
+                        "value":{"type":["integer","null"],"minimum":0},
+                        "available":{"type":"boolean"},
+                        "source":{"type":"string","enum":["provider_billed_units","unavailable"]}
+                    },"description":"Independent native billing counter; never copied into prompt_tokens or total_tokens"}
+                }}
+            }
+        },
+        "AnthropicUsage": {
+            "type":"object","required":["input_tokens","output_tokens"],
+            "description":"Provider-reported uncached input and output. Input excludes valid reported cache reads/creation; unavailable counters retain compatible zero with uar_usage availability false. Optional cache counters are omitted when unavailable or invalid.",
+            "properties":{
+                "input_tokens":{"type":"integer","minimum":0},"output_tokens":{"type":"integer","minimum":0},
+                "cache_read_input_tokens":{"type":"integer","minimum":0},"cache_creation_input_tokens":{"type":"integer","minimum":0}
+            }
+        },
+        "AnthropicUsageAvailability": {
+            "type":"object","required":["input_tokens","output_tokens"],"properties":{
+                "input_tokens":{"$ref":"#/components/schemas/UsageCounterAvailability"},
+                "output_tokens":{"$ref":"#/components/schemas/UsageCounterAvailability"}
+            }
+        },
+        "AnthropicMessage": {
+            "type":"object","required":["id","type","role","model","content","stop_reason","stop_sequence","usage","uar_usage"],
+            "properties":{
+                "id":{"type":"string"},"type":{"type":"string","enum":["message"]},"role":{"type":"string","enum":["assistant"]},
+                "model":{"type":"string"},"content":{"type":"array","items":{"type":"object"}},
+                "stop_reason":{"type":["string","null"]},"stop_sequence":{"type":["string","null"]},
+                "usage":{"$ref":"#/components/schemas/AnthropicUsage"},
+                "uar_usage":{"$ref":"#/components/schemas/AnthropicUsageAvailability"}
+            }
+        },
+        "NativeChatTurnReceipt": {
+            "type":"object","required":["retry_allowed"],
+            "description":"Read-only original reservation. Unknown or admission_unconfirmed never grants another execution. Nonterminal durable run without a resident lane is interrupted.",
+            "properties":{
+                "client_turn_id":{"type":"string"},"user_message_id":{"type":["string","null"]},
+                "session_id":{"type":"string"},"run_id":{"type":"string"},
+                "state":{"type":"string","enum":["unknown","pending","running","paused","complete","error","cancelled","interrupted","admission_unconfirmed"]},
+                "recovery":{"type":"string","enum":["available","unavailable"]},"retry_allowed":{"type":"boolean","enum":[false]}
+            }
+        },
+        "MemoryContextObservation": {
+            "type":"object","required":["status","reason_code"],
+            "description":"Content-free /memory_context state-patch observation. selected_prepared is not submission. submitted requires selected fragment in final driver request plus observed provider response, not a nonempty retrieval hit list or proof of model understanding. Config memory.injection_min_similarity must be finite in [-1,1]; absent cutoff refuses automatic injection.",
+            "properties":{
+                "status":{"type":"string","enum":["disabled","opt_out","no_match","bounded_out","unavailable","refused","selected_prepared","submitted"]},
+                "reason_code":{"type":"string"},"retrieval_method":{"type":"string"},
+                "memory_ids":{"type":"array","items":{"type":"string"}},
+                "evidence_basis":{"type":"string","enum":["final_driver_request_and_provider_response"]},
+                "request_content_sha256":{"type":"string"},"model":{"type":"string"}
+            }
+        },
+        "TeamAttemptReconciliation": {
+            "type":"object","required":["schemaVersion","attemptId","runId","rootId","executionEpoch","ownershipEpoch","executionOutcome","accountingState","effectDisposition","usageRevision","teamReservation","teamUsage","teamCapacityRetained","accountingInspection","automaticTeamProjection","effectReplayAllowed","procedure","disposition"],
+            "description":"Owner/workspace-qualified read. Provider call settlement does not release a separate team reservation. No automatic replay or team usage projection; preserve retained capacity while original evidence is unresolved.",
+            "properties":{
+                "schemaVersion":{"type":"integer","enum":[1]},"attemptId":{"type":"string"},"runId":{"type":"string"},"rootId":{"type":"string"},
+                "executionEpoch":{"type":"integer","minimum":0},"ownershipEpoch":{"type":"integer","minimum":0},
+                "executionOutcome":{"type":["string","null"]},"accountingState":{"type":"string"},"effectDisposition":{"type":"string"},
+                "usageRevision":{"type":"integer","minimum":0},"teamReservation":{"type":"object"},"teamUsage":{"type":["object","null"]},
+                "teamCapacityRetained":{"type":"boolean"},"automaticTeamProjection":{"type":"boolean","enum":[false]},"effectReplayAllowed":{"type":"boolean","enum":[false]},
+                "accountingInspection":{"type":"object","properties":{"pathTemplate":{"type":"string"},"runId":{"type":"string"},"callIdentitySource":{"type":"string"},"settlementAuthority":{"type":"string"}}},
+                "procedure":{"type":"string"},"disposition":{"type":"string","enum":["manual_evidence_required_team_capacity_retained","team_usage_settled"]}
+            }
+        },
+        "A2uiAction": {
+            "type":"object","required":["surfaceId","name","sourceComponentId"],
+            "description":"Existing camelCase fields; interactionId and surfaceGeneration also accept snake_case aliases. Protected actions require both logical ID and string generation. Reuse original immutable payload/ID/generation for uncertain intent; a new click gets a new ID. Legacy absent-ID requests explicitly lack retry protection. Existing host-resource/approval/policy requirements remain.",
+            "properties":{
+                "surfaceId":{"type":"string"},"name":{"type":"string"},"sourceComponentId":{"type":"string"},
+                "interactionId":{"type":["string","null"]},"surfaceGeneration":{"type":["string","null"]},
+                "interaction_id":{"type":["string","null"],"description":"Alias of interactionId"},
+                "surface_generation":{"type":["string","null"],"description":"Alias of surfaceGeneration"},
+                "timestamp":{"type":["string","null"]},"context":json_value.clone(),"a2uiClientDataModel":json_value
+            }
+        },
+        "A2uiContinuationReceipt": {
+            "type":"object","required":["run_id","continuation_run_id","status","interaction_id","retry_protected","outcome"],
+            "properties":{
+                "run_id":{"type":"string"},"continuation_run_id":{"type":"string"},"status":{"type":"string","enum":["continued"]},
+                "interaction_id":{"type":["string","null"]},"retry_protected":{"type":"boolean"},
+                "outcome":{"type":"string","enum":["running","completed","failed","cancelled","uncertain"]}
+            },"description":"Acknowledgement is not proof of effect settlement. A protected receipt never permits another dispatch, including when its reserved run is absent."
+        },
+        "A2uiAguiReceipt": {
+            "type":"object","required":["interaction_id","continuation_run_id","wire_run_id","thread_id","retry_protected","outcome"],
+            "properties":{
+                "interaction_id":{"type":"string"},"continuation_run_id":{"type":"string"},"wire_run_id":{"type":"string"},"thread_id":{"type":"string"},
+                "retry_protected":{"type":"boolean","enum":[true]},"outcome":{"type":"string","enum":["running","completed","failed","cancelled","uncertain"]}
+            }
+        },
+        "A2uiSurfaceAuthority": {
+            "type":"object","required":["status","authoritative","max_prior_runs","max_surfaces","recovery_hint","surfaces"],
+            "properties":{
+                "status":{"type":"string","enum":["complete","truncated","expired","unavailable"]},"authoritative":{"type":"boolean"},
+                "max_prior_runs":{"type":"integer","enum":[64]},"max_surfaces":{"type":"integer","enum":[48]},"recovery_hint":{"type":"string"},
+                "surfaces":{"type":"array","items":{"type":"object","required":["surface_id","surface_generation","source_run_id"],"properties":{
+                    "surface_id":{"type":"string"},"surface_generation":{"type":"string"},"source_run_id":{"type":"string"}
+                }}}
+            },"description":"Only complete authoritative=true can authorize a fresh declared action. Partial, expired or unavailable state cannot. Reconcile uncertain intent before opening a fresh conversation/surface."
+        }
+    });
+    if let (Some(target), Some(additions)) = (
+        spec["components"]["schemas"].as_object_mut(),
+        schemas.as_object(),
+    ) {
+        target.extend(additions.clone());
+    }
+    spec["paths"]["/v1/embeddings"]["post"]["responses"]["200"] = json!({
+        "description":"Input-ordered vectors and independent provider counter availability; compatible zero placeholders are not billed zero. See docs/operations/embedding-usage-accounting.md.",
+        "content":{"application/json":{"schema":{"$ref":"#/components/schemas/EmbeddingResponse"}}}
+    });
+    spec["paths"]["/v1/chat/completions"]["post"]["description"] = json!(
+        "OpenAI-compatible completion with existing stream modes and tools. Optional native recovery requires client_turn_id and user_message_id together plus a stable resolved session. The owner/session/workspace-qualified semantic digest covers original rich content, policy, attachments and stream format. Only a newly reserved intent dispatches its reserved run; exact retry returns the original JSON turn receipt, and changed semantics conflict. Caller-owned tool-batch continuations use their separate durable identity and refuse native turn IDs. Requests without IDs retain legacy behavior without durable turn recovery. Source-authored, current-tree runtime qualification unverified; see docs/operations/chat-turn-recovery.md."
+    );
+    spec["paths"]["/metrics"]["get"]["description"] = json!(
+        "Own-recorder Prometheus export only. Host-owned recorder returns explicit 503 rather than healthy empty scrape; compiled-out telemetry returns 404. HTTP labels use matched templates/unmatched sentinel, never resource IDs. See docs/operations/telemetry-ownership.md; no hard exporter-flush promise."
+    );
+    spec["paths"]["/metrics"]["get"]["responses"]["503"] = json!({"description":"telemetry_scrape_unavailable with metrics_status=host_owned or unavailable; use host exporter when host-owned"});
+    spec["paths"]["/metrics"]["get"]["responses"]["404"] =
+        json!({"description":"Telemetry capability is not compiled"});
+    let paths = json!({
+        "/v1/messages":{"post":{
+            "summary":"Anthropic-compatible agent Messages", "tags":["chat"],"security":[{"bearerAuth":[]}],
+            "description":"Existing agent-mode Messages route, verified owner required. uar_usage is a top-level sibling of usage on the nonstream message and streamed message_start.message/message_delta. Input/output availability is independent; cache fields are optional. Provider errors/cancellation do not become successful zero-usage replies. See docs/ANTHROPIC_MESSAGES.md; authentication is externally provisioned.",
+            "responses":{
+                "200":{"description":"Anthropic message or SSE; initial streamed availability may be false until actual provider usage arrives", "content":{
+                    "application/json":{"schema":{"$ref":"#/components/schemas/AnthropicMessage"}},"text/event-stream":{"schema":{"type":"string"}}
+                }},"400":{"description":"Unsupported or contradictory request fields"},"401":{"description":"Verified owner required"},"422":{"description":"Model/provider refused"},"502":{"description":"Started nonstream execution failed or cancelled; streamed execution emits error event"}
+            }
+        }},
+        "/api/uar/chat-turns/{client_turn_id}":{"get":{
+            "summary":"Read original native chat turn admission", "tags":["chat"],"security":[{"bearerAuth":[]}],
+            "description":"Owner/session-qualified read without execution. Stable client_turn_id and original user_message_id identify immutable intent. Unknown or absent execution never permits automatic resend. Durable capability required; no anonymous fallback. Ordinary native POST now reserves paired client_turn_id/user_message_id under a stable resolved session before dispatch: only a new reservation executes its original run ID; an existing reservation returns this original JSON receipt. Changed semantic input conflicts, and uncertain admission never permits resend. Caller-owned tool-batch continuations keep their separate identity and refuse these IDs. Source-authored; current-tree runtime qualification remains unverified.",
+            "parameters":[{"name":"client_turn_id","in":"path","required":true,"schema":{"type":"string","minLength":1,"maxLength":512}},{"name":"session_id","in":"query","required":true,"schema":{"type":"string","minLength":1,"maxLength":512}}],
+            "responses":{
+                "200":{"description":"Original owned reservation or unknown with retry_allowed=false","content":{"application/json":{"schema":{"$ref":"#/components/schemas/NativeChatTurnReceipt"}}}},
+                "400":{"description":"Invalid native chat identity"},"401":{"description":"Verified principal required"},"409":{"description":"Native turn binding conflict"},"503":{"description":"Durable admission recovery unavailable"}
+            }
+        }},
+        "/api/v1/collaboration/team-instances/{id}/attempts/{attempt}/reconciliation":{"get":{
+            "summary":"Read retained team attempt accounting/effect disposition", "tags":["runs"],"security":[{"bearerAuth":[]}],
+            "description":"Surreal team execution capability only. Owner/workspace-qualified original attempt/run correlation; no dispatch, billing attestation or team reservation release. Generic confirmed call settlement may leave teamCapacityRetained=true and automaticTeamProjection=false. See docs/operations/team-control-reconciliation.md.",
+            "parameters":[{"name":"id","in":"path","required":true,"schema":{"type":"string"}},{"name":"attempt","in":"path","required":true,"schema":{"type":"string"}},{"name":"x-uar-workspace-id","in":"header","required":true,"schema":{"type":"string","minLength":1}}],
+            "responses":{"200":{"description":"Original attempt correlation and retained reservation disposition","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TeamAttemptReconciliation"}}}},"401":{"description":"Verified owner required"},"403":{"description":"Owner/workspace authority refused"},"404":{"description":"Attempt unavailable in owner/workspace scope"},"409":{"description":"Current revision/ownership conflict"},"422":{"description":"Invalid team/workspace request"},"503":{"description":"Team capability unsupported or catalog storage unavailable"}}
+        }},
+        "/api/uar/runs/{run_id}/a2ui/actions":{"post":{
+            "summary":"Submit declared A2UI action with optional protected intent", "tags":["runs"],"security":[{"bearerAuth":[]}],
+            "description":"Protected logical ID/generation is durably reserved before native continuation. Exact retry returns original receipt; changed semantics conflict. Existing latest declaration, policy, approval and host-resource checks remain. Single owned host only, no distributed multiwriter ordering or global exactly-once claim.",
+            "parameters":[{"name":"run_id","in":"path","required":true,"schema":{"type":"string"}}],
+            "requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/A2uiAction"}}}},
+            "responses":{"202":{"description":"Continuation acknowledgement, protected or explicit legacy unprotected","content":{"application/json":{"schema":{"$ref":"#/components/schemas/A2uiContinuationReceipt"}}}},"401":{"description":"Verified owner required for protected action"},"403":{"description":"Current authority denied"},"404":{"description":"Source unavailable to owner"},"409":{"description":"Intent/generation/authority conflict"},"422":{"description":"Invalid or undeclared action"},"503":{"description":"Durable action recovery unavailable"}}
+        }},
+        "/api/uar/runs/{run_id}/a2ui/actions/{interaction_id}":{"get":{
+            "summary":"Read original A2UI intent receipt", "tags":["runs"],"security":[{"bearerAuth":[]}],
+            "description":"Read-only owner-qualified recovery. Missing receipt or uncertain continuation is not permission to re-execute.",
+            "parameters":[{"name":"run_id","in":"path","required":true,"schema":{"type":"string"}},{"name":"interaction_id","in":"path","required":true,"schema":{"type":"string"}}],
+            "responses":{"202":{"description":"Original continuation receipt","content":{"application/json":{"schema":{"$ref":"#/components/schemas/A2uiContinuationReceipt"}}}},"404":{"description":"Owned interaction unavailable"},"503":{"description":"Action recovery unavailable"}}
+        }},
+        "/api/uar/runs/{run_id}/a2ui/surface-authority":{"get":{
+            "summary":"Read bounded authoritative surface generations", "tags":["runs"],"security":[{"bearerAuth":[]}],
+            "parameters":[{"name":"run_id","in":"path","required":true,"schema":{"type":"string"}}],
+            "responses":{"200":{"description":"Explicit complete/truncated/expired/unavailable authority, never inferred from nonempty surfaces","content":{"application/json":{"schema":{"$ref":"#/components/schemas/A2uiSurfaceAuthority"}}}},"404":{"description":"Source unavailable to owner"}}
+        }},
+        "/api/uar/ag-ui/agents/{agent_id}/threads/{thread_id}/actions/{interaction_id}":{"get":{
+            "summary":"Read protected AG-UI A2UI intent receipt", "tags":["runs"],"security":[{"bearerAuth":[]}],
+            "description":"Owner/workspace-qualified original wire/native continuation identity. forwardedProps.a2uiAction carries interaction_id and string surface_generation. CUSTOM uar.a2ui.retry_protection and uar.a2ui.surface_authority disclose protection/authority; ACTIVITY_SNAPSHOT adds surface_generation. No receipt read dispatches work.",
+            "parameters":[{"name":"agent_id","in":"path","required":true,"schema":{"type":"string"}},{"name":"thread_id","in":"path","required":true,"schema":{"type":"string"}},{"name":"interaction_id","in":"path","required":true,"schema":{"type":"string"}},{"name":"x-uar-workspace-id","in":"header","required":false,"schema":{"type":"string"}}],
+            "responses":{"200":{"description":"Original protected AG-UI receipt","content":{"application/json":{"schema":{"$ref":"#/components/schemas/A2uiAguiReceipt"}}}},"400":{"description":"Invalid identity"},"401":{"description":"Verified principal required"},"403":{"description":"Current authority refused"},"404":{"description":"Owned interaction unavailable"},"409":{"description":"Original receipt belongs to another protocol"},"503":{"description":"Durable recovery unavailable"}}
+        }}
+    });
+    if let (Some(target), Some(additions)) = (spec["paths"].as_object_mut(), paths.as_object()) {
+        target.extend(additions.clone());
+    }
 }
 
 #[cfg(test)]
@@ -603,6 +810,20 @@ mod tests {
             spec["paths"]["/api/uar/knowledge-bases/{id}/documents"]["post"]["responses"]
                 .get("202")
                 .is_some()
+        );
+        let action = &spec["components"]["schemas"]["A2uiAction"]["properties"];
+        for field in ["context", "a2uiClientDataModel"] {
+            assert_eq!(
+                action[field],
+                serde_json::json!({}),
+                "A2UI {field} must document arbitrary JSON values"
+            );
+        }
+        let event_data = &spec["components"]["schemas"]["RunEventSnapshot"]["properties"]
+            ["events"]["items"]["properties"]["data"];
+        assert_eq!(
+            event_data,
+            &serde_json::json!({"description": "Existing public payload for eventName; no internal admission or credential objects"})
         );
     }
 }

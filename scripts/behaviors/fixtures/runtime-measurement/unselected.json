@@ -1,0 +1,29 @@
+{
+  "kind": "uar.runtime-measurement/v1",
+  "selection": {
+    "status": "unselected",
+    "ownerDecision": null,
+    "experimentId": null,
+    "externalSpendAllowed": false,
+    "syntheticProviderOnly": true,
+    "comparison": "NONE",
+    "rigDisposition": "No equivalent owner-selected model/task/tool/budget/durability profile or authorized real-model spend; no Rig version or superiority claim."
+  },
+  "identity": null,
+  "hardware": null,
+  "profile": null,
+  "model": null,
+  "settings": null,
+  "workload": null,
+  "workloadSha256": null,
+  "concurrency": null,
+  "repetitions": null,
+  "requestsPerRound": null,
+  "limits": null,
+  "tokenBudgets": null,
+  "startupDefinitions": null,
+  "observer": null,
+  "peerJournal": null,
+  "thresholds": null,
+  "reliability": null
+}

@@ -3,7 +3,6 @@ import { useExternalStoreRuntime, type AppendMessage, type ThreadAssistantMessag
 import { useChatMessageStore, selectIsStreaming } from "@/stores/chat-message-store";
 import { useChatIntentStore } from "@/stores/chat-intent-store";
 import { useThreadRegistryStore } from "@/stores/thread-registry-store";
-import { useDb } from "@/lib/db-context";
 import { useChatMessages } from "./use-chat-messages";
 import { useMessageStream } from "./use-message-stream";
 import { useThreadTitleStore } from "@/stores/thread-title-store";
@@ -15,7 +14,7 @@ import { useAttachmentManager } from "./use-attachment-manager";
 import type { AttachmentManager } from "./use-attachment-manager";
 import { useMemoryContext } from "./memory-context";
 import { useAgentConfig } from "./agent-config-context";
-import { useAgentSession } from "@/platform/entities";
+import { useAgentSession, pendingChatTurns, reconcileChatTurn } from "@/platform/entities";
 
 export type { AttachmentManager };
 
@@ -27,11 +26,11 @@ function richMessageToThreadMessageLike(msg: RichMessage): ThreadMessageLike {
     const text = msg.content.filter((b): b is Extract<ContentBlock, { type: "text" }> => b.type === "text").map((b) => b.text).join("");
     // A click-started run stores its JSON envelope as the user turn; show a label, never the envelope.
     const displayText = a2uiUserActionLabel(text) ?? text;
-    return { role: "user", id: msg.id, content: [{ type: "text", text: displayText }], createdAt: toDate(msg.createdAt), attachments: [], metadata: baseMetadata };
+    return { role: "user", id: msg.id, content: [{ type: "text", text: displayText }, ...msg.content.flatMap((block) => block.type === "image" && block.url ? [{ type: "image" as const, image: block.url }] : [])], createdAt: msg.createdAtKnown === false ? undefined : toDate(msg.createdAt), attachments: [], metadata: baseMetadata };
   }
   if (msg.role === "system") {
     const text = msg.content.filter((b): b is Extract<ContentBlock, { type: "text" }> => b.type === "text").map((b) => b.text).join("");
-    return { role: "system", id: msg.id, content: [{ type: "text", text }], createdAt: toDate(msg.createdAt), metadata: baseMetadata };
+    return { role: "system", id: msg.id, content: [{ type: "text", text }], createdAt: msg.createdAtKnown === false ? undefined : toDate(msg.createdAt), metadata: baseMetadata };
   }
 
   const chunks = msg.chunks ?? toChunks(msg.content, { messageId: msg.id, at: toDate(msg.createdAt).toISOString(), finalized: msg.status !== "in_progress" });
@@ -49,8 +48,8 @@ function richMessageToThreadMessageLike(msg: RichMessage): ThreadMessageLike {
     : undefined;
 
   return {
-    role: "assistant", id: msg.id, content: parts, createdAt: toDate(msg.createdAt),
-    status: msg.status === "in_progress" ? { type: "running" } : msg.status === "failed" ? { type: "incomplete", reason: "error" } : { type: "complete", reason: "stop" as const },
+    role: "assistant", id: msg.id, content: parts, createdAt: msg.createdAtKnown === false ? undefined : toDate(msg.createdAt),
+    status: msg.status === "in_progress" ? { type: "running" } : msg.status !== "complete" ? { type: "incomplete", reason: msg.status === "cancelled" ? "cancelled" : "error" } : { type: "complete", reason: "stop" as const },
     metadata: { ...baseMetadata, unstable_state: null, unstable_annotations: [], unstable_data: [], steps: [], custom: errorText ? { errorText } : {} },
   };
 }
@@ -63,7 +62,6 @@ export function useChatRuntime(threadId: string): {
   runtime: ReturnType<typeof useExternalStoreRuntime>;
   attachmentManager: AttachmentManager;
 } {
-  const db = useDb();
   const consumePendingPrompt = useChatIntentStore((s) => s.consumePendingPrompt);
   const { startStream, cancelStream } = useMessageStream();
   const { messages, isStreaming } = useChatMessages(threadId);
@@ -94,12 +92,22 @@ export function useChatRuntime(threadId: string): {
       messagesLoadedRef.current = threadId;
       void loadMessagesFromDb(threadId).then(() => {
         // Non-fatal: if the server is unreachable the local history stands as loaded.
-        void backfillFromServer(threadId).catch(() => undefined);
+        void (async () => {
+          for (const receipt of pendingChatTurns(threadId)) {
+            try {
+              const remote = await reconcileChatTurn(receipt.id);
+              if (remote?.run_id && ["running", "pending", "paused"].includes(remote.state)) {
+                await startStream(threadId, { message: "", clientTurnId: receipt.id, persistedUserMessageId: receipt.user_message_id });
+              }
+            } catch { /* Recovery availability never authorizes a replacement POST. */ }
+          }
+          await backfillFromServer(threadId);
+        })().catch(() => undefined);
       }, () => {
         useChatMessageStore.getState().setStreamError(threadId, "Conversation history could not be loaded.");
       });
     }
-  }, [threadId, setActive, registerThread, loadMessagesFromDb, backfillFromServer]);
+  }, [threadId, setActive, registerThread, loadMessagesFromDb, backfillFromServer, startStream]);
 
   const afterStreamComplete = useCallback(
     async (userMsgText: string) => {
@@ -128,21 +136,21 @@ export function useChatRuntime(threadId: string): {
 
       // Capture (and clear) pending attachments before starting the stream.
       const attachments = attachmentManager.toPayload();
-      attachmentManager.clear();
+
 
       // Persist the user message to PGlite before starting the stream
       const userMsg: RichMessage = {
         id: crypto.randomUUID(),
         role: "user",
-        content: [{ type: "text", text: userText }],
+        content: [{ type: "text", text: userText }, ...attachments.filter((item) => item.content_type.startsWith("image/"))
+          .map((item) => ({ type: "image" as const, url: item.url, dataBase64: null, mime: item.content_type, alt: item.filename }))],
         createdAt: new Date(),
         status: "complete",
       };
-      // Ensure thread exists in DB before inserting message
+      const clientTurnId = crypto.randomUUID();
+      userMsg.clientTurnId = clientTurnId;
       const existing = useThreadRegistryStore.getState().threads[threadId];
-      if (existing) {
-        await db.insertMessage(threadId, userMsg);
-      }
+      useChatMessageStore.getState().initThread(threadId, [...(useChatMessageStore.getState().messagesByThread[threadId] ?? []), userMsg]);
 
       // Make the thread visible and titled before the stream starts. PGlite
       // reaches IndexedDB asynchronously, so writes issued only when the answer
@@ -161,20 +169,22 @@ export function useChatRuntime(threadId: string): {
           message: userText,
           attachments: attachments.length ? attachments : undefined,
           memory_enabled: memoryEnabled,
-          ...(existing ? { persistedUserMessageId: userMsg.id } : {}),
+          persistedUserMessageId: userMsg.id,
+          clientTurnId,
           // The selected agent may remain an explicit turn input. Model is
           // deliberately omitted so the saved AgentSession policy can win.
           ...(effectiveAgentId ? { agent_id: effectiveAgentId } : {}),
         },
-        { onComplete: () => { void afterStreamComplete(userText); } },
+        { onComplete: () => { attachmentManager.clear(); void afterStreamComplete(userText); } },
       );
     },
-    [threadId, db, startStream, afterStreamComplete, attachmentManager, memoryEnabled, effectiveAgentId, markPersisted, setTitle],
+    [threadId, startStream, afterStreamComplete, attachmentManager, memoryEnabled, effectiveAgentId, markPersisted, setTitle],
   );
 
   const onCancel = useCallback(async () => {
     cancelStream();
-    useChatMessageStore.getState().finishStream(threadId);
+    // Stop requests cancellation; only the original native terminal settles it.
+    await useChatMessageStore.getState().finishStream(threadId, "interrupted");
   }, [threadId, cancelStream]);
 
   useEffect(() => {

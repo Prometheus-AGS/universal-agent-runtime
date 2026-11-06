@@ -207,7 +207,8 @@ pub async fn list_tools(
     user: Option<Extension<UserContext>>,
 ) -> impl IntoResponse {
     let mcp_servers = state.mcp.server_names();
-    let definitions = crate::uar::api::tool_definitions::visible_definitions(&state, user.as_ref()).await;
+    let definitions =
+        crate::uar::api::tool_definitions::visible_definitions(&state, user.as_ref()).await;
     let tools = state
         .mcp
         .tools()
@@ -638,8 +639,11 @@ pub(crate) async fn load_conversation_policy(
 
 fn conversation_policy_cache_key(owner_key: &str, conversation_id: &str) -> String {
     let key = crate::uar::persistence::tenant_storage_key(owner_key, conversation_id);
-    if owner_key == crate::session::ANONYMOUS_SESSION_OWNER { key }
-    else { format!("principal-policy:{key}") }
+    if owner_key == crate::session::ANONYMOUS_SESSION_OWNER {
+        key
+    } else {
+        format!("principal-policy:{key}")
+    }
 }
 
 async fn persist_policy_for_user(
@@ -649,7 +653,10 @@ async fn persist_policy_for_user(
     expected: Option<&RunPolicy>,
 ) -> anyhow::Result<bool> {
     let owner_key = user.session_owner_key()?;
-    anyhow::ensure!(record.owner_id == owner_key, "Conversation policy owner mismatch");
+    anyhow::ensure!(
+        record.owner_id == owner_key,
+        "Conversation policy owner mismatch"
+    );
     if owner_key != crate::session::ANONYMOUS_SESSION_OWNER {
         persistence
             .save_principal_conversation_policy(record, expected)
@@ -666,7 +673,9 @@ async fn principal_policy_before_write(
     conversation_id: &str,
 ) -> anyhow::Result<Option<RunPolicy>> {
     let key = user.session_owner_key()?;
-    if key == crate::session::ANONYMOUS_SESSION_OWNER { return Ok(None); }
+    if key == crate::session::ANONYMOUS_SESSION_OWNER {
+        return Ok(None);
+    }
     let record = persistence
         .load_principal_conversation_policy(&key, conversation_id)
         .await?;
@@ -692,7 +701,9 @@ async fn load_conversation_policy_with_status(
     user: &UserContext,
     conversation_id: &str,
 ) -> (Option<RunPolicy>, bool) {
-    let Ok(owner_key) = user.session_owner_key() else { return (None, true); };
+    let Ok(owner_key) = user.session_owner_key() else {
+        return (None, true);
+    };
     let mut unavailable = false;
     let verified =
         crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user).ok();
@@ -716,7 +727,10 @@ async fn load_conversation_policy_with_status(
     }
     let sessions = state.agent_sessions.read().await;
     let scoped_key = conversation_policy_cache_key(&owner_key, conversation_id);
-    let policy = sessions.get(&scoped_key).cloned().map(AgentSessionConfig::into_run_policy);
+    let policy = sessions
+        .get(&scoped_key)
+        .cloned()
+        .map(AgentSessionConfig::into_run_policy);
     (policy, unavailable)
 }
 
@@ -782,8 +796,11 @@ async fn policy_universe(
         }
     }
     let mut knowledge_bases = std::collections::BTreeSet::new();
-    let knowledge_owner = verified_owner.and_then(|owner| owner.session_owner_key().ok())
-        .or_else(|| (owner_id == crate::session::ANONYMOUS_SESSION_OWNER).then(|| owner_id.to_owned()));
+    let knowledge_owner = verified_owner
+        .and_then(|owner| owner.session_owner_key().ok())
+        .or_else(|| {
+            (owner_id == crate::session::ANONYMOUS_SESSION_OWNER).then(|| owner_id.to_owned())
+        });
     if let Some(persistence) = &state.persistence
         && let Some(knowledge_owner) = knowledge_owner
         && let Ok(records) = persistence.list_knowledge_bases(&knowledge_owner).await
@@ -919,11 +936,7 @@ pub async fn save_agent_session_config(
     match persist_policy_for_user(
         persistence.as_ref(),
         &user,
-        &ConversationPolicyRecord::new_for_user(
-            owner_key.clone(),
-            session_id.clone(),
-            policy,
-        ),
+        &ConversationPolicyRecord::new_for_user(owner_key.clone(), session_id.clone(), policy),
         expected.as_ref(),
     )
     .await
@@ -1139,11 +1152,8 @@ pub async fn save_conversation_policy(
                 .unwrap_or_default()
         }
     };
-    let record = ConversationPolicyRecord::new_for_user(
-        owner_key.clone(),
-        conversation_id.clone(),
-        policy,
-    );
+    let record =
+        ConversationPolicyRecord::new_for_user(owner_key.clone(), conversation_id.clone(), policy);
     match persist_policy_for_user(persistence.as_ref(), &user, &record, expected.as_ref()).await {
         Ok(true) => (StatusCode::OK, Json(record)).into_response(),
         Ok(false) => policy_write_conflict(),
@@ -1274,7 +1284,16 @@ pub async fn get_session(
             .into_response();
     };
     match persistence.load_session(&owner_key, &session_id).await {
-        Ok(Some(session)) => Json(session).into_response(),
+        Ok(Some(session)) => {
+            match super::chat_turns::session_projection(&state, &user, &session).await {
+                Ok(projection) => Json(projection).into_response(),
+                Err(_) => (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"error":"session history unavailable"})),
+                )
+                    .into_response(),
+            }
+        }
         Ok(None) => (
             StatusCode::NOT_FOUND,
             Json(json!({"error": "session not found"})),

@@ -71,6 +71,9 @@ interface MessageRow {
   chunks: Chunk[] | string;
   created_at: string;
   status: string;
+  run_id: string | null;
+  client_turn_id: string | null;
+  history_position: number | string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -248,7 +251,7 @@ export class UarDb {
 
   async getMessages(threadId: string): Promise<RichMessage[]> {
     const { rows } = await this.db.query<MessageRow>(
-      "SELECT id, thread_id, role, content, chunks, created_at, status FROM messages WHERE thread_id = $1 ORDER BY created_at ASC",
+      "SELECT id, thread_id, role, content, chunks, created_at, status, run_id, client_turn_id, history_position FROM messages WHERE thread_id = $1 ORDER BY history_position ASC NULLS LAST, created_at ASC",
       [threadId],
     );
     return rows.map(rowToMessage);
@@ -256,12 +259,19 @@ export class UarDb {
 
   async insertMessage(threadId: string, msg: RichMessage): Promise<void> {
     await this.db.query(
-      `INSERT INTO messages (id, thread_id, role, content, chunks, created_at, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO messages (id, thread_id, role, content, chunks, created_at, status, run_id, client_turn_id, history_position)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10::bigint, (SELECT COALESCE(MAX(history_position), -1) + 1 FROM messages WHERE thread_id = $2)))
        ON CONFLICT (id) DO UPDATE
          SET content = EXCLUDED.content,
              chunks  = EXCLUDED.chunks,
-             status  = EXCLUDED.status`,
+             -- Only explicit canonical positions correct creation time. The
+             -- INSERT fallback fills EXCLUDED.history_position even for ordinary writes.
+             created_at = CASE WHEN $10::bigint IS NOT NULL
+               THEN EXCLUDED.created_at ELSE messages.created_at END,
+             status  = EXCLUDED.status,
+             run_id = EXCLUDED.run_id,
+             client_turn_id = EXCLUDED.client_turn_id,
+             history_position = COALESCE($10::bigint, messages.history_position)`,
       [
         msg.id,
         threadId,
@@ -270,6 +280,9 @@ export class UarDb {
         JSON.stringify(restoreSelectionChunks(msg.chunks ?? [], msg.content)),
         msg.createdAt instanceof Date ? msg.createdAt.toISOString() : msg.createdAt,
         msg.status ?? "complete",
+        msg.runId ?? null,
+        msg.clientTurnId ?? null,
+        msg.historyPosition ?? null,
       ],
     );
   }
@@ -341,6 +354,13 @@ function rowToMessage(row: MessageRow): RichMessage {
   });
   return {
     id: row.id,
+    runId: row.run_id ?? undefined,
+    clientTurnId: row.client_turn_id ?? undefined,
+    historyPosition: row.history_position == null ? undefined : Number(row.history_position),
+    createdAtKnown: !decoded.content.some((block) => {
+      if (block.type !== "artifact" || block.kind !== "application/vnd.uar.history-provenance+json") return false;
+      try { return JSON.parse(block.content).created_at_availability === "unavailable"; } catch { return false; }
+    }),
     role: row.role,
     content: decoded.content,
     chunks: storedChunks.length > 0 ? restoreSelectionChunks(storedChunks, decoded.content) : decoded.chunks,

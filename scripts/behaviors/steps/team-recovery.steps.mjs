@@ -374,6 +374,29 @@ Then('the cancelled note is still reported honestly with no new model calls', as
   this.evidence.note_calls_unchanged_bytes = canonical(this.after.noteCalls) === canonical(this.before.noteCalls);
 });
 
+Then('repeated reconciliation inspection retains original accounting identity and team capacity', async function () {
+  const path = teamPath(this) + `/attempts/${encodeURIComponent(this.noteAttemptId)}/reconciliation`;
+  const before = await summary(this);
+  const first = await api(this, 'GET', path);
+  const repeated = await api(this, 'GET', path);
+  assert.deepEqual(repeated, first, 'Read-only reconciliation changed its own disposition');
+  assert.equal(first.attemptId, this.noteAttemptId);
+  assert.equal(first.runId, this.noteRunId);
+  assert.equal(first.accountingInspection.runId, this.noteRunId);
+  assert.equal(first.automaticTeamProjection, false);
+  assert.equal(first.effectReplayAllowed, false);
+  assert.equal(first.teamCapacityRetained, this.after.noteAttempt.usage == null);
+  assert.deepEqual(first.teamReservation, this.after.noteAttempt.reservation);
+  assert.equal(first.accountingState, this.after.noteAttempt.accountingState);
+  const after = await summary(this);
+  assert.deepEqual(after.reserved, before.reserved, 'Inspection released reserved team capacity');
+  assert.deepEqual(after.committed, before.committed, 'Inspection charged team capacity');
+  assert.equal(canonical(await callsFor(this, this.noteRunId)), canonical(this.after.noteCalls),
+    'Inspection changed original accounting calls');
+  this.evidence.reconciliation_inspection = { first, repeated, reserved: after.reserved,
+    automatic_projection: 'unavailable; confirmed provider billing does not settle team effects or release team reservations' };
+});
+
 When('I ask the team to recover only what its recovery design permits', async function () {
   const team = await readTeam(this);
   const result = await raw(this, 'POST', basePath + teamPath(this) + '/recover',

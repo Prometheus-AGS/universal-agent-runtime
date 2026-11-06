@@ -1,0 +1,5 @@
+# Selected extraction source fixtures
+
+`fixtures.mjs` authors deterministic, tiny DOCX, XLSX, RFC822 email, ZIP and PNG inputs without running external tools. These MIME families are advertised in `src/uar/file_processing/kreuzberg.rs`; images additionally require the existing OCR configuration. The document cases must pass through the public knowledge-base upload, extraction/indexing status and retrieval paths. Merely generating or opening a document is not acceptance.
+
+Office/spreadsheet/email/archive inputs contain the same coefficient 73 and synthetic seal TEAL-7319. The OCR raster says FACT 73 and never puts the answer in the retrieval query. Its pixels are generated with a fixed bitmap font, fixed dimensions and grayscale PNG. Required OCR prerequisites are explicit; missing OCR is blocked/unqualified, never a silent successful skip. The fixture generator, extraction and retrieval have not run during source authoring. The PNG encoder and OOXML containers remain unverified until the approved whole-set batch.

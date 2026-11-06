@@ -95,6 +95,42 @@ export function toChunks(blocks: readonly ContentBlock[], context: ChunkProjecti
         chunks.push({ ...base, kind: "skill-activation", skillId: block.name, skillName: block.name, status: block.status === "active" ? "active" : "complete" });
         return;
       case "artifact":
+        if (block.kind === "application/vnd.uar.a2ui+json") {
+          // This reserved wrapper persists the publication and its metadata together.
+          // Never fill a missing historical generation from current authority.
+          const display = parseRecord(block.content);
+          chunks.push({ ...base, kind: "a2ui-display", toolCallId: block.id,
+            version: typeof display.version === "string" ? display.version : undefined,
+            profile: typeof display.profile === "string" ? display.profile : "",
+            component: typeof display.component === "string" ? display.component : "surface", payload: display.payload,
+            validation: display.validation === "invalid" || display.validation === "unknown-component" ? display.validation : "valid",
+            validationError: typeof display.validationError === "string" ? display.validationError : undefined });
+          return;
+        }
+        if (block.kind === "application/vnd.uar.history-provenance+json") {
+          const history = parseRecord(block.content);
+          const usage = history.usage && typeof history.usage === "object" ? history.usage as Record<string, unknown> : null;
+          if (history.usage_availability === "available" && usage && typeof usage.input_tokens === "number"
+            && typeof usage.output_tokens === "number" && typeof usage.total_tokens === "number") {
+            chunks.push({ ...base, id: `${base.id}:usage`, kind: "usage", inputTokens: usage.input_tokens,
+              outputTokens: usage.output_tokens, totalTokens: usage.total_tokens,
+              costUsd: typeof usage.cost_usd_estimate === "number" ? usage.cost_usd_estimate : undefined,
+              model: typeof usage.model === "string" ? usage.model : undefined });
+          }
+          const approvals = Array.isArray(history.approvals) ? history.approvals : [];
+          for (const value of approvals) {
+            if (!value || typeof value !== "object") continue;
+            const approval = value as Record<string, unknown>;
+            if (typeof approval.approval_id !== "string" || typeof approval.tool_call_id !== "string") continue;
+            const decision = approval.decision && typeof approval.decision === "object" ? approval.decision as Record<string, unknown> : null;
+            chunks.push({ ...base, id: `${base.id}:approval:${approval.approval_id}`, kind: "tool-approval",
+              approvalId: approval.approval_id, toolCallId: approval.tool_call_id,
+              toolName: typeof approval.tool_name === "string" ? approval.tool_name : "Tool", args: {},
+              historical: true, historicalState: typeof approval.state === "string" ? approval.state : "unavailable",
+              decision: decision?.approved === true ? "approved" : decision?.approved === false ? "denied" : undefined,
+              decidedAt: typeof decision?.decided_at === "string" ? decision.decided_at : undefined });
+          }
+        }
         if (block.kind === AGENT_SELECTION_MIME) {
           const selection = selectionArtifact(block.id, block.content, base);
           if (selection) {

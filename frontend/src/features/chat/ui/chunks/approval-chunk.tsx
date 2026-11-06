@@ -7,20 +7,20 @@ import { ChunkSurface, JsonSource } from "./chunk-surface";
 
 export function ToolApprovalChunkView({ chunk }: { chunk: ToolApprovalChunk }) {
   const [open, setOpen] = useState(false);
-  const resolved = chunk.decision !== undefined;
+  const resolved = chunk.historical === true || chunk.decision !== undefined;
   return (
-    <ChunkSurface className="bg-warning/10" label="Tool approval required" live={!resolved}>
+    <ChunkSurface className="bg-warning/10" label={chunk.historical ? "Historical tool approval" : "Tool approval required"} live={!resolved}>
       <div className="flex flex-wrap items-center gap-2">
         <AlertTriangleIcon size={16} className="text-warning" aria-hidden="true" />
-        <span className="font-mono text-xs font-medium">Approval required · {chunk.toolName}</span>
-        <span className="ml-auto text-xs">{chunk.decision ?? "pending"}</span>
+        <span className="font-mono text-xs font-medium">{chunk.historical ? "Approval history" : "Approval required"} · {chunk.toolName}</span>
+        <span className="ml-auto text-xs">{chunk.decision ?? chunk.historicalState ?? "pending"}</span>
       </div>
       {chunk.reason ? <p className="mt-2 text-sm text-fg-sub">{chunk.reason}</p> : null}
       <div className="mt-2"><JsonSource value={chunk.args} label="Proposed tool arguments" /></div>
       {!resolved && chunk.runId && chunk.approvalId ? (
         <Button type="button" size="sm" className="mt-3 min-h-11" onClick={() => setOpen(true)}>Review approval</Button>
       ) : null}
-      {chunk.runId && chunk.approvalId ? <ToolApprovalDialog open={open} onOpenChange={setOpen} runId={chunk.runId} approvalId={chunk.approvalId} toolName={chunk.toolName} args={chunk.args} riskReason={chunk.reason} /> : null}
+      {!resolved && chunk.runId && chunk.approvalId ? <ToolApprovalDialog open={open} onOpenChange={setOpen} runId={chunk.runId} approvalId={chunk.approvalId} toolName={chunk.toolName} args={chunk.args} riskReason={chunk.reason} /> : null}
     </ChunkSurface>
   );
 }

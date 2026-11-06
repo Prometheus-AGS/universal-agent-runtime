@@ -9,6 +9,14 @@ current_authority: /docs/protocols/mcp
 
 # Model Context Protocol
 
+Use the [canonical MCP recovery/effect row](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/product-support-matrix.md#execution-and-recovery-guarantees)
+for current scope. This guide describes source roles; each advertised
+role/transport/version still needs independent pinned-counterpart acceptance on
+the selected artifact. A working client tool does not certify full server feature
+parity, reconnect does not replay an uncertain effect, and unqualified optional
+features remain partial. The [final checklist](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/releases/v1.4.0-final.md)
+records that pending evidence.
+
 ## Boundary statement
 
 **MCP discovery is not authorization.** A connected server can advertise a tool

@@ -10,10 +10,13 @@ export function A2uiChunkView({ chunk }: { chunk: A2uiDisplayChunk | A2uiInputCh
   const metadata = record(payload.metadata);
   const sourceRunId = typeof metadata.source_run_id === "string" ? metadata.source_run_id : chunk.runId;
   if (chunk.kind === "a2ui-input") {
+    const artifactId = typeof chunk.toolCallId === "string" && chunk.toolCallId.length > 0 ? chunk.toolCallId
+      : typeof payload.artifactId === "string" && payload.artifactId.length > 0 ? payload.artifactId : undefined;
+    if (!artifactId) return <p role="status">This input is unavailable. Request a fresh input form.</p>;
     return (
       <A2uiInputBlock
         runId={chunk.runId ?? chunk.requestId}
-        artifactId={chunk.id}
+        artifactId={artifactId}
         artifactType={chunk.component}
         title={typeof payload.title === "string" ? payload.title : "Input required"}
         content={typeof payload.content === "string" ? payload.content : JSON.stringify(payload)}
@@ -26,6 +29,7 @@ export function A2uiChunkView({ chunk }: { chunk: A2uiDisplayChunk | A2uiInputCh
   return (
     <A2uiDisplayBlock
       runId={sourceRunId}
+      surfaceGenerations={record(metadata.surface_generations)}
       artifactType={chunk.component}
       title={typeof payload.title === "string" ? payload.title : "Generated surface"}
       content={typeof payload.content === "string" ? payload.content : JSON.stringify(payload)}

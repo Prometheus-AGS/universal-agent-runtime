@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from "vitest";
+import type { RichMessage } from "@/types/chat-content";
 import { decodePersistedChatContent } from "@/platform/pglite/legacy-chat-content";
 import { agentSelectionChunk, AGENT_SELECTION_MIME, portableSelection } from "@/shared/content/agent-selection";
 import {
@@ -257,4 +258,86 @@ describe("chat-message-store streaming", () => {
     expect(selectRetryMaxAttempts(THREAD_ID)(state)).toBe(5);
     expect(selectRetryDelayMs(THREAD_ID)(state)).toBe(1200);
   });
+});
+
+
+describe("settled message replay mutation boundaries", () => {
+  test.each(["complete", "failed", "cancelled"] as const)("every replay content writer preserves %s evidence and metadata", (status) => {
+    const thread = `settled-writers-${status}`;
+    const runId = `settled-run-${status}`;
+    const id = `run-${runId}-assistant-0`;
+    const original: RichMessage = { id, role: "assistant", runId, status, createdAt: new Date("2026-11-03T00:00:00Z"),
+      agentId: "original-agent", model: "original-model", usage: { inputTokens: 2, outputTokens: 3, totalTokens: 5 },
+      content: [{ type: "text", text: "original answer" }, { type: "toolUse", id: "original-tool", name: "native_echo", inputJson: "{}" },
+        { type: "toolResult", toolUseId: "original-tool", outputJson: "original result", isError: false }],
+      chunks: [{ id: `${id}:text`, at: "2026-11-03T00:00:00Z", seq: 0, runId, kind: "markdown", source: "original answer" },
+        { id: `${id}:tool`, at: "2026-11-03T00:00:00Z", seq: 1, runId, kind: "tool-call", toolCallId: "original-tool", toolName: "native_echo", args: {}, result: "original result", status: "complete" },
+        { id: `${id}:usage`, at: "2026-11-03T00:00:00Z", seq: 2, runId, kind: "usage", inputTokens: 2, outputTokens: 3, totalTokens: 5, model: "original-model" }],
+    };
+    const store = useChatMessageStore.getState();
+    store.initThread(thread, [structuredClone(original)]);
+    // beginStream must also adopt non-deterministic hydrated settled IDs. This
+    // case uses the deterministic path; a separate control covers legacy IDs.
+    store.beginStream(thread, runId);
+    store.setMessageMeta(thread, runId, { agentId: "replayed-agent", model: "replayed-model", usage: { inputTokens: 20, outputTokens: 30, totalTokens: 50 } });
+    store.appendTextDelta(thread, runId, "original answer");
+    store.appendThinkingDelta(thread, runId, "replayed reasoning");
+    store.addToolCall(thread, runId, { type: "tool-call", toolCallId: "original-tool", toolName: "native_echo", args: {}, status: "running" });
+    store.updateToolCall(thread, "original-tool", { result: "replayed result", status: "failed" });
+    store.addRuntimeChunk(thread, runId, { id: "replayed-card", at: "2026-11-03T00:00:00Z", seq: 5, runId, kind: "error", message: "replayed error" });
+    store.addCitation(thread, runId, { source: "replayed citation", content: "duplicate" });
+    store.addRagCitations(thread, runId, [{ marker: 1, chunkId: "replayed-document", documentName: "Replayed", relevanceScore: 1, snippet: "duplicate" }]);
+    store.addSkillActivation(thread, runId, { skillId: "replayed-skill", skillName: "Replayed", status: "active" });
+    store.addContextUpdate(thread, runId, { strategy: "replayed", messagesRemoved: 1, tokensSaved: 10, wasApplied: true, summaryGenerated: false });
+    store.setStreamError(thread, "observer error", runId);
+    expect(useChatMessageStore.getState().messagesByThread[thread]).toEqual([original]);
+  });
+
+  test("settled hydrated ID is observed while a different admitted run still creates its own bubble", () => {
+    const thread = "settled-legacy-id";
+    const store = useChatMessageStore.getState();
+    const original: RichMessage = { id: "historical-bubble", runId: "historical-run", role: "assistant", status: "complete",
+      createdAt: new Date(), content: [{ type: "text", text: "retained" }] };
+    store.initThread(thread, [original]);
+    store.beginStream(thread, "historical-run");
+    store.appendTextDelta(thread, "historical-run", "retained");
+    expect(useChatMessageStore.getState().messagesByThread[thread]).toEqual([original]);
+    store.beginStream(thread, "new-run");
+    store.appendTextDelta(thread, "new-run", "new answer");
+    expect(useChatMessageStore.getState().messagesByThread[thread]).toMatchObject([original,
+      { id: "run-new-run-assistant-0", runId: "new-run", status: "in_progress", content: [{ type: "text", text: "new answer" }] }]);
+  });
+
+  test("a same-run interrupted bubble still rebuilds even beside settled history", () => {
+    const thread = "settled-and-provisional";
+    const runId = "recover-provisional";
+    const store = useChatMessageStore.getState();
+    const settled: RichMessage = { id: `run-${runId}-assistant-0`, runId, role: "assistant", status: "complete",
+      createdAt: new Date(), content: [{ type: "text", text: "settled segment" }] };
+    store.initThread(thread, [settled, { id: `run-${runId}-assistant-1`, runId, role: "assistant", status: "interrupted",
+      createdAt: new Date(), content: [{ type: "text", text: "partial" }] }]);
+    store.beginStream(thread, runId);
+    store.setMessageMeta(thread, runId, { agentId: "same-agent" });
+    store.appendTextDelta(thread, runId, "rebuilt answer");
+    expect(useChatMessageStore.getState().messagesByThread[thread]).toMatchObject([settled,
+      { id: `run-${runId}-assistant-1`, runId, status: "in_progress", agentId: "same-agent", content: [{ type: "text", text: "rebuilt answer" }] }]);
+  });
+});
+
+
+test.each(["complete", "failed", "cancelled"] as const)("deterministic lookup without beginStream preserves %s history", (status) => {
+  const thread = `settled-lookup-${status}`;
+  const runId = `settled-lookup-run-${status}`;
+  const original: RichMessage = { id: `run-${runId}-assistant-0`, runId, role: "assistant", status,
+    createdAt: new Date(), content: [{ type: "text", text: "original" }] };
+  const store = useChatMessageStore.getState();
+  store.initThread(thread, [original]);
+  store.appendTextDelta(thread, runId, "original");
+  store.appendTextDelta(thread, runId, "original");
+  const selection = agentSelectionChunk({ sourceAgentId: "orchestrator-agent", agent: { id: "registered", title: "Registered" },
+    selectedThreadId: "child", selectionMethod: "intent", rosterRevision: "revision" },
+  { id: "settled-replay-selection", at: "2026-11-03T00:00:00Z", seq: 3, runId }, true)!;
+  store.addRuntimeChunk(thread, runId, selection);
+  expect(useChatMessageStore.getState().messagesByThread[thread]).toEqual([original]);
+  expect(useChatMessageStore.getState().messagesByThread[thread][0]).not.toHaveProperty("chunks");
 });

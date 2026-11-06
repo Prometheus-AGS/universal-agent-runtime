@@ -7,8 +7,9 @@ created = "2026-08-09"
 
 [pins]
 # Vitest rejects mixed runtime/browser package versions; keep the runner,
-# browser provider, coverage, and UI packages on the tested 4.1.10 set.
-vitest = "4.1.10"
+# browser provider, coverage, and UI packages aligned on the 5.0.5 set.
+# Operator retained the current source on 2026-11-04; qualification is pending.
+vitest = "5.0.5"
 # @a2ui/web_core and the UAR catalog exchange schema objects; mixed Zod 3/4
 # instances fail catalog validation, so the boundary stays on tested Zod 3.
 zod = "3.25.76"
@@ -27,9 +28,10 @@ surreal_memory_server_commit = "9e36b1cd8b83a657366eb1e3ef8cd837178336de"
 # Effective runtime overrides and migration acceptance are recorded separately.
 prometheus_skill_system_base_commit = "f0df1e0121d176c9467e5c71022737b845af6a20"
 prometheus_skill_system_commit = "f4bef4556a83ac22bf204bf69a01ddf0f9e007f2"
-# Keep the SDK, schema types, native server, and deployed container in lockstep.
-surrealdb = "3.3.0"
-surrealdb_types = "3.3.0"
+# Embedded UAR SDK and schema types. The remote server/image pins below
+# remain the existing companion baseline and are separate from this upgrade.
+surrealdb = "4.0.0"
+surrealdb_types = "4.0.0"
 surrealdb_server = "3.3.0"
 surrealdb_image = "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20"
 # JavaScript advisory closure is lockfile-scoped across the root, frontend,

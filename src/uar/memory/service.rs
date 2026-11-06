@@ -9,19 +9,18 @@ use anyhow::{Context, Result};
 #[cfg(feature = "surreal-backend")]
 use futures::{FutureExt, Stream};
 #[cfg(feature = "surreal-backend")]
+use std::panic::AssertUnwindSafe;
+#[cfg(feature = "surreal-backend")]
 use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 #[cfg(feature = "surreal-backend")]
-use std::panic::AssertUnwindSafe;
-#[cfg(feature = "surreal-backend")]
 use std::task::{Context as TaskContext, Poll};
 #[cfg(feature = "surreal-backend")]
-use surrealdb::{Surreal, engine::any::Any};
-#[cfg(feature = "surreal-backend")]
-use surrealdb::engine::any;
-#[cfg(feature = "surreal-backend")]
-use surrealdb::opt::auth::Root;
+use surreal_memory::{
+    EmbeddingProvider, EmbeddingService, SurrealStorage,
+    storage::surreal::{SurrealConfig, SurrealLifecycleMode, SurrealMode},
+};
 use surreal_memory::{
     Memory, MemoryHistory, MemoryScope, MemoryType,
     entity::{Entity, KnowledgeGraph, Relation, SemanticSearchResult},
@@ -30,21 +29,22 @@ use surreal_memory::{
     task_stream::{ContextWindow, TaskStream},
 };
 #[cfg(feature = "surreal-backend")]
-use surreal_memory::{
-    EmbeddingProvider, EmbeddingService, SurrealStorage,
-    storage::surreal::{SurrealConfig, SurrealLifecycleMode, SurrealMode},
-};
+use surrealdb::engine::any;
+#[cfg(feature = "surreal-backend")]
+use surrealdb::opt::auth::Root;
+#[cfg(feature = "surreal-backend")]
+use surrealdb::{Surreal, engine::any::Any};
 
-use crate::config::MemoryConfig;
-#[cfg(feature = "surreal-backend")]
-use crate::uar::persistence::providers::surreal::SurrealEndpoint;
-use crate::uar::runtime::lifecycle::{OperationLease, ResourceScope};
-#[cfg(feature = "surreal-backend")]
-use crate::uar::runtime::lifecycle::ResourceOwnership;
-use crate::uar::security::claims::{CredentialPrincipal, UserContext};
 use super::owned::OwnedMemory;
 #[cfg(feature = "surreal-backend")]
 use super::scoped_storage::ScopedMemoryStorage;
+use crate::config::MemoryConfig;
+#[cfg(feature = "surreal-backend")]
+use crate::uar::persistence::providers::surreal::SurrealEndpoint;
+#[cfg(feature = "surreal-backend")]
+use crate::uar::runtime::lifecycle::ResourceOwnership;
+use crate::uar::runtime::lifecycle::{OperationLease, ResourceScope};
+use crate::uar::security::claims::{CredentialPrincipal, UserContext};
 
 use super::workflow_mirror::{
     WorkflowMirrorCandidate, WorkflowMirrorRecord, workflow_candidate_from_memory,
@@ -286,10 +286,7 @@ impl MemoryLiveStream {
 impl Stream for MemoryLiveStream {
     type Item = <surrealdb::method::Stream<Vec<surrealdb::types::Value>> as Stream>::Item;
 
-    fn poll_next(
-        self: Pin<&mut Self>,
-        context: &mut TaskContext<'_>,
-    ) -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, context: &mut TaskContext<'_>) -> Poll<Option<Self::Item>> {
         let this = self.get_mut();
         match this.stream.as_mut() {
             Some(stream) => Pin::new(stream).poll_next(context),
@@ -302,7 +299,9 @@ impl Stream for MemoryLiveStream {
 impl Drop for MemoryLiveStream {
     fn drop(&mut self) {
         match (self.stream.take(), self.lease.take()) {
-            (Some(stream), Some(lease)) => PendingMemoryLiveClose::new(stream, lease).retain_or_record(),
+            (Some(stream), Some(lease)) => {
+                PendingMemoryLiveClose::new(stream, lease).retain_or_record()
+            }
             (Some(stream), None) => drop(stream),
             (None, Some(lease)) => lease.unresolved(
                 "memory live subscription stream was absent before closure acknowledgement",
@@ -391,9 +390,7 @@ impl MemorySubscriptionClient {
     /// closed. This is an observation-only control capability; it neither
     /// reconnects nor grants another database operation.
     pub fn transport_generation(&self) -> Result<u64> {
-        self.db
-            .transport_generation()
-            .map_err(anyhow::Error::from)
+        self.db.transport_generation().map_err(anyhow::Error::from)
     }
 }
 
@@ -431,6 +428,7 @@ impl MemoryService {
     /// Initialise the service by connecting to (or creating) the embedded SurrealDB store.
     #[cfg(feature = "surreal-backend")]
     pub async fn new(config: MemoryConfig) -> Result<Self> {
+        config.validate_injection()?;
         tracing::info!(
             db_path = %config.db_path,
             embedding_provider = %config.embedding_provider,
@@ -572,15 +570,13 @@ impl MemoryService {
             let result = match initialized {
                 Ok(Ok(service)) => Ok(service),
                 Ok(Err(error)) => Err(shutdown_failed_owned_memory_client(&db, error).await),
-                Err(_) => Err(
-                    shutdown_failed_owned_memory_client(
-                        &db,
-                        anyhow::anyhow!(
-                            "memory service initialization panicked after acquiring its database client"
-                        ),
-                    )
-                    .await,
-                ),
+                Err(_) => Err(shutdown_failed_owned_memory_client(
+                    &db,
+                    anyhow::anyhow!(
+                        "memory service initialization panicked after acquiring its database client"
+                    ),
+                )
+                .await),
             };
 
             if let Err(result) = sender.send(result) {
@@ -609,10 +605,17 @@ impl MemoryService {
         db: Surreal<Any>,
         database: String,
     ) -> Result<Self> {
+        config.validate_injection()?;
         if endpoint.is_remote() {
             db.signin(Root {
-                username: config.surreal_user.clone().unwrap_or_else(|| "root".to_string()),
-                password: config.surreal_pass.clone().unwrap_or_else(|| "root".to_string()),
+                username: config
+                    .surreal_user
+                    .clone()
+                    .unwrap_or_else(|| "root".to_string()),
+                password: config
+                    .surreal_pass
+                    .clone()
+                    .unwrap_or_else(|| "root".to_string()),
             })
             .await?;
         }
@@ -630,19 +633,22 @@ impl MemoryService {
         };
         let storage = Arc::new(
             SurrealStorage::from_host_connection(
-            &surreal_config,
-            db.clone(),
-            Arc::clone(&embeddings),
-        )
-        .await
-        .context("Failed to initialise SurrealDB for memory")?,
+                &surreal_config,
+                db.clone(),
+                Arc::clone(&embeddings),
+            )
+            .await
+            .context("Failed to initialise SurrealDB for memory")?,
         );
 
         let lifecycle_scope = ResourceScope::standalone("memory-storage", "memory-service");
         let unscoped_storage: Arc<dyn MemoryStorage> = storage.clone();
         let (close_result, _) = tokio::sync::watch::channel(None);
         let service = Self {
-            storage: Arc::new(ScopedMemoryStorage::new(unscoped_storage, lifecycle_scope.clone())),
+            storage: Arc::new(ScopedMemoryStorage::new(
+                unscoped_storage,
+                lifecycle_scope.clone(),
+            )),
             surreal_storage: storage,
             config,
             embeddings,
@@ -683,9 +689,10 @@ impl MemoryService {
     ) -> Result<Self> {
         let (sender, receiver) = tokio::sync::oneshot::channel();
         tokio::spawn(async move {
-            let initialized = AssertUnwindSafe(Self::build_borrowed_service(config, db, embeddings))
-                .catch_unwind()
-                .await;
+            let initialized =
+                AssertUnwindSafe(Self::build_borrowed_service(config, db, embeddings))
+                    .catch_unwind()
+                    .await;
             let result = match initialized {
                 Ok(result) => result,
                 Err(_) => Err(anyhow::anyhow!(
@@ -717,6 +724,7 @@ impl MemoryService {
         db: Surreal<Any>,
         embeddings: Arc<dyn EmbeddingService>,
     ) -> Result<Self> {
+        config.validate_injection()?;
         let surreal_config = SurrealConfig {
             mode: SurrealMode::Server,
             embedded_path: None,
@@ -733,12 +741,16 @@ impl MemoryService {
                 .await
                 .context("Failed to initialise host-managed SurrealDB memory")?,
         );
-        let lifecycle_scope = ResourceScope::standalone("borrowed-memory-storage", "memory-service");
+        let lifecycle_scope =
+            ResourceScope::standalone("borrowed-memory-storage", "memory-service");
         lifecycle_scope.set_ownership(ResourceOwnership::Borrowed)?;
         let unscoped_storage: Arc<dyn MemoryStorage> = storage.clone();
         let (close_result, _) = tokio::sync::watch::channel(None);
         let service = Self {
-            storage: Arc::new(ScopedMemoryStorage::new(unscoped_storage, lifecycle_scope.clone())),
+            storage: Arc::new(ScopedMemoryStorage::new(
+                unscoped_storage,
+                lifecycle_scope.clone(),
+            )),
             surreal_storage: storage,
             config,
             embeddings,
@@ -760,12 +772,16 @@ impl MemoryService {
     pub async fn borrowed_scope(&self) -> Result<Self> {
         self.ensure_scope_open()?;
         let _operation = self.admit_operation("borrowed_scope")?;
-        let db = self.surreal_storage.db()
+        let db = self
+            .surreal_storage
+            .db()
             .context("Memory borrowed scope requires the Surreal storage adapter")?;
         Self::from_host_connection(self.config.clone(), db, Arc::clone(&self.embeddings)).await
     }
 
-    pub fn ownership(&self) -> MemoryStorageOwnership { self.ownership }
+    pub fn ownership(&self) -> MemoryStorageOwnership {
+        self.ownership
+    }
 
     /// The local admission scope for work performed through this facade.
     #[allow(dead_code)] // Retained for trusted-host lifecycle wiring.
@@ -845,7 +861,8 @@ impl MemoryService {
     /// UAR-owned engine. A borrowed client remains usable to its host.
     #[cfg(feature = "surreal-backend")]
     pub async fn close_scope(&self) -> MemoryCloseReport {
-        if self.close_started
+        if self
+            .close_started
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .is_ok()
         {
@@ -888,7 +905,9 @@ impl MemoryService {
                     ownership: self.ownership,
                     scope_released: false,
                     engine_close_acknowledged: false,
-                    failure: Some("memory lifecycle close task ended without a completion report".to_string()),
+                    failure: Some(
+                        "memory lifecycle close task ended without a completion report".to_string(),
+                    ),
                 };
             }
         }
@@ -903,7 +922,9 @@ impl MemoryService {
     }
 
     pub(super) fn admit_operation(&self, name: &str) -> Result<OperationLease> {
-        self.lifecycle_scope.admit_named(name).map_err(anyhow::Error::from)
+        self.lifecycle_scope
+            .admit_named(name)
+            .map_err(anyhow::Error::from)
     }
 
     // ── Scoped memory ─────────────────────────────────────────────────────────
@@ -933,7 +954,8 @@ impl MemoryService {
         memory.metadata = metadata;
         memory.importance = importance;
 
-        let memory = self.for_context(user_ctx)?
+        let memory = self
+            .for_context(user_ctx)?
             .add_memory(memory)
             .await
             .context("add_memory failed")?;
@@ -951,7 +973,6 @@ impl MemoryService {
         limit: usize,
         categories: Option<&[String]>,
     ) -> Result<Vec<Memory>> {
-
         self.for_context(user_ctx)?
             .search_memories(query, None, agent_id, session_id, categories, limit)
             .await
@@ -986,12 +1007,14 @@ impl MemoryService {
         agent_id: Option<&str>,
         session_id: Option<&str>,
     ) -> Result<Vec<Memory>> {
-
-        let memories = self.for_context(user_ctx)?
+        let memories = self
+            .for_context(user_ctx)?
             .add_memories_from_conversation(messages, None, agent_id, session_id)
             .await
             .context("add_memories_from_conversation failed")?;
-        if !memories.is_empty() { self.notify_committed_memory_change(); }
+        if !memories.is_empty() {
+            self.notify_committed_memory_change();
+        }
         Ok(memories)
     }
 
@@ -1002,7 +1025,6 @@ impl MemoryService {
         agent_id: Option<&str>,
         session_id: Option<&str>,
     ) -> Result<Vec<Memory>> {
-
         self.for_context(user_ctx)?
             .get_all_memories(None, agent_id, session_id)
             .await
@@ -1051,8 +1073,14 @@ impl MemoryService {
     }
 
     /// Update a memory's content (creates a history record).
-    pub async fn update(&self, id: &str, content: String, user_ctx: &UserContext) -> Result<Memory> {
-        let memory = self.for_context(user_ctx)?
+    pub async fn update(
+        &self,
+        id: &str,
+        content: String,
+        user_ctx: &UserContext,
+    ) -> Result<Memory> {
+        let memory = self
+            .for_context(user_ctx)?
             .update_memory(id, content)
             .await
             .context("update_memory failed")?;
@@ -1077,17 +1105,23 @@ impl MemoryService {
         agent_id: Option<&str>,
         session_id: Option<&str>,
     ) -> Result<u64> {
-
-        let count = self.for_context(user_ctx)?
+        let count = self
+            .for_context(user_ctx)?
             .delete_all_memories(None, agent_id, session_id)
             .await
             .context("delete_all_memories failed")?;
-        if count > 0 { self.notify_committed_memory_change(); }
+        if count > 0 {
+            self.notify_committed_memory_change();
+        }
         Ok(count)
     }
 
     /// Get the audit history for a memory.
-    pub async fn history(&self, memory_id: &str, user_ctx: &UserContext) -> Result<Vec<MemoryHistory>> {
+    pub async fn history(
+        &self,
+        memory_id: &str,
+        user_ctx: &UserContext,
+    ) -> Result<Vec<MemoryHistory>> {
         self.for_context(user_ctx)?
             .get_memory_history(memory_id)
             .await
@@ -1102,8 +1136,8 @@ impl MemoryService {
         session_id: Option<&str>,
         older_than_days: u32,
     ) -> Result<Option<Memory>> {
-
-        let memory = self.for_context(user_ctx)?
+        let memory = self
+            .for_context(user_ctx)?
             .compress_memories(None, agent_id, session_id, older_than_days)
             .await
             .context("compress_memories failed")?;
@@ -1124,7 +1158,9 @@ impl MemoryService {
     pub(crate) async fn expire_stale(&self) -> Result<u64> {
         let _operation = self.admit_operation("expire_stale")?;
         let count = self.resume_memory_purge().await?;
-        if count > 0 { self.notify_committed_memory_change(); }
+        if count > 0 {
+            self.notify_committed_memory_change();
+        }
         Ok(count)
     }
 
@@ -1132,7 +1168,10 @@ impl MemoryService {
 
     pub async fn knowledge_graph(&self, user_ctx: &UserContext) -> Result<KnowledgeGraph> {
         let _operation = self.admit_operation("knowledge_graph")?;
-        self.admin_storage(user_ctx)?.get_graph().await.context("get_graph failed")
+        self.admin_storage(user_ctx)?
+            .get_graph()
+            .await
+            .context("get_graph failed")
     }
 
     pub async fn create_entity(&self, entity: Entity, user_ctx: &UserContext) -> Result<Entity> {
@@ -1143,7 +1182,11 @@ impl MemoryService {
             .context("create_entity failed")
     }
 
-    pub async fn create_entities(&self, entities: Vec<Entity>, user_ctx: &UserContext) -> Result<Vec<Entity>> {
+    pub async fn create_entities(
+        &self,
+        entities: Vec<Entity>,
+        user_ctx: &UserContext,
+    ) -> Result<Vec<Entity>> {
         let _operation = self.admit_operation("create_entities")?;
         self.admin_storage(user_ctx)?
             .create_entities(entities)
@@ -1159,7 +1202,11 @@ impl MemoryService {
             .context("get_entity failed")
     }
 
-    pub async fn search_entities(&self, query: &str, user_ctx: &UserContext) -> Result<Vec<Entity>> {
+    pub async fn search_entities(
+        &self,
+        query: &str,
+        user_ctx: &UserContext,
+    ) -> Result<Vec<Entity>> {
         let _operation = self.admit_operation("search_entities")?;
         self.admin_storage(user_ctx)?
             .search_entities(query)
@@ -1202,7 +1249,11 @@ impl MemoryService {
             .context("delete_entity failed")
     }
 
-    pub async fn create_relation(&self, relation: Relation, user_ctx: &UserContext) -> Result<Relation> {
+    pub async fn create_relation(
+        &self,
+        relation: Relation,
+        user_ctx: &UserContext,
+    ) -> Result<Relation> {
         let _operation = self.admit_operation("create_relation")?;
         self.admin_storage(user_ctx)?
             .create_relation(relation)
@@ -1210,7 +1261,11 @@ impl MemoryService {
             .context("create_relation failed")
     }
 
-    pub async fn create_relations(&self, relations: Vec<Relation>, user_ctx: &UserContext) -> Result<Vec<Relation>> {
+    pub async fn create_relations(
+        &self,
+        relations: Vec<Relation>,
+        user_ctx: &UserContext,
+    ) -> Result<Vec<Relation>> {
         let _operation = self.admit_operation("create_relations")?;
         self.admin_storage(user_ctx)?
             .create_relations(relations)
@@ -1218,7 +1273,11 @@ impl MemoryService {
             .context("create_relations failed")
     }
 
-    pub async fn get_relations(&self, entity_name: &str, user_ctx: &UserContext) -> Result<Vec<Relation>> {
+    pub async fn get_relations(
+        &self,
+        entity_name: &str,
+        user_ctx: &UserContext,
+    ) -> Result<Vec<Relation>> {
         let _operation = self.admit_operation("get_relations")?;
         self.admin_storage(user_ctx)?
             .get_relations(entity_name)
@@ -1226,7 +1285,13 @@ impl MemoryService {
             .context("get_relations failed")
     }
 
-    pub async fn delete_relation(&self, from: &str, to: &str, relation_type: &str, user_ctx: &UserContext) -> Result<()> {
+    pub async fn delete_relation(
+        &self,
+        from: &str,
+        to: &str,
+        relation_type: &str,
+        user_ctx: &UserContext,
+    ) -> Result<()> {
         let _operation = self.admit_operation("delete_relation")?;
         self.admin_storage(user_ctx)?
             .delete_relation(from, to, relation_type)
@@ -1248,7 +1313,13 @@ impl MemoryService {
             .context("expand_neighbors failed")
     }
 
-    pub async fn find_path(&self, from: &str, to: &str, max_depth: u8, user_ctx: &UserContext) -> Result<Vec<Vec<String>>> {
+    pub async fn find_path(
+        &self,
+        from: &str,
+        to: &str,
+        max_depth: u8,
+        user_ctx: &UserContext,
+    ) -> Result<Vec<Vec<String>>> {
         let _operation = self.admit_operation("find_path")?;
         self.admin_storage(user_ctx)?
             .find_path(from, to, max_depth)
@@ -1273,7 +1344,11 @@ impl MemoryService {
 
     // ── TaskStreams ───────────────────────────────────────────────────────────
 
-    pub async fn create_task_stream(&self, stream: TaskStream, user_ctx: &UserContext) -> Result<TaskStream> {
+    pub async fn create_task_stream(
+        &self,
+        stream: TaskStream,
+        user_ctx: &UserContext,
+    ) -> Result<TaskStream> {
         self.for_context(user_ctx)?
             .create_task_stream(stream)
             .await
@@ -1299,7 +1374,8 @@ impl MemoryService {
         agent_id: Option<&str>,
         memory: Memory,
     ) -> Result<Memory> {
-        let memory = self.for_context(user_ctx)?
+        let memory = self
+            .for_context(user_ctx)?
             .add_to_task_stream(stream_name, None, agent_id, memory)
             .await
             .context("add_to_task_stream failed")?;
@@ -1352,7 +1428,8 @@ impl MemoryService {
         agent_id: Option<&str>,
         model_id: &str,
     ) -> Result<Option<Memory>> {
-        let memory = self.for_context(user_ctx)?
+        let memory = self
+            .for_context(user_ctx)?
             .auto_summarize_task_stream(stream_name, None, agent_id, model_id)
             .await
             .context("auto_summarize_task_stream failed")?;
@@ -1364,7 +1441,11 @@ impl MemoryService {
 
     // ── Mindmaps ─────────────────────────────────────────────────────────────
 
-    pub async fn create_mindmap(&self, mindmap: MindMap, user_ctx: &UserContext) -> Result<MindMap> {
+    pub async fn create_mindmap(
+        &self,
+        mindmap: MindMap,
+        user_ctx: &UserContext,
+    ) -> Result<MindMap> {
         let _operation = self.admit_operation("create_mindmap")?;
         self.admin_storage(user_ctx)?
             .create_mindmap(mindmap)
@@ -1372,7 +1453,12 @@ impl MemoryService {
             .context("create_mindmap failed")
     }
 
-    pub async fn get_mindmap(&self, name: &str, user_id: Option<&str>, user_ctx: &UserContext) -> Result<Option<MindMap>> {
+    pub async fn get_mindmap(
+        &self,
+        name: &str,
+        user_id: Option<&str>,
+        user_ctx: &UserContext,
+    ) -> Result<Option<MindMap>> {
         let _operation = self.admit_operation("get_mindmap")?;
         self.admin_storage(user_ctx)?
             .get_mindmap(name, user_id, None)
@@ -1435,7 +1521,12 @@ impl MemoryService {
             .context("delete_mindmap_node failed")
     }
 
-    pub async fn delete_mindmap(&self, name: &str, user_id: Option<&str>, user_ctx: &UserContext) -> Result<()> {
+    pub async fn delete_mindmap(
+        &self,
+        name: &str,
+        user_id: Option<&str>,
+        user_ctx: &UserContext,
+    ) -> Result<()> {
         let _operation = self.admit_operation("delete_mindmap")?;
         self.admin_storage(user_ctx)?
             .delete_mindmap(name, user_id, None)
@@ -1451,7 +1542,11 @@ impl MemoryService {
         // authority releases the memory scope.
         self.ensure_scope_open()?;
         let lease = self.admit_operation("owner_memory_access")?;
-        Ok(OwnedMemory { service: self, principal: principal.clone(), _lease: lease })
+        Ok(OwnedMemory {
+            service: self,
+            principal: principal.clone(),
+            _lease: lease,
+        })
     }
 
     pub fn for_context(&self, context: &UserContext) -> Result<OwnedMemory<'_>> {
@@ -1463,7 +1558,10 @@ impl MemoryService {
     /// role strings or user-supplied query filters do not establish it.
     pub fn admin_storage(&self, context: &UserContext) -> Result<Arc<dyn MemoryStorage>> {
         self.ensure_scope_open()?;
-        anyhow::ensure!(context.trusted_host_id().is_some(), "Trusted host memory administration required");
+        anyhow::ensure!(
+            context.trusted_host_id().is_some(),
+            "Trusted host memory administration required"
+        );
         Ok(Arc::clone(&self.storage))
     }
 
@@ -1513,11 +1611,13 @@ async fn close_memory_resources(
     };
     let lifecycle_failure = (!lifecycle_report.failures.is_empty()
         || !lifecycle_report.unresolved_effects.is_empty())
-        .then(|| format!(
+    .then(|| {
+        format!(
             "memory lifecycle drain reported failures [{}] and unresolved effects [{}]",
             lifecycle_report.failures.join("; "),
             lifecycle_report.unresolved_effects.join("; "),
-        ));
+        )
+    });
     let failure = match (&scope_result, &engine_result, lifecycle_failure) {
         (Ok(()), Ok(()), None) => None,
         (Err(scope_error), Ok(()), None) => Some(scope_error.to_string()),

@@ -340,6 +340,7 @@ mod tests {
                 total_tokens: 12,
                 cached_tokens: None,
                 cache_creation_tokens: None,
+                uncached_input_tokens: None,
             },
             NormalizedEvent::Done,
         ]]));

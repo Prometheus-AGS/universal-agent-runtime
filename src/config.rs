@@ -603,7 +603,9 @@ pub struct ServerConfig {
 }
 
 impl ServerConfig {
-    fn default_mcp_shared_transports_enabled() -> bool { true }
+    fn default_mcp_shared_transports_enabled() -> bool {
+        true
+    }
 
     fn default_ingest_directory() -> std::path::PathBuf {
         std::path::PathBuf::from("/data/ingest")
@@ -713,7 +715,8 @@ pub struct SecurityConfig {
     pub provider_credentials: crate::uar::security::credentials::ProviderCredentialPolicyConfig,
     /// Operator-owned role requirements; every listed role is required.
     #[serde(default)]
-    pub skill_required_roles: std::collections::BTreeMap<String, std::collections::BTreeSet<String>>,
+    pub skill_required_roles:
+        std::collections::BTreeMap<String, std::collections::BTreeSet<String>>,
     #[serde(default)]
     pub deployment_profile: DeploymentProfile,
     /// Required explicitly in remote mode; must agree with the selected verifier.
@@ -775,7 +778,10 @@ impl std::fmt::Debug for SecurityConfig {
         f.debug_struct("SecurityConfig")
             .field("deployment_profile", &self.deployment_profile)
             .field("jwt_algorithm", &self.jwt_algorithm)
-            .field("workspace_authority_count", &self.workspace_authorities.len())
+            .field(
+                "workspace_authority_count",
+                &self.workspace_authorities.len(),
+            )
             .field("jwt_required", &self.jwt_required)
             .field("jwt_secret", &REDACTED)
             .field("jwks_url", &self.jwks_url)
@@ -811,53 +817,109 @@ impl SecurityConfig {
 
     /// Validate identity policy without reading or exposing credentials.
     pub(crate) fn validate_identity_policy(&self) -> Result<(), &'static str> {
-        if self.api_key_delegable_roles.iter().any(|role| matches!(role.as_str(), "host-session" | "admin")) {
-            return Err("security.api_key_delegable_roles cannot contain reserved host-session or admin roles");
+        if self
+            .api_key_delegable_roles
+            .iter()
+            .any(|role| matches!(role.as_str(), "host-session" | "admin"))
+        {
+            return Err(
+                "security.api_key_delegable_roles cannot contain reserved host-session or admin roles",
+            );
         }
         if self.api_key_admin_principals.iter().any(|entry| {
             Some(entry.issuer.as_str()) != self.jwt_issuer.as_deref()
-                || [&entry.issuer, &entry.subject, &entry.tenant_id].iter()
+                || [&entry.issuer, &entry.subject, &entry.tenant_id]
+                    .iter()
                     .any(|value| value.trim().is_empty() || value.as_str() != value.trim())
-        }) { return Err("security.api_key_admin_principals requires exact configured issuer/subject/tenant triples"); }
+        }) {
+            return Err(
+                "security.api_key_admin_principals requires exact configured issuer/subject/tenant triples",
+            );
+        }
         if self.trusted_host_principals.iter().any(|entry| {
             Some(entry.issuer.as_str()) != self.jwt_issuer.as_deref()
-                || [&entry.issuer, &entry.subject, &entry.tenant_id, &entry.host_id].iter()
-                    .any(|value| value.trim().is_empty() || value.as_str() != value.trim())
-        }) { return Err("security.trusted_host_principals requires exact configured issuer/subject/tenant and host identifiers"); }
-        let expected = if self.jwks_url.is_some() { JwtAlgorithm::RS256 } else { JwtAlgorithm::HS256 };
-        if self.jwt_algorithm.is_some_and(|algorithm| algorithm != expected) {
+                || [
+                    &entry.issuer,
+                    &entry.subject,
+                    &entry.tenant_id,
+                    &entry.host_id,
+                ]
+                .iter()
+                .any(|value| value.trim().is_empty() || value.as_str() != value.trim())
+        }) {
+            return Err(
+                "security.trusted_host_principals requires exact configured issuer/subject/tenant and host identifiers",
+            );
+        }
+        let expected = if self.jwks_url.is_some() {
+            JwtAlgorithm::RS256
+        } else {
+            JwtAlgorithm::HS256
+        };
+        if self
+            .jwt_algorithm
+            .is_some_and(|algorithm| algorithm != expected)
+        {
             return Err("security.jwt_algorithm does not match the configured verifier");
         }
-        if !self.is_remote() { return Ok(()); }
-        if !self.jwt_required || !self.jwt_validate_nbf || self.jwt_algorithm.is_none()
-            || self.jwt_issuer.as_deref().is_none_or(|value| value.trim().is_empty())
-            || self.jwt_audience.as_deref().is_none_or(|value| value.trim().is_empty())
-            || self.jwks_url.as_deref().is_some_and(|value| value.trim().is_empty())
-        {
-            return Err("remote identity policy requires JWT, issuer, audience, algorithm and not-before validation");
+        if !self.is_remote() {
+            return Ok(());
         }
-        if self.jwks_url.is_none() && (secrecy::ExposeSecret::expose_secret(&self.jwt_secret).is_empty()
-            || secrecy::ExposeSecret::expose_secret(&self.jwt_secret) == FALLBACK_JWT_SECRET)
+        if !self.jwt_required
+            || !self.jwt_validate_nbf
+            || self.jwt_algorithm.is_none()
+            || self
+                .jwt_issuer
+                .as_deref()
+                .is_none_or(|value| value.trim().is_empty())
+            || self
+                .jwt_audience
+                .as_deref()
+                .is_none_or(|value| value.trim().is_empty())
+            || self
+                .jwks_url
+                .as_deref()
+                .is_some_and(|value| value.trim().is_empty())
+        {
+            return Err(
+                "remote identity policy requires JWT, issuer, audience, algorithm and not-before validation",
+            );
+        }
+        if self.jwks_url.is_none()
+            && (secrecy::ExposeSecret::expose_secret(&self.jwt_secret).is_empty()
+                || secrecy::ExposeSecret::expose_secret(&self.jwt_secret) == FALLBACK_JWT_SECRET)
         {
             return Err("remote shared-secret verification requires a deliberate signing secret");
         }
-        if self.workspace_authorities.is_empty() || self.workspace_authorities.iter().any(|entry| {
-            Some(entry.issuer.as_str()) != self.jwt_issuer.as_deref()
-                || [&entry.issuer, &entry.subject, &entry.tenant_id, &entry.workspace_id]
-                    .iter().any(|value| value.trim().is_empty() || value.as_str() != value.trim())
-        }) {
-            return Err("remote identity policy requires exact issuer/subject/tenant/workspace mappings");
+        if self.workspace_authorities.is_empty()
+            || self.workspace_authorities.iter().any(|entry| {
+                Some(entry.issuer.as_str()) != self.jwt_issuer.as_deref()
+                    || [
+                        &entry.issuer,
+                        &entry.subject,
+                        &entry.tenant_id,
+                        &entry.workspace_id,
+                    ]
+                    .iter()
+                    .any(|value| value.trim().is_empty() || value.as_str() != value.trim())
+            })
+        {
+            return Err(
+                "remote identity policy requires exact issuer/subject/tenant/workspace mappings",
+            );
         }
         Ok(())
     }
 
     pub(crate) fn validate(&self) -> Result<(), config::ConfigError> {
-        self.validate_identity_policy().map_err(|message| config::ConfigError::Message(message.to_owned()))?;
+        self.validate_identity_policy()
+            .map_err(|message| config::ConfigError::Message(message.to_owned()))?;
         crate::uar::security::credentials::CredentialTenancyPolicy::from_config(
             self.provider_credentials.clone(),
-        ).map_err(|_| config::ConfigError::Message(
-            "security.provider_credentials is invalid".to_owned(),
-        ))?;
+        )
+        .map_err(|_| {
+            config::ConfigError::Message("security.provider_credentials is invalid".to_owned())
+        })?;
         if self.jwt_required
             && secrecy::ExposeSecret::expose_secret(&self.jwt_secret) == FALLBACK_JWT_SECRET
         {
@@ -1450,6 +1512,10 @@ pub struct MemoryConfig {
     /// Inject relevant memory context into LLM prompts before each call.
     #[serde(default = "MemoryConfig::default_inject_context")]
     pub inject_context: bool,
+    /// Operator-selected cosine cutoff for automatic injection, inclusive [-1, 1].
+    /// None refuses automatic selection; memory tools are unaffected.
+    #[serde(default)]
+    pub injection_min_similarity: Option<f32>,
     /// Maximum tokens to include in an injected memory context block.
     #[serde(default = "MemoryConfig::default_max_context_tokens")]
     pub max_context_tokens: u32,
@@ -1492,6 +1558,7 @@ impl std::fmt::Debug for MemoryConfig {
             .field("vector_weight", &self.vector_weight)
             .field("bm25_weight", &self.bm25_weight)
             .field("inject_context", &self.inject_context)
+            .field("injection_min_similarity", &self.injection_min_similarity)
             .field("max_context_tokens", &self.max_context_tokens)
             .field("mcp_http_enabled", &self.mcp_http_enabled)
             .field("mcp_http_path", &self.mcp_http_path)
@@ -1505,6 +1572,15 @@ impl std::fmt::Debug for MemoryConfig {
 }
 
 impl MemoryConfig {
+    pub fn validate_injection(&self) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            self.injection_min_similarity
+                .is_none_or(|value| value.is_finite() && (-1.0..=1.0).contains(&value)),
+            "memory.injection_min_similarity must be finite and within [-1, 1]"
+        );
+        Ok(())
+    }
+
     /// The embedding adapter the memory service selects: `embedding_api` when
     /// set and non-empty, otherwise the legacy `embedding_provider`.
     pub fn resolved_embedding_api(&self) -> &str {
@@ -1571,6 +1647,7 @@ impl Default for MemoryConfig {
             vector_weight: Self::default_vector_weight(),
             bm25_weight: Self::default_bm25_weight(),
             inject_context: Self::default_inject_context(),
+            injection_min_similarity: None,
             max_context_tokens: Self::default_max_context_tokens(),
             mcp_http_enabled: Self::default_mcp_http_enabled(),
             mcp_http_path: Self::default_mcp_http_path(),
@@ -1929,6 +2006,10 @@ impl AppConfig {
         }
 
         deserialized.security.validate()?;
+        deserialized
+            .memory
+            .validate_injection()
+            .map_err(|error| config::ConfigError::Message(error.to_string()))?;
         deserialized.a2a.validate()?;
         deserialized.service_instance.validate(&deserialized.a2a)?;
         deserialized
@@ -2528,7 +2609,8 @@ persistence:
         assert_eq!(memory.embedding_model, "BAAI/bge-small-en-v1.5");
         let server: ServerConfig = serde_json::from_value(serde_json::json!({
             "host": "127.0.0.1", "port": 1906
-        })).expect("server config should accept an omitted origin allowlist");
+        }))
+        .expect("server config should accept an omitted origin allowlist");
         assert!(server.cors_allowed_origins.is_empty());
     }
 

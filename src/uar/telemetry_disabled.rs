@@ -18,10 +18,116 @@
 //! feature surface.
 
 use crate::config::LogFormat;
+use std::sync::Mutex;
+use std::time::Duration;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt::writer::BoxMakeWriter;
 use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
+
+// Install tracing independently of the optional log bridge: try_init() can
+// report a host log logger after it has already installed our subscriber.
+// A best-effort bridge preserves the existing logging behavior without treating
+// a foreign log logger as failure to own the tracing subscriber.
+fn install_subscriber<S>(subscriber: S) -> Result<(), tracing::dispatcher::SetGlobalDefaultError>
+where
+    S: tracing::Subscriber + Send + Sync + 'static,
+{
+    tracing::subscriber::set_global_default(subscriber)?;
+    use tracing_subscriber::util::SubscriberInitExt as _;
+    let dispatch = tracing::dispatcher::get_default(Clone::clone);
+    drop(dispatch.set_default());
+    Ok(())
+}
+
+/// Ownership of the process tracing subscriber.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SubscriberStatus {
+    /// UAR initialization has not run.
+    Uninitialized,
+    /// UAR installed the process subscriber.
+    Installed,
+    /// A host subscriber already owns the process slot.
+    HostOwned,
+    /// Initialization could not complete.
+    Unavailable,
+}
+
+impl SubscriberStatus {
+    /// Stable ownership diagnostic.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Uninitialized => "uninitialized",
+            Self::Installed => "installed",
+            Self::HostOwned => "host_owned",
+            Self::Unavailable => "unavailable",
+        }
+    }
+}
+
+/// UAR trace export configuration. Enabled does not attest collector delivery.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExportStatus {
+    /// No endpoint, explicitly disabled, or telemetry not compiled.
+    Disabled,
+    /// UAR's subscriber has an OTLP layer; delivery is best effort.
+    Enabled,
+    /// Only the host can arrange trace export.
+    HostOwned,
+    /// Exporter construction failed.
+    Unavailable,
+    /// The owned provider has been asked to shut down.
+    Shutdown,
+}
+
+impl ExportStatus {
+    /// Stable export diagnostic without endpoint or credential values.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Disabled => "disabled",
+            Self::Enabled => "enabled",
+            Self::HostOwned => "host_owned",
+            Self::Unavailable => "unavailable",
+            Self::Shutdown => "shutdown",
+        }
+    }
+}
+
+/// Last initialization disposition; not a collector health probe.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TelemetryStatus {
+    /// Process subscriber owner.
+    pub subscriber: SubscriberStatus,
+    /// UAR's export configuration.
+    pub export: ExportStatus,
+}
+
+static STATUS: Mutex<TelemetryStatus> = Mutex::new(TelemetryStatus {
+    subscriber: SubscriberStatus::Uninitialized,
+    export: ExportStatus::Disabled,
+});
+
+/// Snapshot ownership without installing telemetry or contacting an exporter.
+pub fn status() -> TelemetryStatus {
+    STATUS.lock().map_or(
+        TelemetryStatus {
+            subscriber: SubscriberStatus::Unavailable,
+            export: ExportStatus::Unavailable,
+        },
+        |status| *status,
+    )
+}
+
+/// SDK shutdown wait used by the owned helper and an unattached exporter.
+/// This bounds the SDK acknowledgement wait, not exporter-thread release.
+pub const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// No exporter exists in this profile; shutdown performs no I/O.
+pub fn shutdown(provider: &DisabledTelemetryProvider) -> anyhow::Result<()> {
+    match provider.shutdown() {
+        Ok(()) => Ok(()),
+        Err(error) => match error {},
+    }
+}
 
 /// Placeholder matching the exporter shutdown contract.
 #[derive(Debug)]
@@ -44,6 +150,16 @@ pub fn init(
     log_format: &LogFormat,
     default_directive: &str,
 ) -> anyhow::Result<Option<DisabledTelemetryProvider>> {
+    let mut disposition = STATUS
+        .lock()
+        .map_err(|_| anyhow::anyhow!("telemetry initialization unavailable"))?;
+    if matches!(
+        disposition.subscriber,
+        SubscriberStatus::Installed | SubscriberStatus::HostOwned
+    ) {
+        return Ok(None);
+    }
+    disposition.subscriber = SubscriberStatus::Unavailable;
     let filter_layer =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(default_directive));
 
@@ -60,6 +176,8 @@ pub fn init(
                 )
             })?;
         BoxMakeWriter::new(std::sync::Mutex::new(file))
+    } else if std::env::var_os("UAR_SIDECAR").as_deref() == Some(std::ffi::OsStr::new("1")) {
+        BoxMakeWriter::new(std::io::stderr)
     } else {
         BoxMakeWriter::new(std::io::stdout)
     };
@@ -68,40 +186,40 @@ pub fn init(
     // is a lesser failure than a server that will not start, so this is
     // tolerant by design (tests and embedders may install their own).
     let installed = match log_format {
-        LogFormat::Json => tracing_subscriber::registry()
-            .with(filter_layer)
-            .with(
+        LogFormat::Json => install_subscriber(
+            tracing_subscriber::registry().with(filter_layer).with(
                 tracing_subscriber::fmt::layer()
                     .json()
                     .with_target(true)
                     .with_line_number(true)
                     .with_writer(writer),
-            )
-            .try_init(),
-        LogFormat::Compact => tracing_subscriber::registry()
-            .with(filter_layer)
-            .with(
+            ),
+        ),
+        LogFormat::Compact => install_subscriber(
+            tracing_subscriber::registry().with(filter_layer).with(
                 tracing_subscriber::fmt::layer()
                     .compact()
                     .with_target(true)
                     .with_line_number(true)
                     .with_writer(writer),
-            )
-            .try_init(),
-        LogFormat::Pretty => tracing_subscriber::registry()
-            .with(filter_layer)
-            .with(
+            ),
+        ),
+        LogFormat::Pretty => install_subscriber(
+            tracing_subscriber::registry().with(filter_layer).with(
                 tracing_subscriber::fmt::layer()
                     .pretty()
                     .with_target(true)
                     .with_line_number(true)
                     .with_writer(writer),
-            )
-            .try_init(),
+            ),
+        ),
     };
-    if let Err(error) = installed {
-        eprintln!("tracing subscriber already installed, continuing: {error}");
-    }
+    disposition.subscriber = if installed.is_ok() {
+        SubscriberStatus::Installed
+    } else {
+        SubscriberStatus::HostOwned
+    };
+    disposition.export = ExportStatus::Disabled;
 
     Ok(None)
 }
@@ -109,6 +227,37 @@ pub fn init(
 /// No-op metrics facade preserving instrumentation call sites.
 pub mod metrics {
     use std::time::{Duration, Instant};
+
+    /// Ownership of the process metrics recorder, not exporter connectivity.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum MetricsStatus {
+        /// UAR owns the recorder and can serve its scrape.
+        Installed,
+        /// The host owns metric writes and must arrange their export.
+        HostOwned,
+        /// Metrics were not compiled into this profile.
+        Disabled,
+        /// No supported exporter is available.
+        Unavailable,
+    }
+
+    impl MetricsStatus {
+        /// Stable diagnostic value. Never include resource or owner identifiers.
+        pub const fn as_str(self) -> &'static str {
+            match self {
+                Self::Installed => "installed",
+                Self::HostOwned => "host_owned",
+                Self::Disabled => "disabled",
+                Self::Unavailable => "unavailable",
+            }
+        }
+    }
+
+    /// Metrics are absent in this build; no process-global recorder is installed.
+    pub fn status() -> MetricsStatus {
+        MetricsStatus::Disabled
+    }
+
     pub fn init() {}
     pub fn record_request(_method: &str, _path: &str, _status: u16, _duration: Duration) {}
     #[must_use]

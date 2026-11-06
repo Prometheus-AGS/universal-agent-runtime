@@ -93,6 +93,13 @@ impl EmbeddingBackend for BackendSlot {
         self.backend.embed(texts).await
     }
 
+    async fn embed_with_usage(
+        &self,
+        texts: &[&str],
+    ) -> Result<super::EmbeddingBatch, EmbeddingError> {
+        self.backend.embed_with_usage(texts).await
+    }
+
     async fn shutdown(&self) -> Result<(), EmbeddingError> {
         self.backend.shutdown().await
     }

@@ -778,6 +778,7 @@ async fn overlay_only_outcomes_and_multi_skill_usage_are_attributed_without_doub
             total_tokens: 1_000,
             cached_tokens: None,
             cache_creation_tokens: None,
+            uncached_input_tokens: None,
         },
         DriverEvent::Done,
     ]]));

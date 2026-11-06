@@ -4,61 +4,79 @@ use std::sync::OnceLock;
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::time::Instant;
 
-static METRICS_HANDLE: OnceLock<PrometheusHandle> = OnceLock::new();
+/// Ownership of the process metrics recorder, not exporter connectivity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MetricsStatus {
+    /// UAR owns the recorder and can serve its scrape.
+    Installed,
+    /// The host owns metric writes and must arrange their export.
+    HostOwned,
+    /// Metrics were not compiled into this profile.
+    Disabled,
+    /// No supported exporter is available.
+    Unavailable,
+}
 
-/// Build the Prometheus recorder, install it as the process-global recorder,
-/// and return its handle.
-///
-/// Falls back to a detached recorder only when the global slot is already
-/// owned by a *foreign* recorder (one this module did not install) — in that
-/// case the `counter!` / `gauge!` macros write elsewhere, so the returned
-/// handle renders an empty payload. That is the best available outcome: the
-/// alternative is aborting a `/metrics` scrape, and this module cannot
-/// dislodge a recorder another component installed deliberately.
-fn install() -> PrometheusHandle {
-    match PrometheusBuilder::new().install_recorder() {
-        Ok(handle) => handle,
-        Err(err) => {
-            tracing::warn!(
-                error = %err,
-                "could not install the Prometheus recorder; /metrics will render an \
-                 empty payload because another global recorder owns metric writes"
-            );
-            PrometheusBuilder::new().build_recorder().handle()
+impl MetricsStatus {
+    /// Stable diagnostic value. Never include resource or owner identifiers.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Installed => "installed",
+            Self::HostOwned => "host_owned",
+            Self::Disabled => "disabled",
+            Self::Unavailable => "unavailable",
         }
     }
 }
 
-/// Initialize the Prometheus metrics exporter.
-///
-/// Idempotent: the recorder is installed at most once per process, so callers
-/// need not coordinate. `server::start_server` calls this at boot, and the
-/// binaries call it earlier still to fix ordering relative to other telemetry
-/// setup.
-///
-/// Call this before recording any metric. The `metrics` macros resolve the
-/// global recorder on every call and silently discard writes to a no-op when
-/// none is installed, so metrics recorded before this point are lost — which
-/// is why installation cannot be left to [`metrics_handle`]'s lazy path
-/// alone.
-pub fn init() {
-    let _ = metrics_handle();
+enum RecorderState {
+    Owned(PrometheusHandle),
+    HostOwned,
 }
 
-/// Get the Prometheus handle for rendering metrics.
-///
-/// Initializes on first use as a backstop rather than requiring a prior
-/// [`init`] call. `/metrics` is registered unconditionally by
-/// `server::start_server`, which embedded hosts (including SDK consumers)
-/// reach without going through a binary's startup path — so requiring
-/// explicit initialization here made that route abort its request thread for
-/// every embedder.
-///
-/// This guarantees `/metrics` never panics, but it is not the intended
-/// install point: see [`init`] for why the recorder must be installed at boot
-/// rather than on the first scrape.
+static RECORDER: OnceLock<RecorderState> = OnceLock::new();
+static COMPATIBILITY_HANDLE: OnceLock<PrometheusHandle> = OnceLock::new();
+
+fn recorder() -> &'static RecorderState {
+    RECORDER.get_or_init(|| match PrometheusBuilder::new().install_recorder() {
+        Ok(handle) => RecorderState::Owned(handle),
+        Err(_) => {
+            tracing::warn!("metrics recorder is host-owned; UAR scrape is unavailable");
+            RecorderState::HostOwned
+        }
+    })
+}
+
+/// Initialize once before recording any metrics. Never replaces a host recorder.
+pub fn init() {
+    let _ = recorder();
+}
+
+/// Report ownership. A host-owned recorder receives UAR's metric macros, but
+/// UAR cannot infer whether or where that host exports them.
+pub fn status() -> MetricsStatus {
+    match recorder() {
+        RecorderState::Owned(_) => MetricsStatus::Installed,
+        RecorderState::HostOwned => MetricsStatus::HostOwned,
+    }
+}
+
+/// Return a scrape handle only when UAR owns the recorder receiving writes.
+/// HTTP exporters must use this API and report [`status`] when it returns None.
+pub fn scrape_handle() -> Option<&'static PrometheusHandle> {
+    match recorder() {
+        RecorderState::Owned(handle) => Some(handle),
+        RecorderState::HostOwned => None,
+    }
+}
+
+/// Legacy handle accessor. When host-owned this is a detached compatibility
+/// handle, NOT an activity/export signal. Use [`scrape_handle`] for HTTP scrapes.
+/// It remains available for existing callers that require an infallible handle.
 pub fn metrics_handle() -> &'static PrometheusHandle {
-    METRICS_HANDLE.get_or_init(install)
+    scrape_handle().unwrap_or_else(|| {
+        COMPATIBILITY_HANDLE.get_or_init(|| PrometheusBuilder::new().build_recorder().handle())
+    })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

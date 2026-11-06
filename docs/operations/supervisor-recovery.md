@@ -1,5 +1,14 @@
 # Supervisor recovery
 
+The [canonical execution/recovery table](../product-support-matrix.md#execution-and-recovery-guarantees)
+and [finite final checklist](../releases/v1.4.0-final.md) define the current first
+promotion: Linux amd64 container APIs behind a trusted host/gateway, owned-volume
+SurrealDB default and restricted PostgreSQL18. Broader historical Dot/native
+qualification inventories below retain their original scope; they do not silently
+promote Windows, ARM64, desktop or direct remote multi-user deployment. Current
+whole-set/source/container qualification remains unverified. Full harness stays
+`process_ephemeral`, `unsupported_after_restart`, `steer_supported:false`.
+
 Dot11 implements trusted execution exclusion before abrupt owner recovery. The
 operator approved **reboot-bound native recovery** where the shipped service
 manager cannot prove same-boot descendant containment. A launchd/systemd/SCM

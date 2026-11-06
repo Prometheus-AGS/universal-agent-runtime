@@ -25,6 +25,8 @@
 //! ```
 
 mod encrypted;
+mod history;
+pub use history::{SessionHistoryMessage, SessionMessageMetadata, SessionMessageStatus};
 mod thread;
 
 #[allow(unused_imports)]

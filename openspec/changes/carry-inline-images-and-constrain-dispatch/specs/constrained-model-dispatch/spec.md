@@ -57,6 +57,22 @@ Durable model reservations under an enforceable request contract SHALL obtain th
 - **WHEN** no request contract or no durable reservation requires final preparation
 - **THEN** the existing catalog, team or no-reservation admission path remains in force
 
+### Requirement: Captured final-wire reservation
+Durable model reservations under an enforceable request contract SHALL obtain their input bound and effective output ceiling from the captured driver's actual preparation after host output narrowing and before provider dispatch. Existing uncertainty, reasoning, atomic admission, ownership and uncertain-settlement rules SHALL remain. UAR preflight serialization SHALL not substitute for unavailable final preparation. Serialized image JSON SHALL not certify real-image accounting. Existing no-contract and no-durable-reservation paths SHALL not acquire an unrelated preparation prerequisite.
+
+#### Scenario: Routing identity differs from literal wire model
+- **WHEN** retained adapter preparation strips a qualified routing prefix
+- **THEN** final validation, counting and receipts use the actual prepared body while preserving captured destination, declared profile and protected request controls
+- **AND** routing identity remains distinct from the literal provider-body model
+
+#### Scenario: Durable contract lacks prepared evidence
+- **WHEN** a durable contracted driver cannot supply supported captured final preparation
+- **THEN** admission refuses before model dispatch instead of recording preflight as final-wire evidence
+
+#### Scenario: Existing uncontracted path
+- **WHEN** no request contract or no durable reservation requires final preparation
+- **THEN** the existing catalog, team or no-reservation admission path remains in force
+
 
 ### Requirement: Preserve endpoint profiles without finite-budget contracts
 

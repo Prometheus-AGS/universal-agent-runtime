@@ -31,7 +31,13 @@ impl SurrealDbProvider {
         })
     }
 }
+// Both owned and host-borrowed providers may initialize the same schema in
+// one process. Keep the sequence together so their catalog writes cannot
+// conflict or require replaying a partially applied migration.
+static SCHEMA_INITIALIZATION: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 pub(super) async fn migrate(db: &Surreal<Any>) -> Result<()> {
+    let _schema_initialization = SCHEMA_INITIALIZATION.lock().await;
     db.query(include_str!(
         "../../../../migrations/surrealdb/durable_api_keys.surql"
     ))

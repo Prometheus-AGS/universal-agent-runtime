@@ -5,6 +5,9 @@
 #[path = "support/stream_terminal_peer.rs"]
 mod peer;
 
+#[path = "support/external_identity_host.rs"]
+mod external_identity_host;
+
 use axum::{
     Extension, Router,
     body::{Body, to_bytes},
@@ -25,7 +28,7 @@ use tokio::sync::RwLock;
 use tower::ServiceExt;
 use universal_agent_runtime::{
     config::{LlmConfig, ServiceInstanceConfig},
-    llm::{LiterLlmDriver, LlmDriver, Orchestrator, anthropic_driver::AnthropicDriver},
+    llm::{LiterLlmDriver, LlmDriver, Orchestrator},
     mcp::registry::McpRegistry,
     normalized::NormalizedEvent,
     session::SessionStore,
@@ -43,7 +46,7 @@ use universal_agent_runtime::{
             native_skill::{NativeSkill, NativeSkillRegistry},
             skills::SkillRegistry,
         },
-        security::claims::{CredentialPrincipal, UserClaims, UserContext},
+        security::claims::{CredentialPrincipal, UserContext},
         service_instance::ServiceInstanceAuthority,
         tools::descriptor::ToolEffect,
     },
@@ -87,50 +90,7 @@ impl NativeSkill for Echo {
 }
 
 async fn user() -> UserContext {
-    let secret = "dot05-signed-principal-fixture";
-    let config = universal_agent_runtime::config::SecurityConfig {
-        provider_credentials: Default::default(),
-        deployment_profile: Default::default(),
-        jwt_algorithm: None,
-        workspace_authorities: Vec::new(),
-        skill_required_roles: Default::default(),
-        api_key_delegable_roles:
-            universal_agent_runtime::config::SecurityConfig::default_api_key_delegable_roles(),
-        api_key_admin_principals: Vec::new(),
-        trusted_host_principals: Vec::new(),
-        jwt_required: true,
-        jwt_secret: secret.to_owned().into(),
-        jwks_url: None,
-        jwt_issuer: None,
-        jwt_audience: None,
-        jwt_validate_nbf: true,
-        settings_mutation_auth_required: true,
-        settings_admin_key: None,
-        local_loopback_owner: false,
-    };
-    // The production verifier owns process-provider initialization. Raw fixture
-    // signing must follow it, while malformed credentials remain unauthorized.
-    assert!(
-        matches!(universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(
-        &config, "dot05-malformed-synthetic-token").await, Err(status) if status == StatusCode::UNAUTHORIZED),
-        "production verifier must reject malformed fixture credentials before signing"
-    );
-    let token = jsonwebtoken::encode(
-        &jsonwebtoken::Header::default(),
-        &UserClaims {
-            sub: OWNER.into(),
-            name: None,
-            roles: Some(vec!["user".into()]),
-            tenant_id: None,
-            uar_instance_id: None,
-            exp: (chrono::Utc::now().timestamp() + 3600) as usize,
-        },
-        &jsonwebtoken::EncodingKey::from_secret(secret.as_bytes()),
-    )
-    .unwrap();
-    universal_agent_runtime::uar::security::middleware::authenticate_bearer_context(&config, &token)
-        .await
-        .expect("actual signed fixture principal verification")
+    external_identity_host::user("dot05", false, OWNER).await
 }
 
 fn openssl(root: &Path, args: &[&str]) {
@@ -330,36 +290,56 @@ impl Endpoint {
             Self::Http(peer::Peer::start(root, protocol, case).await)
         }
     }
-    fn driver(&self, protocol: peer::Protocol) -> Arc<dyn LlmDriver> {
+    fn configuration(&self, protocol: peer::Protocol) -> LlmConfig {
+        let mut config = config(protocol);
+        assert!(
+            config.host_supplied_connection,
+            "external controlled-wire profile must disable ambient client fallback"
+        );
+        if matches!(protocol, peer::Protocol::Bedrock) {
+            let region = std::env::var("AWS_DEFAULT_REGION")
+                .or_else(|_| std::env::var("AWS_REGION"))
+                .unwrap_or_else(|_| "us-east-1".into());
+            assert_eq!(
+                region, "us-east-1",
+                "native origin must resolve to the owned TLS peer"
+            );
+        }
+        if let Self::Http(peer) = self {
+            // The owned ephemeral collaborator's URL is nonsecret transport
+            // selection; all authentication material stays in the product loader.
+            config.base_url = Some(format!("{}/v1", peer.url));
+            config.host_supplied_connection = true;
+        } else {
+            assert!(
+                config.base_url.is_none(),
+                "native HTTPS lane must keep its actual provider origin"
+            );
+        }
+        config
+    }
+    fn driver(&self, protocol: peer::Protocol, config: &LlmConfig) -> Arc<dyn LlmDriver> {
         match self {
-            Self::Http(peer) if matches!(protocol, peer::Protocol::NativeAnthropic) => {
-                Arc::new(AnthropicDriver::new(
-                    "dot05-synthetic-key".into(),
-                    protocol.model().split_once('/').unwrap().1.into(),
-                    Some(peer.url.clone()),
-                    None,
-                    None,
-                    None,
-                ))
+            Self::Http(_) if matches!(protocol, peer::Protocol::NativeAnthropic) => {
+                assert!(
+                    universal_agent_runtime::llm::anthropic_native_driver_enabled(),
+                    "externally selected native Anthropic lane"
+                );
+                universal_agent_runtime::llm::orchestrator::build_driver(config).unwrap()
             }
-            Self::Http(peer) => {
-                let mut config = liter_llm::ClientConfig::new("dot05-synthetic-key");
-                config.base_url = Some(format!("{}/v1", peer.url));
-                config.load_env = false;
-                config.max_retries = 0;
-                config.transport = config.transport.with_proxies_disabled(true);
-                Arc::new(LiterLlmDriver::new(config, protocol.model().into(), None).unwrap())
-            }
+            Self::Http(_) => Arc::new(
+                LiterLlmDriver::new(
+                    universal_agent_runtime::config::build_client_config(config),
+                    protocol.model().into(),
+                    None,
+                )
+                .unwrap(),
+            ),
             Self::Https(peer) => {
-                let mut config = liter_llm::ClientConfig::new("dot05-synthetic-key");
-                config.load_env = false;
-                config.max_retries = 0;
-                config.bedrock_region = Some("us-east-1".into());
-                config.bedrock_access_key_id = Some("dot05-synthetic-access".into());
-                config.bedrock_secret_access_key = Some("dot05-synthetic-secret".into());
-                config.bedrock_session_token = Some("dot05-synthetic-session".into());
+                // Preserve the existing real TLS/DNS-owned transport. The
+                // production builder, not this test, resolves provider material.
                 let client = liter_llm::DefaultClient::with_http_client(
-                    config,
+                    universal_agent_runtime::config::build_client_config(config),
                     Some(protocol.model()),
                     peer.client(),
                 )
@@ -430,13 +410,11 @@ impl Endpoint {
 }
 
 fn config(protocol: peer::Protocol) -> LlmConfig {
-    LlmConfig {
-        model: protocol.model().into(),
-        api_key: Some("dot05-synthetic-key".into()),
-        host_supplied_connection: true,
-        ..LlmConfig::default()
-    }
+    let config = external_identity_host::llm_config("dot05", false, &format!("{protocol:?}"));
+    assert_eq!(config.model, protocol.model());
+    config
 }
+
 fn succeeds(case: &str) -> bool {
     matches!(case, "valid" | "split" | "tool")
 }
@@ -446,11 +424,12 @@ async fn legacy(root: &Path, certs: &Path, protocol: peer::Protocol, case: &'sta
     let calls = Arc::new(AtomicUsize::new(0));
     let skills = Arc::new(NativeSkillRegistry::new());
     skills.register(Echo(calls.clone())).await.unwrap();
+    let llm_config = endpoint.configuration(protocol);
     let orchestrator = Orchestrator::from_driver(
-        config(protocol),
+        llm_config.clone(),
         Arc::new(McpRegistry::new_empty()),
         skills,
-        endpoint.driver(protocol),
+        endpoint.driver(protocol, &llm_config),
     )
     .with_resilience_policy(
         universal_agent_runtime::uar::settings::resilience_policy::ResiliencePolicy {
@@ -520,19 +499,21 @@ async fn legacy(root: &Path, certs: &Path, protocol: peer::Protocol, case: &'sta
                     total_tokens,
                     cached_tokens,
                     cache_creation_tokens,
+                    uncached_input_tokens,
                 } => Some((
                     *prompt_tokens,
                     *completion_tokens,
                     *total_tokens,
                     *cached_tokens,
                     *cache_creation_tokens,
+                    *uncached_input_tokens,
                 )),
                 _ => None,
             })
             .collect::<Vec<_>>();
         assert_eq!(
             usage,
-            vec![(2, 3, 5, None, None)],
+            vec![(2, 3, 5, None, None, Some(2))],
             "native output-only delta must retain message_start input/cache usage"
         );
     }
@@ -562,9 +543,10 @@ async fn graph(
     let calls = Arc::new(AtomicUsize::new(0));
     let skills = Arc::new(NativeSkillRegistry::new());
     skills.register(Echo(calls.clone())).await.unwrap();
+    let llm_config = endpoint.configuration(protocol);
     let manager = Arc::new(
         RunManager::with_classifier_config(
-            config(protocol),
+            llm_config.clone(),
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             Arc::new(RwLock::new(SkillRegistry::default())),
@@ -585,7 +567,7 @@ async fn graph(
                 ..Default::default()
             },
         )
-        .with_llm_driver(endpoint.driver(protocol))
+        .with_llm_driver(endpoint.driver(protocol, &llm_config))
         .with_agent_graph(
             AgentGraph::builder("admission")
                 .add_node(CheckpointNode::new("admission", "before-provider"))
@@ -827,27 +809,21 @@ async fn suite(root: &Path) {
         .await
         .unwrap(),
     );
-    let infrastructure: Value = serde_json::from_slice(
-        &std::fs::read(
-            std::env::var("UAR_DOT05_INFRA_FILE")
-                .expect("private shared infrastructure manifest required"),
-        )
-        .unwrap(),
-    )
-    .unwrap();
-    let input = &infrastructure["surreal"];
-    let namespace =
-        std::env::var("UAR_DOT05_NAMESPACE").expect("isolated shared fixture namespace");
+    let external = external_identity_host::profile("dot05", false);
+    let inspection = external
+        .databases
+        .get("shared")
+        .expect("owned external shared inspection gateway");
     let shared: Arc<dyn PersistenceLayer> = Arc::new(
         SurrealDbProvider::new(
-            input["url"].as_str().unwrap(),
-            input["username"].as_str(),
-            input["password"].as_str(),
-            Some(&namespace),
-            Some("stream_terminal"),
+            &inspection.inspection_url,
+            None,
+            None,
+            Some(&inspection.namespace),
+            Some(&inspection.name),
         )
         .await
-        .unwrap(),
+        .expect("credential-free shared store inspection"),
     );
     let mut index = 0;
     for protocol in [

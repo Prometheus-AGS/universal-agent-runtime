@@ -1,13 +1,19 @@
 # UAR A2UI profile
 
-UAR 1.0 supports **A2UI v0.9.1** through the stable profile
-`uar.a2ui/1`. Upstream describes v0.9.1 as the current production release; it
-standardizes `application/a2ui+json` and uses these message types:
+UAR's historical **A2UI v0.9.1** compatibility profile is `uar.a2ui/1`, with
+`application/a2ui+json` and these message types:
 
 - `createSurface`
 - `updateComponents`
 - `updateDataModel`
 - `deleteSurface`
+
+That profile identity does not certify the current container or every upstream
+extension. The [canonical recovery table](../product-support-matrix.md#execution-and-recovery-guarantees)
+and [logical action contract](../operations/a2ui-interaction-recovery.md) govern
+durable interaction identity, bounded surface authority, retry reconciliation and
+uncertain effects. A fresh wire run ID is not a new user intent; a legacy action
+without protected interaction identity can execute again if retried.
 
 The supported catalog is UAR-owned and maps declarative A2UI components to
 local React components. Agent messages cannot supply React code, HTML,

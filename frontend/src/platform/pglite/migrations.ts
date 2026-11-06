@@ -75,4 +75,13 @@ export const MIGRATIONS: readonly Migration[] = [
   { version: 1, name: "initial_schema", up: INITIAL_SCHEMA_SQL },
   { version: 2, name: "runs_and_events", up: RUN_EVENT_MIGRATION_SQL },
   { version: 3, name: "message_chunks", up: MESSAGE_CHUNK_MIGRATION_SQL },
+  { version: 4, name: "message_turn_identity_and_interruption", up: `
+    ALTER TABLE messages ADD COLUMN IF NOT EXISTS run_id TEXT;
+    ALTER TABLE messages ADD COLUMN IF NOT EXISTS client_turn_id TEXT;
+    ALTER TABLE messages ADD COLUMN IF NOT EXISTS history_position BIGINT;
+    WITH ordered AS (SELECT id, ROW_NUMBER() OVER (PARTITION BY thread_id ORDER BY created_at, id) - 1 AS position FROM messages)
+      UPDATE messages SET history_position = ordered.position FROM ordered WHERE messages.id = ordered.id AND messages.history_position IS NULL;
+    ALTER TABLE run DROP CONSTRAINT IF EXISTS run_status_check;
+    ALTER TABLE run ADD CONSTRAINT run_status_check CHECK (status IN ('running','finished','error','cancelled','interrupted'));
+  ` },
 ];

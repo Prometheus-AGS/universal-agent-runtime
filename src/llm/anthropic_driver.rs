@@ -329,6 +329,7 @@ impl LlmDriver for AnthropicDriver {
         &self,
         req: LlmRequest,
     ) -> anyhow::Result<Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>> {
+        super::orchestrator::record_provider_preparation();
         if req.output_token_cap == Some(0) {
             return Err(ProviderError::invalid_request("Output token cap must be positive").into());
         }
@@ -371,6 +372,7 @@ impl LlmDriver for AnthropicDriver {
             "Sending Anthropic Messages API request"
         );
 
+        super::orchestrator::record_provider_submission();
         let response = self
             .client
             .post(&self.base_url)

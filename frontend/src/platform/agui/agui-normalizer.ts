@@ -39,6 +39,15 @@ export interface AguiConsumerProjections {
   phaseTimings?: RunPhaseTimings;
 }
 
+/** Absent terminal usage remains unavailable, including cancellation. */
+export function aguiTerminalUsage(event: Record<string, unknown>): Record<string, unknown> | undefined {
+  const result = event.result;
+  if (!result || typeof result !== "object" || Array.isArray(result)) return undefined;
+  const usage = (result as Record<string, unknown>).usage;
+  return usage && typeof usage === "object" && !Array.isArray(usage)
+    ? usage as Record<string, unknown> : undefined;
+}
+
 interface PhaseSpan {
   first: number;
   last: number;

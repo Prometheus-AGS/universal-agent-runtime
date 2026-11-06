@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { ingestA2uiSurfaceAuthority } from "@/platform/entities/a2ui-actions/domain";
+import { readChatTurn, persistChatTurn, reconcileChatTurn } from "@/platform/entities/chat-turns";
 import { acquireChatStream, ownsChatStream, type ChatStreamLease } from "@/platform/entities/a2ui-actions/stream-ownership";
 
 import {
@@ -14,8 +16,10 @@ import type { RagCitationMarker, ToolCallContentBlock } from "@/types/chat-conte
 import type { AttachmentPayload } from "@/types";
 import { ingestAgUiEvent, ingestRuntimeEvent } from "@/entities/runtime-ingest";
 import { UarAguiAdapter } from "@/platform/agui/agui-adapter";
+import { completeAguiUsage } from "@/platform/agui/runtime-chunk-projection";
 import { getDbInstance } from "@/platform/pglite/client";
-import { RunEventPersistence } from "@/platform/pglite/run-event-persistence";
+import { isUarAguiEvent } from "@/platform/agui/agui-schema";
+import { RunEventIdentityError, RunEventPersistence } from "@/platform/pglite/run-event-persistence";
 import { A2uiStreamAccumulator } from "@/features/a2ui/a2ui-stream-accumulator";
 
 export interface UarChatPayload {
@@ -32,6 +36,7 @@ export interface UarChatPayload {
   /** Client-only, never sent: id of the user message the caller already saved
    * to PGlite. The history reload then holds it, so no second copy is added. */
   persistedUserMessageId?: string;
+  clientTurnId?: string;
 }
 export interface StreamCallbacks {
   onComplete?: () => void;
@@ -644,16 +649,22 @@ function releaseRunPersistence(writer: RunEventPersistence | null): void {
 
 async function finalizeRunPersistence(
   writer: RunEventPersistence | null,
-  status: "cancelled" | "error" | "finished",
 ): Promise<void> {
   if (!writer) return;
   try {
-    await writer.finish(status);
+    await writer.finish();
   } catch (error) {
     console.error("[run-persistence] terminal finalization failed", {
-      status,
+      status: "interrupted",
       errorType: error instanceof Error ? error.name : typeof error,
     });
+  }
+}
+
+class RunEventStorageError extends Error {
+  constructor() {
+    super("The response could not be saved. Its outcome is unconfirmed; recover the original response.");
+    this.name = "RunEventStorageError";
   }
 }
 
@@ -661,16 +672,19 @@ async function persistRunEvent(
   writer: RunEventPersistence,
   row: Parameters<RunEventPersistence["ingest"]>[0],
   phaseTimings: Parameters<RunEventPersistence["ingest"]>[1],
-): Promise<boolean> {
+): Promise<void> {
   try {
+    if ((row.type === "RUN_FINISHED" || row.type === "RUN_ERROR")
+      && (!row.runId || row.payload.runId !== row.runId || row.payload.profile !== "uar.agui/1"
+        || row.payload.eventId !== row.id || row.payload.type !== row.type)) throw new RunEventIdentityError();
     await writer.ingest(row, phaseTimings);
-    return true;
   } catch (error) {
     console.error("[run-persistence] event ingest failed", {
       eventType: row.type,
       errorType: error instanceof Error ? error.name : typeof error,
     });
-    return false;
+    if (error instanceof RunEventIdentityError) throw error;
+    throw new RunEventStorageError();
   }
 }
 
@@ -693,15 +707,12 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
         onComplete: resolve, onError: reject,
       }, { runId, lease }).catch(reject);
     });
-    const message = useChatMessageStore.getState().messagesByThread[threadId]?.find((row) =>
-      row.role === "assistant" && row.chunks?.some((chunk) => chunk.runId === runId));
-    if (message) await getDbInstance().insertMessage(threadId, JSON.parse(JSON.stringify(message)));
+    // finishStream persists newly settled bubbles. A successful replay of an
+    // already settled run observes its proof without rewriting saved history.
   },
   cancelStream: () => {
-    // Request explicit server-side cancellation (deterministic, immediate) in
-    // addition to aborting the local stream. The abort alone would also cancel
-    // the run via the server's last-subscriber-drop guard, but the explicit
-    // call avoids the grace-period delay.
+    // Request server-side cancellation as well as stopping this observer.
+    // Neither dispatch nor observer abort proves the native terminal outcome.
     if (serverRunIdRef) {
       void cancelRun(serverRunIdRef);
       serverRunIdRef = null;
@@ -733,16 +744,41 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
       await useChatMessageStore.getState().loadMessagesFromDb(threadId);
     } catch {
       const error = new Error("Conversation history could not be loaded; no request was sent.");
-      useChatMessageStore.getState().setStreamError(threadId, error.message);
+      if (!continuation) useChatMessageStore.getState().setStreamError(threadId, error.message);
       callbacks?.onError?.(error);
       return;
     }
 
+    const clientTurnId = payload.clientTurnId ?? crypto.randomUUID();
+    const userMessageId = payload.persistedUserMessageId ?? crypto.randomUUID();
+    let recoveryRunId: string | undefined;
+    const existingTurn = !continuation ? readChatTurn(clientTurnId) : undefined;
+    if (existingTurn) {
+      try {
+        const receipt = await reconcileChatTurn(clientTurnId);
+        if (!receipt?.run_id) throw new Error("Turn outcome is unconfirmed. No request was resent.");
+        recoveryRunId = receipt.run_id;
+      } catch (error) {
+        callbacks?.onError?.(error instanceof Error ? error : new Error("Turn recovery is unavailable."));
+        return;
+      }
+    }
+    const settleTurn = async () => {
+      if (continuation) return;
+      const receipt = readChatTurn(clientTurnId);
+      if (receipt) await persistChatTurn({ ...receipt, state: "settled" });
+    };
     const history = useChatMessageStore.getState().messagesByThread[threadId] ?? [];
+    // Error feedback belongs to this observer, not to immutable chat evidence.
+    // A same-run partial still needs normal recovery, even beside settled rows.
+    const replayRunId = continuation?.runId ?? recoveryRunId;
+    const replayMessages = history.filter((message) => message.role === "assistant" && message.runId === replayRunId);
+    const observingSettledRun = replayRunId !== undefined && replayMessages.length > 0
+      && replayMessages.every((message) => message.status === "complete" || message.status === "failed" || message.status === "cancelled");
     const alreadyLoaded = payload.persistedUserMessageId !== undefined
       && history.some((message) => message.id === payload.persistedUserMessageId);
     if (!continuation && !alreadyLoaded) {
-    const userMsgId = `user-${Date.now()}`;
+    const userMsgId = userMessageId;
     // Build user message content: text + any image attachments for in-thread display
     const imageBlocks = (payload.attachments ?? [])
       .filter((a) => a.content_type.startsWith("image/"))
@@ -755,20 +791,39 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
         content: [{ type: "text", text: payload.message }, ...imageBlocks],
         createdAt: new Date(),
         status: "complete",
+        clientTurnId,
       },
     ]);
 
     }
-    const runId = continuation?.runId ?? `run-${Date.now()}`;
+    if (!continuation && !existingTurn) {
+      const message = useChatMessageStore.getState().messagesByThread[threadId]?.find((row) => row.id === userMessageId);
+      if (!message) throw new Error("The submitted draft is unavailable; no request was sent.");
+      try {
+        await getDbInstance().insertMessage(threadId, message);
+        await persistChatTurn({ id: clientTurnId, session_id: threadId, user_message_id: userMessageId,
+          message: JSON.parse(JSON.stringify(message)), state: "prepared", run_id: null });
+        await persistChatTurn({ ...readChatTurn(clientTurnId)!, state: "sending" });
+      } catch {
+        const error = new Error("Your draft could not be saved. It remains visible; no request was sent.");
+        useChatMessageStore.getState().setStreamError(threadId, error.message);
+        callbacks?.onError?.(error);
+        return;
+      }
+    }
+    let runId = continuation?.runId ?? recoveryRunId ?? `run-${Date.now()}`;
     const pendingArgs = new Map<string, string>();
     const a2uiAccumulator = new A2uiStreamAccumulator();
     const aguiAdapter = new UarAguiAdapter();
     useChatMessageStore.getState().beginStream(threadId, runId);
     const retryPolicy = await loadStreamRetryPolicy();
-    const maxAttempts = Math.max(1, retryPolicy.maxAttempts);
+    // An uncertain POST is reconciled by stable receipt; never blindly POST again.
+    const maxAttempts = 1;
     let cumulativeRetryDelayMs = 0;
     const requestBody = JSON.stringify({
       message: payload.message,
+      client_turn_id: clientTurnId,
+      user_message_id: userMessageId,
       stream: true,
       stream_mode: "agui_spec",
       ...(payload.attachments?.length
@@ -797,8 +852,8 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
       }, retryPolicy.streamStartTimeoutMs);
 
       try {
-        const res = continuation
-          ? await resumeRunStream(continuation.runId, 0, controller.signal)
+        let res = continuation || recoveryRunId
+          ? await resumeRunStream(continuation?.runId ?? recoveryRunId!, 0, controller.signal)
           : await postChatCompletion(requestBody, threadId, controller.signal);
 
         if (!res.ok) {
@@ -810,18 +865,33 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
             res.headers.get("retry-after"),
           );
         }
+        if (res.ok && res.headers.get("content-type")?.includes("application/json")) {
+          const receipt = await reconcileChatTurn(clientTurnId);
+          if (!receipt?.run_id) throw new Error("Turn admission is unconfirmed. No request was resent.");
+          recoveryRunId = receipt.run_id;
+          res = await resumeRunStream(receipt.run_id, 0, controller.signal);
+          if (!res.ok) throw new Error("The admitted response could not be recovered. No request was resent.");
+        }
+        const attachedRunId = continuation?.runId ?? recoveryRunId;
+        const headerRunId = res.headers.get("x-uar-run-id");
+        if (attachedRunId && headerRunId && attachedRunId !== headerRunId) throw new RunEventIdentityError();
         if (!res.body) throw new Error("Response body is null");
 
         // Capture the server-assigned run id so the stop action can cancel it.
-        serverRunIdRef = continuation?.runId ?? res.headers.get("x-uar-run-id");
+        serverRunIdRef = attachedRunId ?? headerRunId;
+        if (serverRunIdRef && runId !== serverRunIdRef) {
+          runId = serverRunIdRef;
+          useChatMessageStore.getState().beginStream(threadId, runId);
+        }
+        if (!continuation && serverRunIdRef) await persistChatTurn({ ...readChatTurn(clientTurnId)!, run_id: serverRunIdRef, state: "admitted" });
         runPersistence = new RunEventPersistence(getDbInstance(), {
           threadId,
+          nativeRunId: serverRunIdRef,
           fallbackRunId:
             serverRunIdRef ?? (attempt === 0 ? runId : `${runId}:retry-${attempt}`),
           model: payload.model,
         });
         activeRunPersistence = runPersistence;
-        let persistenceHealthy = true;
 
         const reader = res.body.getReader();
 
@@ -832,6 +902,11 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
         })) {
           let { event } = frame;
           const { data } = frame;
+          // Reject foreign official identities before the adapter can consume
+          // their sequence, deduplication ID, state snapshot or phase timings.
+          let wire: unknown;
+          try { wire = JSON.parse(data); } catch { wire = undefined; }
+          if (isUarAguiEvent(wire)) runPersistence.assertIdentity(typeof wire.runId === "string" ? wire.runId : undefined);
           const adapted = aguiAdapter.ingest(event, data, frame.id);
           if (adapted) {
               event = adapted.event;
@@ -839,9 +914,21 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
 
               // The adapter normalizes every validated official frame once for
               // Runtime Console ingestion, including high-frequency content rows.
-              const durableRunId = adapted.eventRow?.runId ?? serverRunIdRef ?? runId;
               if (adapted.eventRow) {
-                persistenceHealthy = await persistRunEvent(runPersistence, adapted.eventRow, adapted.phaseTimings) && persistenceHealthy;
+                await persistRunEvent(runPersistence, adapted.eventRow, adapted.phaseTimings);
+              } else if (event === "agui.done" || event === "agui.error" || event === "agui.cancelled") {
+                throw new RunEventStorageError();
+              }
+              const durableRunId = adapted.eventRow?.runId ?? serverRunIdRef ?? runId;
+              if (!serverRunIdRef && adapted.eventRow?.runId) {
+                serverRunIdRef = adapted.eventRow.runId;
+                if (runId !== serverRunIdRef) {
+                  runId = serverRunIdRef;
+                  useChatMessageStore.getState().beginStream(threadId, runId);
+                }
+                if (!continuation) await persistChatTurn({ ...readChatTurn(clientTurnId)!, run_id: serverRunIdRef, state: "admitted" });
+              }
+              if (adapted.eventRow) {
                 ingestAgUiEvent(durableRunId, adapted.eventRow);
               }
               if (adapted.phaseTimings) {
@@ -1038,8 +1125,10 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                   ]
                     .filter(Boolean)
                     .join("\n");
-                  store.setStreamError(threadId, detail);
-                  if (!adapted.eventRow) await finalizeRunPersistence(runPersistence, "error");
+                  await store.finishStream(threadId, "failed", adapted.eventRow?.runId);
+                  await settleTurn();
+                  if (!observingSettledRun) store.setStreamError(threadId, detail, runId);
+                  if (!adapted.eventRow) await finalizeRunPersistence(runPersistence);
                   releaseRunPersistence(runPersistence);
                   callbacks?.onError?.(new Error(detail));
                   return;
@@ -1156,6 +1245,15 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                 }
                 case "agui.custom":
                 case "agui.raw": {
+                  const custom = agui as AguiCustom;
+                  if (custom.name === "uar.a2ui.surface_authority") {
+                    const authority = ingestA2uiSurfaceAuthority(durableRunId, threadId, custom.value);
+                    if (!authority.authoritative || authority.status !== "complete") store.addRuntimeChunk(threadId, runId, {
+                      id: `${durableRunId}:surface-authority`, kind: "error", at: new Date().toISOString(), runId: durableRunId,
+                      seq: adapted.eventRow?.sequence ?? 0, code: `A2UI_HISTORY_${authority.status.toUpperCase()}`,
+                      message: `Surface history ${authority.status}. ${authority.recovery_hint}` });
+                    break;
+                  }
                   const envelope = extractA2uiEnvelope(agui);
                   if (!envelope) break;
                   const current = a2uiAccumulator.advance(envelope);
@@ -1232,25 +1330,13 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                     store.setMessageMeta(threadId, runId, { agentId: e.agent_id });
                   break;
                 }
-                case "agui.cancelled": {
-                  // Run was cancelled (explicit stop, last-subscriber drop, or
-                  // server shutdown). Terminal — finalize the stream cleanly,
-                  // distinct from done/error.
-                  clearTimeout(streamStartTimer);
-                  store.finishStream(threadId);
-                  useAgentStatusStore.getState().setIdle();
-                  if (!adapted.eventRow) await finalizeRunPersistence(runPersistence, "cancelled");
-                  releaseRunPersistence(runPersistence);
-                  if (continuation) callbacks?.onError?.(new Error("The response was interrupted."));
-                  else callbacks?.onComplete?.();
-                  return;
-                }
+                case "agui.cancelled":
                 case "agui.done": {
                   const e = agui as {
                     usage?: {
-                      input_tokens?: number;
-                      output_tokens?: number;
-                      total_tokens?: number;
+                      input_tokens?: number | null;
+                      output_tokens?: number | null;
+                      total_tokens?: number | null;
                       model?: string | null;
                     };
                   };
@@ -1258,24 +1344,26 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
                   if (u) {
                     store.setMessageMeta(threadId, runId, {
                       model: u.model ?? undefined,
-                      usage:
-                        u.input_tokens != null || u.output_tokens != null
-                          ? {
-                              inputTokens: u.input_tokens ?? 0,
-                              outputTokens: u.output_tokens ?? 0,
-                              totalTokens:
-                                u.total_tokens ??
-                                (u.input_tokens ?? 0) + (u.output_tokens ?? 0),
-                            }
-                          : undefined,
+                      usage: completeAguiUsage({ inputTokens: u.input_tokens,
+                        outputTokens: u.output_tokens, totalTokens: u.total_tokens }),
                     });
                   }
                   clearTimeout(streamStartTimer);
-                  store.finishStream(threadId);
+                  if (event === "agui.cancelled") {
+                    await store.finishStream(threadId, "cancelled", adapted.eventRow?.runId);
+                    await settleTurn();
+                    useAgentStatusStore.getState().setIdle();
+                    if (!adapted.eventRow) await finalizeRunPersistence(runPersistence);
+                    releaseRunPersistence(runPersistence);
+                    callbacks?.onError?.(new Error("The response was cancelled."));
+                    return;
+                  }
+                  await store.finishStream(threadId, "complete", adapted.eventRow?.runId);
+                  await settleTurn();
                   useAgentStatusStore.getState().setIdle();
-                  if (!adapted.eventRow || !persistenceHealthy) await finalizeRunPersistence(runPersistence, "finished");
+                  if (!adapted.eventRow) await finalizeRunPersistence(runPersistence);
                   releaseRunPersistence(runPersistence);
-                  if (continuation && (!runPersistence || !persistenceHealthy || adapted.eventRow?.type !== "RUN_FINISHED"
+                  if (continuation && (!runPersistence || adapted.eventRow?.type !== "RUN_FINISHED"
                     || adapted.eventRow.runId !== continuation.runId)) callbacks?.onError?.(new Error("The response could not be saved."));
                   else callbacks?.onComplete?.();
                   return;
@@ -1301,14 +1389,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
           }
 
           if (event === "message" && data === "[DONE]") {
-            if (continuation) throw new Error("The response ended without a successful native terminal.");
-            clearTimeout(streamStartTimer);
-            await finalizeRunPersistence(runPersistence, "finished");
-            useChatMessageStore.getState().finishStream(threadId);
-            useAgentStatusStore.getState().setIdle();
-            releaseRunPersistence(runPersistence);
-            callbacks?.onComplete?.();
-            return;
+            throw new Error("The response ended without a successful native terminal. Its outcome is unconfirmed.");
           }
           sawFirstStreamChunk = true;
           clearTimeout(streamStartTimer);
@@ -1317,16 +1398,27 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
 
         clearTimeout(streamStartTimer);
         if (continuation) throw new Error("The response ended without a successful terminal.");
-        await finalizeRunPersistence(runPersistence, "finished");
-        useChatMessageStore.getState().finishStream(threadId);
-        releaseRunPersistence(runPersistence);
-        callbacks?.onComplete?.();
-        return;
+        throw new Error("The response ended without a terminal event. Its outcome is unconfirmed.");
       } catch (err) {
         clearTimeout(streamStartTimer);
+        if (!continuation) {
+          const receipt = readChatTurn(clientTurnId);
+          if (receipt) await persistChatTurn({ ...receipt, state: "uncertain" }).catch(() => {});
+        }
+        if (err instanceof RunEventIdentityError || err instanceof RunEventStorageError) {
+          // Rejected evidence supplies no terminal authority. Do not decorate
+          // the partial with a foreign error or manufacture a second bubble.
+          await finalizeRunPersistence(runPersistence);
+          await useChatMessageStore.getState().finishStream(threadId, "interrupted");
+          releaseRunPersistence(runPersistence);
+          useAgentStatusStore.getState().setIdle();
+          console.error("[uar.stream.rejected-evidence]", { reason: err.name, threadId });
+          callbacks?.onError?.(err);
+          return;
+        }
         if ((err as Error).name === "AbortError" && !streamStartTimedOut) {
-          await finalizeRunPersistence(runPersistence, "cancelled");
-          useChatMessageStore.getState().finishStream(threadId);
+          await finalizeRunPersistence(runPersistence);
+          await useChatMessageStore.getState().finishStream(threadId, "interrupted");
           releaseRunPersistence(runPersistence);
           if (continuation) callbacks?.onError?.(new Error("The response was interrupted."));
           return;
@@ -1344,11 +1436,11 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
           normalizedError,
           attempt,
           sawFirstStreamChunk,
-          retryPolicy,
+          { ...retryPolicy, maxAttempts },
           cumulativeRetryDelayMs,
         );
         if (retryDecision.retry) {
-          await finalizeRunPersistence(runPersistence, "error");
+          await finalizeRunPersistence(runPersistence);
           releaseRunPersistence(runPersistence);
           console.warn("[uar.stream.retry]", {
             threadId,
@@ -1373,7 +1465,7 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
             continue;
           } catch (sleepErr) {
             if ((sleepErr as Error).name === "AbortError") {
-              useChatMessageStore.getState().finishStream(threadId);
+              await useChatMessageStore.getState().finishStream(threadId, "interrupted");
               if (continuation) callbacks?.onError?.(new Error("The response was interrupted."));
               return;
             }
@@ -1403,8 +1495,9 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
             : error.message.startsWith("[20")
               ? error.message
               : `[${ts}] Unexpected error\n  ${error.message}\n  Session: ${threadId}`;
-        await finalizeRunPersistence(runPersistence, "error");
-        useChatMessageStore.getState().setStreamError(threadId, detail);
+        await finalizeRunPersistence(runPersistence);
+        await useChatMessageStore.getState().finishStream(threadId, "interrupted");
+        if (!observingSettledRun) useChatMessageStore.getState().setStreamError(threadId, detail);
         releaseRunPersistence(runPersistence);
         callbacks?.onError?.(new Error(detail));
         return;

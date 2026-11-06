@@ -1,7 +1,9 @@
 //! WebAssembly Component Model runtime for `kind = Wasm` skills.
 //!
-//! Loads `.wasm` (JIT-compiled by Cranelift at load time) or `.cwasm`
-//! (AOT-precompiled via `wasmtime compile`) components targeting the
+//! Loads plain `.wasm` components, validated and compiled by the current
+//! runtime at load time. Native precompiled `.cwasm` inputs are refused;
+//! discovered files have no protected provenance authorizing deserialization.
+//! Components target the
 //! [`uar:skill@0.1.0`](../../../../wit/uar-skill.wit) WIT world and dispatches
 //! the `run(input: string) -> result<string, string>` export.
 //!
@@ -101,20 +103,38 @@ impl WasmSkillRuntime {
         })
     }
 
-    /// Load a component from disk and register it under `skill_id`.
+    /// Validate and compile plain component source, then register `skill_id`.
+    ///
+    /// Native precompiled files are refused even in the builtin directory.
+    /// An adjacent manifest or a file extension cannot establish native-code
+    /// trust. Renaming native bytes to `.wasm` still uses the safe compiler.
+    ///
+    /// # Errors
+    /// Returns an actionable refusal for `.cwasm`, or a load error when the
+    /// source is unreadable, malformed, or incompatible with this engine.
     pub async fn register(&self, skill_id: &str, path: &Path) -> Result<()> {
-        let component = if path
+        if path
             .extension()
             .and_then(|s| s.to_str())
             .map(|s| s.eq_ignore_ascii_case("cwasm"))
             .unwrap_or(false)
         {
-            unsafe { Component::deserialize_file(&self.engine, path) }
-                .with_context(|| format!("deserialize_file {}", path.display()))?
-        } else {
-            Component::from_file(&self.engine, path)
-                .with_context(|| format!("from_file {}", path.display()))?
-        };
+            anyhow::bail!(
+                "native_component_untrusted: precompiled .cwasm input is unsupported; \
+                 supply the original plain .wasm component for validation and compilation \
+                 by this runtime; stale or incompatible native caches must not be reused"
+            );
+        }
+
+        // This safe API validates source before compiling for this engine and
+        // host target. Never replace it with deserialize for discovered files.
+        let component = Component::from_file(&self.engine, path).with_context(|| {
+            format!(
+                "invalid_component_source: {} must contain a plain component compatible \
+                 with this runtime; rebuild from its WIT/source instead of supplying a native cache",
+                path.display()
+            )
+        })?;
 
         self.components
             .lock()
@@ -290,8 +310,9 @@ pub fn user_wasm_dir() -> PathBuf {
     PathBuf::from("/var/lib/uar/skills-user")
 }
 
-/// Scan both directories for `.wasm` / `.cwasm` files and register each into
-/// `runtime`. Returns a vector of `Skill` records (one per loaded component)
+/// Scan both directories for plain `.wasm` components and register each into
+/// `runtime`. Discovered `.cwasm` entries produce an actionable load refusal
+/// and are never deserialized. Returns one `Skill` per loaded component,
 /// suitable for `SkillService::register_builtins`.
 pub async fn discover_and_load(runtime: &WasmSkillRuntime) -> Vec<Skill> {
     let mut out = Vec::new();
@@ -341,4 +362,106 @@ pub async fn discover_and_load(runtime: &WasmSkillRuntime) -> Vec<Skill> {
     }
     info!(count = out.len(), "discovered wasm component skills");
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sha2::{Digest, Sha256};
+
+    fn fixture(name: &str) -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/production-readiness-wasm")
+            .join(name)
+    }
+
+    #[tokio::test]
+    async fn plain_reference_component_preserves_isolated_capability_behavior() {
+        let path = fixture("reference.wasm");
+        let bytes = std::fs::read(&path).expect("reference component fixture");
+        assert_eq!(
+            Sha256::digest(&bytes)
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>(),
+            "ba438895404a23985d5226735b8f362cf3e8044894a1140852ba0992f2fdbe78"
+        );
+        let runtime = WasmSkillRuntime::new().expect("runtime");
+        runtime
+            .register("reference", &path)
+            .await
+            .expect("plain source");
+        let output = runtime.run("reference", "").await.expect("reference run");
+        let actual: serde_json::Value = serde_json::from_str(&output).expect("marker output");
+        assert_eq!(
+            actual,
+            serde_json::json!({
+                "kbd": {"available": false},
+                "evolver": {"available": false},
+                "refiner": {"available": false},
+                "openspec": {"available": false}
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn native_cache_is_refused_even_with_self_asserted_compatible_manifest() {
+        let directory = tempfile::tempdir().expect("owned fixture directory");
+        let path = directory.path().join("skill.cwasm");
+        std::fs::copy(fixture("untrusted.cwasm"), &path).expect("native fixture");
+        std::fs::write(
+            directory.path().join("skill.cwasm.json"),
+            r#"{"trusted":true,"wasmtime":"50.0.0","target":"current-host"}"#,
+        )
+        .expect("untrusted adjacent manifest");
+        let runtime = WasmSkillRuntime::new().expect("runtime");
+        let error = runtime
+            .register("native", &path)
+            .await
+            .expect_err("native refusal");
+        assert!(error.to_string().contains("native_component_untrusted"));
+        assert!(!runtime.has("native").await);
+    }
+
+    #[tokio::test]
+    async fn native_extension_is_refused_before_file_access_including_case_variants() {
+        let runtime = WasmSkillRuntime::new().expect("runtime");
+        let directory = tempfile::tempdir().expect("owned fixture directory");
+        let error = runtime
+            .register("missing", &directory.path().join("missing.CWASM"))
+            .await
+            .expect_err("refuse extension before opening a nonexistent cache");
+        assert!(
+            error
+                .to_string()
+                .contains("supply the original plain .wasm")
+        );
+        assert!(!runtime.has("missing").await);
+    }
+
+    #[tokio::test]
+    async fn malformed_plain_source_does_not_register_a_skill() {
+        let runtime = WasmSkillRuntime::new().expect("runtime");
+        let error = runtime
+            .register("malformed", &fixture("malformed.wasm"))
+            .await
+            .expect_err("malformed source refusal");
+        assert!(error.to_string().contains("invalid_component_source"));
+        assert!(!runtime.has("malformed").await);
+    }
+
+    #[tokio::test]
+    async fn renaming_native_bytes_cannot_bypass_safe_source_compilation() {
+        let directory = tempfile::tempdir().expect("owned fixture directory");
+        let path = directory.path().join("renamed.wasm");
+        std::fs::write(&path, b"\x7fELF\x02\x01\x01\x00untrusted native cache")
+            .expect("renamed native fixture");
+        let runtime = WasmSkillRuntime::new().expect("runtime");
+        let error = runtime
+            .register("renamed", &path)
+            .await
+            .expect_err("source refusal");
+        assert!(error.to_string().contains("invalid_component_source"));
+        assert!(!runtime.has("renamed").await);
+    }
 }

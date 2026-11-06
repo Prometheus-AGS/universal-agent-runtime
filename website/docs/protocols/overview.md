@@ -9,6 +9,13 @@ current_authority: /docs/protocols/overview
 
 # Protocol overview
 
+The [canonical interface recovery table](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/product-support-matrix.md#execution-and-recovery-guarantees)
+separates durable admission from bounded event replay, checkpoint continuation
+and external-effect settlement. Current whole-set/Linux amd64 container and
+independently pinned counterpart qualification remain unverified; optional
+features are partial unless individually recorded. The [final checklist](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/releases/v1.4.0-final.md)
+consumes this contract without granting permission to run the closed gate.
+
 ## Boundary statement
 
 **A protocol adapter changes a wire shape; it does not create a second runtime

@@ -12,6 +12,9 @@ fn usage() -> RunUsage {
         input_tokens: Some(120),
         output_tokens: Some(30),
         total_tokens: Some(150),
+        cache_read_input_tokens: Some(20),
+        cache_creation_input_tokens: Some(0),
+        uncached_input_tokens: Some(100),
         cost_usd_estimate: Some(0.0004),
         model: Some("openai/gpt-4.1-mini".to_string()),
     }
@@ -33,6 +36,9 @@ fn agui_cancelled_carries_usage_when_present() {
     assert_eq!(payload["usage"]["total_tokens"], 150);
     assert_eq!(payload["usage"]["cost_usd_estimate"], 0.0004);
     assert_eq!(payload["usage"]["model"], "openai/gpt-4.1-mini");
+    assert_eq!(payload["usage"]["cache_read_input_tokens"], 20);
+    assert_eq!(payload["usage"]["cache_creation_input_tokens"], 0);
+    assert_eq!(payload["usage"]["uncached_input_tokens"], 100);
 }
 
 #[test]

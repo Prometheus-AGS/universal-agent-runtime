@@ -1,5 +1,12 @@
 # Durable approval recovery
 
+Current source-defined scope and exact-artifact evidence are separated in the
+[canonical recovery table](../product-support-matrix.md#execution-and-recovery-guarantees)
+and [final checklist](../releases/v1.4.0-final.md). Current whole-set/container
+qualification remains unverified; retained historical receipts are not new
+acceptance. PostgreSQL checkpoint continuation refuses with the actual
+`checkpoint_resume_unsupported` code even though approval history can persist.
+
 An ordinary tool-loop approval can survive an orderly runtime restart. The
 trusted host first commits a protected pre-effect checkpoint, then publishes
 the pending challenge. Local SurrealKV and qualified durable networked

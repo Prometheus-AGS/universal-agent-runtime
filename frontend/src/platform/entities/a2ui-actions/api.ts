@@ -1,4 +1,4 @@
-import type { A2uiActionInput } from "./contracts";
+import type { A2uiActionInput, A2uiSurfaceAuthority } from "./contracts";
 
 export class A2uiActionError extends Error {
   constructor(public readonly uncertain: boolean) {
@@ -40,6 +40,31 @@ export async function postA2uiAction(runId: string, input: A2uiActionInput): Pro
       || !("run_id" in ack) || ack.run_id !== runId || !("status" in ack) || ack.status !== "continued"
       || !("continuation_run_id" in ack) || typeof ack.continuation_run_id !== "string"
       || !ack.continuation_run_id || ack.continuation_run_id === runId) throw new Error("invalid acknowledgment");
+    if (input.interaction_id && (!("interaction_id" in ack) || ack.interaction_id !== input.interaction_id
+      || !("retry_protected" in ack) || ack.retry_protected !== true)) throw new Error("unprotected acknowledgment");
     return ack.continuation_run_id;
   } catch { throw new A2uiActionError(true); }
+}
+
+export async function fetchSurfaceAuthority(runId: string): Promise<A2uiSurfaceAuthority> {
+  const response = await fetch(`/api/uar/runs/${encodeURIComponent(runId)}/a2ui/surface-authority`, { cache: "no-store" });
+  if (!response.ok) throw new Error("Surface history is unavailable. Reload the conversation to recover.");
+  return parseSurfaceAuthority(runId, await response.json());
+}
+export function parseSurfaceAuthority(runId: string, value: unknown): A2uiSurfaceAuthority {
+  if (!value || typeof value !== "object") throw new Error("Surface history is unavailable.");
+  const authority = value as A2uiSurfaceAuthority;
+  if (!["complete", "truncated", "expired", "unavailable"].includes(authority.status) || !Array.isArray(authority.surfaces) || typeof authority.authoritative !== "boolean"
+    || typeof authority.recovery_hint !== "string" || authority.surfaces.some((surface) => !surface
+      || typeof surface.surface_id !== "string" || typeof surface.surface_generation !== "string"
+      || !surface.surface_generation || typeof surface.source_run_id !== "string")) throw new Error("Surface history is unavailable.");
+  return { ...authority, id: runId };
+}
+export async function fetchActionReceipt(runId: string, interactionId: string): Promise<{ continuation_run_id: string; outcome: string }> {
+  const response = await fetch(`/api/uar/runs/${encodeURIComponent(runId)}/a2ui/actions/${encodeURIComponent(interactionId)}`, { cache: "no-store" });
+  if (!response.ok) throw new A2uiActionError(true);
+  const receipt = await response.json();
+  if (receipt.run_id !== runId || receipt.interaction_id !== interactionId || receipt.retry_protected !== true
+    || typeof receipt.continuation_run_id !== "string") throw new A2uiActionError(true);
+  return receipt;
 }

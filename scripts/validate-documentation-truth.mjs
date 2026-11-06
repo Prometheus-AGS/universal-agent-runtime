@@ -43,8 +43,63 @@ function docusaurusRoutes() {
   return routes;
 }
 
-if (manifest.version !== cargoVersion) failures.push(`version mismatch: package.json=${manifest.version}, Cargo.toml=${cargoVersion}`);
+const support = JSON.parse(read("docs/product-support-matrix.json"));
+if (support.product_version !== cargoVersion) {
+  failures.push(`product version mismatch: support=${support.product_version}, Cargo.toml=${cargoVersion}`);
+}
+const versionInventory = support.version_inventory;
+const requiredVersionPaths = ["Cargo.toml", "package.json", "frontend/package.json", "website/package.json",
+  "src-tauri/tauri.conf.json", "sdks/rust/Cargo.toml", "sdks/python/pyproject.toml", "sdks/typescript/package.json"];
+if (!Array.isArray(versionInventory) || versionInventory.length === 0) {
+  failures.push("support matrix lacks recorded independent version inventory");
+} else {
+  const seen = new Set();
+  for (const row of versionInventory) {
+    if (!requiredVersionPaths.includes(row.path) || seen.has(row.path)) {
+      failures.push(`unexpected or duplicate version inventory path: ${row.path}`);
+      continue;
+    }
+    seen.add(row.path);
+    const source = read(row.path);
+    const actual = row.format === "json" ? JSON.parse(source).version
+      : row.format === "toml" ? source.match(/^version\s*=\s*"([^"]+)"/m)?.[1] : undefined;
+    if (!row.role || !row.version || actual !== row.version) {
+      failures.push(`recorded version mismatch: ${row.path}=${actual}, inventory=${row.version}`);
+    }
+    if (row.path === "Cargo.toml" && (row.role !== "runtime-product" || row.version !== cargoVersion)) {
+      failures.push("runtime-product inventory does not match Cargo product identity");
+    }
+  }
+  for (const path of requiredVersionPaths) {
+    if (!seen.has(path)) failures.push(`version inventory missing: ${path}`);
+  }
+}
 if (manifest.license !== cargoLicense) failures.push(`license mismatch: package.json=${manifest.license}, Cargo.toml=${cargoLicense}`);
+for (const path of ["README.md", "website/docs/intro.md"]) {
+  if (!read(path).includes(`**${cargoVersion}**`)) failures.push(`${path}: current Rust product version is not explicit`);
+  if (/\b(?:269|316)[- ]provider/iu.test(read(path))) failures.push(`${path}: fixed provider total must derive from current catalog metadata`);
+}
+if (support.catalog_counts?.classification !== "metadata-only") failures.push("support matrix: provider count lost metadata-only scope");
+if (support.catalog_counts?.numeric_total != null) {
+  const catalog = JSON.parse(read("vendor/git/liter-llm/crates/liter-llm/schemas/catalog.json"));
+  if (!catalog.providers || Array.isArray(catalog.providers)
+    || Object.keys(catalog.providers).length !== support.catalog_counts.numeric_total) {
+    failures.push("support matrix: numeric provider total disagrees with pinned provider map");
+  }
+}
+for (const row of support.providers ?? []) {
+  if (row.capabilities?.includes("vision") && /unverified|NOT_EXERCISED|source.authored/iu.test(row.current_candidate_evidence ?? "")) {
+    failures.push(`support matrix: unqualified vision advertised in provider capabilities: ${row.id}`);
+  }
+}
+if (support.runtime_measurement?.comparison_scope !== "NONE") {
+  failures.push("support matrix: selected runtime comparison scope is no longer the recorded NONE disposition");
+}
+const fullHarness = support.execution_recovery?.interfaces?.find((row) => row.id === "full-harness");
+if (fullHarness?.durability !== "process_ephemeral" || fullHarness?.recovery !== "unsupported_after_restart"
+  || fullHarness?.steer_supported !== false) {
+  failures.push("support matrix: full-harness recovery boundary drift");
+}
 
 const canonical = [
   "README.md",
