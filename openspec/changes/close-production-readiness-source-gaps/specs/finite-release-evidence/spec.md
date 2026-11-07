@@ -12,6 +12,12 @@ Release/support/version/recovery/measurement source SHALL use one selected-lane 
 - **THEN** The inventory retains each link's tracked path, blob bytes and unresolved state without reading outside the source tree
 - **AND** A moved pin, new dangling path, mismatched link, or external or ambiguous traversal refuses the candidate
 
+#### Scenario: The container context excludes Git metadata
+
+- **WHEN** the root Dockerfile receives the approved source context without Git metadata
+- **THEN** it consumes the already-initialized vendored inputs from that context
+- **AND** a missing required input fails before dependency installation with its path and the recursive submodule setup requirement
+
 #### Scenario: Selected independent protocol clients cancel actual active work
 - **WHEN** A selected independent A2A client or official MCP counterpart observes positive activity and cancellation is requested for the original task or call
 - **THEN** The case retains the original protocol/native identity, observes actual counterpart termination or explicit refusal/uncertainty, and cannot substitute generic model-stream cancellation for protocol evidence

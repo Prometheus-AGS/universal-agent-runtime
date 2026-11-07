@@ -213,11 +213,22 @@ ARG UAR_CARGO_CACHE_KEY=default
 
 WORKDIR /src
 
-# Initialize submodules first so cargo's network step finds the vendored
-# skill-system + entity-management contents.
+# The build context must already include the pinned recursive submodule
+# checkout. Git metadata is excluded from the context.
 COPY . .
-RUN git config --global --add safe.directory '*' \
-    && git submodule update --init --recursive --depth 1 || true
+RUN for input in \
+        models.dev/package.json \
+        crates/prometheus-skill-system/skills/process/kbd-process-orchestrator/SKILL.md \
+        frontend/packages/prometheus-entity-management/package.json \
+        frontend/packages/prometheus-entity-management/packages/entity-graph-core/package.json \
+        frontend/packages/prometheus-entity-management/packages/entity-graph-react/package.json \
+        vendor/git/liter-llm/crates/liter-llm/Cargo.toml \
+        vendor/git/rust-mcp-filesystem/Cargo.toml; do \
+        if [ ! -f "$input" ]; then \
+            printf 'Missing vendored build input: %s. Initialize pinned submodules recursively before building.\n' "$input" >&2; \
+            exit 1; \
+        fi; \
+    done
 
 # Frontend: use the same pinned pnpm and immutable frontend lockfile as release
 # validation. The frontend remains an isolated workspace under `frontend/`.
