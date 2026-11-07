@@ -5,7 +5,7 @@ This is UAR's public release contract. The canonical source data is
 [`product-support-matrix.schema.json`](product-support-matrix.schema.json).
 “Cataloged” never means “certified.” Maturity labels and historical gate names do not certify a new source tree or artifact. The matrix contract revision remains `1.0.0`; the Rust product is **1.4.0-rc.2**, and SDK/package/schema versions are independent. `verified_at` retains the historical inventory date; the November 2 source claim update is not verification. All #462–475 implementation precedes one explicitly authorized final batch; validation is currently CLOSED.
 
-The first selected production contract is **Linux amd64 container APIs**, with SurrealDB 3.3.0 default persistence and PostgreSQL 18’s explicit restrictions. Its actual image/source/configuration and applicable API/recovery rows remain **unverified** pending #465. Other platforms/native archives and WASM/AOT execution are not promoted by this selection. #462’s library baseline on `5aa36a40` is exact-source developer evidence, not container acceptance.
+The first selected production contract is **Linux amd64 container APIs**, with embedded SurrealDB 4.0.0 on owned SurrealKV volumes by default and a restricted PostgreSQL 18 lane. The [embedded upgrade qualification](operations/embedded-surrealdb-4-upgrade.md#qualification-scope) covers a specific candidate and a pinned 3.3.0 migration baseline. Final release image, configuration, and applicable API and recovery qualification remain pending under #465. Other platforms, native archives, and WASM/AOT execution remain outside this contract. #462’s library baseline on `5aa36a40` records exact-source developer evidence.
 
 ## Release bundles
 

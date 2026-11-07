@@ -128,3 +128,13 @@ Owned persisted run verification SHALL bind the actual matching owner selected b
 - **WHEN** the owned pending-tool or graph fixture enters run admission
 - **THEN** matching metadata identifies service keyword matching without an auxiliary model
 - **AND** original persistence, history validation, denial, execution-count and timeout assertions remain in force
+
+### Requirement: Prepare and admit the captured destination independently of its wire alias
+
+The selected provider and registered model SHALL identify the request preparation, destination budget and final admission. A bound explicit endpoint MAY receive a bare or slash-bearing model alias without changing its captured qualified destination. Primary retries SHALL retain that exact binding and fallbacks SHALL use their own destination.
+
+#### Scenario: The captured provider and wire alias differ
+- **GIVEN** an enabled configured destination whose exact wire model omits the selected provider prefix or contains nested slash-delimited segments
+- **WHEN** the runtime prepares streaming or non-streaming execution against that bound client
+- **THEN** preparation and admission use the original qualified destination and its actual limits
+- **AND** the bound driver preserves the wire alias without selecting a similarly named destination or borrowing its policy

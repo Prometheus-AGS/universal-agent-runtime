@@ -7,6 +7,11 @@ Release/support/version/recovery/measurement source SHALL use one selected-lane 
 - **WHEN** Final qualification is prepared for a selected artifact
 - **THEN** Every promotedpromise maps to an authored applicable case or existing justified receipt, with blocked/unverified/excluded/historical outcomes separate
 
+#### Scenario: A pinned source contains reviewed missing metadata links
+- **WHEN** A clean candidate includes the exact committed links from a reviewed pinned checkout whose metadata targets are absent
+- **THEN** The inventory retains each link's tracked path, blob bytes and unresolved state without reading outside the source tree
+- **AND** A moved pin, new dangling path, mismatched link, or external or ambiguous traversal refuses the candidate
+
 #### Scenario: Selected independent protocol clients cancel actual active work
 - **WHEN** A selected independent A2A client or official MCP counterpart observes positive activity and cancellation is requested for the original task or call
 - **THEN** The case retains the original protocol/native identity, observes actual counterpart termination or explicit refusal/uncertainty, and cannot substitute generic model-stream cancellation for protocol evidence
@@ -25,6 +30,12 @@ Measurement source SHALL require a frozen workload, hardware/profile, concurrenc
 - **AND** Missing required observations or mismatched reliability receipts cannot become a passing selected promise
 
 ### Requirement: Keep functional qualification free of authentication plumbing
+
+#### Scenario: Accounting refuses a run before protected content is admitted
+
+- **WHEN** accounting refuses the run before the host completes its captured publication boundary
+- **THEN** only the existing safe error and terminal lifecycle events are published, without generated presentation patches
+- **AND** successful admission still enables the existing content and presentation publication
 Functional qualification SHALL use externally provisioned identity ingress and opaque host-owned configuration. Fixtures SHALL NOT mint, copy or send credentials, substitute synthetic verified identity, or weaken the original runtime/persistence/effect assertions. Dedicated authentication-security regression coverage remains separate.
 
 #### Scenario: A trusted Rust host composes a credential-free fixture handler

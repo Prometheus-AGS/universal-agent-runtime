@@ -249,8 +249,19 @@ mod recovery_routes {
         }).layer(Extension(user.clone()))
     }
 
+    fn agui_admission_policy() -> SecurityConfig {
+        // The externally verified context supplies identity to this inner router.
+        serde_json::from_value(json!({
+            "deployment_profile": "trusted_local",
+            "jwt_required": false,
+            "jwt_secret": "",
+            "local_loopback_owner": false
+        }))
+        .expect("trusted-local AG-UI fixture policy")
+    }
+
     fn agui_router(manager: Arc<RunManager>, user: &UserContext) -> Router {
-        agui::build_router(SecurityConfig::default()).with_state(Arc::new(RunApiState {
+        agui::build_router(agui_admission_policy()).with_state(Arc::new(RunApiState {
             manager,
             collaboration_catalog: Arc::new(CollaborationCatalogService::in_memory()),
             service_instance: Arc::new(ServiceInstanceAuthority::new(
@@ -669,7 +680,7 @@ mod recovery_routes {
         let driver = Arc::new(BoundActionProducer::default());
         *driver.proof.lock().unwrap() = Some((store.clone(), owner.clone(), target.clone(), resolved.artifact.id.clone()));
         let manager = manager_with_sources(store.clone(), driver.clone(), Some((registry, settings))).await;
-        let app = agui::build_router(SecurityConfig::default()).with_state(Arc::new(RunApiState {
+        let app = agui::build_router(agui_admission_policy()).with_state(Arc::new(RunApiState {
             manager: manager.clone(), collaboration_catalog: catalog.clone(),
             service_instance: Arc::new(ServiceInstanceAuthority::new(&ServiceInstanceConfig::default(),
                 "bound-action", "http://127.0.0.1", false, &[])),

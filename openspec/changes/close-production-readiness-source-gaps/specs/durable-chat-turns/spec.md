@@ -85,3 +85,14 @@ Chat send/history SHALL retain a durable original turn identity, supported richc
 - **WHEN** an owned graph run prepares its captured thread kernel before raw, revoked or legacy checkpoint-resume attempts
 - **THEN** hosted preparation retains the same completion/cancellation ownership and all live root, owner, persisted binding and budget checks under the unchanged executor
 - **AND** the original graph can reach its capture node while invalid resume attempts refuse without provider dispatch or warm-history mutation, preserving the existing capture bound and complete assertions
+
+#### Scenario: Full-harness admission is retried
+
+- **WHEN** the full-harness HTTP handler admits a new task through the ordinary host run path and then receives the same admission again
+- **THEN** the first admission returns through the existing runtime without exhausting the request stack
+- **AND** the identical retry retains the original task, run, and history while a changed request with the same admission key is refused
+
+#### Scenario: Conversation-scoped history survives embedded migration and reopen
+- **WHEN** A schema-full embedded store is opened through UAR's normal migrations and run history is written with an optional conversation ID
+- **THEN** An owned conversation read after reopen includes its durable history and bounded legacy candidates without a conversation ID
+- **AND** Records explicitly belonging to another conversation or owner are excluded

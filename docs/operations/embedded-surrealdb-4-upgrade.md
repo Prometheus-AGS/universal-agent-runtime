@@ -1,6 +1,12 @@
 # Offline upgrade of UAR embedded SurrealKV to 4.0
 
-This procedure covers the Linux amd64 UAR OCI service and its dedicated embedded SurrealKV volumes. It targets the UAR artifact linked to the pinned SurrealDB 4.0.0 SDK and engine. Qualification of this procedure and the listed data classes is pending.
+This procedure covers the Linux amd64 UAR OCI service and its dedicated embedded SurrealKV volumes. It targets the UAR artifact linked to the pinned SurrealDB 4.0.0 SDK and engine.
+
+## Qualification scope
+
+The SurrealDB upgrade phase passed five scenarios for the recorded Linux amd64 candidate behind a trusted gateway. The evidence covers fresh persistence, offline migration from the pinned 3.3.0 SurrealKV baseline, selected data and query parity, storage shutdown and reopen, and rollback after interruption or a recorded write disposition. The original snapshot stayed byte-for-byte unchanged.
+
+The child evidence packet is identified by SHA-256 `2c8649980b135e69fdcc14bd99ee8ad6fbc9ce19f9c1e150795264839749a188`. Its scope is the recorded artifacts, configuration, and fixture data classes. Final release qualification remains tracked in the [release checklist](../releases/v1.4.0-final.md#finite-selected-obligations). The separate standalone SurrealDB server image remains pinned to 3.3.0 in [versions.toml](../../versions.toml).
 
 ## Bind the source and recovery point
 
@@ -40,7 +46,7 @@ Use the bound runner artifact on a trusted Unix host. Keep the quiesced snapshot
 
 The runner reads snapshot files and creates a private destination. It rejects overlapping directories, existing destinations, unsupported entries and hard-linked files. It verifies the copied legacy format before connecting the 4.0 engine. The only connection that opts into `experimental_upgrade_from_3x` is the typed embedded connection to the newly created copy. The conversion of that copy is one-way. The snapshot's exact 3.3.0 artifact, configuration and schema provenance come from the eligibility receipt.
 
-Retain the command, exit status, stderr and stdout JSON lines. The `copy-start`, `copied` and `closed` events identify the canonical snapshot and destination paths and give the file count where complete. `closed` follows awaited engine shutdown. Only a successful exit with `closed` permits starting the candidate on that destination. On interruption or any error after directory creation, quarantine the destination and record its identity and last completed stage. Restart from the immutable baseline with a different destination. Keep quarantined destinations out of all startup and restore configuration.
+Retain the command, exit status, stderr and stdout JSON lines. The `copy-start`, `copied` and `closed` stages identify the canonical snapshot and destination paths and give the file count where complete. Before copying, the runner creates `UAR_UPGRADE_INCOMPLETE` in the destination. It clears the marker only after the upgraded engine closes successfully. The migration and restore commands refuse a source carrying this marker, even if its legacy manifest was copied before interruption. Only a successful exit with `closed` permits starting the candidate on that destination. On interruption or any error after directory creation, quarantine the destination and record its identity and last completed stage. Restart from the immutable baseline with a different destination. Keep quarantined destinations out of all startup and restore configuration.
 
 ## Compare logical data on both artifacts
 

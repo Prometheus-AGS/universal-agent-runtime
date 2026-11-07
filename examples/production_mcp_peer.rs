@@ -7,7 +7,8 @@ use rmcp::{
     ErrorData as McpError, RoleServer,
     handler::server::{router::tool::ToolRouter, wrapper::Parameters},
     model::{
-        CallToolResult, Content, Implementation, ProtocolVersion, ServerCapabilities, ServerInfo,
+        CallToolResult, ContentBlock, Implementation, ProtocolVersion, ServerCapabilities,
+        ServerConfig,
     },
     service::RequestContext,
     tool, tool_handler, tool_router,
@@ -103,7 +104,7 @@ impl Peer {
             "request_id": context.id, "marker": input.marker,
             "tool": "qualification_echo", "phase": "completed", "effect_performed": true,
         }))?;
-        Ok(CallToolResult::success(vec![Content::text(input.marker)]))
+        Ok(CallToolResult::success(vec![ContentBlock::text(input.marker)]))
     }
 
     #[tool(description = "Wait without performing an effect so cancellation of the actual MCP request can be observed")]
@@ -150,7 +151,7 @@ impl Peer {
             "request_id": context.id, "marker": input.marker,
             "tool": "qualification_fail", "phase": "intentional_error", "effect_performed": false,
         }))?;
-        Ok(CallToolResult::error(vec![Content::text(
+        Ok(CallToolResult::error(vec![ContentBlock::text(
             "qualification intentional tool error; no effect performed",
         )]))
     }
@@ -158,8 +159,8 @@ impl Peer {
 
 #[tool_handler]
 impl rmcp::ServerHandler for Peer {
-    fn get_info(&self) -> ServerInfo {
-        ServerInfo::new(ServerCapabilities::builder().enable_tools().build())
+    fn get_info(&self) -> ServerConfig {
+        ServerConfig::new(ServerCapabilities::builder().enable_tools().build())
             .with_protocol_version(ProtocolVersion::V_2025_11_25)
             .with_server_info(Implementation::new(
                 "uar-qualification-official-sdk-peer",

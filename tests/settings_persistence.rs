@@ -163,11 +163,13 @@ fn minimal_config() -> AppConfig {
             local_loopback_owner: false,
         },
         a2a: Default::default(),
+        service_instance: Default::default(),
         resilience: ResilienceConfig {
             rate_limit_enabled: false,
             timeout_disabled: false,
             requests_per_second: 5.0,
             burst_size: 10.0,
+            admission_timeout_ms: 8_000,
             request_timeout_ms: 30_000,
             stream_start_timeout_ms: 15_000,
             stream_idle_timeout_ms: 30_000,
@@ -191,6 +193,7 @@ fn minimal_config() -> AppConfig {
             external_cache_enabled: false,
             surreal_user: None,
             surreal_pass: None,
+            surreal_auth_level: None,
             surreal_ns: None,
             surreal_db: None,
         },
@@ -1132,7 +1135,7 @@ async fn mgr_provider_upsert_load_and_hydrate_registry() -> Result<()> {
         models: vec![],
         enabled: true,
     };
-    mgr.upsert_provider_config(&pc).await?;
+    mgr.upsert_provider_config(&pc, true).await?;
 
     let loaded = mgr.load_provider_configs_from_db().await?;
     assert!(

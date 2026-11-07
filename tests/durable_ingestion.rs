@@ -3,6 +3,7 @@
 //! the local database in a separate, joined process. No same-handle restart claim.
 #![cfg(all(feature = "server", feature = "surreal-backend", feature = "a2a-transport"))]
 
+#[expect(dead_code, reason = "ingestion reuses only the database fixtures from API key process support")]
 #[path = "support/api_key_process.rs"]
 mod process;
 
@@ -168,9 +169,9 @@ async fn child(stage: &str) {
 #[tokio::test]
 async fn durable_ingestion_contract() {
     if let Ok(stage) = std::env::var("UAR_DOT08_CHILD") { child(&stage).await; return; }
-    let mut databases = vec![process::Database::local(), process::Database::shared()];
+    let databases = [process::Database::local(), process::Database::shared()];
     #[cfg(feature = "postgres-backend")]
-    databases.push(process::Database::postgres());
+    let databases = databases.into_iter().chain([process::Database::postgres()]);
     for database in databases {
         let manifest = tempfile::NamedTempFile::new().unwrap();
         let remote_surreal = database.provider == "surreal"

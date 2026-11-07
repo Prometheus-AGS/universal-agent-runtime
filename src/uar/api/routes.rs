@@ -516,7 +516,10 @@ async fn create_run(
     .map(Json)
 }
 
-pub(crate) async fn admit_run(
+// Keep the concrete admission future's construction out of the full-harness
+// handler's poll frame. It shares the caller's cancellation and drop behavior.
+#[inline(never)]
+pub(crate) fn admit_run(
     state: Arc<RunApiState>,
     user: UserContext,
     headers: HeaderMap,
@@ -525,9 +528,18 @@ pub(crate) async fn admit_run(
     reserved_run_id: Option<String>,
     delegated_host_context: Option<Arc<super::full_harness::host_context::DelegatedHostContext>>,
     credential_capture: Option<AuthenticatedCredentialCapture>,
-) -> Result<CreateRunResponse, RunApiError> {
-    admit_run_inner(state, user, headers, host_authenticated, req, reserved_run_id,
-        delegated_host_context, credential_capture, None).await
+) -> futures::future::BoxFuture<'static, Result<CreateRunResponse, RunApiError>> {
+    Box::pin(admit_run_inner(
+        state,
+        user,
+        headers,
+        host_authenticated,
+        req,
+        reserved_run_id,
+        delegated_host_context,
+        credential_capture,
+        None,
+    ))
 }
 
 /// Capture the resolved native artifact in the immutable wire reservation before dispatch.

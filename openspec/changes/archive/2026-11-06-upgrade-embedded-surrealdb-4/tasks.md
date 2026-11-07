@@ -5,7 +5,7 @@
 - [x] **T3** Preserve owner scoping, typed data, transaction protections and contractual query/index behavior. Cover each claimed source data class with the parity dataset and test failed transaction atomicity through a real UAR path. Depends on T1 and shares the fixture with T2. Owns SDB-3.
 - [x] **T4** Integrate native shutdown when its semantics satisfy UAR ownership, admission, drain and failure handling. Preserve existing protection for uncovered behavior. Cover reachable clones, subscriptions and storage workers before replacing their protection. Adapt real lifecycle fixtures and installed reopen observations. Depends on T1. Owns SDB-4.
 - [x] **T5** Implement and document the interrupted-upgrade recovery procedure and fixtures, including separate restore storage, write freeze and recorded recovery point and write disposition. Cover interrupted migration and a separate post-baseline accepted-write branch that refuses rollback until disposition. Depends on T2 and T3. Owns SDB-5.
-- [ ] **T6** After T1–T5 and every planned implementation item in the entire governing active phase are complete, reconcile the waypoint and ledger and record the exact whole-phase inventory and proposed serial gate. Run the operator-approved local qualification batch and retain exact receipts. Depends on explicit gate approval.
+- [x] **T6** After T1–T5 and every planned implementation item in the entire governing active phase are complete, reconcile the waypoint and ledger and record the exact whole-phase inventory and proposed serial gate. Run the operator-approved local qualification batch and retain exact receipts. Depends on explicit gate approval.
 
 Task model assignments are recorded in the isolated child plan under the same T1–T6 identifiers.
 

@@ -1,4 +1,9 @@
-## ADDED Requirements
+# embedded-surrealdb-upgrade Specification
+
+## Purpose
+TBD - created by archiving change upgrade-embedded-surrealdb-4. Update Purpose after archive.
+
+## Requirements
 
 ### Requirement: Embedded 4.0 artifact preserves persistence behavior
 
@@ -32,6 +37,7 @@ UAR SHALL refuse a 3.3 store at normal 4.0 startup and require an explicit offli
 
 - **WHEN** migration is interrupted and the operator follows the recovery procedure
 - **THEN** the failed destination is isolated and the pinned 3.3 artifact serves the recorded baseline from a distinct restored volume
+- **AND** the upgrade destination remains marked ineligible as a source for offline migration or restore even if its legacy manifest was copied before interruption
 
 #### Scenario: SDB-5 rollback accounts for accepted writes after migration
 

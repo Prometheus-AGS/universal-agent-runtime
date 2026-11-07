@@ -77,6 +77,16 @@ const plan = {
 };
 const savePlan = () => writeFile(planPath, JSON.stringify(plan), { mode: 0o600 });
 const restore = destination => run(newRunner, ['--restore-3.3', snapshot, destination, planPath]);
+async function rejectRestoreSource(source, name, expected) {
+  const invalidPlan = join(workspace, `${name}.json`);
+  const destination = join(workspace, name);
+  await writeFile(invalidPlan, JSON.stringify({ ...plan, snapshot: source }), { mode: 0o600 });
+  const rejected = run(newRunner, ['--restore-3.3', source, destination, invalidPlan]);
+  assert.equal(rejected.status, 1);
+  assert.match(rejected.stderr, expected);
+  await assert.rejects(lstat(destination), { code: 'ENOENT' });
+  return { source, destination, status: rejected.status, reason: rejected.stderr.trim() };
+}
 await savePlan();
 const reference = join(workspace, 'reference-3.3');
 assert.equal(success(restore(reference))[0].event, 'restored-copy');
@@ -100,15 +110,19 @@ const interruption = run('bash', [
 ]);
 assert.notEqual(interruption.status, 0);
 const progress = interruption.stdout.trim().split('\n').map(line => JSON.parse(line));
-assert.equal(progress[0].event, 'copy-start');
-assert.ok(progress.every(entry => entry.event !== 'copied' && entry.event !== 'closed'));
+assert.equal(progress[0].stage, 'copy-start');
+assert.ok(progress.every(entry => entry.stage !== 'copied' && entry.stage !== 'closed'));
 assert.ok((await lstat(interrupted)).isDirectory());
+assert.ok((await lstat(join(interrupted, 'UAR_UPGRADE_INCOMPLETE'))).isFile());
+const incompleteRefusal = await rejectRestoreSource(interrupted, 'invalid-incomplete-restore', /^Error: interrupted conversion is ineligible:/);
 const recovered = join(workspace, 'interrupted-restore-3.3');
 assert.equal(success(restore(recovered))[0].event, 'restored-copy');
 assert.deepEqual(query(oldRunner, recovered, 'SELECT * FROM agui_runs ORDER BY id;')[0], baselineRows);
 
 const candidate = join(workspace, 'post-baseline-4.0');
-assert.equal(success(run(newRunner, ['--migrate-3.3', snapshot, candidate])).at(-1).event, 'closed');
+assert.equal(success(run(newRunner, ['--migrate-3.3', snapshot, candidate])).at(-1).stage, 'closed');
+await assert.rejects(lstat(join(candidate, 'UAR_UPGRADE_INCOMPLETE')), { code: 'ENOENT' });
+const convertedRefusal = await rejectRestoreSource(candidate, 'invalid-converted-restore', /not a legacy SurrealKV format 1 store|missing legacy SurrealKV manifest|RocksDB or interrupted conversion is ineligible/);
 const writeId = 'agui_contexts:uar_upgrade_post_baseline';
 const write = query(newRunner, candidate,
   `CREATE ${writeId} SET run_key = 'accepted-after-baseline'; SELECT * FROM ${writeId};`);
@@ -136,4 +150,5 @@ assert.deepEqual(await inventory(snapshot), before, 'The immutable original snap
 console.log(JSON.stringify({
   caseId: manifest.caseId, workspace, interruption: { status: interruption.status, signal: interruption.signal },
   quarantined: interrupted, refusedNormalOpen: refusalCopy, recoveryPoint: plan.recovery_point, restored, acceptedLoss: receipt.accepted_loss,
+  incompleteRefusal, convertedRefusal,
 }));

@@ -267,11 +267,23 @@ impl RunModelBindings {
         let mut config = apply_credential_decision(config, &primary_decision)?;
         let settings_only = !endpoint_profiles.is_empty();
         let selected_profile = if settings_only {
-            let selected = endpoint_profiles.values().find(|profile| {
+            let selected = if config.resolved_model_id.is_some() {
+                endpoint_profiles.get(&config.qualified_model_name())
+            } else {
+                endpoint_profiles.values().find(|profile| {
+                    config.resolved_provider_id.as_deref() == Some(profile.provider_id.as_str())
+                        && (config.model == profile.wire_model
+                            || config.model == profile.qualified_model)
+                })
+            }
+            .filter(|profile| {
                 config.resolved_provider_id.as_deref() == Some(profile.provider_id.as_str())
-                    && (config.model == profile.wire_model || config.model == profile.qualified_model)
-            }).cloned().ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
-            config.model.clone_from(&selected.qualified_model);
+            })
+            .cloned()
+            .ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
+            let (_, model_id) =
+                crate::llm::registry::split_model_string_pub(&selected.qualified_model);
+            config.set_qualified_model(&selected.provider_id, &model_id);
             config.reasoning_effort = None;
             config.thinking_budget = None;
             Some(selected)
@@ -290,12 +302,7 @@ impl RunModelBindings {
                 None => crate::llm::orchestrator::build_driver_captured(&config, secret_scrubber)?,
             },
         };
-        let (model_provider, model) = crate::llm::registry::split_model_string_pub(&config.model);
-        let provider = config
-            .resolved_provider_id
-            .as_deref()
-            .unwrap_or(&model_provider);
-        let primary_model = format!("{provider}/{model}");
+        let primary_model = config.qualified_model_name();
         let mut primary = BoundModel::capture(primary_model.clone(), primary, primary_decision);
         primary.endpoint_profile = selected_profile;
         if let Some(pricing_model) = &config.catalog_pricing_model {
@@ -307,7 +314,8 @@ impl RunModelBindings {
                 if fallback.model == primary_model {
                     continue;
                 }
-                let (provider, _) = crate::llm::registry::split_model_string_pub(&fallback.model);
+                let (provider, model_id) =
+                    crate::llm::registry::split_model_string_pub(&fallback.model);
                 if run_credentials.is_none()
                     && let Some(health) = &health
                     && !health.is_available(&provider).await
@@ -329,6 +337,7 @@ impl RunModelBindings {
                     (Some(profile), _) => {
                         let mut fallback_config = fallback_config;
                         fallback_config.resolved_provider_id = Some(profile.provider_id.clone());
+                        fallback_config.resolved_model_id = Some(model_id);
                         let fallback_config =
                             apply_credential_decision(fallback_config, &fallback_decision)?;
                         let mut client_config = crate::config::build_client_config(&fallback_config);
@@ -553,8 +562,7 @@ impl RunModelBindings {
             }
         }
         let mut config = self.config.clone();
-        config.model.clone_from(&primary.model);
-        config.resolved_provider_id = Some(route.provider_id.clone());
+        config.set_qualified_model(&route.provider_id, &route.model_id);
         // The selected driver already owns its exact connection. These values
         // must not suggest that reconstructing it from a config is permitted.
         config.api_key = None;
@@ -590,6 +598,7 @@ impl RunModelBindings {
     ) -> Orchestrator {
         let orchestrator =
             Orchestrator::from_driver(self.config.clone(), mcp, native, self.primary())
+                .with_primary_destination(self.primary_model())
                 .with_failovers(
                     self.fallbacks
                         .iter()

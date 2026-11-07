@@ -9,7 +9,7 @@ import { dirname, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber';
 import { parseAnswerJson, stripReasoning } from '../support/answer-oracle.mjs';
-import { restartOwnedUar } from '../support/restart-owned-uar.mjs';
+import { assertOwnedEndpoint, bindExternalTeamRestart, restartOwnedUar } from '../support/restart-owned-uar.mjs';
 
 setDefaultTimeout(185_000);
 const RESTART_TIMEOUT_MS = 420_000;
@@ -69,15 +69,38 @@ const attemptView = row => row && ({ id: row.id, taskId: row.taskId, runId: row.
 
 Given('the saved math and writing specialists form an owned recovery team', async function () {
   assert.ok(process.env.UAR_WORKSPACE_ID && process.env.UAR_MODEL, 'UAR_WORKSPACE_ID and UAR_MODEL are required');
+  const modelSelector = process.env.UAR_MODEL;
+  const split = modelSelector.indexOf('/');
+  assert.ok(split > 0 && split < modelSelector.length - 1 && !/\s/.test(modelSelector),
+    'UAR_MODEL must be provider/model');
+  const mode = process.env.UAR_TEAM_RECOVERY_MODE ?? 'manual-mac';
+  assert.ok(['manual-mac', 'installed-linux'].includes(mode), 'Select a known C54 lifecycle mode');
+  if (mode === 'installed-linux') {
+    assert.ok(process.env.UAR_BASE_URL && process.env.UAR_CANDIDATE_ARTIFACT_BINDING,
+      'Installed C54 requires an explicit identity endpoint and candidate binding');
+  } else {
+    assert.equal(process.platform, 'darwin', 'Select installed-linux for the external Linux artifact');
+    for (const selector of ['UAR_CANDIDATE_ARTIFACT_BINDING', 'UAR_ARTIFACT_CONTAINER', 'UAR_ARTIFACT_VOLUME', 'UAR_QUALIFICATION_CASE_ID']) {
+      assert.equal(process.env[selector], undefined, 'Set UAR_TEAM_RECOVERY_MODE=installed-linux to use installed artifact selectors');
+    }
+  }
   this.base = new URL(process.env.UAR_BASE_URL ?? 'http://127.0.0.1:3000');
   assert.ok(['http:', 'https:'].includes(this.base.protocol) && !this.base.username && !this.base.password);
   this.uuid = randomUUID();
   this.id = `urn:uar:team-recovery:${this.uuid}`;
   this.record = resolve(`.prometheus/verification/team-recovery/${this.uuid}.json`);
-  this.evidence = { catalog_id: 'C54', trace: 'U19.team-cancel-recovery', platform: process.platform,
+  this.evidence = { catalog_id: 'C54', trace: 'U19.team-cancel-recovery',
+    platform: mode === 'installed-linux' ? 'linux/amd64' : process.platform, runner_platform: process.platform,
     model: process.env.UAR_MODEL, base_url: this.base.origin, workspace: process.env.UAR_WORKSPACE_ID,
-    started_at: new Date().toISOString() };
+    lifecycle_mode: mode, started_at: new Date().toISOString() };
+  if (mode === 'installed-linux') {
+    this.externalRestart = await bindExternalTeamRestart(this.base, process.env.UAR_WORKSPACE_ID);
+  } else {
+    this.evidence.manual_runtime = await assertOwnedEndpoint(this.base);
+  }
   this.caps = await api(this, 'GET', '/capabilities');
+  if (this.externalRestart) assert.equal(this.caps.instance?.id, this.externalRestart.instanceId,
+    'The identity endpoint must serve the exact case-owned collaboration instance');
   assert.ok(this.caps.capabilities.includes('collaboration_team_execution_v1'), 'Actual team execution unavailable');
   assert.notEqual(this.caps.catalogStorage.backend, 'memory', 'Team catalog must be durable across the restart');
   this.evidence.instance_before = this.caps.instance;
@@ -131,16 +154,14 @@ Given('the saved math and writing specialists form an owned recovery team', asyn
       reference: reference(definition), resolvedPath: index === 0 ? 'math.json' : 'writer.json' })),
     capabilityDeclarations: [{ capability: 'collaboration_definition_packages_v2', required: true }],
     resolution: 'exact-version-and-digest' });
+  const binding = JSON.parse(await readFile('scripts/acceptance/fixtures/team-binding.json', 'utf8'));
   this.evidence.install = await api(this, 'POST', '/packages:install', {
     commandId: randomUUID(), manifest: canonical(manifest), files }, 201);
-  const binding = JSON.parse(await readFile('scripts/acceptance/fixtures/team-binding.json', 'utf8'));
-  const split = process.env.UAR_MODEL.indexOf('/');
-  assert.ok(split > 0, 'UAR_MODEL must be provider/model');
   Object.assign(binding, { id: this.id + ':binding', package: reference(manifest), provenance,
     ownerId: this.caps.bindingOwnerId, workspaceId: process.env.UAR_WORKSPACE_ID,
     runtimeInstanceId: this.caps.instance.id, revision: 1,
-    modelBindings: [{ requestedAlias: 'project-model', providerId: process.env.UAR_MODEL.slice(0, split),
-      modelId: process.env.UAR_MODEL.slice(split + 1), credentialRef: 'protected-credential://uar-acceptance/fixture-primary' }],
+    modelBindings: [{ requestedAlias: 'project-model', providerId: modelSelector.slice(0, split),
+      modelId: modelSelector.slice(split + 1), credentialRef: 'protected-credential://uar-acceptance/fixture-primary' }],
     skillBindings: [], contextGrants: [], representationGrantRefs: [], effectiveLimits: limits, effectiveBudget: budget,
     storage: { backend: this.caps.catalogStorage.backend, connectionRef: 'protected-connection://uar-acceptance/catalog', durableTransactions: true } });
   finalize(binding);
@@ -338,7 +359,11 @@ async function snapshot(world) {
 When('I restart the owned UAR', { timeout: RESTART_TIMEOUT_MS }, async function () {
   const restart = {};
   this.evidence.restart = restart;
-  await restartOwnedUar(restart);
+  if (this.externalRestart) {
+    await this.externalRestart.observe(restart, digest(canonical(this.before)), this.uuid);
+  } else {
+    await restartOwnedUar(restart);
+  }
   const deadline = Date.now() + READY_WAIT_MS;
   let caps;
   do {
@@ -347,11 +372,14 @@ When('I restart the owned UAR', { timeout: RESTART_TIMEOUT_MS }, async function 
     await delay(500);
   } while (Date.now() < deadline);
   assert.equal(caps.status, 200, `Restarted UAR is not serving collaboration: ${JSON.stringify(caps.body).slice(0, 500)}`);
+  if (this.externalRestart) assert.equal(caps.body.instance?.id, this.externalRestart.instanceId,
+    'The restarted gateway must still serve the bound collaboration instance');
   this.evidence.instance_after = caps.body.instance;
   const owner = await raw(this, 'GET', basePath + '/execution-owner');
   this.evidence.execution_owner_after = owner;
   assert.equal(owner.status, 200);
   assert.equal(owner.body.ownsExecution, true, 'Restarted runtime does not own team execution');
+  if (this.externalRestart) await this.externalRestart.recordReady(restart);
 });
 
 Then('the settled tally artifact, attempt and model calls are byte-identical after the restart', async function () {

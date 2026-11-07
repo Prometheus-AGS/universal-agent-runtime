@@ -16,7 +16,12 @@ struct Case {
     effect_trace: String, evidence_owner: String, accounting_owner: String, root_run_id: String,
 }
 fn bytes(path: &str) -> Vec<u8> { std::fs::read(path).expect("actual qualified artifact required") }
-fn hash(value: &[u8]) -> String { format!("{:x}", Sha256::digest(value)) }
+fn hash(value: &[u8]) -> String {
+    Sha256::digest(value)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
 
 #[tokio::test]
 async fn actual_closed_epoch_rejects_new_admission_without_effect_or_receipt() {

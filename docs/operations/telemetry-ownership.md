@@ -1,0 +1,37 @@
+# Telemetry ownership and export
+
+Status: source-authored for #473; current-source runtime qualification is pending the whole #462–475 final gate. Telemetry is in the selected `server-full` Linux amd64 API bundle. In-process embedding certification remains excluded from first promotion, while host-global coexistence defects still require repair.
+
+## Process ownership
+
+`uar::telemetry::init(&LogFormat, default_directive)` preserves its `Result<Option<Provider>>` contract. It installs at most one UAR process subscriber and returns the owned OTLP provider only on the initialization that attached it. A repeated call returns `Ok(None)`; it does not allocate a second exporter. A preinstalled host subscriber remains installed, initialization returns `Ok(None)`, and `telemetry::status()` reports `subscriber=host_owned`. This is a usable hosted configuration, not evidence that UAR attached an exporter to the host subscriber.
+
+`TelemetryStatus` exposes `subscriber` (`uninitialized`, `installed`, `host_owned`, `unavailable`) and `export` (`disabled`, `enabled`, `host_owned`, `unavailable`, `shutdown`). `enabled` means the installed UAR subscriber has an OTLP layer; it is not a collector delivery or connectivity check. A host subscriber owns its filtering, layers and exporter configuration. The installation path sets the tracing subscriber separately from the best-effort `log` bridge: a host `log` logger is preserved and cannot cause a successful tracing install to be misreported as host tracing ownership.
+
+Initialization is process-owned. Stopping and recreating an embedded instance does not remove globals. If its owned provider was shut down, recreating the instance does not reattach a new OTLP layer to the existing process subscriber. Hosts requiring that lifecycle must own their subscriber/exporter and expose the appropriate layers themselves. This limitation is explicit; a new instance is not represented as a new live exporter.
+
+Metrics initialize once per process. `telemetry::metrics::status()` returns `installed` only when UAR's recorder receives the global `metrics` macros. It returns `host_owned` when the host already installed a recorder. `scrape_handle()` returns `Some` only in the installed case. The metrics-disabled facade reports `disabled` and installs no recorder. `unavailable` is a diagnostic value reserved for configurations without a supported export path.
+
+The HTTP `/metrics` owner must render only `scrape_handle()`. A host-owned or unavailable scrape must return an explicit non-success capability response explaining that the host owns metric export; an empty HTTP 200 is not valid evidence of no activity. Host metrics integration requires installing the desired global `metrics::Recorder` before starting UAR and serving that recorder's handle through the host exporter. The legacy `metrics_handle()` remains an infallible compatibility API: its host-owned detached handle is never a supported scrape or activity signal.
+
+## Offline and shutdown
+
+No `OTEL_EXPORTER_OTLP_ENDPOINT` means no OTLP exporter or collector dependency. `UAR_LLM__TRACING=false`, `0`, `off` or `no` explicitly disables trace export even with an endpoint. Telemetry-disabled builds retain console logs and no-op metric calls. Exporter construction failure degrades to `export=unavailable`; product execution does not depend on collector availability. Construction errors are generic and do not print endpoint or credential-bearing error values.
+
+The entrypoint owns the returned provider across configuration and server cleanup. `telemetry::shutdown(&provider)` invokes the pinned SDK's `shutdown_with_timeout` with `SHUTDOWN_TIMEOUT` (five seconds), catches SDK cleanup panic and reports a generic unconfirmed-cleanup error. It updates the export status to `shutdown` after successful SDK acknowledgement or `unavailable` after failure. Calling the provider's compatibility `shutdown()` directly retains its existing SDK behavior but does not update UAR's status snapshot.
+
+The timeout is an SDK acknowledgement wait, not a hard process-response deadline, guaranteed collector delivery, or guaranteed release of an upstream exporter thread. In pinned `opentelemetry_sdk` 0.33.1, `trace/provider.rs:246–274` delegates shutdown to processors and defaults to five seconds; `trace/span_processor.rs:929–969` waits on a channel, joins a worker after acknowledgement, and can return timeout without proving release. Its documentation at lines 480–483 warns against calling blocking shutdown on a Tokio current-thread runtime. The helper must be called outside that runtime or in the entrypoint's owned blocking cleanup context. Source inspection supports these limits; no timed shutdown qualification has run for this source. These limits also apply to cleanup of a provider built before losing a concurrent host subscriber install. A cleanup warning is not proof of release.
+
+The selected lifecycle contract does not guarantee exporter internals release within the server's owned-resource budget. Do not promote a hard flush or zero-loss telemetry promise without separately selected evidence. Never retain a detached cleanup task as a claimed flush success. A telemetry cleanup failure remains visible to the owning entrypoint without rewriting an already observed agent execution outcome.
+
+## Labels, payloads and accounting
+
+HTTP dimensions use matched route templates and one unmatched sentinel, not URI resource identifiers or query strings. Run, tenant, credential, prompt and tool-result values do not belong in metric labels. Provider/model/tool/skill/server dimensions describe configured catalogs and need bounded configuration; they are not permission to insert arbitrary per-request IDs. Existing metric dimensions alone are not proof of a leak.
+
+OTLP/log fields retain safe correlation metadata, existing run/request/iteration/attempt and durable call/receipt identities. Raw prompt/tool arguments and result content must not be logged merely because captured credentials were scrubbed: secret redaction and content minimization are different requirements. Captured secret projection remains in the host path. The lead owns the corresponding shared runtime logging/route changes; this document does not certify their output.
+
+Per-call durable accounting remains authoritative. Event replay does not re-execute tools or create a new accounting charge. Metrics are operational observations, not a replacement cost ledger. Terminal run-total cost histograms are not an idempotent billing record; replay/double-terminal behavior must be disclosed and checked using existing accounting call identities, without a speculative second ledger or in-memory deduplication guard.
+
+## Authored final evidence
+
+`tests/telemetry_ownership.rs` uses separate child processes for fresh/repeated globals, foreign recorder, foreign subscriber, explicit disable, no-collector mode and shutdown/instance recreation. It preserves the host recorder and verifies that UAR macro writes arrive there while UAR's own scrape remains unavailable. Fixtures are authored only. The final combined gate must additionally exercise the mounted HTTP route, bounded labels, sensitive-payload controls, exporter outage and actual run→tool→retry/fallback→recovery/cancel correlation on the selected artifact. No test requires authentication plumbing; external identity provisioning remains outside behavior scripts. No fixture run or host-global mutation occurred while authoring these files.

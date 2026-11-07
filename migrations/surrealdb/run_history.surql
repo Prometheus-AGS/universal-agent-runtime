@@ -1,6 +1,7 @@
 DEFINE TABLE IF NOT EXISTS durable_run_records SCHEMAFULL;
 DEFINE FIELD IF NOT EXISTS owner_key ON durable_run_records TYPE option<string>;
 DEFINE FIELD IF NOT EXISTS run_id ON durable_run_records TYPE string;
+DEFINE FIELD IF NOT EXISTS conversation_id ON durable_run_records TYPE option<string>;
 DEFINE FIELD IF NOT EXISTS data ON durable_run_records TYPE string;
 DEFINE FIELD IF NOT EXISTS revision ON durable_run_records TYPE int;
 DEFINE INDEX IF NOT EXISTS durable_run_records_owner ON durable_run_records FIELDS owner_key;

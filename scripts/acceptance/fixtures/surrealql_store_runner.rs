@@ -95,6 +95,8 @@ mod migration {
     use std::path::{Path, PathBuf};
     use surrealdb::{Surreal, engine::local::SurrealKv, opt::Config};
 
+    const INCOMPLETE_UPGRADE: &str = "UAR_UPGRADE_INCOMPLETE";
+
     pub(super) async fn run(snapshot: &Path, destination: &Path) -> Result<()> {
         let (snapshot, destination) = distinct_paths(snapshot, destination)?;
         create_directory(&destination)?;
@@ -116,6 +118,11 @@ mod migration {
         );
         let snapshot = snapshot.canonicalize().context("cannot resolve snapshot path")?;
         ensure!(snapshot.to_str().is_some(), "snapshot path must be UTF-8");
+        match fs::symlink_metadata(snapshot.join(INCOMPLETE_UPGRADE)) {
+            Ok(_) => anyhow::bail!("interrupted conversion is ineligible: {}", snapshot.display()),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error).context("cannot inspect upgrade quarantine marker"),
+        }
 
         let name = destination
             .file_name()
@@ -219,6 +226,12 @@ mod migration {
     }
 
     async fn convert_copy(snapshot: &Path, destination: &Path) -> Result<()> {
+        let marker = destination.join(INCOMPLETE_UPGRADE);
+        let directory = File::open(destination).context("cannot open upgrade destination")?;
+        File::create_new(&marker)
+            .and_then(|file| file.sync_all())
+            .and_then(|()| directory.sync_all())
+            .context("cannot record incomplete upgrade")?;
         report("copy-start", snapshot, destination, 0)?;
         let files = copy_files(snapshot, destination)?;
         check_legacy_format(destination)?;
@@ -229,6 +242,8 @@ mod migration {
             .await
             .context("failed to upgrade the copied SurrealKV store")?;
         db.shutdown().await.context("failed to close the upgraded store")?;
+        fs::remove_file(marker).context("cannot clear completed upgrade marker")?;
+        directory.sync_all().context("cannot sync completed upgrade")?;
         report("closed", snapshot, destination, files)
     }
 

@@ -650,50 +650,49 @@ mod compare_candidates_tests {
     async fn disabled_runtime_catalog_model_is_not_reentered_or_preferred() {
         // Select an actual embedded catalog entry instead of constructing a
         // look-alike: the regression is the catalog-overlay path itself.
-        let (provider_id, provider_name, provider_base_url, model_id) = {
-            let (catalog_provider, catalog_model) = ModelCatalog::global()
-                .models_with_capabilities(&CapabilityFilter::default())
-                .into_iter()
-                .next()
-                .expect("embedded model catalog has a selectable entry");
-            (
-                catalog_provider.id.clone(),
-                catalog_provider.display_name.clone(),
-                catalog_provider.base_url.clone().unwrap_or_default(),
-                catalog_model.id.clone(),
-            )
-        };
+        let (catalog_provider, catalog_model) = ModelCatalog::global()
+            .models_with_capabilities(&CapabilityFilter::default())
+            .into_iter()
+            .next()
+            .expect("embedded model catalog has a selectable entry");
+        // Disable every sibling so legacy catalog discovery cannot legitimately
+        // select an unregistered model while this test expects no route.
+        let models = catalog_provider
+            .models
+            .iter()
+            .map(|model| ModelConfig {
+                id: model.id.clone(),
+                pricing_identity: None,
+                execution_profile: None,
+                display_name: None,
+                context_window: None,
+                supports_vision: false,
+                supports_tools: true,
+                supports_reasoning: false,
+                supports_structured_output: false,
+                supports_streaming: true,
+                max_output_tokens: None,
+                enabled: false,
+            })
+            .collect();
         let registry = Arc::new(ProviderRegistry::new());
         registry
             .register(ProviderConfig {
-                id: provider_id.clone(),
-                display_name: provider_name,
-                base_url: provider_base_url,
+                id: catalog_provider.id.clone(),
+                display_name: catalog_provider.display_name.clone(),
+                base_url: catalog_provider.base_url.clone().unwrap_or_default(),
                 api_key: None,
                 protocol: ProtocolSetting::Auto,
-                default_model: Some(model_id.clone()),
-                models: vec![ModelConfig {
-                    id: model_id.clone(),
-                    pricing_identity: None,
-                    execution_profile: None,
-                    display_name: None,
-                    context_window: None,
-                    supports_vision: false,
-                    supports_tools: true,
-                    supports_reasoning: false,
-                    supports_structured_output: false,
-                    supports_streaming: true,
-                    max_output_tokens: None,
-                    enabled: false,
-                }],
+                default_model: Some(catalog_model.id.clone()),
+                models,
                 enabled: true,
             })
             .await
-            .expect("disabled runtime catalog model registers");
+            .expect("disabled runtime catalog models register");
 
         let router = ModelRouter::new(registry);
         let requirements = RouteRequirements::default();
-        let destination = format!("{provider_id}/{model_id}");
+        let destination = format!("{}/{}", catalog_provider.id, catalog_model.id);
 
         assert_eq!(router.route(&requirements).await, None);
         assert_eq!(

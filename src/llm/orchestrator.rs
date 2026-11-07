@@ -124,7 +124,7 @@ fn build_driver_inner(
         );
         return Ok(Arc::new(super::anthropic_driver::AnthropicDriver::new(
             api_key,
-            model_id,
+            llm_config.resolved_model_id.clone().unwrap_or(model_id),
             llm_config.base_url.clone(),
             None,
             None,
@@ -142,11 +142,22 @@ fn build_driver_inner(
         max_retries = llm_config.max_retries,
         "Built LLM client with effective request timeout"
     );
-    Ok(Arc::new(super::LiterLlmDriver::new(
-        client_config,
-        llm_config.model.clone(),
-        llm_config.parallel_tool_calls,
-    )?))
+    let driver = match (&llm_config.resolved_provider_id, &llm_config.resolved_model_id) {
+        (Some(provider), Some(model)) => super::LiterLlmDriver::from_selected_route(
+            client_config,
+            llm_config.model.clone(),
+            provider_id,
+            format!("{provider}/{model}"),
+            model.clone(),
+            llm_config.parallel_tool_calls,
+        )?,
+        _ => super::LiterLlmDriver::new(
+            client_config,
+            llm_config.model.clone(),
+            llm_config.parallel_tool_calls,
+        )?,
+    };
+    Ok(Arc::new(driver))
 }
 
 type DriverEventStream = Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>;
@@ -469,9 +480,13 @@ struct ToolCallAccumulator {
 #[derive(Clone)]
 pub struct Orchestrator {
     llm_config: LlmConfig,
+    /// The captured route used for preparation and admission. The config model
+    /// remains the bound driver's wire alias.
+    primary_destination: String,
     mcp: Arc<McpRegistry>,
     driver: Arc<dyn LlmDriver>,
     model_usage: ModelUsageObservation,
+    tool_identity_rejected: Option<Arc<std::sync::atomic::AtomicBool>>,
     /// Ordered fallback drivers activated when the primary driver errors.
     fallback_drivers: Vec<FailoverTarget>,
     /// Controls when/how to switch to the fallback driver.
@@ -1140,10 +1155,12 @@ impl Orchestrator {
         driver: Arc<dyn LlmDriver>,
     ) -> Self {
         Self {
+            primary_destination: llm_config.model.clone(),
             llm_config,
             mcp,
             driver,
             model_usage: ModelUsageObservation::default(),
+            tool_identity_rejected: None,
             fallback_drivers: Vec::new(),
             failover_config: FailoverConfig::default(),
             health_monitor: None,
@@ -1186,9 +1203,24 @@ impl Orchestrator {
         }
     }
 
+    #[must_use]
+    pub(crate) fn with_primary_destination(mut self, destination: &str) -> Self {
+        self.primary_destination = destination.to_owned();
+        self
+    }
+
     /// Bind a fresh run's observational usage without changing accounting.
     pub(crate) fn with_model_usage(mut self, usage: ModelUsageObservation) -> Self {
         self.model_usage = usage;
+        self
+    }
+
+    /// Observe an invalid provisional batch before it can become recovery history.
+    pub(crate) fn with_tool_identity_rejection(
+        mut self,
+        rejected: Arc<std::sync::atomic::AtomicBool>,
+    ) -> Self {
+        self.tool_identity_rejected = Some(rejected);
         self
     }
 
@@ -1576,7 +1608,7 @@ impl Orchestrator {
             format.validate()?;
             // The native Anthropic driver has no response-format wire field.
             // Do not let its ignored extra_params become a successful fallback.
-            let provider = if model == self.llm_config.model {
+            let provider = if model == self.primary_destination {
                 self.llm_config
                     .host_provider_kind
                     .as_deref()
@@ -1651,6 +1683,11 @@ impl Orchestrator {
     }
 
     fn provider_failure(&self, error: &anyhow::Error, streaming: bool) -> NormalizedEvent {
+        if super::tool_call_identity::is_rejection(error)
+            && let Some(rejected) = &self.tool_identity_rejected
+        {
+            rejected.store(true, std::sync::atomic::Ordering::Release);
+        }
         if !self.endpoint_settings_profiles.is_empty() {
             let diagnostic = super::team_failure::diagnostic(error, streaming);
             tracing::warn!(
@@ -2230,6 +2267,7 @@ impl Orchestrator {
         let mut config = base.clone();
         config.model.clone_from(&fallback.model);
         config.resolved_provider_id = None;
+        config.resolved_model_id = None;
         config.api_key.clone_from(&fallback.api_key);
         config.base_url.clone_from(&fallback.base_url);
         config
@@ -2626,7 +2664,7 @@ impl Orchestrator {
 
                 if let Some(activation) = &orchestrator.skill_activation {
                     let destination_contract = orchestrator.destination_preparations.as_ref()
-                        .and_then(|preparations| preparations.budget_contract(&orchestrator.llm_config.model))
+                        .and_then(|preparations| preparations.budget_contract(&orchestrator.primary_destination))
                         .or(orchestrator.request_budget_contract.as_ref());
                     let input_allowance = match destination_contract {
                         Some(contract) => crate::uar::runtime::context::budget::input_allowance_for_limits(&contract.limits)
@@ -2823,7 +2861,7 @@ impl Orchestrator {
                         .map(|_| dialect_params.clone()),
                     budget_contract: orchestrator.request_budget_contract.clone(),
                 };
-                let primary_model = orchestrator.llm_config.model.clone();
+                let primary_model = orchestrator.primary_destination.clone();
                 let req = match orchestrator.prepare_user_attempt(
                     &primary_model,
                     base_req.clone(),
@@ -4145,8 +4183,8 @@ impl Orchestrator {
 
         let canonical = req.messages.clone();
         let fragments = self.canonical_fragments.as_deref().unwrap_or(&[]);
-        let mut req = self.prepare_attempt(&self.llm_config.model, req, &canonical, fragments)?;
-        self.admit_prepared_user_attempt(&self.llm_config.model, &mut req)
+        let mut req = self.prepare_attempt(&self.primary_destination, req, &canonical, fragments)?;
+        self.admit_prepared_user_attempt(&self.primary_destination, &mut req)
             .await?;
 
         // Stream from the driver and collect message deltas
@@ -5716,6 +5754,50 @@ mod tests {
 
         assert_eq!(response, "Hello from mock!");
         assert_eq!(driver.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn captured_destination_admits_streaming_and_non_streaming_with_bare_wire_alias() {
+        use crate::llm::router::{DestinationAdmission, DestinationScope};
+
+        let driver = Arc::new(MockLlmDriver::echo());
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig {
+                model: "gpt-4o".into(),
+                resolved_provider_id: Some("openai".into()),
+                ..LlmConfig::default()
+            },
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
+            driver.clone(),
+        )
+        .with_primary_destination("openai/gpt-4o")
+        .with_destination_admission(Arc::new(DestinationAdmission::without_registry(
+            DestinationScope::Exact {
+                primary: "openai/gpt-4o".into(),
+            },
+            Default::default(),
+        )));
+
+        let stream = orchestrator.chat("hello").await.expect("start stream");
+        let events = stream.collect::<Vec<_>>().await;
+        assert!(events.iter().all(|event| !matches!(event, NormalizedEvent::Error { .. })));
+        assert!(events.iter().any(|event| matches!(event,
+            NormalizedEvent::MessageDelta { text } if text == "Hello from mock!")));
+        assert_eq!(driver.call_count(), 1);
+
+        let response = orchestrator
+            .chat_non_streaming(vec![Message {
+                role: MessageRole::User,
+                content: MessageContent::text("hello"),
+                tool_call_id: None,
+                tool_calls: None,
+            }])
+            .await
+            .expect("non-streaming request uses the same captured route");
+        assert_eq!(response, "Hello from mock!");
+        assert_eq!(driver.call_count(), 2);
+        assert_eq!(orchestrator.llm_config.model, "gpt-4o");
     }
 
     #[tokio::test]

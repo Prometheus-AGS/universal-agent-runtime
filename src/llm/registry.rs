@@ -238,6 +238,7 @@ pub struct ProviderRegistry {
 struct InheritedLlmSettings {
     timeout_secs: u64,
     max_retries: u32,
+    parallel_tool_calls: Option<bool>,
 }
 
 impl From<&LlmConfig> for InheritedLlmSettings {
@@ -245,6 +246,7 @@ impl From<&LlmConfig> for InheritedLlmSettings {
         Self {
             timeout_secs: config.timeout_secs,
             max_retries: config.max_retries,
+            parallel_tool_calls: config.parallel_tool_calls,
         }
     }
 }
@@ -261,9 +263,8 @@ impl ProviderRegistry {
         }
     }
 
-    /// Record the operator-global LLM settings that every provider/model
-    /// resolution inherits. Without this, per-agent provider policies resolve
-    /// with `LlmConfig::default()` values and ignore `UAR_LLM__TIMEOUT_SECS`.
+    /// Preserve operator timeout, retry, and parallel-tool settings when
+    /// resolving a provider and model.
     pub async fn set_llm_defaults(&self, global: &LlmConfig) {
         *self.llm_defaults.write().await = InheritedLlmSettings::from(global);
     }
@@ -628,7 +629,7 @@ impl ProviderRegistry {
         // Only use provider/model format when liter-llm needs to auto-detect the provider.
         let has_explicit_base_url = !config.base_url.is_empty();
         let model_for_driver = if has_explicit_base_url {
-            resolved_model
+            resolved_model.clone()
         } else {
             format!("{provider_id}/{resolved_model}")
         };
@@ -637,6 +638,7 @@ impl ProviderRegistry {
         Some(LlmConfig {
             model: model_for_driver,
             resolved_provider_id: Some(provider_id.to_string()),
+            resolved_model_id: Some(resolved_model),
             catalog_pricing_model: pricing_model,
             api_key: config.api_key.clone(),
             base_url: if config.base_url.is_empty() {
@@ -646,6 +648,7 @@ impl ProviderRegistry {
             },
             timeout_secs: inherited.timeout_secs,
             max_retries: inherited.max_retries,
+            parallel_tool_calls: inherited.parallel_tool_calls,
             ..LlmConfig::default()
         })
     }
@@ -951,30 +954,59 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn resolve_to_llm_config_inherits_operator_timeout_and_retries() {
+    async fn registered_slash_aliases_keep_distinct_route_and_wire_identities() {
+        for (provider, model) in [
+            ("siliconflow-cn", "Pro/deepseek-ai/DeepSeek-V3"),
+            ("siliconflow-cn", "deepseek-ai/DeepSeek-V3"),
+            ("groq", "groq/compound"),
+            ("openrouter", "openrouter/auto"),
+        ] {
+            let registry = ProviderRegistry::new();
+            let mut config = make_test_config(provider, "http://127.0.0.1:1/v1");
+            config.models = models_from_catalog(ModelCatalog::global().provider(provider).unwrap());
+            assert!(config.models.iter().any(|entry| entry.id == model));
+            config.default_model = Some(model.into());
+            registry.register(config).await.unwrap();
+
+            let resolved = registry
+                .resolve_to_llm_config(provider, "")
+                .await
+                .expect("registered default resolves");
+            assert_eq!(resolved.model, model);
+            assert_eq!(resolved.qualified_model_name(), format!("{provider}/{model}"));
+        }
+    }
+
+    #[tokio::test]
+    async fn resolve_to_llm_config_inherits_operator_request_settings() {
         let registry = ProviderRegistry::new();
-        registry
-            .set_llm_defaults(&LlmConfig {
-                timeout_secs: 240,
-                max_retries: 7,
-                ..LlmConfig::default()
-            })
-            .await;
         registry
             .register(make_test_config("groq", "https://api.groq.com/openai"))
             .await
             .unwrap();
 
-        let resolved = registry
-            .resolve_to_llm_config("groq", "llama-3.3-70b")
-            .await
-            .expect("registered provider resolves");
+        for parallel_tool_calls in [None, Some(false), Some(true)] {
+            registry
+                .set_llm_defaults(&LlmConfig {
+                    timeout_secs: 240,
+                    max_retries: 7,
+                    parallel_tool_calls,
+                    ..LlmConfig::default()
+                })
+                .await;
 
-        assert_eq!(
-            (resolved.timeout_secs, resolved.max_retries),
-            (240, 7),
-            "per-provider resolution must keep the operator-configured timeout and retries"
-        );
+            let resolved = registry
+                .resolve_to_llm_config("groq", "llama-3.3-70b")
+                .await
+                .expect("registered provider resolves");
+
+            assert_eq!(
+                (resolved.timeout_secs, resolved.max_retries),
+                (240, 7),
+                "per-provider resolution must keep the operator-configured timeout and retries"
+            );
+            assert_eq!(resolved.parallel_tool_calls, parallel_tool_calls);
+        }
     }
 
     #[tokio::test]

@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { open, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { assertCandidateArtifactStable, candidateSettingKeys, captureCandidateArtifact,
+  loadCandidateArtifactInputs } from './candidate-artifact-binding.mjs';
 
 async function digest(path) {
   const hash = createHash('sha256');
@@ -80,6 +82,110 @@ export async function assertOwnedEndpoint(base) {
     assert.ok(listener.split('\n').includes(`n${new URL(url).host}`), 'Recorded process must own the selected listener');
   }
   return { client_url: base.href, upstream_url: proxy.upstream, proxy_pid: proxy.pid, runtime_pid: launch.pid };
+}
+
+// The installed artifact lifecycle is controlled outside Cucumber. Only inspect
+// the exact case-owned container and observe its restart; never read its Env.
+export async function bindExternalTeamRestart(base, workspace) {
+  const { DOCKER_CONTEXT: context, UAR_ARTIFACT_CONTAINER: name, UAR_ARTIFACT_VOLUME: volume,
+    UAR_QUALIFICATION_CASE_ID: caseId, UAR_CANDIDATE_ARTIFACT_BINDING: inputPath } = process.env;
+  assert.match(context ?? '', /^[A-Za-z0-9][A-Za-z0-9_.-]*$/);
+  assert.match(caseId ?? '', /^[a-z0-9][a-z0-9-]{7,63}$/);
+  assert.match(name ?? '', /^uar-pr476-[a-z0-9-]+$/);
+  assert.ok(volume?.startsWith(`uar-pr476-${caseId}-`), 'An exact case-owned volume is required');
+  const instanceId = `uar-pr476-${caseId}`;
+  const directory = resolve('target/production-artifact-qualification', caseId);
+  const docker = (...args) => JSON.parse(execFileSync('docker', ['--context', context, ...args], {
+    encoding: 'utf8', timeout: 10_000, maxBuffer: 128 * 1024,
+  }));
+  const projection = '{"id":{{json .Id}},"image":{{json .Image}},"labels":{{json .Config.Labels}},"running":{{json .State.Running}},"started_at":{{json .State.StartedAt}},"finished_at":{{json .State.FinishedAt}},"exit_code":{{json .State.ExitCode}},"pid":{{json .State.Pid}},"mounts":{{json .Mounts}}}';
+  const inspect = () => {
+    const container = docker('inspect', '--format', projection, name);
+    assert.equal(container.labels['dev.prometheus.qualification.case'], caseId);
+    assert.equal(container.labels['dev.prometheus.qualification.instance-id'], instanceId);
+    const data = container.mounts.filter(row => row.Destination === '/var/lib/uar');
+    assert.equal(data.length, 1);
+    assert.equal(data[0].Type, 'volume');
+    assert.equal(data[0].Name, volume);
+    container.volume = volume;
+    delete container.mounts;
+    return container;
+  };
+  const volumeLabels = docker('volume', 'inspect', '--format', '{{json .Labels}}', volume);
+  assert.equal(volumeLabels['dev.prometheus.qualification.case'], caseId);
+  const initialContainer = inspect();
+  const platform = docker('image', 'inspect', '--format', '{"os":{{json .Os}},"architecture":{{json .Architecture}}}', initialContainer.image);
+  const capture = async (container, retainedSettings) => {
+    const inputs = await loadCandidateArtifactInputs(inputPath);
+    assert.equal(base.href, inputs.config.baseUrl);
+    assert.equal(workspace, inputs.config.workspace);
+    const settings = retainedSettings ?? Object.fromEntries(await Promise.all(candidateSettingKeys.map(async key => {
+      const response = await fetch(new URL(`/api/uar/settings/${key}`, base), {
+        redirect: 'error', signal: AbortSignal.timeout(15_000),
+        headers: { 'x-uar-workspace-id': workspace },
+      });
+      assert.equal(response.status, 200, `Candidate setting ${key} must be readable`);
+      return [key, (await response.json()).effective];
+    })));
+    return captureCandidateArtifact(inputs, { container, platform, settings, baseUrl: base.href, workspace,
+      expectRunning: retainedSettings === undefined });
+  };
+  const initial = await capture(initialContainer);
+  assert.ok(Number.isSafeInteger(initialContainer.pid) && initialContainer.pid > 0);
+  let started;
+  return {
+    instanceId,
+    async observe(record, lineageDigest, nonce) {
+      const original = inspect();
+      const before = await capture(original);
+      assertCandidateArtifactStable(initial, before);
+      assert.equal(original.pid, initialContainer.pid);
+      Object.assign(record, { nonce, caseId, context, name, volume, before, previous_pid: original.pid });
+      const wait = async (predicate, stage, deadline) => {
+        do {
+          const current = inspect();
+          assert.equal(current.id, original.id, 'The external host must restart the same container');
+          assert.equal(current.image, original.image);
+          if (Date.now() < deadline && predicate(current)) return current;
+          await delay(500);
+        } while (Date.now() < deadline);
+        assert.fail(`No actual case-owned ${stage} observed before the restart deadline`);
+      };
+      await mkdir(directory, { recursive: true });
+      record.request = resolve(directory, `team-recovery-${nonce}-restart-request.json`);
+      record.stoppedReceipt = resolve(directory, `team-recovery-${nonce}-stopped.json`);
+      const barrier = { nonce, caseId, context, name, volume, containerId: original.id,
+        image: original.image, instanceId, startedAt: original.started_at, pid: original.pid, lineageDigest };
+      const stopDeadline = Date.now() + 120_000;
+      await writeFile(record.request, JSON.stringify({ ...barrier,
+        expiresAt: new Date(stopDeadline).toISOString() }) + '\n', { flag: 'wx', mode: 0o600 });
+      console.error(`C54 restart requested: ${record.request}`);
+      const stopped = await wait(current => !current.running, 'clean stop', stopDeadline);
+      assert.equal(stopped.pid, 0);
+      assert.equal(stopped.exit_code, 0);
+      assert.equal(stopped.started_at, original.started_at);
+      assert.ok(Date.parse(stopped.finished_at) > Date.parse(original.started_at));
+      record.stopped = await capture(stopped, before.settings);
+      assertCandidateArtifactStable(before, record.stopped);
+      const startDeadline = Date.now() + 120_000;
+      await writeFile(record.stoppedReceipt, JSON.stringify({ ...barrier, finishedAt: stopped.finished_at,
+        exitCode: stopped.exit_code, expiresAt: new Date(startDeadline).toISOString() }) + '\n', { flag: 'wx', mode: 0o600 });
+      console.error(`C54 clean stop observed: ${record.stoppedReceipt}`);
+      started = await wait(current => current.running, 'restart', startDeadline);
+      assert.ok(Date.parse(started.started_at) > Date.parse(stopped.finished_at), 'The new process must start after the observed stop');
+      assert.ok(Number.isSafeInteger(started.pid) && started.pid > 0);
+    },
+    async recordReady(record) {
+      const current = inspect();
+      assert.equal(current.id, started.id);
+      assert.equal(current.started_at, started.started_at);
+      assert.equal(current.pid, started.pid);
+      record.after = await capture(current);
+      assertCandidateArtifactStable(record.before, record.after, { allowRestart: true });
+      record.new_pid = current.pid;
+      record.new_process_ready = true;
+    },
+  };
 }
 
 // Private, process-local recovery context for a stopped runtime owned by this invocation.

@@ -206,6 +206,35 @@ pub async fn user(suite: &str, shared: bool, expected_subject: &str) -> UserCont
     listener.set_nonblocking(true).unwrap();
     let grpc = std::net::TcpListener::bind(node.grpc_bind).expect("owned fixed gRPC listener");
     grpc.set_nonblocking(true).unwrap();
+    let user = capture_user(
+        config,
+        listener,
+        grpc,
+        None,
+        loopback_url(&node.gateway_url),
+        &node.workspace,
+        expected_subject,
+    )
+    .await;
+    captured
+        .lock()
+        .expect("capture cache")
+        .insert(key, user.clone());
+    user
+}
+
+/// Capture identity through actual host middleware over a credential-free
+/// loopback request. The supplied origin may be the host or its gateway.
+pub async fn capture_user(
+    config: Arc<ConfigManager>,
+    listener: std::net::TcpListener,
+    grpc: std::net::TcpListener,
+    mcp_config_path: Option<PathBuf>,
+    origin: reqwest::Url,
+    workspace: &str,
+    expected_subject: &str,
+) -> UserContext {
+    let backend_bind = listener.local_addr().expect("owned identity listener address");
     let path = format!("/__fixture/owner-capture/{}", uuid::Uuid::new_v4());
     let (identity_tx, identity_rx) = tokio::sync::oneshot::channel();
     let identity_tx = Arc::new(Mutex::new(Some(identity_tx)));
@@ -249,7 +278,7 @@ pub async fn user(suite: &str, shared: bool, expected_subject: &str) -> UserCont
                         config,
                         tokio::net::TcpListener::from_std(listener).unwrap(),
                         tokio::net::TcpListener::from_std(grpc).unwrap(),
-                        None,
+                        mcp_config_path,
                         ready_tx,
                         Some(thread_stop.clone()),
                         Some(thread_stop),
@@ -267,13 +296,11 @@ pub async fn user(suite: &str, shared: bool, expected_subject: &str) -> UserCont
         .await
         .expect("host readiness bound")
         .expect("production host ready");
-    assert_eq!(ready, node.backend_bind);
-    let url = loopback_url(&node.gateway_url)
-        .join(&path)
-        .expect("actual external gateway capture route");
+    assert_eq!(ready, backend_bind);
+    let url = origin.join(&path).expect("actual host identity capture route");
     let response = reqwest::Client::new()
         .get(url)
-        .header("x-uar-workspace-id", &node.workspace)
+        .header("x-uar-workspace-id", workspace)
         .timeout(Duration::from_secs(30))
         .send()
         .await
@@ -286,9 +313,5 @@ pub async fn user(suite: &str, shared: bool, expected_subject: &str) -> UserCont
     assert_eq!(user.user_id, expected_subject);
     CredentialPrincipal::from_verified_context(&user).expect("host-captured verified principal");
     drop(host);
-    captured
-        .lock()
-        .expect("capture cache")
-        .insert(key, user.clone());
     user
 }

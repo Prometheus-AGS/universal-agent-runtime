@@ -2168,6 +2168,11 @@ pub struct LlmConfig {
     #[serde(skip)]
     #[schemars(skip)]
     pub resolved_provider_id: Option<String>,
+    /// Exact model identity selected with the resolved provider. A wire alias
+    /// can contain slashes, including a prefix identical to the provider ID.
+    #[serde(skip)]
+    #[schemars(skip)]
+    pub resolved_model_id: Option<String>,
     /// Validated pricing identity captured from trusted provider administration.
     /// Kept separate from the model alias sent to the configured gateway.
     #[serde(skip)]
@@ -2263,6 +2268,7 @@ impl std::fmt::Debug for LlmConfig {
         f.debug_struct("LlmConfig")
             .field("model", &self.model)
             .field("resolved_provider_id", &self.resolved_provider_id)
+            .field("resolved_model_id", &self.resolved_model_id)
             .field("api_key", &redact_opt(&self.api_key))
             .field("api_key_env", &self.api_key_env)
             .field(
@@ -2293,6 +2299,31 @@ impl std::fmt::Debug for LlmConfig {
 }
 
 impl LlmConfig {
+    pub(crate) fn qualified_model_name(&self) -> String {
+        if let (Some(provider), Some(model)) = (&self.resolved_provider_id, &self.resolved_model_id)
+        {
+            return format!("{provider}/{model}");
+        }
+        let (inferred_provider, inferred_model) =
+            crate::llm::registry::split_model_string_pub(&self.model);
+        let provider = self
+            .resolved_provider_id
+            .as_deref()
+            .unwrap_or(&inferred_provider);
+        let model = if provider == inferred_provider.as_str() {
+            &inferred_model
+        } else {
+            &self.model
+        };
+        format!("{provider}/{model}")
+    }
+
+    pub(crate) fn set_qualified_model(&mut self, provider: &str, model: &str) {
+        self.model = format!("{provider}/{model}");
+        self.resolved_provider_id = Some(provider.to_owned());
+        self.resolved_model_id = Some(model.to_owned());
+    }
+
     fn default_model() -> String {
         String::new()
     }
@@ -2315,6 +2346,7 @@ impl Default for LlmConfig {
         Self {
             model: Self::default_model(),
             resolved_provider_id: None,
+            resolved_model_id: None,
             catalog_pricing_model: None,
             host_provider_kind: None,
             host_supplied_connection: false,

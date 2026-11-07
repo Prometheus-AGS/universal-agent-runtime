@@ -47,11 +47,13 @@ Native provisional deltas SHALL use the reconciled exact nonblank identity once 
 
 - **WHEN** an apparent native completion is followed by a distinct nonblank identity before terminal EOF, including after a Done event
 - **THEN** the existing typed failure is emitted without a successful native completion, approval, effect or canonical result for that rejected batch
+- **AND** its provisional calls do not enter the retained assistant tool-call dialogue or pending recovery state
 
 #### Scenario: Incomplete or failed terminal stream
 
 - **WHEN** a pending native completion is followed by a normalized error, typed stream failure or EOF without the required terminal event
 - **THEN** no successful completion, approval or native effect is published for that pending batch
+- **AND** a stream interruption without identity rejection retains the existing pending-call evidence and resume safeguards
 
 #### Scenario: Configured caller tools with native publication
 

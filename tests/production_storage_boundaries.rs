@@ -9,6 +9,7 @@ use serde_json::Value;
 use universal_agent_runtime::uar::persistence::{
     PersistenceLayer,
     providers::surreal::{HostSurrealBackend, SurrealDbProvider},
+    run_history::RunHistoryRecord,
 };
 
 #[tokio::test]
@@ -28,6 +29,31 @@ async fn concurrent_real_migration_facades_preserve_owned_data_and_reopen() -> R
         host.query("CREATE migration_canary:owned SET marker = 'PR476-MIGRATION-7319';")
             .await?
             .check()?;
+        let legacy = RunHistoryRecord {
+            owner_key: Some("owner-a".into()),
+            run_id: "legacy-run".into(),
+            run: serde_json::json!({
+                "run_id": "legacy-run",
+                "agent_id": "fixture-agent",
+                "conversation_id": "older-conversation",
+                "user_id": "owner-a",
+                "status": "done",
+                "context": {},
+            }),
+            revision: 1,
+        };
+        host.query(
+            "DEFINE TABLE durable_run_records SCHEMAFULL;
+             DEFINE FIELD owner_key ON durable_run_records TYPE option<string>;
+             DEFINE FIELD run_id ON durable_run_records TYPE string;
+             DEFINE FIELD data ON durable_run_records TYPE string;
+             DEFINE FIELD revision ON durable_run_records TYPE int;
+             CREATE type::record('durable_run_records', '10:legacy-run')
+                 SET owner_key = 'owner-a', run_id = 'legacy-run', data = $data, revision = 1;",
+        )
+        .bind(("data", serde_json::to_string(&legacy)?))
+        .await?
+        .check()?;
 
         // Both production constructors issue their actual migration sequence
         // against the selected real host engine. No mock migration or source
@@ -79,6 +105,21 @@ async fn concurrent_real_migration_facades_preserve_owned_data_and_reopen() -> R
             rows,
             vec![serde_json::json!({"marker":"PR476-MIGRATION-7319"})]
         );
+        for (run_id, owner, conversation) in [
+            ("selected-run", "owner-a", "selected-conversation"),
+            ("sibling-run", "owner-a", "sibling-conversation"),
+            ("foreign-run", "owner-b", "selected-conversation"),
+        ] {
+            first
+                .upsert_run_history_record(&RunHistoryRecord {
+                    owner_key: Some(owner.into()),
+                    run_id: run_id.into(),
+                    run: serde_json::json!({"conversation_id": conversation}),
+                    revision: 1,
+                })
+                .await
+                .context("persist a real conversation-scoped run history record")?;
+        }
         for provider in [first, second] {
             let close = provider.close_scope().await;
             anyhow::ensure!(
@@ -127,6 +168,20 @@ async fn concurrent_real_migration_facades_preserve_owned_data_and_reopen() -> R
             rows,
             vec![serde_json::json!({"marker":"PR476-MIGRATION-7319"})]
         );
+        let facade =
+            SurrealDbProvider::from_existing_client(reopened.clone(), HostSurrealBackend::SurrealKv)
+                .await?;
+        let history = facade
+            .list_conversation_run_history("owner-a", "selected-conversation")
+            .await;
+        let close = facade.close_scope().await;
+        anyhow::ensure!(
+            close.failure.is_none() && close.scope_released,
+            "reopened history facade did not release"
+        );
+        let mut run_ids: Vec<_> = history?.into_iter().map(|record| record.run_id).collect();
+        run_ids.sort();
+        assert_eq!(run_ids, ["legacy-run", "selected-run"]);
         Ok(())
     }
     .await;

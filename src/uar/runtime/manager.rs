@@ -1034,22 +1034,11 @@ fn provider_id_for_config(config: &LlmConfig) -> String {
         .unwrap_or_else(|| crate::llm::registry::split_model_string_pub(&config.model).0)
 }
 
-fn qualified_model_name(config: &LlmConfig) -> String {
-    let provider_id = provider_id_for_config(config);
-    let (model_provider, split_model_id) =
-        crate::llm::registry::split_model_string_pub(&config.model);
-    let model_id = if config.model.contains('/') && model_provider == provider_id {
-        split_model_id
-    } else {
-        config.model.clone()
-    };
-    format!("{provider_id}/{model_id}")
-}
-
 fn apply_routed_connection(mut base: LlmConfig, routed: LlmConfig) -> LlmConfig {
     let provider_changed = provider_id_for_config(&base) != provider_id_for_config(&routed);
     base.model = routed.model;
     base.resolved_provider_id = routed.resolved_provider_id;
+    base.resolved_model_id = routed.resolved_model_id;
     base.catalog_pricing_model = routed.catalog_pricing_model;
     if provider_changed {
         base.api_key = routed.api_key;
@@ -3592,9 +3581,8 @@ impl RunManager {
                 }
                 return run_id;
             }
-            // Keep the large kernel future out of the HTTP admission future's
-            // inline state, as the captured child-run entry point already does.
-            Box::pin(self.execute_request_inner(request, run_id, None, None, None, None)).await
+            self.run_kernel_future(request, run_id, None, None, None, None)
+                .await
         })
     }
 
@@ -3978,30 +3966,38 @@ impl RunManager {
         } else {
             crate::uar::runtime::thread::execution::RunCompletionCapture::observer_channel()
         };
-        self.hosted_root_kernel_future(request, root, cancellation, capture)
-            .await;
-        receiver
-    }
-
-    // The observed hosted-worker stack overflow retained this entry while
-    // polling the kernel. Return its boxed future before polling so the
-    // construction frame does not remain below thread attachment.
-    #[inline(never)]
-    fn hosted_root_kernel_future(
-        &self,
-        request: crate::uar::runtime::turn::RunExecutionRequest,
-        root: crate::uar::runtime::thread::actor_host::ActorRootBinding,
-        cancellation: CancellationToken,
-        capture: crate::uar::runtime::thread::execution::RunCompletionCapture,
-    ) -> futures::future::BoxFuture<'_, String> {
         let run_id = root.record.thread.root_run_id.clone();
-        Box::pin(self.execute_request_inner(
+        self.run_kernel_future(
             request,
             run_id,
             Some(capture),
             Some(cancellation),
             None,
             Some(root),
+        )
+        .await;
+        receiver
+    }
+
+    // Hosted and HTTP admission have both overflowed while polling the kernel.
+    // Return the boxed future before polling so its construction frame is gone.
+    #[inline(never)]
+    fn run_kernel_future(
+        &self,
+        request: crate::uar::runtime::turn::RunExecutionRequest,
+        run_id: String,
+        completion: Option<crate::uar::runtime::thread::execution::RunCompletionCapture>,
+        cancellation: Option<CancellationToken>,
+        inherited: Option<crate::uar::runtime::turn::bindings::InheritedRunBindings>,
+        root: Option<crate::uar::runtime::thread::actor_host::ActorRootBinding>,
+    ) -> futures::future::BoxFuture<'_, String> {
+        Box::pin(self.execute_request_inner(
+            request,
+            run_id,
+            completion,
+            cancellation,
+            inherited,
+            root,
         ))
     }
 
@@ -5917,25 +5913,24 @@ impl RunManager {
                 } else {
                     let mut config = self.llm_config.clone();
                     if let Some(route) = &effective_policy.model {
-                        config.model = format!("{}/{}", route.provider_id, route.model_id);
-                        config.resolved_provider_id = Some(route.provider_id.clone());
+                        config.set_qualified_model(&route.provider_id, &route.model_id);
                     } else if !artifact.policy.provider.default.model.trim().is_empty() {
-                        config.model = format!("{}/{}", artifact.policy.provider.default.provider,
-                            artifact.policy.provider.default.model);
-                        config.resolved_provider_id = Some(artifact.policy.provider.default.provider.clone());
+                        let route = &artifact.policy.provider.default;
+                        config.set_qualified_model(&route.provider, &route.model);
                     }
                     if let Some(model) = &requested_model {
-                        let (provider, _) = crate::llm::registry::split_model_string_pub(&qualified_model_name(&config));
-                        config.model = if model.contains('/') { model.clone() } else { format!("{provider}/{model}") };
-                        let (selected_provider, _) = crate::llm::registry::split_model_string_pub(&config.model);
-                        config.resolved_provider_id = Some(selected_provider);
+                        let provider = provider_id_for_config(&config);
+                        let (provider, model) = model
+                            .split_once('/')
+                            .unwrap_or((provider.as_str(), model.as_str()));
+                        config.set_qualified_model(provider, model);
                     }
                     if config.model.trim().is_empty()
                         && let Some(registry) = &self.provider_registry
                         && let Some((provider, model)) = registry.default_model().await {
-                        config.model = format!("{provider}/{model}");
+                        config.set_qualified_model(&provider, &model);
                     }
-                    let (provider, model) = crate::llm::registry::split_model_string_pub(&qualified_model_name(&config));
+                    let (provider, model) = crate::llm::registry::split_model_string_pub(&config.qualified_model_name());
                     if let Some(registry) = &self.provider_registry {
                         let routed = registry.resolve_to_llm_config(&provider, &model).await
                             .ok_or_else(|| anyhow::anyhow!("auxiliary_model_unavailable"))?;
@@ -5966,7 +5961,7 @@ impl RunManager {
                         }
                         let profile = profiles.get(&format!("{provider}/{model}"))
                             .ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
-                        config.model.clone_from(&profile.qualified_model);
+                        config.set_qualified_model(&provider, &model);
                         config.catalog_pricing_model = pricing_models.get(&profile.qualified_model).cloned();
                     }
                     let (config, decision) = resolve_credential_binding(config,
@@ -5983,7 +5978,7 @@ impl RunManager {
                 };
                 let model = match requested_model.as_deref() {
                     Some(model) => bindings.auxiliary_model(model)?,
-                    None => qualified_model_name(bindings.config()),
+                    None => bindings.primary_model().to_owned(),
                 };
                 let driver = bindings.auxiliary(&model)?;
                 let exact = self.destination_preparations.as_ref()
@@ -6661,7 +6656,7 @@ impl RunManager {
                 // replace it, or turn missing operator selection into a model choice.
                 preferred_llm_config
             } else if let Some(ref registry) = self.provider_registry {
-                let policy_preferred_model = qualified_model_name(&preferred_llm_config);
+                let policy_preferred_model = preferred_llm_config.qualified_model_name();
                 let (policy_provider, _) =
                     crate::llm::registry::split_model_string_pub(&policy_preferred_model);
                 let preferred_model = match skill_preferred_model {
@@ -6736,6 +6731,7 @@ impl RunManager {
                     tracing::info!(skill_id, model, "Skill overrides LLM model");
                     if config.model != model {
                         config.catalog_pricing_model = None;
+                        config.resolved_model_id = None;
                     }
                     config.model = model.to_string();
                 }
@@ -6865,7 +6861,7 @@ impl RunManager {
                 );
                 // Request credentials supply connection authority only. Restore
                 // the admitted complete alias and administrator-owned price.
-                run_llm_config.model.clone_from(&selected.qualified_model);
+                run_llm_config.set_qualified_model(provider, model);
                 run_llm_config.catalog_pricing_model =
                     pricing_models.get(&selected.qualified_model).cloned();
                 for fallback in &mut run_failover_config.fallback_models {
@@ -6956,7 +6952,7 @@ impl RunManager {
                     };
                     let fallback_config = match &run_credentials {
                         Some(credentials) => credentials
-                            .config_for(&fallback_provider, Some(&fallback.model), fallback_config)
+                            .config_for(&fallback_provider, Some(&fallback_model), fallback_config)
                             .map_err(anyhow::Error::from)?,
                         None => fallback_config,
                     };
@@ -7508,13 +7504,7 @@ impl RunManager {
                 })
                 .collect::<Vec<_>>()
         };
-        let qualified_model = if is_team_attempt {
-            // Team profiles already capture the complete admitted provider/model.
-            // Qualifying again would hide its administrator-configured capacity.
-            run_llm_config.model.clone()
-        } else {
-            qualified_model_name(&run_llm_config)
-        };
+        let qualified_model = model_bindings.primary_model().to_owned();
         let (catalog_provider, catalog_model_id) =
             crate::llm::registry::split_model_string_pub(&qualified_model);
         let configured_model = if let Some(registry) = &self.provider_registry {
@@ -9507,7 +9497,13 @@ impl RunManager {
             // Observe submitted attempts independently from Usage presence, including
             // retries and openings cancelled before their metadata reaches this loop.
             let model_usage = crate::llm::orchestrator::ModelUsageObservation::default();
-            let orchestrator = Arc::new((*orchestrator).clone().with_model_usage(model_usage.clone()));
+            let tool_identity_rejected = Arc::new(std::sync::atomic::AtomicBool::new(false));
+            let orchestrator = Arc::new(
+                (*orchestrator)
+                    .clone()
+                    .with_model_usage(model_usage.clone())
+                    .with_tool_identity_rejection(Arc::clone(&tool_identity_rejected)),
+            );
 
             // 2. Execute Orchestrator
             #[cfg(feature = "bauar-native-admission-gate")]
@@ -10159,6 +10155,12 @@ impl RunManager {
             }
 
             let mut interrupted_fragment = None;
+            if tool_identity_rejected.load(std::sync::atomic::Ordering::Acquire) {
+                // Identity rejection invalidates only the current unvalidated
+                // batch. Validated calls and ordinary interruptions still
+                // retain their recovery evidence.
+                partial_tool_calls.clear();
+            }
             for (_call_index, (id, name, arguments)) in partial_tool_calls {
                 let (Some(id), Some(name)) = (id, name) else {
                     continue;
@@ -11307,9 +11309,13 @@ pub struct EffectiveConfig {
 mod native_identity_tests {
     use super::*;
     use crate::llm::mock_driver::MockLlmDriver;
+    use crate::llm::registry::{ModelConfig, ProtocolSetting, ProviderConfig, ProviderRegistry};
     use crate::normalized::NormalizedEvent as ProviderEvent;
     use crate::uar::persistence::{PersistenceLayer, providers::memory::InMemoryProvider};
     use crate::uar::runtime::native_skill::NativeSkill;
+    use crate::uar::runtime::skills::service::{
+        SkillMatchingAlgorithm, SkillMatchingConfig, SkillMatchingEngine,
+    };
     use crate::uar::tools::descriptor::ToolEffect;
     use futures::FutureExt;
     use serde_json::{Value, json};
@@ -11426,6 +11432,49 @@ mod native_identity_tests {
 
     async fn exercise_manager(batch: Vec<ProviderEvent>, parallel: bool, succeeds: bool) {
         let store: Arc<dyn PersistenceLayer> = Arc::new(InMemoryProvider::new());
+        let skill_service = Arc::new(SkillService::new(Some(Arc::clone(&store)), None));
+        skill_service
+            .set_matching_config(SkillMatchingConfig {
+                engine: SkillMatchingEngine::Service,
+                algorithm: SkillMatchingAlgorithm::Keyword,
+                ..SkillMatchingConfig::default()
+            })
+            .await;
+        let llm_config = LlmConfig {
+            model: "openai/gpt-4o".into(),
+            api_key: Some("identity-fixture-key".into()),
+            cost_tracking: false,
+            parallel_tool_calls: Some(parallel),
+            ..LlmConfig::default()
+        };
+        let providers = Arc::new(ProviderRegistry::new());
+        providers.set_llm_defaults(&llm_config).await;
+        providers
+            .register(ProviderConfig {
+                id: "openai".into(),
+                display_name: "Native identity fixture".into(),
+                base_url: "http://127.0.0.1:1/v1".into(),
+                api_key: llm_config.api_key.clone(),
+                protocol: ProtocolSetting::Chat,
+                default_model: Some("gpt-4o".into()),
+                models: vec![ModelConfig {
+                    id: "gpt-4o".into(),
+                    pricing_identity: None,
+                    execution_profile: None,
+                    display_name: None,
+                    context_window: None,
+                    supports_vision: false,
+                    supports_tools: true,
+                    supports_reasoning: false,
+                    supports_structured_output: false,
+                    supports_streaming: true,
+                    max_output_tokens: None,
+                    enabled: true,
+                }],
+                enabled: true,
+            })
+            .await
+            .expect("register the fixture's tool-capable destination");
         let sessions = SessionStore::new();
         let calls = Arc::new(AtomicUsize::new(0));
         let skills = Arc::new(NativeSkillRegistry::new());
@@ -11443,16 +11492,10 @@ mod native_identity_tests {
             ],
         ]));
         let manager = RunManager::new(
-            LlmConfig {
-                model: "openai/gpt-4o".into(),
-                api_key: Some("identity-fixture-key".into()),
-                cost_tracking: false,
-                parallel_tool_calls: Some(parallel),
-                ..LlmConfig::default()
-            },
+            llm_config,
             Arc::new(McpRegistry::new_empty()),
             sessions.clone(),
-            Arc::new(RwLock::new(SkillRegistry::new(None, None))),
+            Arc::clone(skill_service.registry()),
             Arc::new(crate::uar::runtime::matching::VectorMatcher::new(
                 Arc::new(
                     crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
@@ -11469,6 +11512,8 @@ mod native_identity_tests {
             Some(Arc::clone(&store)),
         )
         .await
+        .with_skill_service(skill_service)
+        .with_provider_registry(providers)
         .with_native_skills(skills)
         .with_llm_driver(driver.clone());
 
@@ -11477,18 +11522,23 @@ mod native_identity_tests {
         let outcome = AssertUnwindSafe(async {
             tokio::time::timeout(WAIT, async {
                 let mut artifact = crate::uar::defaults::default_agent();
+                artifact.policy.provider.default.provider = "openai".into();
+                artifact.policy.provider.default.model = "gpt-4o".into();
                 artifact.extensions.insert("uar.run_policy".into(), json!({"version":1,
                     "tool_approval": if succeeds { ToolApprovalPolicy::Auto } else { ToolApprovalPolicy::Ask }}));
                 let mut request = crate::uar::runtime::turn::RunExecutionRequest::new(artifact, "identity fixture".into());
                 request.session_id = Some("native-identity-conversation".into());
                 let run_id = manager.execute_request(request).await;
+                let is_completion = |event: &StreamEvent| matches!(event.event,
+                    NormalizedEvent::RunDone { .. } | NormalizedEvent::RunDoneWithUsage { .. });
                 let events = loop {
                     let events = manager.history_since(&run_id, None).await.expect("real run history");
-                    if events.iter().any(|event| matches!(event.event, NormalizedEvent::RunDone { .. })) {
+                    if events.iter().any(is_completion) {
                         break events;
                     }
                     tokio::task::yield_now().await;
                 };
+                assert_eq!(events.iter().filter(|event| is_completion(event)).count(), 1);
                 let (dialogue, conversation_id, owner) = {
                     let runs = manager.active_runs.read().await;
                     let state = runs.get(&run_id).expect("executed run remains retained");
@@ -11497,10 +11547,15 @@ mod native_identity_tests {
                 let conversation = sessions.get_for_user(&conversation_id, &owner).expect("real retained conversation").messages();
                 let receipts = store.list_canonical_tool_receipts(&owner, &run_id).await.unwrap();
                 let requests = driver.requests();
+                let error_codes = events.iter().filter_map(|event| match &event.event {
+                    NormalizedEvent::Error { code, .. } => Some(code.as_str()),
+                    _ => None,
+                }).collect::<Vec<_>>();
                 assert!(events.iter().all(|event| !matches!(event.event,
                     NormalizedEvent::ToolCallApprovalRequired { .. } | NormalizedEvent::ToolCallDenied { .. })));
                 if succeeds {
-                    assert!(events.iter().all(|event| !matches!(event.event, NormalizedEvent::Error { .. })));
+                    assert!(events.iter().all(|event| !matches!(event.event, NormalizedEvent::Error { .. })),
+                        "unexpected errors {error_codes:?} after {} provider requests", requests.len());
                     let starts = events.iter().enumerate().filter_map(|(position, event)| match &event.event {
                         NormalizedEvent::ToolStart { call_index, tool_call_id, tool, input, .. } =>
                             Some((position, *call_index, tool_call_id.as_str(), tool.as_str(), input.clone())),
@@ -11546,7 +11601,8 @@ mod native_identity_tests {
                     }
                 } else {
                     assert!(events.iter().any(|event| matches!(&event.event,
-                        NormalizedEvent::Error { code, .. } if code == "provider_stream_failed")));
+                        NormalizedEvent::Error { code, .. } if code == "provider_stream_failed")),
+                        "expected provider_stream_failed, got {error_codes:?} after {} provider requests", requests.len());
                     assert!(events.iter().all(|event| !matches!(event.event,
                         NormalizedEvent::ToolStart { .. } | NormalizedEvent::ToolEnd { .. })));
                     assert_dialogue_pairs(&dialogue, &[]);

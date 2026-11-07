@@ -2,10 +2,11 @@
 
 use super::*;
 use crate::config::{A2aConfig, A2aPeerConfig, LlmConfig, SecurityConfig};
+use crate::llm::registry::{ModelConfig, ModelPricingIdentity, ProtocolSetting, ProviderConfig};
 use crate::llm::{
     DestinationRequestPreparation, DestinationRequestPreparations, EndpointRequestProfile,
     EndpointRequestTransform, ExternalDriverStream, LiterLlmDriver, LlmDriver, LlmRequest,
-    PreparedFinalWireBudget,
+    PreparedFinalWireBudget, ProviderRegistry,
 };
 use crate::uar::persistence::accounting::{
     AccountingCall, AccountingScope, AccountingState, ScopeIdentity,
@@ -22,7 +23,7 @@ use crate::uar::runtime::prompt::{
 use crate::uar::runtime::thread::actor_host::{ActorRootBinding, ActorThreadSession};
 use crate::uar::runtime::{
     actor::messages::ActorOwner, manager::RunManager, matching::VectorMatcher,
-    skills::SkillRegistry,
+    skills::service::{SkillMatchingAlgorithm, SkillMatchingConfig, SkillMatchingEngine, SkillService},
 };
 use axum::response::IntoResponse;
 use futures::FutureExt;
@@ -30,6 +31,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 const MODEL: &str = "openai/gpt-4o-mini";
+const FIXTURE_CONTEXT_TOKENS: u32 = 960;
 const WAIT: Duration = Duration::from_secs(10);
 
 async fn bounded<T>(operation: &str, future: impl std::future::Future<Output = T>) -> T {
@@ -254,7 +256,7 @@ fn preparation(endpoint: &str) -> Arc<DestinationRequestPreparations> {
             destination_model: MODEL.into(),
             destination_endpoint_fingerprint: fingerprint,
             limits: DestinationLimits {
-                context_tokens: 960,
+                context_tokens: i64::from(FIXTURE_CONTEXT_TOKENS),
                 independent_input_tokens: Some(928),
                 host_input_tokens: None,
                 output_tokens: 32,
@@ -492,6 +494,44 @@ impl Harness {
         };
         let driver = Arc::new(HoldingDriver::new(&llm_config)?);
         let preparations = preparation(&endpoint);
+        let skill_service = Arc::new(SkillService::new(Some(persistence.clone()), None));
+        skill_service
+            .set_matching_config(SkillMatchingConfig {
+                engine: SkillMatchingEngine::Service,
+                algorithm: SkillMatchingAlgorithm::Keyword,
+                ..SkillMatchingConfig::default()
+            })
+            .await;
+        let (provider_id, model_id) = MODEL.split_once('/').expect("qualified fixture model");
+        let providers = Arc::new(ProviderRegistry::new());
+        providers
+            .register(ProviderConfig {
+                id: provider_id.into(),
+                display_name: "Remote admission fixture".into(),
+                base_url: endpoint.clone(),
+                api_key: llm_config.api_key.clone(),
+                protocol: ProtocolSetting::Chat,
+                default_model: Some(model_id.into()),
+                models: vec![ModelConfig {
+                    id: model_id.into(),
+                    pricing_identity: Some(ModelPricingIdentity {
+                        provider_id: provider_id.into(),
+                        model_id: model_id.into(),
+                    }),
+                    execution_profile: None,
+                    display_name: None,
+                    context_window: Some(FIXTURE_CONTEXT_TOKENS),
+                    supports_vision: false,
+                    supports_tools: true,
+                    supports_reasoning: false,
+                    supports_structured_output: false,
+                    supports_streaming: true,
+                    max_output_tokens: None,
+                    enabled: true,
+                }],
+                enabled: true,
+            })
+            .await?;
         let manager = Arc::new(
             bounded(
                 "manager setup",
@@ -499,7 +539,7 @@ impl Harness {
                     llm_config,
                     Arc::new(crate::mcp::registry::McpRegistry::new_empty()),
                     crate::session::SessionStore::new(),
-                    Arc::new(tokio::sync::RwLock::new(SkillRegistry::default())),
+                    Arc::clone(skill_service.registry()),
                     Arc::new(VectorMatcher::new(
                         Arc::new(
                             crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
@@ -517,6 +557,8 @@ impl Harness {
                 ),
             )
             .await
+            .with_skill_service(skill_service)
+            .with_provider_registry(providers)
             .with_llm_driver(driver.clone())
             .with_destination_preparations(preparations)
             .with_a2a_config(&A2aConfig {
@@ -531,6 +573,8 @@ impl Harness {
         );
         resources.manager = Some(manager.clone());
         let mut artifact = crate::uar::defaults::default_agent();
+        artifact.policy.provider.default.provider = provider_id.into();
+        artifact.policy.provider.default.model = model_id.into();
         artifact.policy.tools.allow = vec!["spawn_agent".into()];
         artifact.extensions.insert(
             "budgets".into(),
