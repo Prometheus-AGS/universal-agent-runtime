@@ -19,7 +19,7 @@ import {
   type SseFrame,
   type SseStream,
 } from "@/lib/realtime/sse-stream";
-import { UAR_TOPICS } from "@/lib/realtime/topics";
+import { createAllUarAdapters, UAR_TOPICS } from "@/lib/realtime/topics";
 import { buildAuthoritativeSnapshotChangeSet } from "@/lib/realtime/uar-sse-adapter";
 
 interface PersistenceInfo {
@@ -91,11 +91,10 @@ function emitUarSettingChange(change: EntityChange) {
   });
 }
 
-async function registerUarSseAdapters(
+function registerUarSseAdapters(
   manager: ReturnType<typeof getRealtimeManager>,
   channels: ChannelConfig[],
 ) {
-  const { createAllUarAdapters } = await import("@/lib/realtime/topics");
   const adapters = createAllUarAdapters("", emitUarSettingChange);
   let hasConnected = false;
   const removeStatusListener = adapters[0]?.onStatusChange?.((status) => {

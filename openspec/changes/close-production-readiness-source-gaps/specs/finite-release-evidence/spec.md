@@ -18,6 +18,12 @@ Release/support/version/recovery/measurement source SHALL use one selected-lane 
 - **THEN** it consumes the already-initialized vendored inputs from that context
 - **AND** a missing required input fails before dependency installation with its path and the recursive submodule setup requirement
 
+#### Scenario: The selected Linux container packages the frontend
+
+- **WHEN** the root Dockerfile builds the frontend from the exact frozen candidate
+- **THEN** Vite resolves the existing configuration paths and plugin through native module syntax, and the realtime transport reuses its already loaded adapter module
+- **AND** the receipt retains actual bundle diagnostics and fails on first-party warnings, with only explicitly authorized and recorded third-party exceptions
+
 #### Scenario: Selected independent protocol clients cancel actual active work
 - **WHEN** A selected independent A2A client or official MCP counterpart observes positive activity and cancellation is requested for the original task or call
 - **THEN** The case retains the original protocol/native identity, observes actual counterpart termination or explicit refusal/uncertainty, and cannot substitute generic model-stream cancellation for protocol evidence

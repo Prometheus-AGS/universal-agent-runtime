@@ -200,7 +200,7 @@ describe("publication identity through restored chunks and canonical controls", 
     const runId = `rendered-publication-${++publicationSerial}`;
     const request = publicationServer(runId);
     render(<A2uiChunkView chunk={restoredPublication(runId, "G1")} />);
-    const button = await screen.findByRole("button", { name: "Calculate parcel", exact: true });
+    const button = await screen.findByRole("button", { name: "Calculate parcel" });
     await waitFor(() => expect(button).toBeEnabled());
     fireEvent.click(button);
     await screen.findByText("Response complete", { exact: true });
@@ -215,7 +215,7 @@ describe("publication identity through restored chunks and canonical controls", 
     const runId = `rendered-publication-${++publicationSerial}`;
     const request = publicationServer(runId, "G2");
     render(<A2uiChunkView chunk={restoredPublication(runId, "G1")} />);
-    const button = await screen.findByRole("button", { name: "Calculate parcel", exact: true });
+    const button = await screen.findByRole("button", { name: "Calculate parcel" });
     await waitFor(() => expect(button).toBeEnabled());
     fireEvent.click(button);
     await screen.findByText("This surface has changed. Request a fresh surface before acting.", { exact: true });
@@ -228,7 +228,7 @@ describe("publication identity through restored chunks and canonical controls", 
     const runId = `rendered-publication-${++publicationSerial}`;
     const request = publicationServer(runId);
     render(<A2uiChunkView chunk={restoredPublication(runId, generation)} />);
-    const button = await screen.findByRole("button", { name: "Calculate parcel", exact: true });
+    const button = await screen.findByRole("button", { name: "Calculate parcel" });
     expect(button).toBeDisabled();
     expect(screen.getByText("This surface has no publication identity. Request a fresh surface before acting.", { exact: true })).toBeVisible();
     fireEvent.click(button);
@@ -242,7 +242,7 @@ describe("action outcome feedback independent of surface authority", () => {
     const request = publicationServer(runId, "G1", true);
     const attachments = continuationHarness.attach.mock.calls.length;
     render(<A2uiChunkView chunk={restoredPublication(runId, "G1")} />);
-    const button = await screen.findByRole("button", { name: "Calculate parcel", exact: true });
+    const button = await screen.findByRole("button", { name: "Calculate parcel" });
     await waitFor(() => expect(button).toBeEnabled());
     fireEvent.click(button);
     const warning = "Action outcome is unconfirmed. Do not submit again.";
@@ -260,7 +260,7 @@ describe("action outcome feedback independent of surface authority", () => {
     expect(screen.getByText("Surface history is unavailable. Reload the conversation to recover.", { exact: true })).toBeVisible();
     expect(button).toBeDisabled();
     fireEvent.click(button);
-    fireEvent.click(screen.getByRole("button", { name: "Recover action status", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Recover action status" }));
     await waitFor(() => expect(request.mock.calls.some((call) => String(call[0]).endsWith(`/a2ui/actions/${original?.interaction_id}`))).toBe(true));
     expect(screen.getByText(warning, { exact: true })).toBeVisible();
     expect(button).toBeDisabled();
@@ -286,7 +286,7 @@ describe("action outcome feedback independent of surface authority", () => {
       const runId = `outcome-feedback-${++publicationSerial}`;
       const request = publicationServer(runId);
       render(<A2uiChunkView chunk={restoredPublication(runId, "G1")} />);
-      const button = await screen.findByRole("button", { name: "Calculate parcel", exact: true });
+      const button = await screen.findByRole("button", { name: "Calculate parcel" });
       await waitFor(() => expect(button).toBeEnabled());
       const receipt: A2uiActionReceipt = { id: `${runId}-intent`, interaction_id: `${runId}-intent`,
         source_run_id: runId, surface_id: "parcel", surface_generation: "G1", status: outcome.status,
@@ -320,7 +320,7 @@ describe("action outcome feedback independent of surface authority", () => {
       expect(request.mock.calls.filter((call) => call[1]?.method === "POST")).toHaveLength(0);
       expect(latestActionReceipt(runId, "parcel")).toEqual(receipt);
 
-      fireEvent.click(screen.getByRole("button", { name: "Recover action status", exact: true }));
+      fireEvent.click(screen.getByRole("button", { name: "Recover action status" }));
       await waitFor(() => expect(request.mock.calls.some((call) => String(call[0]).endsWith(`/a2ui/actions/${receipt.interaction_id}`))).toBe(true));
       expect(request.mock.calls.filter((call) => call[1]?.method === "POST")).toHaveLength(0);
       expect(latestActionReceipt(runId, "parcel")?.interaction_id).toBe(receipt.interaction_id);

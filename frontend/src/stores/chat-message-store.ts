@@ -252,7 +252,10 @@ function warmTextHistory(message: RichMessage, remote: RichMessage): Pick<RichMe
         decision: replacement.decision ?? chunk.decision, decidedAt: replacement.decidedAt ?? chunk.decidedAt,
         historicalState: replacement.historicalState === "unavailable" ? chunk.historicalState : replacement.historicalState }];
     }
-    return [{ ...chunk, ...replacement, id: chunk.id, seq: chunk.seq }];
+    if (chunk.kind === "usage" && replacement.kind === "usage") {
+      return [{ ...chunk, ...replacement, id: chunk.id, seq: chunk.seq }];
+    }
+    return [chunk];
   });
   if (!textChunks.length && canonical) chunks.unshift(...projected.filter(chunk => chunk.kind === "markdown"));
   chunks.push(...remaining);
@@ -649,12 +652,13 @@ export const useChatMessageStore = create<ChatMessageStore>()(
       let orderedIndex = 0;
       const chronological = reconciled.map((message) => message.historyPosition === undefined
         ? message : ordered[orderedIndex++]);
-      const approvalsByRun = new Map<string, Set<string>>();
+      // Legacy approvals without an ID share the missing-ID slot for their run.
+      const approvalsByRun = new Map<string, Set<string | undefined>>();
       const usageRuns = new Set<string>();
       const restored = chronological.map((message) => {
         const projected = ensureMessageChunks({ ...message }, message.runId);
         if (!message.runId) return { ...message, chunks: projected };
-        const approvals = approvalsByRun.get(message.runId) ?? new Set<string>();
+        const approvals = approvalsByRun.get(message.runId) ?? new Set<string | undefined>();
         approvalsByRun.set(message.runId, approvals);
         const chunks = projected.filter((chunk) => {
           if (chunk.kind === "tool-approval") {

@@ -33,7 +33,7 @@ export function matchesServerHistory(local: RichMessage[], server: ServerSession
   });
 }
 /** Stable identity wins. Legacy text matching is confined to matching user turns. */
-export function missingServerMessages(local: RichMessage[], server: ServerSessionMessage[], _now?: number): RichMessage[] {
+export function missingServerMessages(local: RichMessage[], server: ServerSessionMessage[]): RichMessage[] {
   if (!matchesServerHistory(local, server)) return [];
   const ids = new Set(local.map((message) => message.id));
   const userLocal = local.filter((message) => message.role === "user");
