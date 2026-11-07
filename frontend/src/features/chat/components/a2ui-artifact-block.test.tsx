@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { graphStore } from "@prometheus-ags/prometheus-entity-management";
 import { A2uiChunkView } from "@/features/chat/ui/chunks/a2ui-chunk";
@@ -88,7 +88,12 @@ describe("A2uiDisplayBlock", () => {
       />,
     );
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Unapproved A2UI component: Image");
+    // The profile schema rejects Image before the renderer checks catalog membership.
+    const alert = within(screen.getByRole("alert"));
+    expect(alert.getByText("Effective run policy could not be rendered.", { exact: true })).toBeVisible();
+    expect(alert.getByText("Invalid input", { exact: true })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Effective run policy" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { hidden: true })).not.toBeInTheDocument();
   });
 
   test("requires the declared UAR profile instead of fabricating one", () => {
