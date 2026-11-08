@@ -7,7 +7,7 @@ import { isAbsolute } from 'node:path';
 export const candidateSettingKeys = Object.freeze(['server.log_format', 'memory.inject_context',
   'memory.injection_min_similarity', 'llm.model', 'llm.timeout_secs', 'llm.max_retries',
   'llm.parallel_tool_calls', 'llm.cost_tracking', 'llm.tracing']);
-const canonical = value => JSON.stringify(value, (_key, item) => item && typeof item === 'object' && !Array.isArray(item)
+export const canonical = value => JSON.stringify(value, (_key, item) => item && typeof item === 'object' && !Array.isArray(item)
   ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)) : item);
 const sha = value => createHash('sha256').update(value).digest('hex');
 const unprefix = value => String(value ?? '').replace(/^sha256:/, '');

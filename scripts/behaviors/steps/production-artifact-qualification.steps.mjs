@@ -7,7 +7,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber';
 import { documentFixtures } from '../../../tests/fixtures/production-readiness-documents/fixtures.mjs';
 import { qualifyA2A, qualifyA2ACancellation } from '../../acceptance/fixtures/protocol-qualification/a2a-client.mjs';
-import { loadCandidateArtifactInputs, captureCandidateArtifact, assertCandidateArtifactStable, candidateSettingKeys } from '../support/candidate-artifact-binding.mjs';
+import { loadCandidateArtifactInputs, captureCandidateArtifact, assertCandidateArtifactStable, candidateSettingKeys, canonical } from '../support/candidate-artifact-binding.mjs';
 
 setDefaultTimeout(420_000);
 const KB = '/api/uar/knowledge-bases';
@@ -411,11 +411,11 @@ Given('a frozen bounded reliability agent is retained for this case', async func
   agent.extensions = { ...agent.extensions, budgets: { max_tokens_per_turn: 8192, max_tokens_per_session: 131072, timeout_seconds: 60 } };
   await request(this, 'POST', '/api/agents', agent, [201]);
   this.cleanupAgent = agent.id; this.reliabilityAgent = agent.id;
-  this.frozenAgentDigest = digest(JSON.stringify(await request(this, 'GET', `/api/agents/${agent.id}`)));
+  this.frozenAgentDigest = digest(canonical(await request(this, 'GET', `/api/agents/${agent.id}`)));
 });
 async function reliabilityRun(w, input, session = randomUUID()) {
   if (!w.cleanupSessions.includes(session)) w.cleanupSessions.push(session);
-  assert.equal(digest(JSON.stringify(await request(w, 'GET', `/api/agents/${w.reliabilityAgent}`))), w.frozenAgentDigest);
+  assert.equal(digest(canonical(await request(w, 'GET', `/api/agents/${w.reliabilityAgent}`))), w.frozenAgentDigest);
   const created = await request(w, 'POST', '/api/uar/runs', { agent_id: w.reliabilityAgent, input, session_id: session }, [200, 201, 202]);
   const id = created.run_id ?? created.runId; assert.ok(id);
   const view = await waitRun(w, id);

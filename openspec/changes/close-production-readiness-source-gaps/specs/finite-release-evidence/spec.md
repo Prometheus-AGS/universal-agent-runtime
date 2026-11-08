@@ -41,6 +41,11 @@ Measurement source SHALL require a frozen workload, hardware/profile, concurrenc
 - **THEN** It retains raw request outcomes and semantic first/complete latency distributions with sample counts, provider timing and explicit resource/startup/queue availability
 - **AND** Missing required observations or mismatched reliability receipts cannot become a passing selected promise
 
+#### Scenario: An unchanged retained agent is serialized with a different object-key order
+- **WHEN** an installed reliability scenario re-reads its retained agent before dispatch
+- **THEN** it compares the complete definition in deterministic object-key order while preserving array order
+- **AND** any changed field value or ordered element still fails the frozen-definition check
+
 ### Requirement: Keep functional qualification free of authentication plumbing
 
 #### Scenario: Accounting refuses a run before protected content is admitted
