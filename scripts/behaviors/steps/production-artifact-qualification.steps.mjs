@@ -291,18 +291,19 @@ async function mcpRun(w, marker, approved) {
   const session = randomUUID(); w.cleanupSessions.push(session);
   const created = await request(w, 'POST', '/api/uar/runs', { agent_id: w.agentId, input: `Use qualification_echo with marker ${marker}.`, session_id: session, mcp_servers: [{ name: 'pr476peer', url: w.peerUrl.href }] }, [200, 201, 202]);
   const run = created.run_id ?? created.runId; assert.ok(run);
-  const deadline = Date.now() + 150_000; let approvals = 0;
+  const deadline = Date.now() + 150_000; let approvals = 0, approval;
   while (Date.now() < deadline) {
     const pending = (await request(w, 'GET', `/api/uar/runs/${run}/tool-approval/pending`)).pending;
     if (pending) {
       assert.equal(pending.name, w.tool); assert.ok(++approvals <= 2);
+      if (approved) approval = mcpApproval(pending, run);
       await request(w, 'POST', `/api/uar/runs/${run}/tool-approval`, { approved, approval_id: pending.approvalId });
     }
     const status = await request(w, 'GET', `/api/uar/runs/${run}`);
     if (terminal.has(status.status)) {
       assert.ok(approvals > 0, 'Actual governed approval is required');
       if (approved) assert.equal(status.status, 'done');
-      return { run_id: run, status: status.status, approved, approvals };
+      return { run_id: run, status: status.status, approved, approvals, approval };
     }
     await delay(500);
   }
@@ -330,7 +331,11 @@ Then('the peer journal contains exactly the admitted marker', async function () 
   const events = await runEvents(this, runId);
   const invocations = events.filter(event => event.eventName === 'agui.tool_call.complete' && event.data?.name === this.tool);
   assert.equal(invocations.length, 1); assert.ok(invocations[0].data.id);
-  toolCalls[0].invocation_id = invocations[0].data.id;
+  assert.equal(invocations[0].data.id, this.allowedRun.approval.model_call_id);
+  const admission = await mcpAdmission(this, runId, this.tool, this.allowedRun.approval);
+  assert.ok(admission.records.some(row => row.state === 'succeeded'));
+  toolCalls[0].model_call_id = invocations[0].data.id;
+  toolCalls[0].invocation_id = admission.invocation_id;
   // Replay is retained readback only. It must not create a new provider call,
   // MCP invocation, synthetic effect or accounting liability.
   assert.deepEqual(await runEvents(this, runId), events);
@@ -798,28 +803,60 @@ Then('the PG18 backup is unchanged and restored data remains owner scoped', asyn
 async function protocolEntries(w, marker) {
   return (await readFile(w.protocolJournal, 'utf8')).split('\n').filter(Boolean).map(line => JSON.parse(line)).filter(row => row.marker === marker);
 }
+
+function mcpApproval(pending, runId) {
+  assert.equal(pending.rootRunId, runId);
+  assert.ok(typeof pending.admissionId === 'string' && pending.admissionId.length > 0);
+  assert.ok(typeof pending.toolCallId === 'string' && pending.toolCallId.length > 0);
+  return { admission_id: pending.admissionId, model_call_id: pending.toolCallId };
+}
+
+async function mcpAdmission(w, runId, tool, approval) {
+  const evidence = await request(w, 'GET', `/api/uar/runs/${runId}/tool-admission-evidence`);
+  assert.equal(evidence.runId, runId);
+  const records = evidence.records.filter(row => row.admission_id === approval.admission_id);
+  assert.ok(records.some(row => row.state === 'claim_intent'), 'The exact approved call must have durable claim intent');
+  const invocation = records[0].invocation_id;
+  assert.ok(typeof invocation === 'string' && invocation.length > 0);
+  for (const row of records) {
+    assert.equal(row.run_id, runId);
+    assert.equal(row.root_run_id, runId);
+    assert.equal(row.tool_name, tool);
+    assert.equal(row.invocation_id, invocation);
+  }
+  return { invocation_id: invocation, records };
+}
+
 async function approvedProtocolTool(w, tool, marker, phase) {
   const session = randomUUID(); w.cleanupSessions.push(session);
   const created = await request(w, 'POST', '/api/uar/runs', { agent_id: w.agentId, input: `Use ${tool.split('__').at(-1)} with marker ${marker}.`, session_id: session,
     mcp_servers: [{ name: 'pr476peer', url: w.peerUrl.href }] }, [200, 201, 202]);
   const id = created.run_id ?? created.runId; assert.ok(id);
-  const deadline = Date.now() + 30_000; let approved = false, callId;
+  const deadline = Date.now() + 30_000; let approval;
   while (Date.now() < deadline) {
     const pending = (await request(w, 'GET', `/api/uar/runs/${id}/tool-approval/pending`)).pending;
     if (pending) {
-      assert.equal(approved, false, 'The fixture never silently approves a retry');
+      assert.equal(approval, undefined, 'The fixture never silently approves a retry');
       assert.equal(pending.name, tool);
+      approval = mcpApproval(pending, id);
+      if (tool === w.waitTool) {
+        // Retain the exact resources even if approval or later readback loses its response.
+        w.cleanupSessions = w.cleanupSessions.filter(candidate => candidate !== session);
+        w.retainedMcpAgent = w.cleanupAgent;
+        w.cleanupAgent = undefined;
+      }
       await request(w, 'POST', `/api/uar/runs/${id}/tool-approval`, { approved: true, approval_id: pending.approvalId });
-      approved = true;
     }
     const rows = await protocolEntries(w, marker);
     if (rows.some(row => row.phase === phase)) {
-      assert.equal(approved, true, 'Counterpart arrival requires actual governed approval');
+      assert.ok(approval, 'Counterpart arrival requires actual governed approval');
       const actual = rows.filter(row => row.phase === phase); assert.equal(actual.length, 1);
       assert.ok(actual[0].request_id !== undefined && actual[0].request_id !== null, 'Original MCP request ID must be journalled');
       const started = (await runEvents(w, id)).filter(event => event.eventName === 'agui.tool_call.complete' && event.data?.name === tool);
-      assert.equal(started.length, 1); callId = started[0].data.id; assert.ok(callId);
-      return { run_id: id, session, request_id: actual[0].request_id, invocation_id: callId, marker, tool };
+      assert.equal(started.length, 1);
+      assert.equal(started[0].data.id, approval.model_call_id);
+      const { invocation_id } = await mcpAdmission(w, id, tool, approval);
+      return { run_id: id, session, request_id: actual[0].request_id, invocation_id, ...approval, marker, tool };
     }
     await delay(100);
   }
@@ -848,34 +885,37 @@ Then('the same SDK request terminates without completion or an effect claim', as
   const status = await waitRun(this, original.run_id);
   assert.ok(['cancelled', 'error', 'failed'].includes(status.status), 'Connection uncertainty must not become successful execution');
   const events = await runEvents(this, original.run_id);
-  const results = events.filter(event => event.eventName === 'agui.tool_result' && event.data?.id === original.invocation_id);
+  const results = events.filter(event => event.eventName === 'agui.tool_result' && event.data?.id === original.model_call_id);
   for (const result of results) assert.equal(result.data.success, false);
   for (const event of events.filter(event => event.eventName === 'agui.done')) assert.notEqual(event.data?.outcome?.type ?? event.data?.status, 'success');
-  const evidence = await request(this, 'GET', `/api/uar/runs/${original.run_id}/tool-admission-evidence`);
-  const records = evidence.records.filter(row => row.invocation_id === original.invocation_id);
-  assert.ok(records.length > 0);
+  let admission;
+  const evidenceDeadline = Date.now() + 15_000;
+  do {
+    admission = await mcpAdmission(this, original.run_id, original.tool, original);
+    assert.equal(admission.invocation_id, original.invocation_id);
+    if (admission.records.some(row => row.state === 'outcome_unknown')) break;
+    await delay(100);
+  } while (Date.now() < evidenceDeadline);
+  const { records } = admission;
   assert.equal(records.some(row => row.state === 'succeeded'), false);
-  assert.ok(records.some(row => ['cancelled', 'failed', 'application_failed', 'transport_failed', 'outcome_unknown', 'interrupted'].includes(row.state)), 'Unknown cancellation outcome must stay explicitly recorded');
+  assert.ok(records.some(row => row.state === 'outcome_unknown'), 'The missing result for the claimed MCP call must stay explicitly unknown');
+  assert.equal(records.some(row => ['cancelled', 'invalidated'].includes(row.state)), false, 'Local cancellation cannot settle the claimed MCP effect');
   const calls = await request(this, 'GET', `/api/uar/accounting/calls/${original.run_id}`);
   assert.ok(Array.isArray(calls) && calls.length > 0, 'The actual model/tool exchange must retain its admitted accounting');
-  const uncertain = records.some(row => row.state === 'outcome_unknown') || calls.some(call => call.state !== 'settled');
-  if (uncertain) {
-    this.cleanupSessions = this.cleanupSessions.filter(session => session !== original.session);
-    this.evidence.observations.push({ retained_uncertain_agent: this.cleanupAgent });
-    this.cleanupAgent = undefined;
-  }
+  this.evidence.observations.push({ retained_uncertain_agent: this.retainedMcpAgent });
   this.evidence.observations.push({ independent_mcp_cancellation: original, counterpart: rows, status: status.status, results, admission: records, calls,
-    retained_uncertain_session: uncertain ? original.session : null, remote_effect_rollback_claimed: false });
+    retained_uncertain_session: original.session, remote_effect_rollback_claimed: false });
 });
 When('an approved independent MCP request returns an intentional tool error', async function () {
   this.mcpError = await approvedProtocolTool(this, this.errorTool, `PR476-MCP-ERROR-${randomUUID()}`, 'intentional_error');
   const status = await waitRun(this, this.mcpError.run_id);
-  const results = (await runEvents(this, this.mcpError.run_id)).filter(event => event.eventName === 'agui.tool_result' && event.data?.id === this.mcpError.invocation_id);
+  const results = (await runEvents(this, this.mcpError.run_id)).filter(event => event.eventName === 'agui.tool_result' && event.data?.id === this.mcpError.model_call_id);
   assert.equal(results.length, 1); assert.equal(results[0].data.success, false);
   const rows = await protocolEntries(this, this.mcpError.marker);
   assert.equal(rows.length, 1); assert.deepEqual(rows[0].request_id, this.mcpError.request_id); assert.equal(rows[0].effect_performed, false);
-  const admission = await request(this, 'GET', `/api/uar/runs/${this.mcpError.run_id}/tool-admission-evidence`);
-  const records = admission.records.filter(row => row.invocation_id === this.mcpError.invocation_id);
+  const admission = await mcpAdmission(this, this.mcpError.run_id, this.mcpError.tool, this.mcpError);
+  assert.equal(admission.invocation_id, this.mcpError.invocation_id);
+  const { records } = admission;
   assert.ok(records.some(row => row.state === 'application_failed'), 'An explicit SDK isError result must stay an application failure');
   assert.equal(records.some(row => row.state === 'succeeded'), false);
   this.evidence.observations.push({ independent_mcp_error: this.mcpError, status: status.status, result: results[0], counterpart: rows, admission: records });

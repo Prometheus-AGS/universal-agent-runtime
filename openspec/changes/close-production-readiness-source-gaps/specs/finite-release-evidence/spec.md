@@ -48,6 +48,11 @@ Release/support/version/recovery/measurement source SHALL use one selected-lane 
 - **THEN** The case retains the original protocol/native identity, observes actual counterpart termination or explicit refusal/uncertainty, and cannot substitute generic model-stream cancellation for protocol evidence
 - **AND** Unknown effect or billing liabilities remain retained rather than silently cleaned up or replayed
 
+#### Scenario: Standalone MCP cancellation leaves a claimed effect unresolved
+- **WHEN** an approved standalone MCP call is claimed and cancellation closes the connection without a definitive result
+- **THEN** the owner-scoped admission evidence retains the same invocation as outcome unknown
+- **AND** qualification correlates the model call and durable invocation through their approved admission, verifies cancellation of the original SDK request separately, and retains any unresolved-effect shutdown refusal
+
 ### Requirement: Prepare reproducible packaged-runtime measurements without inventing promises
 Measurement source SHALL require a frozen workload, hardware/profile, concurrency, thresholds, token budgets and exact source/artifact/provider/settings identities before execution. Controlled-provider framework measurements, real-model task quality and comparative results SHALL remain distinct.
 
