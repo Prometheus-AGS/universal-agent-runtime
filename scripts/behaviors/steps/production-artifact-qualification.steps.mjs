@@ -102,6 +102,19 @@ async function upload(w, path, fixture, allowFailed = false) {
   throw new Error(`${fixture.name} ingestion did not reach an honest terminal outcome`);
 }
 
+async function rejectedDocument(w, path, document) {
+  assert.equal(document.status, 'failed');
+  assert.equal(document.chunk_count, 0);
+  const job = await request(w, 'GET', `${path}/documents/${encodeURIComponent(document.id)}/ingestion`);
+  assert.equal(job.document_id, document.id);
+  assert.equal(job.state, 'failed');
+  assert.equal(job.attempts, 1, 'Deterministic extraction failure must settle on the first attempt');
+  assert.ok(job.last_error, 'The rejected attempt must retain its diagnostic');
+  w.evidence.observations.push({ rejected_document: document.id, status: document.status,
+    attempts: job.attempts, diagnostic_sha256: digest(job.last_error) });
+  return job;
+}
+
 async function state(w) {
   const saved = JSON.parse(await readFile(w.statePath, 'utf8'));
   assert.equal(saved.case_id, w.caseId); assert.equal(saved.workspace, w.workspace); assert.equal(saved.base_url, w.base.href);
@@ -146,8 +159,24 @@ Then('a malformed Office input is refused without a searchable fact', async func
   const marker = `MALFORMED-${randomUUID()}`;
   const result = await upload(this, path, { name: 'corrupt.docx', type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', bytes: Buffer.from(marker) }, true);
   assert.ok(result.refused || result.status === 'failed');
+  if (!result.refused) await rejectedDocument(this, path, result);
   const found = await request(this, 'POST', `${path}/search`, { query: marker, limit: 20, min_score: 0 });
   assert.ok(found.results.every(row => !row.content.includes(marker)));
+});
+
+When('I upload the PNG qualification document with OCR disabled', async function () {
+  const fixture = documentFixtures().find(item => item.type === 'image/png');
+  assert.ok(fixture);
+  this.pngKb = await newKb(this, 'ocr-disabled');
+  this.cleanupKbs = [this.pngKb];
+  this.pngDocument = await upload(this, this.pngKb, fixture, true);
+});
+
+Then('the document fails without a searchable chunk or automatic retry', async function () {
+  const job = await rejectedDocument(this, this.pngKb, this.pngDocument);
+  assert.match(job.last_error, /no indexable text/);
+  const found = await request(this, 'POST', `${this.pngKb}/search`, { query: 'What fact does this qualification document contain?', limit: 20, min_score: 0 });
+  assert.deepEqual(found.results, []);
 });
 
 When('I save the artifact lifecycle canary', async function () {

@@ -532,6 +532,7 @@ fn ingestion_api_error(error: anyhow::Error) -> (StatusCode, String) {
         Some(IngestionStoreError::Unsupported) => StatusCode::SERVICE_UNAVAILABLE,
         Some(IngestionStoreError::MissingKnowledgeBase) => StatusCode::NOT_FOUND,
         Some(IngestionStoreError::Revoked) => StatusCode::CONFLICT,
+        Some(IngestionStoreError::EmptyPublication) => StatusCode::UNPROCESSABLE_ENTITY,
         None => StatusCode::INTERNAL_SERVER_ERROR,
     };
     (code, error.to_string())

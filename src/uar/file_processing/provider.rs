@@ -34,6 +34,10 @@ pub enum ProcessingError {
     #[error("Unsupported file type: {0}")]
     UnsupportedType(String),
 
+    /// The provider rejected the document's input bytes.
+    #[error("Invalid document: {0}")]
+    InvalidDocument(&'static str),
+
     /// The provider is not properly configured.
     #[error("Provider not configured: {0}")]
     ProviderNotConfigured(String),

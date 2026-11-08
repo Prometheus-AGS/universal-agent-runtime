@@ -8,7 +8,7 @@ use crate::config::{AppConfig, FileProcessingConfig};
 use crate::uar::file_processing::{FileProcessor, KreuzbergProvider, process_bytes};
 use crate::uar::{
     domain::knowledge::{DocumentStatus, KnowledgeDocument},
-    file_processing::FileProcessorFactory,
+    file_processing::{FileProcessorFactory, ProcessingError},
     persistence::PersistenceLayer,
     rag::ingest::IngestService,
 };
@@ -102,6 +102,19 @@ impl WorkerExecutor<DocumentIngestionJob, IngestionResult> for DocumentIngestion
             }
             self.process_document(&job, meta.deadline_ms).await
         }).catch_unwind().await;
+        let rejected = result.as_ref().is_ok_and(|result| {
+            result.as_ref().is_err_and(|error| {
+                matches!(
+                    error.downcast_ref::<ProcessingError>(),
+                    Some(ProcessingError::InvalidDocument(_)
+                        | ProcessingError::UnsupportedType(_)
+                        | ProcessingError::ProviderNotConfigured(_))
+                ) || matches!(
+                    error.downcast_ref::<IngestionStoreError>(),
+                    Some(IngestionStoreError::EmptyPublication)
+                )
+            })
+        });
         let result = match result {
             Ok(result) => result.map_err(TaskError::executor),
             Err(_) => Err(TaskError::ExecutorPanicked { message: "document ingestion panicked".to_owned() }),
@@ -109,7 +122,12 @@ impl WorkerExecutor<DocumentIngestionJob, IngestionResult> for DocumentIngestion
         match result {
             Ok(chunk_count) => Ok(IngestionResult { document_id: doc_id, chunk_count, status: DocumentStatus::Indexed }),
             Err(error) => {
-                self.persist_failure(&job.durable, &error).await;
+                if rejected {
+                    let failed = job.durable.rejected_attempt(error.to_string());
+                    self.persist_failure_transition(&job.durable, &failed).await;
+                } else {
+                    self.persist_failure(&job.durable, &error).await;
+                }
                 Err(error)
             }
         }
@@ -120,8 +138,12 @@ impl WorkerExecutor<DocumentIngestionJob, IngestionResult> for DocumentIngestion
 impl DocumentIngestionExecutor {
     async fn persist_failure(&self, job: &IngestionJob, error: &TaskError) {
         let failed = job.failed_attempt(error.to_string());
+        self.persist_failure_transition(job, &failed).await;
+    }
+
+    async fn persist_failure_transition(&self, job: &IngestionJob, failed: &IngestionJob) {
         let settlement = std::panic::AssertUnwindSafe(
-            self.persistence.transition_ingestion(job, &failed)
+            self.persistence.transition_ingestion(job, failed)
         ).catch_unwind().await;
         match settlement {
             // False is a settled stale attempt: retry, publication or deletion

@@ -255,10 +255,16 @@ impl IngestService {
         // old indexed identity stays unavailable until every member settles.
         let fingerprint = backend.fingerprint();
         crate::uar::rag::regeneration::validate_preparation(&kb, job, &fingerprint)?;
+        if content.trim().is_empty() {
+            return Err(IngestionStoreError::EmptyPublication.into());
+        }
         let segments = Chunker::new(kb.config.chunk_strategy, Some(Arc::clone(&backend)))
             .chunk(content).await?;
         let refs: Vec<&str> = segments.iter().map(String::as_str).collect();
-        let embeddings = if refs.is_empty() { Vec::new() } else { backend.embed(&refs).await? };
+        if refs.iter().all(|segment| segment.trim().is_empty()) {
+            return Err(IngestionStoreError::EmptyPublication.into());
+        }
+        let embeddings = backend.embed(&refs).await?;
         anyhow::ensure!(segments.len() == embeddings.len(), "embedding result count differs from chunk count");
         let created_at = chrono::Utc::now().to_rfc3339();
         let chunks = segments.into_iter().zip(embeddings).enumerate().map(|(index, (content, embedding))| {

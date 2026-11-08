@@ -10,6 +10,12 @@ Feature: Exact owned Linux container and independent protocol qualification
     Then each format retrieves its own fact with document provenance
     And a malformed Office input is refused without a searchable fact
 
+  @document-ocr-disabled
+  Scenario: A PNG without OCR does not publish an empty index
+    Given the exact owned Linux API artifact is externally provisioned
+    When I upload the PNG qualification document with OCR disabled
+    Then the document fails without a searchable chunk or automatic retry
+
   @capture-prior
   Scenario: Capture actual prior artifact and synthetic retained state
     Given the exact owned Linux API artifact is externally provisioned

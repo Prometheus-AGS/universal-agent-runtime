@@ -30,6 +30,12 @@ Release/support/version/recovery/measurement source SHALL use one selected-lane 
 - **THEN** the exact safe invalid_image_base64 code remains recognizable in the qualification check without exposing request data
 - **AND** no isolated provider receives the refused request
 
+#### Scenario: The installed document profile settles extraction truthfully
+
+- **WHEN** local English OCR is enabled in the selected Linux image
+- **THEN** the packaged pinned language data is available to the non-root runtime without a download at extraction time
+- **AND** malformed or empty extraction cannot publish an indexed generation, deterministic rejection becomes a terminal failed job, and transient failures keep their existing retry budget
+
 #### Scenario: Installed final-wire accounting is carried in a retained artifact
 
 - **WHEN** the selected peer receives an image-bearing request and the run retains its provider budget artifact

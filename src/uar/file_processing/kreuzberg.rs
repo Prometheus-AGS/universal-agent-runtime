@@ -99,7 +99,18 @@ fn extract_document(
 ) -> Result<xberg::ExtractedDocument, ProcessingError> {
     let result = handle
         .block_on(xberg::extract(input, config))
-        .map_err(|error| ProcessingError::ProviderError(format!("xberg error: {error}")))?;
+        .map_err(|error| match error {
+            xberg::XbergError::Parsing { .. } => {
+                ProcessingError::InvalidDocument("document structure could not be parsed")
+            }
+            xberg::XbergError::UnsupportedFormat(_) => {
+                ProcessingError::UnsupportedType("unsupported document format".to_owned())
+            }
+            xberg::XbergError::MissingDependency(_) => ProcessingError::ProviderNotConfigured(
+                "required extraction dependency is unavailable".to_owned(),
+            ),
+            _ => ProcessingError::ProviderError(format!("xberg error: {error}")),
+        })?;
     result
         .results
         .into_iter()

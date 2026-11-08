@@ -264,7 +264,18 @@ RUN --mount=type=secret,id=github_token \
         --features "server-full,postgres-backend" \
         --bin universal-agent-runtime \
     && mkdir -p /out/bin \
-    && cp target/release/universal-agent-runtime /out/bin/
+    && cp target/release/universal-agent-runtime /out/bin/ \
+    && for model in target/release/build/xberg-tesseract-*/out/eng.traineddata; do \
+         if [ -f "$model" ] && printf '%s  %s\n' \
+           7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2 "$model" \
+           | sha256sum --check --status; then \
+           install -D -m 0644 "$model" /out/tessdata/eng.traineddata || exit 1; \
+           break; \
+         fi; \
+       done \
+    && test -s /out/tessdata/eng.traineddata \
+    && install -m 0644 "${CARGO_HOME}"/git/checkouts/xberg-*/ffb3b1a/crates/xberg-tesseract/licenses/tesseract-LICENSE \
+         /out/tessdata/LICENSE
 
 # Ship the actual plain components from the pinned skill pack. Native caches
 # are not a trusted distribution format: the runtime validates and compiles
@@ -302,6 +313,9 @@ ENV UAR_STATIC_DIR=/opt/uar/static \
     PNPM_STORE_DIR=/var/lib/uar/cache/pnpm
 
 COPY --from=builder /out/bin/universal-agent-runtime /usr/local/bin/universal-agent-runtime
+# The pinned xberg build verifies this English pack. Its Linux system lookup
+# can read it without materializing a cache or downloading data during OCR.
+COPY --from=builder /out/tessdata/ /usr/share/tesseract-ocr/5/tessdata/
 # Preserve restrictive source modes while making bundled assets readable by
 # the non-root runtime identity, including the mandatory governance policies.
 COPY --chown=65532:65532 --from=builder /out/static /opt/uar/static

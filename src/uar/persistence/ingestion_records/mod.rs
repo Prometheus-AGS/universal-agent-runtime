@@ -76,6 +76,15 @@ impl IngestionJob {
         next
     }
 
+    /// The same bytes and settings cannot succeed on automatic redelivery.
+    pub fn rejected_attempt(&self, error: String) -> Self {
+        let mut next = self.clone();
+        next.state = IngestionState::Failed;
+        next.next_attempt_at = chrono::Utc::now().timestamp();
+        next.last_error = Some(error);
+        next
+    }
+
     pub fn retry(&self) -> Self {
         let mut next = self.clone();
         next.state = IngestionState::Pending;
@@ -108,6 +117,8 @@ pub enum IngestionStoreError {
     Revoked,
     #[error("knowledge base is unavailable to the document owner")]
     MissingKnowledgeBase,
+    #[error("document extraction produced no indexable text")]
+    EmptyPublication,
 }
 
 /// Entire generation is prepared without storage writes, then published once.
@@ -121,6 +132,9 @@ impl IngestionPublication {
     pub fn validate(&self, job: &IngestionJob) -> anyhow::Result<()> {
         job.validate_namespace()?;
         anyhow::ensure!(job.state == IngestionState::Processing, "only processing jobs publish");
+        if self.chunks.iter().all(|chunk| chunk.content.trim().is_empty()) {
+            return Err(IngestionStoreError::EmptyPublication.into());
+        }
         for chunk in &self.chunks {
             anyhow::ensure!(chunk.owner_id == job.owner_id && chunk.kb_id == job.kb_id
                 && chunk.document_id.as_deref() == Some(job.document_id.as_str()), "chunk scope differs from job");
