@@ -30,6 +30,12 @@ Release/support/version/recovery/measurement source SHALL use one selected-lane 
 - **THEN** the exact safe invalid_image_base64 code remains recognizable in the qualification check without exposing request data
 - **AND** no isolated provider receives the refused request
 
+#### Scenario: Installed final-wire accounting is carried in a retained artifact
+
+- **WHEN** the selected peer receives an image-bearing request and the run retains its provider budget artifact
+- **THEN** qualification decodes that exact run-scoped artifact and checks its qualified destination, while the peer observation checks the destination's actual wire model
+- **AND** an attempt manifest alone cannot substitute for final-wire estimated counting evidence
+
 #### Scenario: Selected independent protocol clients cancel actual active work
 - **WHEN** A selected independent A2A client or official MCP counterpart observes positive activity and cancellation is requested for the original task or call
 - **THEN** The case retains the original protocol/native identity, observes actual counterpart termination or explicit refusal/uncertainty, and cannot substitute generic model-stream cancellation for protocol evidence

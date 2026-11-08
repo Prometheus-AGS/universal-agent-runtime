@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { Before, After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber';
 import { initialize, configure, agent, content, image, text, send, summarize, compareParts,
-  assertSuccess, assertRefused, privacy, http, digest, parseJson, beginCase, beginCleanup, finishIO, requireLive,
+  assertSuccess, assertRefused, finalWireAccounting, privacy, http, digest, parseJson, beginCase, beginCleanup, finishIO, requireLive,
   readOwnedFile, poisonFixture, isolationState } from '../support/capability-fixture.mjs';
 
 setDefaultTimeout(180_000);
@@ -281,12 +281,12 @@ When('I send an admitted image under that same finite-cost policy', async functi
 });
 
 function assertEstimatedAccounting(facts, observations, expected) {
-  const observed = observations.filter(row => row.peer === expected.peer && row.model_sha256 === digest(expected.model));
+  const observed = observations.filter(row => row.peer === expected.peer && row.model_sha256 === digest(expected.wireModel));
   assert.ok(observed.length > 0 && observed.some(row => row.messages.some(message =>
     message.parts.some(part => part.type === 'image_url'))), 'Accounting must accompany an actual image-bearing destination request');
   assert.ok(facts.final.length > 0, 'Actual final-provider request budget receipt is required; attempt manifests are insufficient');
   for (const receipt of facts.final) {
-    assert.equal(receipt.destination_model, expected.model, 'Final accounting destination must equal the actual observed wire model');
+    assert.equal(receipt.destination_model, expected.destination, 'Final accounting must identify the exact admitted destination');
     assert.equal(receipt.representation, 'final_provider_request');
     assert.equal(receipt.serialized_request, true);
     assert.equal(receipt.count_quality, 'approximate');
@@ -309,20 +309,14 @@ Then('the owned run events report estimated image accounting without a fit guara
   assert.ok(run, 'Actual public run must exist');
   const events = parseJson((await http(this, 'GET', `/api/uar/runs/${encodeURIComponent(run.run_id)}/events`, undefined, [200])).raw);
   assert.equal(events.gapReason, null, 'Diagnostic receipt cannot rely on a retention gap');
-  const facts = { final: [], attempts: [] };
-  function visit(value) {
-    if (!value || typeof value !== 'object') return;
-    if (value.schema_version === 'uar.request-budget.v1') facts.final.push(value);
-    if (value.schema_version === 'uar.attempt-manifest.v1') facts.attempts.push(value);
-    for (const nested of Object.values(value)) visit(nested);
-  }
-  visit(events);
-  const expected = { peer: this.primary.peer, model: this.primary.wireModel ?? this.primary.modelId };
+  const facts = finalWireAccounting(events.events, run.run_id);
+  const expected = { peer: this.primary.peer, destination: this.primary.destination,
+    wireModel: this.primary.wireModel ?? this.primary.modelId };
   assertEstimatedAccounting(facts, this.last.observations, expected);
   assert.throws(() => assertEstimatedAccounting({ final: [], attempts: facts.attempts }, this.last.observations, expected),
     { name: 'AssertionError' }, 'Removing only actual final-wire receipts must fail the same comparator');
   this.evidence.accounting = { final_receipt_count: facts.final.length, attempt_count: facts.attempts.length,
-    destination_model_sha256: digest(expected.model), count_quality: 'approximate', fit_guarantee: false,
+    destination_model_sha256: digest(expected.destination), wire_model_sha256: digest(expected.wireModel), count_quality: 'approximate', fit_guarantee: false,
     missing_final_receipt_control: 'REJECTED_BY_SAME_COMPARATOR' };
 });
 Then('diagnostic sentinels are excluded by a sensitive privacy comparator', function () {

@@ -395,6 +395,24 @@ export async function send(w, route, stream, value, extras = {}) {
   return w.last;
 }
 
+export function finalWireAccounting(events, runId) {
+  const facts = { final: [], attempts: [] };
+  for (const { eventName, data } of events) {
+    if (eventName !== 'agui.artifact' || data?.request_id !== runId || data.language !== 'json') continue;
+    if (data.artifact_type === 'provider_event' && data.artifact_id === 'uar.request:budget_receipt') {
+      const event = parseJson(data.content);
+      assert.equal(event.source, 'uar.request');
+      assert.equal(event.payload?.schema_version, 'uar.request-budget.v1');
+      facts.final.push(event.payload);
+    } else if (data.artifact_type === 'attempt_manifest') {
+      const attempt = parseJson(data.content);
+      assert.equal(attempt.schema_version, 'uar.attempt-manifest.v1');
+      facts.attempts.push(attempt);
+    }
+  }
+  return facts;
+}
+
 export function assertSuccess(w, result, destination = w.primary) {
   assert.equal(result.failed, false, 'Public completion must succeed');
   assert.ok(result.completion.startsWith('controlled-success:') || result.completion === '{"result":42}', 'Useful controlled completion required');
