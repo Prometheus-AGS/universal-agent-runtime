@@ -389,7 +389,7 @@ export async function send(w, route, stream, value, extras = {}) {
   if (response.status >= 400 && response.raw.trim().startsWith('{')) {
     const body = parseJson(response.raw);
     const candidate = body.error?.code ?? body.code;
-    if (typeof candidate === 'string' && /^[a-z_]{1,80}$/.test(candidate)) errorCode = candidate;
+    if (typeof candidate === 'string' && /^[a-z_][a-z0-9_]{0,79}$/.test(candidate)) errorCode = candidate;
   }
   w.last = { status: response.status, failed, completion, observations, errorCode };
   return w.last;
