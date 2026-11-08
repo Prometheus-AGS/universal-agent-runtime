@@ -36,6 +36,13 @@ Release/support/version/recovery/measurement source SHALL use one selected-lane 
 - **THEN** qualification decodes that exact run-scoped artifact and checks its qualified destination, while the peer observation checks the destination's actual wire model
 - **AND** an attempt manifest alone cannot substitute for final-wire estimated counting evidence
 
+#### Scenario: A verified inherited chat model has an authorized fallback
+
+- **WHEN** ordinary chat inherits its verified primary and the provider fails before output
+- **THEN** the runtime retains the verification receipt and may dispatch only to a fallback authorized by the existing run policy
+- **AND** each fallback must have current verification for its configured destination and pass its own capability, credential and final-wire budget checks
+- **AND** explicit model selections, saved conversation models and bound targets retain exact scope
+
 #### Scenario: Selected independent protocol clients cancel actual active work
 - **WHEN** A selected independent A2A client or official MCP counterpart observes positive activity and cancellation is requested for the original task or call
 - **THEN** The case retains the original protocol/native identity, observes actual counterpart termination or explicit refusal/uncertainty, and cannot substitute generic model-stream cancellation for protocol evidence

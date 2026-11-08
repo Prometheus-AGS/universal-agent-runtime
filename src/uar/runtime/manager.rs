@@ -3507,6 +3507,7 @@ impl RunManager {
             host_secret_scrubber: Default::default(),
             resolved_policy: None,
             target_selection: None,
+            inherited_chat_model: false,
             presentation_negotiation: Default::default(),
             host_policy_constraint: None,
             host_budget_constraint: None,
@@ -4287,6 +4288,7 @@ impl RunManager {
             mut memory_hits,
             resolved_policy,
             target_selection,
+            inherited_chat_model,
             presentation_negotiation,
             seed_history,
             client_tools,
@@ -4313,6 +4315,8 @@ impl RunManager {
             a2a_delegation,
             host_sandbox_constraint,
         } = request;
+        let exact_target =
+            target_selection.is_some() && (!inherited_chat_model || checkpoint_resume.is_some());
         let output_token_cap = match (
             output_token_cap,
             client_tools
@@ -6784,7 +6788,7 @@ impl RunManager {
                 run_llm_config.thinking_budget = effort.thinking_budget();
             }
             let mut run_llm_config = run_llm_config;
-            let mut run_failover_config = if target_selection.is_some() {
+            let mut run_failover_config = if exact_target {
                 // Explicit target selection never authorizes another model or billing route.
                 let mut failover = self.failover_config.clone();
                 failover.enabled = false;
@@ -6950,6 +6954,47 @@ impl RunManager {
                         fallback_config.catalog_pricing_model = None;
                         fallback_config
                     };
+                    #[cfg(feature = "server")]
+                    let fallback_config = if inherited_chat_model {
+                        let Some(registry) = &self.provider_registry else {
+                            continue;
+                        };
+                        let Some(provider) = registry.get(&fallback_provider).await else {
+                            continue;
+                        };
+                        let registered_endpoint =
+                            (!provider.base_url.is_empty()).then_some(provider.base_url.as_str());
+                        if fallback_config
+                            .base_url
+                            .as_deref()
+                            .is_some_and(|endpoint| Some(endpoint) != registered_endpoint)
+                            || fallback_config
+                                .api_key
+                                .as_ref()
+                                .is_some_and(|key| Some(key) != provider.api_key.as_ref())
+                            || crate::uar::api::model_verification::current(
+                                &provider,
+                                &fallback_model,
+                                self.settings_manager.as_deref(),
+                                self.provider_service.as_deref(),
+                            )
+                            .await
+                            .is_none()
+                        {
+                            tracing::info!(
+                                model = %fallback.model,
+                                "Skipping fallback without matching current model verification"
+                            );
+                            continue;
+                        }
+                        // Model-only global entries inherit their registered connection.
+                        let mut fallback_config = fallback_config;
+                        fallback_config.base_url = registered_endpoint.map(str::to_owned);
+                        fallback_config.api_key = provider.api_key;
+                        fallback_config
+                    } else {
+                        fallback_config
+                    };
                     let fallback_config = match &run_credentials {
                         Some(credentials) => credentials
                             .config_for(&fallback_provider, Some(&fallback_model), fallback_config)
@@ -7108,7 +7153,7 @@ impl RunManager {
         };
 
         let run_llm_config = model_bindings.config().clone();
-        let destination_scope = model_bindings.destination_scope(target_selection.is_some());
+        let destination_scope = model_bindings.destination_scope(exact_target);
         let admitted_inline_image_destinations =
             model_bindings.admitted_inline_image_destinations();
         let admitted_run_local_plaintext_destinations =

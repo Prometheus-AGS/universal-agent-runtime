@@ -7609,6 +7609,7 @@ pub(crate) async fn api_chat_completion(
                     });
                 }
             }
+            let inherited_chat_model = turn_policy.model.is_none() && caller_request.is_none();
             if !req.memory_enabled {
                 turn_policy.memory_enabled = Some(false);
             }
@@ -7724,6 +7725,9 @@ pub(crate) async fn api_chat_completion(
                 .await;
             }
 
+            let inherited_chat_model = inherited_chat_model
+                && effective_run_policy.provenance.get("model")
+                    != Some(&uar::domain::policy::PolicyScope::Conversation);
             let effective_model_name = effective_run_policy
                 .model
                 .as_ref()
@@ -7958,6 +7962,7 @@ pub(crate) async fn api_chat_completion(
                 }
             };
             run_request.target_selection = target_receipt.map(|receipt| json!(receipt));
+            run_request.inherited_chat_model = inherited_chat_model;
             run_request = run_request.with_credential_capture(
                 credential_capture.map(|axum::Extension(capture)| capture),
             );

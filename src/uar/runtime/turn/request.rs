@@ -120,6 +120,8 @@ pub struct RunExecutionRequest {
     pub resolved_policy: Option<EffectiveRunPolicy>,
     /// Safe admitted target identity, never a mutable definition.
     pub(crate) target_selection: Option<serde_json::Value>,
+    /// The chat ingress verified a model inherited from policy without pinning fallback authority.
+    pub(crate) inherited_chat_model: bool,
     /// Client output restrictions; these never grant template/resource access.
     pub presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
     /// Restriction-only turn scope accepted from a verified host adapter.
@@ -205,6 +207,7 @@ impl RunExecutionRequest {
             memory_context_provenance: None,
             resolved_policy: None,
             target_selection: None,
+            inherited_chat_model: false,
             presentation_negotiation: Default::default(),
             host_policy_constraint: None,
             host_budget_constraint: None,
