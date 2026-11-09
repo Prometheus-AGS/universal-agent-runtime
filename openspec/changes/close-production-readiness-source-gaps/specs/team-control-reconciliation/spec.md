@@ -15,3 +15,8 @@ Team control advertisement SHALL reflect usable authoritativepolicy and typed re
 #### Scenario: A selected team control is unavailable to the current attempt
 - **WHEN** current team eligibility, governance or approval policy withholds a selected attempt-bound team control
 - **THEN** the actor captures only registered team controls, the task can run without the withheld control, and unrelated unbound tools still fail closed
+
+#### Scenario: Concurrent team parents contend on embedded durable call admission
+- **WHEN** embedded SurrealKV confirms that a pre-dispatch admission transaction aborted with a typed transaction conflict
+- **THEN** the host can retry admission within a finite bound using the same call identity and reservation, with fresh scope and funding reads and the original generation checks
+- **AND** an unknown commit outcome, stale generation or exhausted retry bound prevents dispatch, and previously submitted work and settlement stay outside the retry

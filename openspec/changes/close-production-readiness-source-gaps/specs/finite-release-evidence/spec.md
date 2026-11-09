@@ -72,6 +72,11 @@ Measurement source SHALL require a frozen workload, hardware/profile, concurrenc
 - **THEN** It retains raw request outcomes and semantic first/complete latency distributions with sample counts, provider timing and explicit resource/startup/queue availability
 - **AND** Missing required observations or mismatched reliability receipts cannot become a passing selected promise
 
+#### Scenario: The first Linux candidate has an error-only measurement threshold
+- **WHEN** the frozen synthetic workload runs at concurrency 1 and 4 with eight requests per round and three repetitions per concurrency
+- **THEN** the existing measurement receipt qualifies the threshold only if all 48 requests complete with zero observed errors
+- **AND** latency, throughput and resource samples remain observations without a latency or capacity promise
+
 #### Scenario: An unchanged retained agent is serialized with a different object-key order
 - **WHEN** an installed reliability scenario re-reads its retained agent before dispatch
 - **THEN** it compares the complete definition in deterministic object-key order while preserving array order

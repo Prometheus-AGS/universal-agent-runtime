@@ -24,6 +24,18 @@ Native archives and the container package `server-full` together with the built
 React assets. The `minimal` profile exists for dependency-constrained headless
 deployments and compile-time boundary verification.
 
+## Build and verification features
+
+| Cargo feature | Classification | Scope |
+|---|---|---|
+| `tract-embeddings` | Internal | CPU-only local embedding backend selected by Intel macOS sidecar packaging. Intel macOS is outside the selected Linux amd64 qualification. |
+| `afc-c06-gate` | Development only | Agent Fabric C06 acceptance target. |
+| `afc-c07-gate` | Development only | Agent Fabric C07 acceptance target, which includes the C06 feature. |
+| `test-probes` | Development only | Test probe executable and integration targets that require it. |
+| `bauar-native-admission-gate` | Development only | Separate full-feature native admission acceptance artifact. |
+
+The development-only flags listed here are outside the product bundles.
+
 ## Provider tiers
 
 | Tier | Promise | Evidence |

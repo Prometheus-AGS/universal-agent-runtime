@@ -56,16 +56,21 @@
     { "id": "response-quality", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features response-quality" },
     { "id": "admin-ui", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features admin-ui" },
     { "id": "local-models", "status": "stable", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features local-models" },
+    { "id": "tract-embeddings", "status": "internal", "default": false, "platforms": ["macos"], "conflicts": [], "gate": "Intel macOS sidecar packaging selects the CPU-only tract backend for local embeddings" },
     { "id": "candle-embeddings", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features server-full,candle-embeddings" },
     { "id": "document-intelligence", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features document-intelligence" },
     { "id": "api-docs", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features api-docs" },
     { "id": "cedar-governance", "status": "stable", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features cedar-governance" },
+    { "id": "afc-c06-gate", "status": "development-only", "default": false, "platforms": [], "conflicts": [], "gate": "cargo test --locked --features afc-c06-gate --test agent_fabric_c06_gate" },
+    { "id": "afc-c07-gate", "status": "development-only", "default": false, "platforms": [], "conflicts": [], "gate": "cargo test --locked --features afc-c07-gate --test agent_fabric_c07_gate" },
     { "id": "telemetry", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features telemetry" },
     { "id": "sentry", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features server-full,sentry" },
     { "id": "a2a-transport", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features a2a-transport" },
     { "id": "wasm-runtime", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features wasm-runtime" },
     { "id": "tauri", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features tauri" },
-    { "id": "vault", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features server-full,vault" }
+    { "id": "vault", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features server-full,vault" },
+    { "id": "test-probes", "status": "development-only", "default": false, "platforms": [], "conflicts": [], "gate": "cargo test --locked --features test-probes --test sidecar_launch_security" },
+    { "id": "bauar-native-admission-gate", "status": "development-only", "default": false, "platforms": [], "conflicts": [], "gate": "Separate full-feature acceptance artifact for native admission" }
   ],
   "bundles": [
     { "id": "minimal", "status": "stable", "license": "MIT", "features": ["surreal-backend"], "gate": "cargo test --lib --features minimal" },

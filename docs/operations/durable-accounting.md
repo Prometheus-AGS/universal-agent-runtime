@@ -51,9 +51,13 @@ generation. `accounting_calls` contains separate stable call records, indexed by
 owner/run. Admission and settlement affect at most eight scopes per call.
 Postgres locks affected scope rows in sorted key order in a native transaction.
 Surreal commits scope revisions and the call record in one compare-and-swap
-transaction. A contention or generation conflict refuses work; callers must not
-silently dispatch after refusal. There is no lease timeout that returns uncertain
-liability. No global history document is rewritten by a call.
+transaction. Before provider dispatch, embedded SurrealKV may retry admission
+up to twice when the transaction reports a typed conflict and every other error
+is a rollback placeholder. Each retry rereads the original call and funding
+identities and all affected scopes, then checks the original reservation against
+current balances and generations. Unresolved contention, stale generations and
+unknown commit outcomes refuse dispatch. There is no lease timeout that returns
+uncertain liability. No global history document is rewritten by a call.
 
 Scope capacity is settled usage plus outstanding reserved liability. Current
 persisted scope limits are authoritative; startup creates missing scopes from

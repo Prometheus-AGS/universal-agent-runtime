@@ -4,11 +4,11 @@ The selected promotion lane is Linux amd64 container APIs behind the trusted hos
 
 ## Selected promises and retained evidence
 
-Comparison scope is **NONE**. No owner-selected equivalent workload, target concurrency, measurable thresholds or comparative profile has been established for #472. No workload/threshold, hardware number, benchmark result or paid-model budget is invented here. A missing prerequisite remains unselected or unverified, not a synthetic quality pass.
+Comparison scope is **NONE**. The operator selected the synthetic #472 request-path baseline at concurrency 1 and 4, eight requests per round and three repetitions per concurrency, for 48 requests in total. The sole acceptance threshold is a 0% observed error rate. Latency, throughput and resource observations carry no selected threshold or capacity promise. The selected experiment remains unverified until the frozen manifest, installed artifact and actual receipt are available.
 
 `benches/hot_path.rs` measures deterministic routing/context/prompt helpers. Its July 4 table is historical helper-overhead evidence on its recorded source; it is not a packaged-runtime capacity result. `evals/routing-accuracy.yaml` and the context suite exercise deterministic helpers. Existing eval scorers and baselines remain useful: deterministic checks are primary, and any LLM judge is advisory with named provider/model/prompt/temperature. A controlled provider can establish framework overhead and protocol wiring; only genuine output through the supported packaged runtime can establish model task success.
 
-Reuse the existing eval CLI, suite/baseline persistence and post-lifecycle boundary manifests/receipts when a workload is selected. Do not replace them with a new global harness. Existing recovery, interruption, history and resource-owner scenarios can supply a bounded reliability workload. Select duration/volume from actual failure scenarios; a cancelled arbitrary soak must not return as an implied requirement. No current receipt in those paths qualifies a new source/artifact automatically.
+Use the existing Cucumber measurement feature for the selected baseline. Existing recovery, interruption, history and resource-owner scenarios supply separate reliability evidence within their recorded inputs. Any receipt carried forward to a different source or artifact needs an explicit applicability rationale.
 
 ## Rig and equivalence disclosure
 
@@ -28,7 +28,7 @@ Raw outcomes, repeated-run variation, failed, blocked, negative and inconclusive
 
 A result is bound to its exact source/artifact/configuration/workload. Reassess the affected selected measurements after materially changing request preparation/routing, context strategy/tokenization, retry/stream handling, tool/effect dispatch, durable admission/accounting/recovery, persistence engine/version, provider/model/adapter, scheduler/backpressure, telemetry capture, compiler/dependency/runtime or artifact resource settings. Preserve a passing unaffected gate; do not expand every change into an unbounded benchmark suite. If no measurement was selected, update the disclosure rather than inventing a regression threshold. Historical helper numbers must retain their date/source scope until deliberately replaced with approved measurements.
 
-The whole-set verification gate remains closed. All #462–475 implementation items precede one final named validation batch after explicit operator instruction; source authorship or an isolated handoff supplies no benchmark or acceptance result.
+The parent KBD Execute ledger records the phase-scoped authorization, implementation boundary and serial gate commands. Source authorship and fixture preparation supply no benchmark or acceptance result.
 
 ## Source-authored packaged-runtime baseline
 
