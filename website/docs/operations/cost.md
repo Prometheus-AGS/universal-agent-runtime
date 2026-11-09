@@ -16,6 +16,16 @@ UAR can estimate model cost from observed token usage and catalog pricing, aggre
 Every amount is an estimated cost. Provider billing is the authority for charged usage, credits, batch discounts, cache treatment, taxes, and pricing changes.
 :::
 
+## Durable accounting in RC3
+
+Read the original owner-scoped call records when investigating spend, pending
+liability, cancellation or a lost response. On the owned embedded SurrealKV
+provider, admission and usage mutations serialize where they share budget
+scopes. The persistence guard ends before model I/O. Keep pending liability
+until authoritative evidence is available and treat provider usage and external
+effect settlement as separate decisions. See
+[RC3 team and accounting checks](../release-candidate.md#run-tools-team-tasks-and-protocol-peers).
+
 ## Enable estimates
 
 Cost tracking is opt-in through `llm.cost_tracking`. When enabled and a completed run reports input or output usage for a priced `provider/model`, UAR calculates a USD estimate from the local model catalog. It emits that value on the terminal run event and records a provider/model Prometheus histogram.

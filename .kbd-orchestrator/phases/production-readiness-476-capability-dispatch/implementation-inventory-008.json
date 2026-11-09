@@ -1,0 +1,227 @@
+{
+  "phase": "production-readiness-476-capability-dispatch",
+  "boundary": "WHOLE_PHASE_IMPLEMENTATION_COMPLETE",
+  "baseCommit": "629f570239654717a59b6a3db5793c9bcd34d846",
+  "sourceIdentity": "Working source manifest below; not a clean committed candidate or acceptance receipt. Commit/tree/artifact identity will be recorded at serial gate.",
+  "implementationItems": {
+    "1": "Strict bounded current-user typed ingress, decoder/safeerrors",
+    "2": "Typed runtime request and three append seams/full text projection",
+    "3": "Canonical protected image history/checkpoint projection, generic redaction retained",
+    "4": "Shared live capability/enabled/health evaluator; disabled catalog veto",
+    "5": "Captured exact/fallback authority and actual all-path admission; nonempty artifact fallback list enforced before capture",
+    "6": "Actual generic adapter fact, honest image/finite accounting refusal, registered final output min restriction; #388 exact preparations preserved",
+    "7": "Focused real HTTP Cucumber/peer capture/synthetic fixtures/nonsecret twelve-role templates with actual source schemas",
+    "8": "OpenSpec/support matrix/release/readme claims and selected Linux production/recovery/exclusion contract",
+    "9": "All four writer handoffs integrated; full ledger reconciled; exact serial command packet recorded"
+  },
+  "remainingImplementationItems": [],
+  "remainingVerification": [
+    "Fresh isolated source reviews",
+    "Supplementary exact-source controlled-peer compatibility/observation and helper lifetime probes",
+    "Ordinary local commit hooks and unchanged clean three-profile library harness compilation",
+    "Affected presentation-history/embeddings/OpenAPI assertions; supplemental context_history_integrity and disabled-catalog assertion",
+    "Actual local Linux amd64 root-Dockerfile artifact build and metadata/source receipts",
+    "Mounted selected HTTP scenarios against exact candidate/store/peers/owner",
+    "Support-matrix/OpenSpec validators and phase reflection"
+  ],
+  "externalPrerequisites": [
+    "Existing local Docker backend and complete candidate artifact",
+    "Externally provisioned isolated loopback identity endpoint/nonsecret workspace and provider read authority",
+    "Owned fresh Surreal volume, controlled peers/shared local namespace, source/dependency/assets mount, exact config/image/process identities"
+  ],
+  "exclusionsUnchanged": [
+    "No paid/live visual understanding, publishing/signing/deployment/remote builder",
+    "No cold checkpoint or public strict-real-image fit qualification in this slice",
+    "No all-platform/provider/recovery certification or issue-wide closure"
+  ],
+  "reviewIsolation": "Fresh-context critics receive artifacts/requirements/constraints only, no producer history/self-assessment. Native same-family fallback is weaker than independent-family review and must be labelled.",
+  "authorization": "Existing explicit user bounded-phase acceptance authorization. All original/repair/fixture/docs/settings/handoffs complete before any compile/build/runtime gate. No routine reapproval.",
+  "sourceInputs": [
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/compile-attempt-001.json",
+      "sha256": "8ce90b1d7d4962b3855e7966f1e8e2de3a8d60c1954828b1c0531a3356f9c289",
+      "bytes": 899
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/compile-attempt-001.txt",
+      "sha256": "65f2edcd2762502a3be4e5007af4a12e88a6c33e71268a82a8cd24305e0a4427",
+      "bytes": 5528
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/compile-attempt-002.json",
+      "sha256": "fc389e9e4f472da2c4507388eb0b88f52806f274af0575c7f02e966f7c62fd03",
+      "bytes": 1032
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/compile-attempt-002.txt",
+      "sha256": "cf45340b591a03fb7893cd67e3f8f12387d8ee454e2c3b33cbf5fe0b57ba8f69",
+      "bytes": 2225
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/verify-controlled-peer-observation.py",
+      "sha256": "264c8ec96ac89c7aaa22048d781d57ace3690054db780c9b4e9e22aaee092dd9",
+      "bytes": 5635
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/verify-fixture-lifetime.mjs",
+      "sha256": "e21b5d0ae4f3659e09f36d363084f5c08ef443c5cef399d02be862686c22a96c",
+      "bytes": 3347
+    },
+    {
+      "path": "scripts/behaviors/README.md",
+      "sha256": "0468d2c94b94358853ffe18d80c5c4423f49f3fed240d669b433d62363db469e",
+      "bytes": 36405
+    },
+    {
+      "path": "scripts/behaviors/capability-dispatch.cucumber.mjs",
+      "sha256": "60c51f9b38fe4831899aa413510c933560d0d8f53a9d5de1863993c8cfa3e386",
+      "bytes": 508
+    },
+    {
+      "path": "scripts/behaviors/features/capability-dispatch.feature",
+      "sha256": "542e50f739750ce93b8fe9df2739b927a070727f19b46c57be7f0826b5056473",
+      "bytes": 7053
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/README.md",
+      "sha256": "a3c18aac7d4f5646d246d05e0410f07626bdfc3dc4d37ce68f4fd1ca34ee54dd",
+      "bytes": 33707
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/generate-png.py",
+      "sha256": "33d46d503a58c7499cc79dddc7f565243574743a95104b0441d22bba63af65a2",
+      "bytes": 1296
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/manifest.template.json",
+      "sha256": "2934b96a9136c53a8d2d98de265bcc0fbe1cf6be57362993f5c9f28258f7ebc0",
+      "bytes": 6834
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/oversized-dimensions.png",
+      "sha256": "50a31de452c3405ab6a68cfded313438172d7dddf085d9d108c915060e1c06f9",
+      "bytes": 112167
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/runtime-overlay.template.yaml",
+      "sha256": "eadde0eb4c1f39a28e940646b596be074a4e23c0001a872a70215bee26a64810",
+      "bytes": 10132
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/synthetic.jpeg",
+      "sha256": "db0fb8cf4b05e9119bda455c2f14ad144ef960fa9aaa1dfc0918e8d2106b9eaa",
+      "bytes": 783
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/synthetic.png",
+      "sha256": "abb052a97dde1d814840e556c20b348009f7eb10dbc6d9998145b211a4234bc3",
+      "bytes": 79
+    },
+    {
+      "path": "scripts/behaviors/steps/capability-dispatch.steps.mjs",
+      "sha256": "3d287c6b294aac6ce52ed2849233b77dcae609ce8e805979e5ef48ad5346da2c",
+      "bytes": 30085
+    },
+    {
+      "path": "scripts/behaviors/support/capability-fixture.mjs",
+      "sha256": "e58aafd81ce8bfdcb01923b299186fc8bb28d28fce0b37ee5e146428980c5692",
+      "bytes": 24055
+    },
+    {
+      "path": "scripts/post_lifecycle/controlled_peer.py",
+      "sha256": "86dbc1bbabaaf210d683f5379a830f03e15cc1b56c1127e5851fc087767d9dff",
+      "bytes": 23197
+    },
+    {
+      "path": "src/llm/inline_image.rs",
+      "sha256": "c7eee3a43073a2b31d924db83a578317dcb8460ee24614ba21049095a4945cf6",
+      "bytes": 8167
+    },
+    {
+      "path": "src/llm/liter_driver.rs",
+      "sha256": "5e8503c1359f43888534a669726dc4f971a561c14055eab663fd0a8a83fd9dbf",
+      "bytes": 61060
+    },
+    {
+      "path": "src/llm/mod.rs",
+      "sha256": "e7e598ea5e2279fe1061a70a32344fb42b8c5f27ef65777a666f0e625d2e0990",
+      "bytes": 15632
+    },
+    {
+      "path": "src/llm/orchestrator.rs",
+      "sha256": "ba0deb20b808c4f6c510270d9fd421af194999765a4b1b6efe695d38a002ddff",
+      "bytes": 230090
+    },
+    {
+      "path": "src/llm/router.rs",
+      "sha256": "222d6e30549201c444af4bd8a58419dab4eedaed569a5f8597ee29157ab866c0",
+      "bytes": 37507
+    },
+    {
+      "path": "src/server.rs",
+      "sha256": "3e505ff9b3b9b4a0f2673f0f7b547f662815d3c8e37a69b8d3dabc35e16fc1ba",
+      "bytes": 361508
+    },
+    {
+      "path": "src/uar/runtime/checkpoint_host.rs",
+      "sha256": "e6b9d7ef7d3eb503a338fe579d3d563745b54411e88aafbb39383ac873480e00",
+      "bytes": 6057
+    },
+    {
+      "path": "src/uar/runtime/manager.rs",
+      "sha256": "d916c3f19612357d12830067ea534c8ed79b44e75557a2e30b322711201cd48d",
+      "bytes": 514094
+    },
+    {
+      "path": "src/uar/runtime/turn/bindings.rs",
+      "sha256": "ce8eb6e8ec1a11ebe66c9bb8d1e0d4da71c56a2911f7599d48a664b68c3858cf",
+      "bytes": 26800
+    },
+    {
+      "path": "src/uar/runtime/turn/host/event_projection.rs",
+      "sha256": "945e64cb41a962e75313a57d3679def793f7d99f8c2f2c193bbdcac02b517dab",
+      "bytes": 13367
+    },
+    {
+      "path": "src/uar/runtime/turn/request.rs",
+      "sha256": "945d65dfe64a3af87598faaba8f6df8b7accc9dbeeac8b7e07685a6cfd210a99",
+      "bytes": 16232
+    }
+  ],
+  "inventoryRevision": 8,
+  "supersedes": "implementation-inventory-007.json; final new-artifact corrective review complete, production source unchanged",
+  "completedReviewRepairs": [
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5",
+    "R6"
+  ],
+  "leadSupplementaryProbeAuthoring": "Two actual owned-loopback integrity/lifetime probes prepared; not executed; no production/vision credit.",
+  "reviewLimits": "Native same-family isolated source review, weaker than independent-family. Specialized Rust role source-review unavailable due mandatory broad commands; Python original report disclosed incidental README narrative exposure. No runtime assertion is certified by review.",
+  "correctiveReviewDisposition": {
+    "Rust": "No remaining actionable inspected Rust findings; source-only approval",
+    "Python": "R5 resolved; phase-local probe source inspected, no actionable finding",
+    "JavaScript": "R3/R4 client isolation/accounting resolved; retained P2 durable IDs repaired with immutable exclusive flushed ownership record before cleanup lifetime. No third review cycle; source repair not independently re-reviewed. Actual failure-path/runtime remains unverified."
+  },
+  "writerCompletion": "All source writers stopped; all handoffs reconciled; corrective D-task source report resolves original finding with no remaining scoped defect.",
+  "completedCompileRepairs": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "priorGate": "Minimal warning-free pre-D working source; server-full stopped130 before D source edits; PG/body not run; no commit. Other chat original-checkout Cargo preserved.",
+  "completedDestinationRepairs": [
+    "D1",
+    "D2",
+    "D3",
+    "D4"
+  ],
+  "newArtifactReviewScope": "New trusted fallback config/credential capture, real global chain control/owned session bookkeeping and explicit container bind. Earlier full-phase review cap/reports retained; this is a one-pass new-artifact review, not re-review of the old source.",
+  "newArtifactReviewDisposition": {
+    "JS": "No actionable scoped control diff finding; runtime unverified",
+    "Python": "No actionable listener diff finding; actual bind/reachability/exposure unverified",
+    "Code": "Original request-credential finding source-resolved; corrective source review no remaining scoped defect. Static approval only, runtime unverified."
+  }
+}

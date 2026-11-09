@@ -53,3 +53,24 @@ export async function cancelRun(runId: string): Promise<void> {
     // Non-fatal: the disconnect guard cancels the run when the stream drops.
   }
 }
+
+export interface ChatTurnRecovery {
+  client_turn_id: string;
+  session_id: string;
+  user_message_id?: string;
+  run_id?: string;
+  state: "complete" | "error" | "cancelled" | "pending" | "running" | "paused" | "interrupted" | "admission_unconfirmed" | "unknown";
+  recovery?: "available";
+  retry_allowed: false;
+}
+/** Read-only reconciliation. Absence is never permission to dispatch again. */
+export async function fetchChatTurnReceipt(sessionId: string, turnId: string): Promise<ChatTurnRecovery> {
+  const response = await fetch(`/api/uar/chat-turns/${encodeURIComponent(turnId)}?session_id=${encodeURIComponent(sessionId)}`, { cache: "no-store" });
+  if (!response.ok) throw new Error("Turn recovery is unavailable. No request was resent.");
+  const receipt = await response.json() as ChatTurnRecovery;
+  if (receipt.client_turn_id !== turnId || receipt.session_id !== sessionId || receipt.retry_allowed !== false
+    || typeof receipt.state !== "string" || (receipt.run_id !== undefined && typeof receipt.run_id !== "string")) {
+    throw new Error("Turn recovery is unconfirmed. No request was resent.");
+  }
+  return receipt;
+}

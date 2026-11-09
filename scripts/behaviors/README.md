@@ -306,3 +306,20 @@ Mac result: **KNOWLEDGE-RESTART-01 PASS**, all 5 reported steps in 22.95 seconds
 ## Re-enable retained KB access
 
 `node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/kb-reenable.cucumber.mjs` selects only KB-REENABLE-01. Setup saves a disposable KB link, disables access and reads it back. The action sends only enabled:true, retaining the original references. One fresh genuine inference must use the document-only private fact and matching runtime citation; original source snapshots and direct search must remain intact. No older scenario reruns, reindexing or credentials in the test. Cleanup removes only disposable resources and leaves UAR running.
+
+
+## Behavior: bounded inline images and actual model admission (authored only)
+
+The focused `capability-dispatch.cucumber.mjs` profile uses the existing HTTP-only Cucumber runner for the #463/#464 dependency slice. All new cases are **NOT_EXERCISED** until the whole production phase is complete and its exact candidate/container boundary opens. Current contract: `.kbd-orchestrator/phases/production-readiness-476-capability-dispatch/adopted-contract.json`, revision2.
+
+It selects both ordinary OpenAI aliases/modes, exact synthetic PNG/JPEG part hashes/order, text and warm continuation, safe invalid zero-send controls, real primary/fallback capability/scope observations, finite-cost refusal and estimated-budget honesty. A canned answer is only transport evidence. Cold governed image continuation and a public strict-real-image counting selector are explicitly deferred/unsupported; no unavailable route or prerequisite-only placeholder is called a passing test. Real visual understanding needs a separately authorized provisioned model.
+
+Prepare an isolated selected Linux amd64 image/store/peer network and externally provisioned identity endpoint. The fixture manifest and twelve model roles are documented in [capability fixture preparation](fixtures/capability-dispatch/README.md); they describe nonsecret source/image/configuration/model/peer identities only. No JWT, bearer/admin key, login, credential issuance/copy/renewal, provider settings mutation or authentication step belongs in the scenarios. Never point them at the other chat’s service or live model registrations. Peers and runtime/container lifecycle are owned by the provisioning boundary; cases create/delete only their disposable agents/sessions and fail on cleanup uncertainty.
+
+After that complete authorized boundary, the planned focused invocation is:
+
+```sh
+node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/capability-dispatch.cucumber.mjs
+```
+
+`UAR_BASE_URL`, `UAR_WORKSPACE_ID`, `UAR_CAPABILITY_FIXTURE` and optional `UAR_CUCUMBER_REPORT` are nonsecret selectors. Evidence records hashes/counts and uses exclusive file creation. Source authoring or an exit code alone is not product acceptance; the actual image/configuration/contract and assertion observations must be attached.

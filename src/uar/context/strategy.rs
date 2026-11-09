@@ -914,11 +914,11 @@ mod tests {
                 crate::uar::runtime::context::summarizer::HostMarkedProseSpan::new(
                     "long-term-prose",
                     0,
-                    8,
+                    12,
                 ),
                 crate::uar::runtime::context::summarizer::HostMarkedProseSpan::new(
                     "mid-term-prose",
-                    8,
+                    12,
                     16,
                 ),
             ],

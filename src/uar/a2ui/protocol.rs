@@ -16,6 +16,86 @@ pub(crate) const CATALOG_ID: &str = "urn:uar:a2ui:catalog:1";
 pub(crate) const BASIC_CATALOG_ID: &str =
     "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json";
 
+/// Identity of one surface at the trusted host's original publication boundary.
+pub(crate) fn surface_generation(run_id: &str, cursor: u64, surface_id: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let digest = Sha256::digest(
+        serde_json::json!(["uar.a2ui.publication/1", run_id, cursor, surface_id])
+            .to_string().as_bytes(),
+    );
+    digest.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+pub(crate) fn surface_generation_path(surface_id: &str) -> String {
+    format!("/a2ui/surface_generations/{}", surface_id.replace('~', "~0").replace('/', "~1"))
+}
+
+/// Recognize only the validated host surface-patch representation.
+pub(crate) fn surface_patch_message(
+    operation: &crate::uar::domain::events::StatePatchOp,
+) -> Option<ValidatedA2uiMessage> {
+    let tail = operation.path.strip_prefix("/a2ui/surfaces/")?;
+    let (token, suffix) = tail.split_once('/').map_or((tail, ""), |parts| parts);
+    let surface = token.replace("~1", "/").replace("~0", "~");
+    if surface.replace('~', "~0").replace('/', "~1") != token {
+        return None;
+    }
+    let key = match (operation.op.as_str(), suffix) {
+        ("add", "") => "createSurface",
+        ("replace", "components") => "updateComponents",
+        ("replace", "dataModel") => "updateDataModel",
+        ("remove", "") => "deleteSurface",
+        _ => return None,
+    };
+    let mut payload = operation.value.clone().unwrap_or_else(|| serde_json::json!({}));
+    let object = payload.as_object_mut()?;
+    if object.get("surfaceId").is_some_and(|id| id.as_str() != Some(surface.as_str())) {
+        return None;
+    }
+    object.insert("surfaceId".to_owned(), serde_json::json!(surface));
+    let mut wire = serde_json::json!({"version":COMPAT_VERSION});
+    wire[key] = payload;
+    parse_message(wire).ok()
+}
+
+/// Replace producer generation claims before history, completion capture and fanout.
+pub(crate) fn stamp_surface_publication(
+    run_id: &str,
+    cursor: u64,
+    event: &mut crate::uar::domain::events::NormalizedEvent,
+) {
+    use crate::uar::domain::events::{NormalizedEvent, StatePatchOp};
+    match event {
+        NormalizedEvent::ArtifactDisplay { artifact, .. } if artifact.artifact_type == "a2ui" => {
+            let mut generations = serde_json::Map::new();
+            for line in artifact.content.lines() {
+                let Ok(message) = serde_json::from_str::<serde_json::Value>(line) else { continue };
+                for key in ["createSurface", "updateComponents", "updateDataModel", "deleteSurface"] {
+                    if let Some(surface) = message.get(key).and_then(|payload| payload.get("surfaceId")).and_then(serde_json::Value::as_str) {
+                        generations.insert(surface.to_owned(), serde_json::json!(surface_generation(run_id, cursor, surface)));
+                    }
+                }
+            }
+            if !artifact.metadata.is_object() {
+                artifact.metadata = serde_json::json!({});
+            }
+            artifact.metadata["surface_generations"] = serde_json::Value::Object(generations);
+        }
+        NormalizedEvent::StatePatch { patch, .. } => {
+            // This namespace is host-owned even if a producer supplies it.
+            patch.retain(|operation| operation.path != "/a2ui/surface_generations"
+                && !operation.path.starts_with("/a2ui/surface_generations/"));
+            let surfaces: std::collections::BTreeSet<_> = patch.iter()
+                .filter_map(surface_patch_message).map(|message| message.surface_id).collect();
+            patch.extend(surfaces.into_iter().map(|surface| StatePatchOp {
+                op: "add".into(), path: surface_generation_path(&surface),
+                value: Some(serde_json::json!(surface_generation(run_id, cursor, &surface))),
+            }));
+        }
+        _ => {}
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct ValidatedA2uiMessage {
     pub surface_id: String,

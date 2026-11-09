@@ -29,6 +29,10 @@ pub struct StreamState {
     tool_call_counter: usize,
     /// Accumulated usage across the stream.
     usage: UsageResponse,
+    /// Actual provider usage was present; a default accumulator is not a report.
+    usage_reported: bool,
+    input_usage_reported: bool,
+    final_output_usage_reported: bool,
     /// Whether we have emitted a `StreamStart` event.
     started: bool,
 }
@@ -65,6 +69,9 @@ impl StreamState {
             tool_accumulators: BTreeMap::new(),
             tool_call_counter: 0,
             usage: UsageResponse::default(),
+            usage_reported: false,
+            input_usage_reported: false,
+            final_output_usage_reported: false,
             started: false,
         }
     }
@@ -109,6 +116,8 @@ impl StreamState {
 
         // Store initial usage (input tokens).
         if let Some(usage) = message.usage {
+            self.usage_reported = true;
+            self.input_usage_reported = true;
             self.merge_usage(&usage);
         }
 
@@ -211,6 +220,9 @@ impl StreamState {
 
     fn handle_message_delta(&mut self, usage: Option<MessageDeltaUsage>) {
         if let Some(usage) = usage {
+            self.usage_reported = true;
+            self.input_usage_reported |= usage.input_tokens.is_some();
+            self.final_output_usage_reported = true;
             // The delta omits input counts when unchanged. Preserve the full
             // message_start validation and existing cumulative/cache merger.
             self.merge_usage(&UsageResponse {
@@ -223,16 +235,42 @@ impl StreamState {
     }
 
     fn handle_message_stop(&mut self) -> Vec<NormalizedEvent> {
+        if !self.usage_reported {
+            return vec![NormalizedEvent::Done];
+        }
+        // The normalized counter type cannot represent a missing input/output
+        // number. A partial native report must not manufacture measured zero.
+        if !self.input_usage_reported || !self.final_output_usage_reported {
+            return vec![
+                NormalizedEvent::Error {
+                    message: "Provider usage did not report complete input and final output counts"
+                        .into(),
+                    code: Some("provider_usage_incomplete".into()),
+                },
+                NormalizedEvent::Done,
+            ];
+        }
         // Anthropic reports uncached input separately from cache reads/writes.
         // Normalized prompt usage includes all three, with cache fields as
         // breakdowns rather than additional tokens.
         let prompt_tokens = self
             .usage
             .input_tokens
-            .saturating_add(self.usage.cache_read_input_tokens.unwrap_or(0))
-            .saturating_add(self.usage.cache_creation_input_tokens.unwrap_or(0));
+            .checked_add(self.usage.cache_read_input_tokens.unwrap_or(0))
+            .and_then(|input| {
+                input.checked_add(self.usage.cache_creation_input_tokens.unwrap_or(0))
+            });
         let completion_tokens = self.usage.output_tokens;
-        let total_tokens = prompt_tokens.saturating_add(completion_tokens);
+        let total_tokens = prompt_tokens.and_then(|input| input.checked_add(completion_tokens));
+        let (Some(prompt_tokens), Some(total_tokens)) = (prompt_tokens, total_tokens) else {
+            return vec![
+                NormalizedEvent::Error {
+                    message: "Provider usage exceeds the supported counter range".into(),
+                    code: Some("provider_usage_overflow".into()),
+                },
+                NormalizedEvent::Done,
+            ];
+        };
 
         vec![
             NormalizedEvent::Usage {
@@ -240,6 +278,7 @@ impl StreamState {
                 completion_tokens,
                 total_tokens,
                 cached_tokens: self.usage.cache_read_input_tokens,
+                uncached_input_tokens: Some(self.usage.input_tokens),
                 cache_creation_tokens: self.usage.cache_creation_input_tokens,
             },
             NormalizedEvent::Done,
@@ -449,6 +488,7 @@ mod tests {
             &events[0],
             NormalizedEvent::Usage {
                 prompt_tokens: 70,
+                uncached_input_tokens: Some(50),
                 completion_tokens: 30,
                 total_tokens: 100,
                 cached_tokens: Some(20),
@@ -456,6 +496,113 @@ mod tests {
             }
         ));
         assert!(matches!(&events[1], NormalizedEvent::Done));
+    }
+
+    #[test]
+    fn absent_usage_does_not_become_a_measured_zero_report() {
+        let mut state = StreamState::new("owned-absent".into());
+        state.process_event(StreamEvent::MessageStart {
+            message: MessageStartData {
+                id: "owned-message".into(),
+                model: "owned-model".into(),
+                role: "assistant".into(),
+                usage: None,
+            },
+        });
+        let events = state.process_event(StreamEvent::MessageStop);
+        assert_eq!(events.len(), 1);
+        assert!(matches!(&events[0], NormalizedEvent::Done));
+    }
+
+    #[test]
+    fn native_uncached_only_report_does_not_invent_cache_counts() {
+        let mut state = StreamState::new("owned-uncached".into());
+        state.process_event(StreamEvent::MessageStart {
+            message: MessageStartData {
+                id: "owned-message".into(), model: "owned-model".into(), role: "assistant".into(),
+                usage: Some(UsageResponse { input_tokens: 7, ..Default::default() }),
+            },
+        });
+        state.process_event(StreamEvent::MessageDelta {
+            delta: MessageDeltaData { stop_reason: Some("end_turn".into()), stop_sequence: None },
+            usage: Some(MessageDeltaUsage {
+                input_tokens: None, output_tokens: 5,
+                cache_read_input_tokens: None, cache_creation_input_tokens: None,
+            }),
+        });
+        let events = state.process_event(StreamEvent::MessageStop);
+        assert!(matches!(&events[0], NormalizedEvent::Usage {
+            prompt_tokens: 7, completion_tokens: 5, uncached_input_tokens: Some(7),
+            cached_tokens: None, cache_creation_tokens: None, ..
+        }));
+    }
+
+    #[test]
+    fn actual_zero_usage_still_reports_zero_and_optional_cache_availability() {
+        let mut state = StreamState::new("owned-zero".into());
+        state.process_event(StreamEvent::MessageStart {
+            message: MessageStartData {
+                id: "owned-message".into(),
+                model: "owned-model".into(),
+                role: "assistant".into(),
+                usage: Some(UsageResponse {
+                    input_tokens: 0,
+                    output_tokens: 0,
+                    cache_read_input_tokens: Some(0),
+                    cache_creation_input_tokens: None,
+                }),
+            },
+        });
+        state.process_event(StreamEvent::MessageDelta {
+            delta: MessageDeltaData {
+                stop_reason: Some("end_turn".into()),
+                stop_sequence: None,
+            },
+            usage: Some(MessageDeltaUsage {
+                input_tokens: None,
+                output_tokens: 0,
+                cache_read_input_tokens: None,
+                cache_creation_input_tokens: None,
+            }),
+        });
+        let events = state.process_event(StreamEvent::MessageStop);
+        assert!(matches!(
+            &events[0],
+            NormalizedEvent::Usage {
+                prompt_tokens: 0,
+                uncached_input_tokens: Some(0),
+                completion_tokens: 0,
+                cached_tokens: Some(0),
+                cache_creation_tokens: None,
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn partial_native_usage_refuses_instead_of_filling_missing_input_with_zero() {
+        let mut state = StreamState::new("owned-partial".into());
+        state.process_event(StreamEvent::MessageDelta {
+            delta: MessageDeltaData {
+                stop_reason: Some("end_turn".into()),
+                stop_sequence: None,
+            },
+            usage: Some(MessageDeltaUsage {
+                input_tokens: None,
+                output_tokens: 5,
+                cache_read_input_tokens: None,
+                cache_creation_input_tokens: None,
+            }),
+        });
+        let events = state.process_event(StreamEvent::MessageStop);
+        assert!(
+            matches!(&events[0], NormalizedEvent::Error { code:Some(code),.. } if code == "provider_usage_incomplete")
+        );
+        assert!(
+            !events
+                .iter()
+                .any(|event| matches!(event, NormalizedEvent::Usage { .. }))
+        );
     }
 
     #[test]

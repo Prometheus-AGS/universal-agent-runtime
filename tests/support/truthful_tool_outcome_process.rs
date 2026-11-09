@@ -1,6 +1,6 @@
 //! Actual server composition and team-consumer acceptance. Logs remain local.
 
-use super::peer;
+use super::{external_identity_host, peer};
 use reqwest::Method;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -10,20 +10,16 @@ use std::{
     process::{Child, Command, Stdio},
     time::Duration,
 };
-use universal_agent_runtime::{
-    uar::{
-        compiler::collaboration::{CollaborationStorage, SurrealCollaborationStorage},
-        persistence::{
-            PersistenceLayer,
-            agent_threads::{CanonicalReceiptSource, CanonicalToolReceipt},
-            providers::surreal::SurrealDbProvider,
-            tool_admission::ToolAdmissionEvidenceState,
-        },
+use universal_agent_runtime::uar::{
+    compiler::collaboration::{CollaborationStorage, SurrealCollaborationStorage},
+    persistence::{
+        PersistenceLayer,
+        agent_threads::{CanonicalReceiptSource, CanonicalToolReceipt},
+        providers::surreal::SurrealDbProvider,
+        tool_admission::ToolAdmissionEvidenceState,
     },
 };
 
-const JWT_SECRET: &str = "dot04-process-jwt-fixture";
-const ADMIN_KEY: &str = "dot04-process-admin-fixture";
 const WORKSPACE: &str = "dot04-process-workspace";
 const TEAM_TOOL: &str = "dot04__outcomes__effect";
 const WAIT: Duration = Duration::from_secs(120);
@@ -32,50 +28,50 @@ struct Database {
     url: String,
     namespace: String,
     name: String,
-    user: Option<String>,
-    password: Option<String>,
+    shared: bool,
 }
 
 impl Database {
     fn configuration(root: &Path, shared: bool, label: &str) -> Self {
-        if shared {
-            let path =
-                std::env::var("UAR_DOT04_INFRA_FILE").expect("private infrastructure manifest");
-            let input: Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
-            let infrastructure = &input["surreal"];
-            Self {
-                url: infrastructure["url"].as_str().unwrap().into(),
-                namespace: std::env::var("UAR_DOT04_NAMESPACE").unwrap(),
-                name: format!("truthful_outcomes_binary_{}", label.replace('-', "_")),
-                user: infrastructure["username"].as_str().map(str::to_owned),
-                password: infrastructure["password"].as_str().map(str::to_owned),
-            }
-        } else {
-            std::fs::create_dir_all(root.join("binary-database")).unwrap();
-            Self {
-                url: format!(
-                    "surrealkv://{}",
-                    root.join("binary-database").join(label).display()
-                ),
-                namespace: "dot04_process".into(),
-                name: "outcomes".into(),
-                user: None,
-                password: None,
-            }
+        let profile = external_identity_host::profile("dot04", shared);
+        assert_eq!(
+            profile.root, root,
+            "only the externally assigned owned root may be used"
+        );
+        let database = profile
+            .databases
+            .get(label)
+            .expect("external scoped database profile");
+        Self {
+            url: database.inspection_url.clone(),
+            namespace: database.namespace.clone(),
+            name: database.name.clone(),
+            shared,
         }
     }
 
     async fn connect(&self) -> SurrealDbProvider {
+        // The external inspection gateway owns database authentication too.
         SurrealDbProvider::new(
             &self.url,
-            self.user.as_deref(),
-            self.password.as_deref(),
+            None,
+            None,
             Some(&self.namespace),
             Some(&self.name),
         )
         .await
-        .expect("binary durable store")
+        .expect("owned credential-free inspection endpoint")
     }
+}
+
+async fn model_for(root: &Path, shared: bool, label: &str) -> peer::Peer {
+    let profile = external_identity_host::profile("dot04", shared);
+    assert_eq!(profile.root, root);
+    let node = profile
+        .nodes
+        .get(label)
+        .expect("external owned process stage");
+    peer::Peer::start_at(root, node.model_peer_bind).await
 }
 
 struct Node {
@@ -84,25 +80,7 @@ struct Node {
     directory: PathBuf,
     trace: PathBuf,
     client: reqwest::Client,
-    token: String,
     started_at: String,
-}
-
-fn token() -> String {
-    jsonwebtoken::encode(
-        &jsonwebtoken::Header::default(),
-        &json!({"sub":peer::OWNER,"roles":["user"],"exp":chrono::Utc::now().timestamp()+3600}),
-        &jsonwebtoken::EncodingKey::from_secret(JWT_SECRET.as_bytes()),
-    )
-    .unwrap()
-}
-
-fn unused_port() -> u16 {
-    std::net::TcpListener::bind("127.0.0.1:0")
-        .unwrap()
-        .local_addr()
-        .unwrap()
-        .port()
 }
 
 impl Node {
@@ -130,54 +108,45 @@ impl Node {
         std::fs::write(directory.join("work/skills/dot04/mcp.json"), &configuration).unwrap();
         std::fs::write(directory.join("work/skills/dot04/SKILL.md"),
             "---\nname: dot04\nversion: 1.0.0\ndescription: Controlled tool outcome production acceptance\ntools:\n  - dot04__outcomes__effect\n---\nUse the selected effect tool exactly once.\n").unwrap();
-        let port = unused_port();
-        // A/B and restarts share this logical backend identity, while their
-        // process IDs and catalog execution-owner claims remain independent.
-        let service_instance_id = format!(
-            "urn:uar:dot04:service:{}",
-            sha256(
-                &serde_json::to_vec(&(&database.url, &database.namespace, &database.name)).unwrap()
-            )
+        let profile = external_identity_host::profile("dot04", database.shared);
+        assert_eq!(profile.root, root);
+        let external = profile
+            .nodes
+            .get(label)
+            .expect("externally provisioned child/gateway stage");
+        let inspection = profile
+            .databases
+            .get(&external.database)
+            .expect("declared process database");
+        assert_eq!(
+            (
+                &inspection.inspection_url,
+                &inspection.namespace,
+                &inspection.name
+            ),
+            (&database.url, &database.namespace, &database.name)
         );
-        let config = json!({
-            "service_instance":{"instance_id":service_instance_id},
-            "security":{"jwt_required":true,"jwt_secret":JWT_SECRET,
-                "settings_mutation_auth_required":false,"settings_admin_key":ADMIN_KEY},
-            "resilience":{"rate_limit_enabled":false},
-            "persistence":{"provider":"surreal","database_url":database.url,
-                "surreal_ns":database.namespace,"surreal_db":database.name,
-                "surreal_user":database.user,"surreal_pass":database.password},
-            "llm":{"model":"openai/gpt-4o-mini","base_url":model.url,"api_key":peer::SECRET},
-            "providers":[{"id":"openai","base_url":model.url,"api_key":peer::SECRET,
-                "protocol":"chat","default_model":"gpt-4o-mini","enabled":true,
-                "models":[{"id":"gpt-4o-mini","enabled":true,"supports_tools":true,
-                    "supports_streaming":true,"execution_profile":{
-                        "profile":{"id":"uar.openai-compatible-chat.settings-v1","revision":1},
-                        "settingsRevision":1,"reasoning":{"mode":"off"}}}]}],
-            "server":{"host":"127.0.0.1","port":port,"grpc_port":unused_port(),
-                "shutdown_timeout_secs":5},
-            "memory":{"enabled":false}
-        });
-        std::fs::write(
-            directory.join("config.yaml"),
-            serde_json::to_vec_pretty(&config).unwrap(),
-        )
-        .unwrap();
-        let started_at = chrono::Utc::now().to_rfc3339();
-        let child = Command::new(env!("CARGO_BIN_EXE_universal-agent-runtime"))
+        assert_eq!(external.workspace, WORKSPACE);
+        assert_eq!(model.url, format!("http://{}/v1", external.model_peer_bind));
+        // The profile is an opaque product-owned file. This fixture neither
+        // reads nor reconstructs security, provider, or database credentials.
+        let mut command = Command::new(env!("CARGO_BIN_EXE_universal-agent-runtime"));
+        command
             .arg("--config")
-            .arg(directory.join("config.yaml"))
+            .arg(&external.product_config_path)
+            .arg("--port")
+            .arg(external.backend_bind.port().to_string());
+        if let Some(path) = &external.product_env_path {
+            command.arg("--env-file").arg(path);
+        }
+        let started_at = chrono::Utc::now().to_rfc3339();
+        let child = command
             .current_dir(directory.join("work"))
             .env_clear()
             .env("PATH", std::env::var_os("PATH").unwrap_or_default())
             .env("HOME", directory.join("home"))
             .env("MCP_CONFIG_PATH", directory.join("mcp.json"))
             .env("UAR_BUILTIN_SKILLS_DIR", directory.join("no-builtins"))
-            .env(
-                "CREDENTIAL_ENCRYPTION_KEY",
-                "0123456789abcdef0123456789abcdef",
-            )
-            .env("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED", "1")
             .stdin(Stdio::null())
             .stdout(std::fs::File::create(directory.join("stdout.log")).unwrap())
             .stderr(std::fs::File::create(directory.join("stderr.log")).unwrap())
@@ -185,11 +154,10 @@ impl Node {
             .expect("actual server binary");
         let mut node = Self {
             child,
-            base: format!("http://127.0.0.1:{port}"),
+            base: external.gateway_url.trim_end_matches('/').to_owned(),
             directory,
             trace,
             client: reqwest::Client::new(),
-            token: token(),
             started_at,
         };
         let deadline = tokio::time::Instant::now() + Duration::from_secs(180);
@@ -228,9 +196,7 @@ impl Node {
         let mut request = self
             .client
             .request(method, format!("{}{path}", self.base))
-            .bearer_auth(&self.token)
-            .header("x-uar-workspace-id", WORKSPACE)
-            .header("x-uar-admin-key", ADMIN_KEY);
+            .header("x-uar-workspace-id", WORKSPACE);
         if let Some(body) = body {
             request = request.json(&body);
         }
@@ -312,7 +278,6 @@ impl Node {
                     "{}/api/uar/runs/{run}/stream?last_event_id=0",
                     self.base
                 ))
-                .bearer_auth(&self.token)
                 .header("x-uar-workspace-id", WORKSPACE)
                 .header("Last-Event-ID", "0")
                 .send()
@@ -764,7 +729,10 @@ async fn team_case(
     }
     if held {
         assert_eq!(attempt["effectDisposition"], "uncertain");
-        assert!(attempt["output"].is_null(), "unconfirmed tool prose became team output");
+        assert!(
+            attempt["output"].is_null(),
+            "unconfirmed tool prose became team output"
+        );
         assert!(
             attempt["usage"].is_null(),
             "unknown effect released reservation"
@@ -1064,8 +1032,8 @@ async fn restarted_binary_observer(
 /// current execution authority retain their identities and outcomes.
 async fn historical_recovery_cases(node: &Node, database: &Database, source: &Value) -> Vec<Value> {
     use universal_agent_runtime::uar::{
-        domain::team_wait::{AttemptAuthority, AttributedPayload, KernelTeamYield, TeamWait},
         domain::team_execution::TeamProfileRef,
+        domain::team_wait::{AttemptAuthority, AttributedPayload, KernelTeamYield, TeamWait},
         runtime::thread::{AgentThread, AgentThreadResult},
     };
     let store = database.connect().await;
@@ -1610,7 +1578,7 @@ pub async fn scoped_outcome_run(
 ) -> (String, std::sync::Arc<dyn PersistenceLayer>) {
     let label = format!("scoped-{mode}");
     let database = Database::configuration(root, shared, &label);
-    let model = peer::Peer::start(root).await;
+    let model = model_for(root, shared, &label).await;
     let mut node = Node::boot(root, &label, &database, &model).await;
     let mut artifact = universal_agent_runtime::uar::defaults::default_agent();
     artifact.id = format!("dot04-scoped-{mode}");
@@ -1685,7 +1653,7 @@ pub async fn production_process_cases(root: &Path, shared: bool) -> Vec<Value> {
         for mode in modes {
             let label = format!("{boundary}-{mode}");
             let database = Database::configuration(root, shared, &label);
-            let model = peer::Peer::start(root).await;
+            let model = model_for(root, shared, &label).await;
             let mut node = Node::boot(root, &label, &database, &model).await;
             let (run, team) = if boundary == "team_process" {
                 team_case(&node, mode, None).await
@@ -1771,7 +1739,7 @@ pub async fn production_process_cases(root: &Path, shared: bool) -> Vec<Value> {
     }
     if shared {
         let database = Database::configuration(root, true, "team-process-legacy-hold");
-        let model = peer::Peer::start(root).await;
+        let model = model_for(root, shared, "team-process-legacy-hold").await;
         model
             .seen
             .pause_after_tool
@@ -1807,7 +1775,15 @@ pub async fn production_process_cases(root: &Path, shared: bool) -> Vec<Value> {
             &previous_state,
         )
         .await;
-        durable_result(&database, &run, TEAM_TOOL, "success", &team, &node.directory).await;
+        durable_result(
+            &database,
+            &run,
+            TEAM_TOOL,
+            "success",
+            &team,
+            &node.directory,
+        )
+        .await;
         rows.push(json!({"boundary":"team_process","mode":"legacy-hold","run":run,"tool":TEAM_TOOL,
             "teamEvidence":team,"concurrentBinaryEvidence":concurrent,"restartedBinaryEvidence":restarted,
             "database":database.name,"evidenceDirectory":node.directory}));
@@ -1815,7 +1791,7 @@ pub async fn production_process_cases(root: &Path, shared: bool) -> Vec<Value> {
     for mode in ["success", "application", "unknown"] {
         let label = format!("instance-process-{mode}");
         let database = Database::configuration(root, shared, &label);
-        let model = peer::Peer::start(root).await;
+        let model = model_for(root, shared, &label).await;
         let mut node = Node::boot(root, &label, &database, &model).await;
         let (run, tool, instance) = instance_case(&node, mode).await;
         assert_eq!(

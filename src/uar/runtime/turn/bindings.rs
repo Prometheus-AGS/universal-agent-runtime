@@ -15,7 +15,7 @@ use crate::uar::runtime::skills::{
 use crate::uar::runtime::thread::policy_intersection::{
     CredentialGrant, CredentialTarget, ThreadPolicy,
 };
-use crate::uar::security::credentials::CredentialSourceDecision;
+use crate::uar::security::credentials::{CredentialSource, CredentialSourceDecision};
 
 /// Apply the one host-issued decision before any provider constructor can read
 /// configuration or ambient credential state. A credential-free decision uses
@@ -251,7 +251,10 @@ impl RunModelBindings {
         config: LlmConfig,
         supplied_primary: Option<Arc<dyn LlmDriver>>,
         primary_decision: CredentialSourceDecision,
-        fallback_decisions: std::collections::BTreeMap<String, CredentialSourceDecision>,
+        fallback_bindings: std::collections::BTreeMap<
+            String,
+            (LlmConfig, CredentialSourceDecision),
+        >,
         failover: FailoverConfig,
         health: Option<Arc<ProviderHealthMonitor>>,
         budget: crate::uar::runtime::cost_budget::ModelCallBudget,
@@ -264,11 +267,23 @@ impl RunModelBindings {
         let mut config = apply_credential_decision(config, &primary_decision)?;
         let settings_only = !endpoint_profiles.is_empty();
         let selected_profile = if settings_only {
-            let selected = endpoint_profiles.values().find(|profile| {
+            let selected = if config.resolved_model_id.is_some() {
+                endpoint_profiles.get(&config.qualified_model_name())
+            } else {
+                endpoint_profiles.values().find(|profile| {
+                    config.resolved_provider_id.as_deref() == Some(profile.provider_id.as_str())
+                        && (config.model == profile.wire_model
+                            || config.model == profile.qualified_model)
+                })
+            }
+            .filter(|profile| {
                 config.resolved_provider_id.as_deref() == Some(profile.provider_id.as_str())
-                    && (config.model == profile.wire_model || config.model == profile.qualified_model)
-            }).cloned().ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
-            config.model.clone_from(&selected.qualified_model);
+            })
+            .cloned()
+            .ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
+            let (_, model_id) =
+                crate::llm::registry::split_model_string_pub(&selected.qualified_model);
+            config.set_qualified_model(&selected.provider_id, &model_id);
             config.reasoning_effort = None;
             config.thinking_budget = None;
             Some(selected)
@@ -287,12 +302,7 @@ impl RunModelBindings {
                 None => crate::llm::orchestrator::build_driver_captured(&config, secret_scrubber)?,
             },
         };
-        let (model_provider, model) = crate::llm::registry::split_model_string_pub(&config.model);
-        let provider = config
-            .resolved_provider_id
-            .as_deref()
-            .unwrap_or(&model_provider);
-        let primary_model = format!("{provider}/{model}");
+        let primary_model = config.qualified_model_name();
         let mut primary = BoundModel::capture(primary_model.clone(), primary, primary_decision);
         primary.endpoint_profile = selected_profile;
         if let Some(pricing_model) = &config.catalog_pricing_model {
@@ -304,7 +314,8 @@ impl RunModelBindings {
                 if fallback.model == primary_model {
                     continue;
                 }
-                let (provider, _) = crate::llm::registry::split_model_string_pub(&fallback.model);
+                let (provider, model_id) =
+                    crate::llm::registry::split_model_string_pub(&fallback.model);
                 if run_credentials.is_none()
                     && let Some(health) = &health
                     && !health.is_available(&provider).await
@@ -317,14 +328,16 @@ impl RunModelBindings {
                     Some(endpoint_profiles.get(&fallback.model).cloned()
                         .ok_or_else(|| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))?)
                 } else { None };
-                let fallback_decision = fallback_decisions
+                let (fallback_config, fallback_decision) = fallback_bindings
                     .get(&fallback.model)
                     .ok_or_else(|| anyhow::anyhow!("Fallback model lacks credential decision"))?
                     .clone();
+                let fallback_pricing_model = fallback_config.catalog_pricing_model.clone();
                 let driver = match (&fallback_profile, run_credentials) {
                     (Some(profile), _) => {
-                        let mut fallback_config = Orchestrator::fallback_llm_config(&config, fallback);
+                        let mut fallback_config = fallback_config;
                         fallback_config.resolved_provider_id = Some(profile.provider_id.clone());
+                        fallback_config.resolved_model_id = Some(model_id);
                         let fallback_config =
                             apply_credential_decision(fallback_config, &fallback_decision)?;
                         let mut client_config = crate::config::build_client_config(&fallback_config);
@@ -334,16 +347,15 @@ impl RunModelBindings {
                         ).map(|driver| Arc::new(driver) as Arc<dyn LlmDriver>)
                             .map_err(|_| anyhow::anyhow!("TEAM_PROFILE_UNSUPPORTED"))
                     }
-                    (None, Some(credentials)) => credentials
-                        .config_for(&provider, Some(&fallback.model), config.clone())
-                        .map_err(anyhow::Error::from)
-                        .and_then(|fallback_config| {
-                            let fallback_config =
-                                apply_credential_decision(fallback_config, &fallback_decision)?;
-                            crate::llm::orchestrator::build_driver_captured(&fallback_config, secret_scrubber)
-                        }),
+                    (None, Some(_)) => {
+                        let fallback_config =
+                            apply_credential_decision(fallback_config, &fallback_decision)?;
+                        crate::llm::orchestrator::build_driver_captured(
+                            &fallback_config,
+                            secret_scrubber,
+                        )
+                    }
                     (None, None) => {
-                        let fallback_config = Orchestrator::fallback_llm_config(&config, fallback);
                         let fallback_config =
                             apply_credential_decision(fallback_config, &fallback_decision)?;
                         crate::llm::orchestrator::build_driver_captured(&fallback_config, secret_scrubber)
@@ -357,6 +369,9 @@ impl RunModelBindings {
                             fallback_decision,
                         );
                         bound.endpoint_profile = fallback_profile;
+                        if let Some(pricing_model) = &fallback_pricing_model {
+                            bound.pricing_model.clone_from(pricing_model);
+                        }
                         if let Some(pricing_model) = pricing_models.get(&fallback.model) {
                             bound.pricing_model.clone_from(pricing_model);
                         }
@@ -390,6 +405,10 @@ impl RunModelBindings {
         )
     }
 
+    pub(crate) fn primary_model(&self) -> &str {
+        &self.primary.model
+    }
+
     /// Auxiliary roles can select only an exact captured model identity.
     pub(crate) fn auxiliary_model(&self, requested: &str) -> anyhow::Result<String> {
         let qualified = if requested.contains('/') { requested.to_owned() } else {
@@ -414,6 +433,54 @@ impl RunModelBindings {
 
     pub(crate) fn budget(&self) -> &crate::uar::runtime::cost_budget::ModelCallBudget {
         &self.budget
+    }
+
+    /// Describe only the concrete clients captured for this run. This is
+    /// destination authority, not a credential grant or routing query.
+    pub(crate) fn destination_scope(
+        &self,
+        exact_target: bool,
+    ) -> crate::llm::router::DestinationScope {
+        if exact_target {
+            crate::llm::router::DestinationScope::Exact {
+                primary: self.primary.model.clone(),
+            }
+        } else {
+            crate::llm::router::DestinationScope::PrimaryWithFallbacks {
+                primary: self.primary.model.clone(),
+                fallbacks: self
+                    .fallbacks
+                    .iter()
+                    .map(|binding| binding.model.clone())
+                    .collect(),
+            }
+        }
+    }
+
+    /// Return only captured destinations whose constructed driver explicitly
+    /// supports the ordinary admitted inline-image adapter path. This is not
+    /// a model-name or registry capability lookup.
+    pub(crate) fn admitted_inline_image_destinations(
+        &self,
+    ) -> std::collections::BTreeSet<String> {
+        std::iter::once(&self.primary)
+            .chain(self.fallbacks.iter())
+            .filter(|binding| binding.driver.supports_admitted_inline_images())
+            .map(|binding| binding.model.clone())
+            .collect()
+    }
+
+    /// Return only captured request-local destinations whose explicit host
+    /// credential decision can support a final plaintext send without catalog
+    /// metadata. This is destination authority, not a capability declaration.
+    pub(crate) fn admitted_run_local_plaintext_destinations(
+        &self,
+    ) -> std::collections::BTreeSet<String> {
+        std::iter::once(&self.primary)
+            .chain(self.fallbacks.iter())
+            .filter(|binding| binding.credential.source() == CredentialSource::ExplicitRequest)
+            .map(|binding| binding.model.clone())
+            .collect()
     }
 
     /// Qualified models of the captured failover destinations, in dispatch order.
@@ -495,8 +562,7 @@ impl RunModelBindings {
             }
         }
         let mut config = self.config.clone();
-        config.model.clone_from(&primary.model);
-        config.resolved_provider_id = Some(route.provider_id.clone());
+        config.set_qualified_model(&route.provider_id, &route.model_id);
         // The selected driver already owns its exact connection. These values
         // must not suggest that reconstructing it from a config is permitted.
         config.api_key = None;
@@ -532,6 +598,7 @@ impl RunModelBindings {
     ) -> Orchestrator {
         let orchestrator =
             Orchestrator::from_driver(self.config.clone(), mcp, native, self.primary())
+                .with_primary_destination(self.primary_model())
                 .with_failovers(
                     self.fallbacks
                         .iter()

@@ -1,0 +1,182 @@
+{
+  "phase": "production-readiness-476-capability-dispatch",
+  "boundary": "WHOLE_PHASE_IMPLEMENTATION_COMPLETE",
+  "baseCommit": "629f570239654717a59b6a3db5793c9bcd34d846",
+  "sourceIdentity": "Working source manifest below; not a clean committed candidate or acceptance receipt. Commit/tree/artifact identity will be recorded at serial gate.",
+  "implementationItems": {
+    "1": "Strict bounded current-user typed ingress, decoder/safeerrors",
+    "2": "Typed runtime request and three append seams/full text projection",
+    "3": "Canonical protected image history/checkpoint projection, generic redaction retained",
+    "4": "Shared live capability/enabled/health evaluator; disabled catalog veto",
+    "5": "Captured exact/fallback authority and actual all-path admission; nonempty artifact fallback list enforced before capture",
+    "6": "Actual generic adapter fact, honest image/finite accounting refusal, registered final output min restriction; #388 exact preparations preserved",
+    "7": "Focused real HTTP Cucumber/peer capture/synthetic fixtures/nonsecret twelve-role templates with actual source schemas",
+    "8": "OpenSpec/support matrix/release/readme claims and selected Linux production/recovery/exclusion contract",
+    "9": "All four writer handoffs integrated; full ledger reconciled; exact serial command packet recorded"
+  },
+  "remainingImplementationItems": [],
+  "remainingVerification": [
+    "Fresh isolated source reviews",
+    "Supplementary exact-source controlled-peer compatibility/observation and helper lifetime probes",
+    "Ordinary local commit hooks and unchanged clean three-profile library harness compilation",
+    "Affected presentation-history/embeddings/OpenAPI assertions; supplemental context_history_integrity and disabled-catalog assertion",
+    "Actual local Linux amd64 root-Dockerfile artifact build and metadata/source receipts",
+    "Mounted selected HTTP scenarios against exact candidate/store/peers/owner",
+    "Support-matrix/OpenSpec validators and phase reflection"
+  ],
+  "externalPrerequisites": [
+    "Existing local Docker backend and complete candidate artifact",
+    "Externally provisioned isolated loopback identity endpoint/nonsecret workspace and provider read authority",
+    "Owned fresh Surreal volume, controlled peers/shared local namespace, source/dependency/assets mount, exact config/image/process identities"
+  ],
+  "exclusionsUnchanged": [
+    "No paid/live visual understanding, publishing/signing/deployment/remote builder",
+    "No cold checkpoint or public strict-real-image fit qualification in this slice",
+    "No all-platform/provider/recovery certification or issue-wide closure"
+  ],
+  "reviewIsolation": "Fresh-context critics receive artifacts/requirements/constraints only, no producer history/self-assessment. Native same-family fallback is weaker than independent-family review and must be labelled.",
+  "authorization": "User explicitly authorized useful bounded phases and acceptance after whole implementation, no routine approval. No command ran before this inventory.",
+  "sourceInputs": [
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/verify-controlled-peer-observation.py",
+      "sha256": "264c8ec96ac89c7aaa22048d781d57ace3690054db780c9b4e9e22aaee092dd9",
+      "bytes": 5635
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/verify-fixture-lifetime.mjs",
+      "sha256": "e21b5d0ae4f3659e09f36d363084f5c08ef443c5cef399d02be862686c22a96c",
+      "bytes": 3347
+    },
+    {
+      "path": "scripts/behaviors/README.md",
+      "sha256": "0468d2c94b94358853ffe18d80c5c4423f49f3fed240d669b433d62363db469e",
+      "bytes": 36405
+    },
+    {
+      "path": "scripts/behaviors/capability-dispatch.cucumber.mjs",
+      "sha256": "60c51f9b38fe4831899aa413510c933560d0d8f53a9d5de1863993c8cfa3e386",
+      "bytes": 508
+    },
+    {
+      "path": "scripts/behaviors/features/capability-dispatch.feature",
+      "sha256": "976469579b265ea73a2b3282910eb5150ae0bb77b292af52dce314a3f8d3c225",
+      "bytes": 6909
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/README.md",
+      "sha256": "d323a8c19ff90891c15b17ff69e937c037e7e0042563fc7ba1ad079d3ac02902",
+      "bytes": 24140
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/generate-png.py",
+      "sha256": "33d46d503a58c7499cc79dddc7f565243574743a95104b0441d22bba63af65a2",
+      "bytes": 1296
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/manifest.template.json",
+      "sha256": "3ab7fade233ea7ca2b15f218c57b2cbcf839cbd61cbbfe6289fd62ddbf48e47e",
+      "bytes": 6532
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/oversized-dimensions.png",
+      "sha256": "50a31de452c3405ab6a68cfded313438172d7dddf085d9d108c915060e1c06f9",
+      "bytes": 112167
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/runtime-overlay.template.yaml",
+      "sha256": "441ee34cdfe55115e21e31815f0b8a136b9c472309758bbdcd38e4906ccd4389",
+      "bytes": 9924
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/synthetic.jpeg",
+      "sha256": "db0fb8cf4b05e9119bda455c2f14ad144ef960fa9aaa1dfc0918e8d2106b9eaa",
+      "bytes": 783
+    },
+    {
+      "path": "scripts/behaviors/fixtures/capability-dispatch/synthetic.png",
+      "sha256": "abb052a97dde1d814840e556c20b348009f7eb10dbc6d9998145b211a4234bc3",
+      "bytes": 79
+    },
+    {
+      "path": "scripts/behaviors/steps/capability-dispatch.steps.mjs",
+      "sha256": "f97eda9b75e3aeffae60d72934956a4b395ec5ed7db7ccdd37b7aeed66397556",
+      "bytes": 22792
+    },
+    {
+      "path": "scripts/behaviors/support/capability-fixture.mjs",
+      "sha256": "5b93382ac314cc0abf114838432c3575188c678635491c46d21807d580524ff3",
+      "bytes": 20571
+    },
+    {
+      "path": "scripts/post_lifecycle/controlled_peer.py",
+      "sha256": "3d7a3bed4aab1a17b630e68b0e2ffbac66ff1e4a9600b57cd9a847a7d34c6917",
+      "bytes": 22957
+    },
+    {
+      "path": "src/llm/inline_image.rs",
+      "sha256": "c7eee3a43073a2b31d924db83a578317dcb8460ee24614ba21049095a4945cf6",
+      "bytes": 8167
+    },
+    {
+      "path": "src/llm/liter_driver.rs",
+      "sha256": "5e8503c1359f43888534a669726dc4f971a561c14055eab663fd0a8a83fd9dbf",
+      "bytes": 61060
+    },
+    {
+      "path": "src/llm/mod.rs",
+      "sha256": "855d594eeb66cffa82f312952f0c574f137f7ef1b5e0fbb1fe7a42c18f7094dd",
+      "bytes": 15547
+    },
+    {
+      "path": "src/llm/orchestrator.rs",
+      "sha256": "ba0deb20b808c4f6c510270d9fd421af194999765a4b1b6efe695d38a002ddff",
+      "bytes": 230090
+    },
+    {
+      "path": "src/llm/router.rs",
+      "sha256": "c73c93ff4180fb1379d83ae713eccd596fa484936ffc5b34a8c528aeb264604f",
+      "bytes": 35112
+    },
+    {
+      "path": "src/server.rs",
+      "sha256": "3e505ff9b3b9b4a0f2673f0f7b547f662815d3c8e37a69b8d3dabc35e16fc1ba",
+      "bytes": 361508
+    },
+    {
+      "path": "src/uar/runtime/checkpoint_host.rs",
+      "sha256": "e6b9d7ef7d3eb503a338fe579d3d563745b54411e88aafbb39383ac873480e00",
+      "bytes": 6057
+    },
+    {
+      "path": "src/uar/runtime/manager.rs",
+      "sha256": "2eada2a52661e3d737f50d63a61f7c95a423e1a5e9dd943c3552f1f32629683e",
+      "bytes": 511539
+    },
+    {
+      "path": "src/uar/runtime/turn/bindings.rs",
+      "sha256": "1ccfb0177f08c410ad72c9d015b95d6652b6bd1bb592f0cc9298fe8a9635a97e",
+      "bytes": 26116
+    },
+    {
+      "path": "src/uar/runtime/turn/host/event_projection.rs",
+      "sha256": "945e64cb41a962e75313a57d3679def793f7d99f8c2f2c193bbdcac02b517dab",
+      "bytes": 13367
+    },
+    {
+      "path": "src/uar/runtime/turn/request.rs",
+      "sha256": "945d65dfe64a3af87598faaba8f6df8b7accc9dbeeac8b7e07685a6cfd210a99",
+      "bytes": 16232
+    }
+  ],
+  "inventoryRevision": 2,
+  "supersedes": "implementation-inventory-001.json (retained pre-review source)",
+  "completedReviewRepairs": [
+    "R1",
+    "R2",
+    "R3",
+    "R4",
+    "R5"
+  ],
+  "leadSupplementaryProbeAuthoring": "Two actual owned-loopback integrity/lifetime probes prepared; not executed; no production/vision credit.",
+  "reviewLimits": "Native same-family isolated source review, weaker than independent-family. Specialized Rust role source-review unavailable due mandatory broad commands; Python original report disclosed incidental README narrative exposure. No runtime assertion is certified by review."
+}

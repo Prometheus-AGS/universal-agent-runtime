@@ -80,3 +80,10 @@ The `intent_classifier` settings namespace and its backends SHALL be reported as
 #### Scenario: Settings schema lists the namespace
 - **WHEN** a client reads the settings schema for `intent_classifier`
 - **THEN** the schema carries the legacy marker and the description that names the skill-matching configuration as the effective control
+
+### Requirement: Embedded settings validate the skill-matching engine
+SurrealKV SHALL validate writes to `skills.matching.engine` against the `engine` property of the registered `skills.matching` settings type.
+
+#### Scenario: Invalid skill-matching engine write
+- **WHEN** a settings write supplies a value outside the schema for `skills.matching.engine`
+- **THEN** the write is rejected and the previous setting remains intact

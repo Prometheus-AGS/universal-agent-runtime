@@ -5,6 +5,10 @@
 mod peer;
 #[path = "support/sidecar_process.rs"]
 mod sidecar_process;
+#[expect(
+    dead_code,
+    reason = "the shared live stub's delay and prompt-prefix fixtures serve other targets"
+)]
 #[path = "integration/live/stub_llm.rs"]
 mod stub_llm;
 

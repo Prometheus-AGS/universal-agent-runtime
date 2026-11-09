@@ -22,6 +22,12 @@ conversation selection, agent and session controls, message composition, run
 status, and normalized output. Provider calls, tools, retrieval, memory, policy,
 and authoritative server state remain behind UAR's governed boundary.
 
+For lost responses and immediate reload, reconcile the original native turn
+and read canonical session history before considering a new run. Retain ordered
+assistant segments and media. The
+[RC3 recovery procedure](../release-candidate.md#recover-chat-turns-and-a2ui-actions)
+shows how to test for an extra POST, provider call, or effect.
+
 ## Start a conversation
 
 1. Configure a provider and default model. Chat blocks with **No Model

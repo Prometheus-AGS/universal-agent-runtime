@@ -28,10 +28,17 @@ impl SurrealDbProvider {
             catalog_storage_backend: match backend { HostSurrealBackend::RocksDb => "rocksdb", HostSurrealBackend::SurrealKv => "surrealkv" },
             remote_requires_durability_attestation: false,
             session_changes: tokio::sync::watch::channel(0_u64).0,
+            accounting_write_guard: None,
         })
     }
 }
+// Both owned and host-borrowed providers may initialize the same schema in
+// one process. Keep the sequence together so their catalog writes cannot
+// conflict or require replaying a partially applied migration.
+static SCHEMA_INITIALIZATION: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 pub(super) async fn migrate(db: &Surreal<Any>) -> Result<()> {
+    let _schema_initialization = SCHEMA_INITIALIZATION.lock().await;
     db.query(include_str!(
         "../../../../migrations/surrealdb/durable_api_keys.surql"
     ))

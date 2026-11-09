@@ -1,0 +1,79 @@
+{
+  "phase": "production-readiness-476-baseline",
+  "implementation_complete": true,
+  "verification_status": "PENDING",
+  "source_base": "964e816854411cd12b3c85e5e0f11f03b0bf4892",
+  "files": [
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-baseline/assessment.md",
+      "sha256": "85d4b2679163cdc0da2ff6f62b20379e1381ced787499fd4b2c2d27a65c91b77"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-baseline/execution.md",
+      "sha256": "ee0999d5e316e23aa2a389461a38fd77b7cdc6d99bef5df58078659828e23a67"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-baseline/plan.md",
+      "sha256": "cdd5b631ca4b17232fc65980cf8fa8a3c63c50e9bfd3b092c6730f8dbe7607f1"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-baseline/prior-waypoint.json",
+      "sha256": "4fed3b531ebf52bbc04d1e5bf1c3fc9d11cb8884289a558ca26891f5b0860bee"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-baseline/production-contract.md",
+      "sha256": "81d8f59297fc450a96dcb77a3361ebf864916bc18826e2061eb4cf7d76265505"
+    },
+    {
+      "path": ".kbd-orchestrator/phases/production-readiness-476-baseline/progress.json",
+      "sha256": "c7d5e165fc8dec3c073c559069d6b7208c703706a79e23616814faaf20e0d72e"
+    },
+    {
+      "path": "docs/development/rust-test-baseline.md",
+      "sha256": "3b22faaa0f1169ec5dcb491d93875f269f48a1e13b134da9ab5a33feb622acdf"
+    },
+    {
+      "path": "lefthook.yml",
+      "sha256": "6615ae3751828bca3e4d149d2086eb3d4c46efb26cbe55426df363b9f74dcafa"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/.openspec.yaml",
+      "sha256": "c6ab3a95d8d0fd469ca8750ef79234025bf4a8356d5d57856e97d7e47fc8b6c2"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/design.md",
+      "sha256": "8845c2deb6c457aae2bc70741a8730916663e76c2c895d496b8c8a3473b1935c"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/proposal.md",
+      "sha256": "4215d8eecdb3230b14cd7c76e530058a3717a9ec8accc2b28bd079c11578ebc1"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/specs/rust-test-baseline/spec.md",
+      "sha256": "e8add124e8e200d6c4636661b54bdd10767e14f37eab569df0edaddd9e427da3"
+    },
+    {
+      "path": "openspec/changes/restore-exact-tree-rust-baseline/tasks.md",
+      "sha256": "c26443842c076d38aafbe3dd13bc44367da633b02704d8289958a444e406afd7"
+    },
+    {
+      "path": "scripts/verify-rust-test-baseline.sh",
+      "sha256": "9520ccad22409240f15f23e424ef4941f9ef5b0627a26a40ba7c4236bd555c65"
+    },
+    {
+      "path": "src/uar/runtime/presentation_history_tests.rs",
+      "sha256": "7f6658b2c8805812b99b447040d639187ff93a2d41ab97cddb8f5412ce527e09"
+    }
+  ],
+  "commit": "Pending ordinary local hook gates; no committed-candidate pass yet",
+  "guards": "Clean/pinned source and unchanged identity address temporary-patch acceptance (#462); warning refusal and serialization follow operator rules. No runtime guards added.",
+  "remaining_implementation": [],
+  "remaining_acceptance": [
+    "serial three-profile compile",
+    "retained presentation-history and embeddings/OpenAPI tests",
+    "affected format/full server-full inventory",
+    "synthetic safeguard controls",
+    "independent review"
+  ],
+  "authorization": "Operator 2026-10-31 phase-exit validation rule; no early tests were run"
+}

@@ -24,3 +24,10 @@ describe("standard A2UI action admission classification", () => {
     await expect(postA2uiAction("source", action)).rejects.toMatchObject({ uncertain: true });
   });
 });
+
+
+test("protected acknowledgments must retain the logical intent and guarantee", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ run_id: "source", continuation_run_id: "child", status: "continued",
+    interaction_id: "different", retry_protected: true }), { status: 202 })));
+  await expect(postA2uiAction("source", { ...action, interaction_id: "original", surface_generation: "generation" })).rejects.toMatchObject({ uncertain: true });
+});

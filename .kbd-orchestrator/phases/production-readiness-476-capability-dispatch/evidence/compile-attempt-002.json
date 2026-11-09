@@ -1,0 +1,16 @@
+{
+  "status": "INCOMPLETE_STOPPED_BEFORE_DESTINATION_REPAIR",
+  "source_inventory": "implementation-inventory-005.json",
+  "base_commit": "629f570239654717a59b6a3db5793c9bcd34d846",
+  "staged_tree_at_attempt": "abf45e13e4780959c713c6946fe739291443e3b9",
+  "git_commit_created": false,
+  "git_commit_exit_code": 1,
+  "guard_exit_code": 130,
+  "minimal": "PASS_WARNING_FREE on pre-repair working source; not final source acceptance",
+  "server_full": "INCOMPLETE_INTERRUPTED; no acceptance credit",
+  "postgres_profile": "NOT_EXERCISED",
+  "test_bodies": "NOT_EXECUTED",
+  "reason": "Acceptance source preparation found ordinary non-team explicit fallback capture clears registered connection and fixture global fallback control was empty. Stop own gate before implementation cohort.",
+  "ownership_stop": "Confirmed Cargo60798 cwd exact worktree and process group57473 containing only own guard/bash/Cargo/tee/rustc; sent SIGINT to group. Other chat Cargo62078 cwd original checkout preserved.",
+  "log": "compile-attempt-002.txt"
+}

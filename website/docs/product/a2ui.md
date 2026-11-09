@@ -23,6 +23,11 @@ conversation. The current artifact bridge supports confirmation, single-choice,
 text input, and JSON-form responses, plus display artifacts rendered through the
 shared React surface renderer.
 
+Use the original interaction receipt to recover an action with a lost response.
+The source surface generation and semantic input remain part of its identity.
+See [RC3 action recovery](../release-candidate.md#recover-chat-turns-and-a2ui-actions)
+for stale-generation and duplicate-effect controls.
+
 ```mermaid
 flowchart LR
     Run[Governed UAR run] --> Artifact[Typed artifact event]

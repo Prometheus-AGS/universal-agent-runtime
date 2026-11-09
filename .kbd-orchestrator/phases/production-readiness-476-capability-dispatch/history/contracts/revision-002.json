@@ -1,0 +1,287 @@
+{
+  "contractVersion": "1",
+  "kind": "kbd.adopted-contract",
+  "identity": {
+    "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+    "runId": "production-readiness-476-20261031",
+    "phaseId": "production-readiness-476-capability-dispatch",
+    "planRevision": 2,
+    "contractDigest": "fdfa9dedf521eea6bb5f3c2383caf161215efbeb2893a749a43ee8db6ca6b3b8"
+  },
+  "authorityMode": "operator-delegated file-based KBD phase selection; not a signed legacy runtime binding",
+  "adoptionSource": "Operator: create a worktree; establish contract, create concise dependency-aware bounded phase plan then start; may inspect/prepare tests but execute only after useful whole-phase implementation; continue through authorized phases without routine approvals. Operator selected Linux amd64 container APIs.",
+  "decisionOwner": "Operator owns promotion/spend/materialscope; lead chooses this bounded implementation/scenario frontier under that explicit delegation, not a claim each detail received separate human approval.",
+  "methodReference": "docs/validation/uar-validation-methodology.html sections8-9; existing local HTTP Cucumber and adopted-contract scenarioMatrix shape. Native kbd/kbd-runtime unavailable; file-based phase workflow is recorded transparently, no legacy signed binding forged/overwritten.",
+  "amendmentPolicy": "Material scope/spend/external effects require operator answer; record bounded source-grounded repairs and affected evidence invalidation. Preserve prior revisions and failures; source inventory/waypoint controls full implementation readiness.",
+  "releaseClaim": {
+    "userOperation": "Supported ordinary chat delivers typed image parts and all real sends honor captured destinations and hard capabilities.",
+    "supportedEnvironments": [
+      "Linux amd64 rootDockerfile API artifact; Surrealdefault; PG18restricted per separate applicable qualification"
+    ],
+    "currentCapabilities": "Implementation in progress; all new scenarios NOT_EXERCISED",
+    "explicitUnknowns": [
+      "actualcontainer runtime/adapter outcomes",
+      "private visual fact modelunderstanding until authorized realmodel",
+      "cold governedcheckpoint outcome until actual qualifiedpath exercised",
+      "final artifact/recovery andotherprotocol qualification"
+    ]
+  },
+  "statusVocabulary": [
+    "PASS",
+    "FAIL",
+    "BLOCKED",
+    "NOT_EXERCISED",
+    "HISTORICAL",
+    "UNVERIFIED"
+  ],
+  "scenarioMatrix": [
+    {
+      "id": "CD-01",
+      "name": "Ordered multimodal ordinary replies",
+      "ownerTask": "1+2+3+6+7",
+      "productionEntry": "Both ordinary HTTP aliases, streaming and non-streaming",
+      "realCollaborators": [
+        "actual candidate Linux amd64 container APIs",
+        "selected Surreal3.3owned volume",
+        "controlled keyless peer(s); no real-model quality substitution"
+      ],
+      "oracle": "Independent synthetic PNG/JPEG bytes and ordered part summaries; client completion is useful and successful",
+      "negativeControl": "Swapped hash/order oracle challenge against the same captured actual request rejects; canned answer alone is insufficient",
+      "fixtures": "Owned synthetic fixtures only; exact endpoint/registration/process/artifact identity frozen at completed phase boundary",
+      "evidence": "Focused Cucumber JSON and sanitized per-case receipt with source/image/config/contract digests; supplementary existing integration receipt where stated",
+      "basis": "Operator#476 bounded-phase request and issues#463/#464; preserve#388/#466; selectedLinuxamd64contract",
+      "likelihood": "UNKNOWN; ordinary operation or mandatory integrity/privacy constraint, no fabricated probability",
+      "selection": "CURRENT_PHASE"
+    },
+    {
+      "id": "CD-02",
+      "name": "Text compatibility and image-only input",
+      "ownerTask": "1+2+7",
+      "productionEntry": "Both ordinary aliases",
+      "realCollaborators": [
+        "actual candidate Linux amd64 container APIs",
+        "selected Surreal3.3owned volume",
+        "controlled keyless peer(s); no real-model quality substitution"
+      ],
+      "oracle": "Exact declared text projection and literal JSON-looking text; image-only final payload exists",
+      "negativeControl": "Reject a missing text span/image turn rather than accepting only status200",
+      "fixtures": "Owned synthetic fixtures only; exact endpoint/registration/process/artifact identity frozen at completed phase boundary",
+      "evidence": "Focused Cucumber JSON and sanitized per-case receipt with source/image/config/contract digests; supplementary existing integration receipt where stated",
+      "basis": "Operator#476 bounded-phase request and issues#463/#464; preserve#388/#466; selectedLinuxamd64contract",
+      "likelihood": "UNKNOWN; ordinary operation or mandatory integrity/privacy constraint, no fabricated probability",
+      "selection": "CURRENT_PHASE"
+    },
+    {
+      "id": "CD-03",
+      "name": "Invalid and bounded input has zero sends",
+      "ownerTask": "1+7",
+      "productionEntry": "Ordinary HTTP admission",
+      "realCollaborators": [
+        "actual candidate Linux amd64 container APIs",
+        "selected Surreal3.3owned volume",
+        "controlled keyless peer(s); no real-model quality substitution"
+      ],
+      "oracle": "Static error class plus all isolated peer model-call counters unchanged for invalid URL/MIME/base64/detail/decoder/parts/attachments/count/envelope/decoded bounds",
+      "negativeControl": "Use a valid admitted control first to prove counters observe the actual runtime route",
+      "fixtures": "Owned synthetic fixtures only; exact endpoint/registration/process/artifact identity frozen at completed phase boundary",
+      "evidence": "Focused Cucumber JSON and sanitized per-case receipt with source/image/config/contract digests; supplementary existing integration receipt where stated",
+      "basis": "Operator#476 bounded-phase request and issues#463/#464; preserve#388/#466; selectedLinuxamd64contract",
+      "likelihood": "UNKNOWN; ordinary operation or mandatory integrity/privacy constraint, no fabricated probability",
+      "selection": "CURRENT_PHASE"
+    },
+    {
+      "id": "CD-04",
+      "name": "Actual tools vision structured and context destinations",
+      "ownerTask": "4+5+6+7",
+      "productionEntry": "Mounted public runs and actual peer request identities",
+      "realCollaborators": [
+        "actual candidate Linux amd64 container APIs",
+        "selected Surreal3.3owned volume",
+        "controlled keyless peer(s); no real-model quality substitution"
+      ],
+      "oracle": "Isolated registrations with deliberately different declared capabilities/capacity; actual chosen model and final payload demands",
+      "negativeControl": "Explicit incompatible target or empty eligible set refuses with zero peer sends",
+      "fixtures": "Owned synthetic fixtures only; exact endpoint/registration/process/artifact identity frozen at completed phase boundary",
+      "evidence": "Focused Cucumber JSON and sanitized per-case receipt with source/image/config/contract digests; supplementary existing integration receipt where stated",
+      "basis": "Operator#476 bounded-phase request and issues#463/#464; preserve#388/#466; selectedLinuxamd64contract",
+      "likelihood": "UNKNOWN; ordinary operation or mandatory integrity/privacy constraint, no fabricated probability",
+      "selection": "CURRENT_PHASE"
+    },
+    {
+      "id": "CD-05",
+      "name": "Disablement cooldown and captured scope win over preference",
+      "ownerTask": "4+5+7",
+      "productionEntry": "Route-query plus real public dispatch",
+      "realCollaborators": [
+        "actual candidate Linux amd64 container APIs",
+        "selected Surreal3.3owned volume",
+        "controlled keyless peer(s); no real-model quality substitution"
+      ],
+      "oracle": "Current configured disabled/cooldown state and exact captured policy/target identities, not route-query answer alone",
+      "negativeControl": "Registered disabled candidate cannot reenter through catalog; out-of-scope fallback count remainszero",
+      "fixtures": "Owned synthetic fixtures only; exact endpoint/registration/process/artifact identity frozen at completed phase boundary",
+      "evidence": "Focused Cucumber JSON and sanitized per-case receipt with source/image/config/contract digests; supplementary existing integration receipt where stated",
+      "basis": "Operator#476 bounded-phase request and issues#463/#464; preserve#388/#466; selectedLinuxamd64contract",
+      "likelihood": "UNKNOWN; ordinary operation or mandatory integrity/privacy constraint, no fabricated probability",
+      "selection": "CURRENT_PHASE"
+    },
+    {
+      "id": "CD-06",
+      "name": "Fallback rechecks scope payload and destination budget",
+      "ownerTask": "5+6+7",
+      "productionEntry": "Real pre-output503 from controlled primary then actual fallback",
+      "realCollaborators": [
+        "actual candidate Linux amd64 container APIs",
+        "selected Surreal3.3owned volume",
+        "controlled keyless peer(s); no real-model quality substitution"
+      ],
+      "oracle": "Per-model counters and ordered image hashes/settings/capacity/output limits at permitted fallback",
+      "negativeControl": "Incapable/disallowed fallback receiveszero; exact target never substitutes; no post-output replay invented",
+      "fixtures": "Owned synthetic fixtures only; exact endpoint/registration/process/artifact identity frozen at completed phase boundary",
+      "evidence": "Focused Cucumber JSON and sanitized per-case receipt with source/image/config/contract digests; supplementary existing integration receipt where stated",
+      "basis": "Operator#476 bounded-phase request and issues#463/#464; preserve#388/#466; selectedLinuxamd64contract",
+      "likelihood": "UNKNOWN; ordinary operation or mandatory integrity/privacy constraint, no fabricated probability",
+      "selection": "CURRENT_PHASE"
+    },
+    {
+      "id": "CD-07",
+      "name": "Warm continuation retains images without client replay",
+      "ownerTask": "2+3+5+7",
+      "productionEntry": "Same owned public session, fresh text-only second request",
+      "realCollaborators": [
+        "actual candidate Linux amd64 container APIs",
+        "selected Surreal3.3owned volume",
+        "controlled keyless peer(s); no real-model quality substitution"
+      ],
+      "oracle": "Second client request contains no oldimage; last actual provider request retains original image hashes/order and requiresvision",
+      "negativeControl": "Removing retained images from expected observation is not allowed to pass from a correct canned answer",
+      "fixtures": "Owned synthetic fixtures only; exact endpoint/registration/process/artifact identity frozen at completed phase boundary",
+      "evidence": "Focused Cucumber JSON and sanitized per-case receipt with source/image/config/contract digests; supplementary existing integration receipt where stated",
+      "basis": "Operator#476 bounded-phase request and issues#463/#464; preserve#388/#466; selectedLinuxamd64contract",
+      "likelihood": "UNKNOWN; ordinary operation or mandatory integrity/privacy constraint, no fabricated probability",
+      "selection": "CURRENT_PHASE"
+    },
+    {
+      "id": "CD-08",
+      "name": "Protected checkpoint image identity",
+      "ownerTask": "3+7",
+      "productionEntry": "Existing production checkpoint/resume/storage API paths, with mounted governed cold continuation where source supports it",
+      "realCollaborators": [
+        "actual candidate Linux amd64 container APIs",
+        "selected Surreal3.3owned volume",
+        "controlled keyless peer(s); no real-model quality substitution"
+      ],
+      "oracle": "Same raw image hashes/order and intact authorization/integrity/single-use admission; use existing context_history_integrity integration as supplementary component evidence",
+      "negativeControl": "Tampered checkpoint or wrong current authority refuses; component serialization alone doesnot certify container cold execution",
+      "fixtures": "Owned synthetic fixtures only; exact endpoint/registration/process/artifact identity frozen at completed phase boundary",
+      "evidence": "Focused Cucumber JSON and sanitized per-case receipt with source/image/config/contract digests; supplementary existing integration receipt where stated",
+      "basis": "Operator#476 bounded-phase request and issues#463/#464; preserve#388/#466; selectedLinuxamd64contract",
+      "likelihood": "UNKNOWN; ordinary operation or mandatory integrity/privacy constraint, no fabricated probability",
+      "selection": "DEFERRED_NOT_EXERCISED",
+      "disposition": "Source-only investigation: default public graph has no CheckpointNode; typed image submission does not itself create a governed checkpoint. RealToolEnd/approval+durableowner and safecontainer lifecycle fixture still required. Preserve canonical checkpoint code, but defer actual cold qualification to#469/#465 rather than invent a new producer/kernel or fake prerequisite test. No cold pass claimed."
+    },
+    {
+      "id": "CD-09",
+      "name": "Strict and estimated image budget honesty",
+      "ownerTask": "5+6+7",
+      "productionEntry": "Actual final provider preparation/send; existing explicit synthetic exact budget regression",
+      "realCollaborators": [
+        "actual candidate Linux amd64 container APIs",
+        "selected Surreal3.3owned volume",
+        "controlled keyless peer(s); no real-model quality substitution"
+      ],
+      "oracle": "Real strict unknown-image counting zero-send/refusal; estimated fit_guarantee:false; existing synthetic exact protected overflow/output/reasoning/fallback controls",
+      "negativeControl": "A JSON-count receipt or catalog flag cannot be credited as real-image guaranteedfit",
+      "fixtures": "Owned synthetic fixtures only; exact endpoint/registration/process/artifact identity frozen at completed phase boundary",
+      "evidence": "Focused Cucumber JSON and sanitized per-case receipt with source/image/config/contract digests; supplementary existing integration receipt where stated",
+      "basis": "Operator#476 bounded-phase request and issues#463/#464; preserve#388/#466; selectedLinuxamd64contract",
+      "likelihood": "UNKNOWN; ordinary operation or mandatory integrity/privacy constraint, no fabricated probability",
+      "selection": "CURRENT_PHASE",
+      "disposition": "Current public estimated receipts plus source-supported finitecost refusal when runtime supplies actualfield; existing explicit synthetic budget regression supplementary. No public strict-real-image selector exists, so strict-real supported endpoint is excluded/notexercised, not a fake route or passingplaceholder."
+    },
+    {
+      "id": "CD-10",
+      "name": "Safe image diagnostics and evidence",
+      "ownerTask": "1+3+6+7+8",
+      "productionEntry": "Public errors/run context/events/receipts and captured Debug where applicable",
+      "realCollaborators": [
+        "actual candidate Linux amd64 container APIs",
+        "selected Surreal3.3owned volume",
+        "controlled keyless peer(s); no real-model quality substitution"
+      ],
+      "oracle": "No rawdataURI/base64/privatevisualfact in diagnostics; canonical protected history still has usable image identity",
+      "negativeControl": "Privacy assertion is sensitive to deliberately planted inline sentinel in the isolated observation comparator; never attach rawbody in assertion failures",
+      "fixtures": "Owned synthetic fixtures only; exact endpoint/registration/process/artifact identity frozen at completed phase boundary",
+      "evidence": "Focused Cucumber JSON and sanitized per-case receipt with source/image/config/contract digests; supplementary existing integration receipt where stated",
+      "basis": "Operator#476 bounded-phase request and issues#463/#464; preserve#388/#466; selectedLinuxamd64contract",
+      "likelihood": "UNKNOWN; ordinary operation or mandatory integrity/privacy constraint, no fabricated probability",
+      "selection": "CURRENT_PHASE"
+    }
+  ],
+  "functionalScope": [
+    "bounded last-current-user inlinePNG/JPEG typed path",
+    "actual shared capability/availability and immutable captured-destination admission",
+    "truthful support/evidence labels"
+  ],
+  "exclusions": [
+    "remoteimage retrieval/audio/video/uploadID resolution",
+    "new global runner/kernel/full-harness durability rewrite/public allowdenyDSL",
+    "genuinevision model spend or certification from fakepeer",
+    "otherplatform/provider/published release certification",
+    "revival of cancelled historical allproduct qualification",
+    "CD-08 governed cold checkpoint qualification until existing real producer/lifecycle fixture is supplied under#469/#465",
+    "public strict-real-image fit selection (not currently exposed); no new budget/certification knob solely for testing"
+  ],
+  "requiredSafetyChecks": [
+    "preserve owner/authorization/approval/effect/budget/replay/in-doubt safeguards",
+    "only owned fixture processes/records/volume; preserve otherchat work",
+    "no manual credentials/authentication setup or productionboundary weakening",
+    "no rawimages in diagnostic/evidence/assertion failure output",
+    "no tests/check/build/probes/reviewgates until all9implementationitems/fixtures/docs/settings/handoffs complete"
+  ],
+  "budgets": {
+    "scenarioFrontier": "CD-01..CD-10 families and explicit bounded input variants only",
+    "paidModelCalls": 0,
+    "externalPublishingSigningDeployment": false,
+    "arbitraryNumericalProgramBudget": "Not allocated byoperator; no invented token/time reset or inherited cancelled-phase budget",
+    "repairPolicy": "Operator-authorized bounded affected repair/recheck aftercompletecohort; no automatic flaky retries or unrelated suite expansion"
+  },
+  "evidenceInvalidation": "Bind exactsource/image/config/fixture/contract and realnetwork/storage/lifecycle boundaries. Changes invalidate only affected assertions; keep historical failed attempts and original receipt identities.",
+  "boundaryPacket": {
+    "postImplementationOnly": true,
+    "commands": [
+      "bash scripts/verify-rust-test-baseline.sh --acceptance",
+      "existingDockerfile localLinuxamd64 buildx argv finalized at boundary",
+      "node node_modules/@cucumber/cucumber/bin/cucumber.js --config scripts/behaviors/capability-dispatch.cucumber.mjs",
+      "affected existing context_history_integrity integration selector and narrowed budget/text cases, exact argv frozen in execution.md"
+    ],
+    "requiredApprovals": "Existing operator authorization for bounded phase-exit local acceptance aftercompleteinventory. No authority for remote/paid builder, model spend, signing/publishing/deployment or thirdparty changes.",
+    "cleanup": [
+      "clean up only ownfixture records/processes/container namespace; retain artifacts/evidence",
+      "cleanup failure or uncertain effect is not PASS"
+    ],
+    "stopConditions": [
+      "genuine authorization/prerequisiteblocker",
+      "unresolved effect/cleanup uncertainty before retry",
+      "scope beyond delegated contract"
+    ]
+  },
+  "status": {
+    "implementationComplete": false,
+    "verification": "CLOSED",
+    "sourceBase": "629f5702",
+    "candidateIdentity": "freeze exactcommittedsource/artifact onlyatcompletedboundary; no current acceptance"
+  },
+  "amendmentRecord": {
+    "date": "2026-10-31",
+    "reason": "Source-informed frontier correction before ANY test execution; avoid invented mandatory coldproducer/publicstrictbudget APIs. No observed failure hidden, no original assertions deleted, no issue/release closure credited.",
+    "actor": "lead underoperator bounded-useful-phase delegation",
+    "previousContractDigest": "a9d8510e07fa7ea65e568fe37dd6a2db3c98c12ceab69077efc516806416dfda",
+    "originalRequirementsPreserved": "#388 syntheticcontracts, actual image transport and zero-send/diagnostic/authority controls remain; all deferred claims explicitly unqualified"
+  },
+  "digestNormalization": {
+    "algorithm": "sha256",
+    "representation": "UTF8 JSON sortedkeys compactseparators; exclude identity.contractDigest and digestNormalization",
+    "scope": "operator-delegated file-based phase selection, no signedlegacybinding claim"
+  }
+}

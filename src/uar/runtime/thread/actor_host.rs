@@ -117,6 +117,8 @@ pub(crate) struct ActorThreadSession {
     remote_constraints: Option<RemoteRootConstraints>,
     instance: Option<InstanceRootConstraints>,
     a2a_context: Option<Vec<crate::llm::Message>>,
+    #[cfg(test)]
+    lose_next_persist_ack: bool,
 }
 
 /// A verified activation's immutable catalog, epoch, and cold-start history.
@@ -192,12 +194,19 @@ impl ActorThreadSession {
             remote_constraints,
             instance,
             a2a_context: None,
+            #[cfg(test)]
+            lose_next_persist_ack: false,
         }
     }
 
     pub(crate) fn with_a2a_context(mut self, history: Option<Vec<crate::llm::Message>>) -> Self {
         self.a2a_context = history;
         self
+    }
+
+    #[cfg(all(test, feature = "surreal-backend"))]
+    fn inject_lost_persist_ack(&mut self) {
+        self.lose_next_persist_ack = true;
     }
 
     /// Execute one direct user turn through RunManager with an exact artifact.
@@ -216,13 +225,24 @@ impl ActorThreadSession {
         run_id: String,
         artifacts: Option<super::artifacts::RunArtifactCollector>,
     ) -> anyhow::Result<PersistedAgentThread> {
-        self.execute_named_with_capture(content, run_id, artifacts,
-            AuthenticatedCredentialCapture::default()).await
+        self.execute_named_with_capture(
+            content,
+            run_id,
+            artifacts,
+            AuthenticatedCredentialCapture::default(),
+        )
+        .await
     }
 
     /// Renew credential roles only for the same captured principal/namespace.
-    pub(crate) fn refresh_owner(&mut self, owner: crate::uar::runtime::actor::messages::ActorOwner) -> anyhow::Result<()> {
-        anyhow::ensure!(self.owner == owner, "Actor authority belongs to another owner");
+    pub(crate) fn refresh_owner(
+        &mut self,
+        owner: crate::uar::runtime::actor::messages::ActorOwner,
+    ) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            self.owner == owner,
+            "Actor authority belongs to another owner"
+        );
         self.owner = owner;
         Ok(())
     }
@@ -234,11 +254,14 @@ impl ActorThreadSession {
         artifacts: Option<super::artifacts::RunArtifactCollector>,
         credential_capture: AuthenticatedCredentialCapture,
     ) -> anyhow::Result<PersistedAgentThread> {
-        self.execute_named_with_client_tools(content, run_id, artifacts, credential_capture, None).await
+        self.execute_named_with_client_tools(content, run_id, artifacts, credential_capture, None)
+            .await
     }
 
     pub(crate) async fn execute_named_with_client_tools(
-        &mut self, content: String, run_id: String,
+        &mut self,
+        content: String,
+        run_id: String,
         artifacts: Option<super::artifacts::RunArtifactCollector>,
         credential_capture: AuthenticatedCredentialCapture,
         client_tools: Option<crate::uar::runtime::turn::client_tools::ClientToolInput>,
@@ -246,7 +269,10 @@ impl ActorThreadSession {
         if client_tools.is_some() && self.instance.is_none() {
             // A caller handoff releases the previous root. A warm mailbox must
             // not turn its old artifact into authority for the next root.
-            self.artifact = self.manager.resolve_registered_agent(&self.artifact.id).await
+            self.artifact = self
+                .manager
+                .resolve_registered_agent(&self.artifact.id)
+                .await
                 .context("caller_tool_current_agent_unavailable")?;
         }
         let mut request = match &self.instance {
@@ -277,7 +303,9 @@ impl ActorThreadSession {
             None => RunExecutionRequest::new(self.artifact.clone(), content)
                 .with_verified_owner(self.owner.clone()),
         };
-        if let Some(history) = self.a2a_context.take() { request.host_history = Some(history); }
+        if let Some(history) = self.a2a_context.take() {
+            request.host_history = Some(history);
+        }
         request = request.with_credential_capture(Some(credential_capture));
         request.client_tools = client_tools;
         if let Some(constraints) = &self.remote_constraints {
@@ -298,11 +326,21 @@ impl ActorThreadSession {
                             chat_mode: Some(constraints.policy.chat_mode),
                             agent_id: constraints.policy.agent_id.clone(),
                             model: constraints.policy.model.clone(),
-                            skills: ResourceSelection::selected(constraints.policy.skills.ids.clone()),
-                            tools: ResourceSelection::selected(constraints.policy.tools.ids.clone()),
-                            mcp_servers: ResourceSelection::selected(constraints.policy.mcp_servers.ids.clone()),
-                            knowledge_bases: ResourceSelection::selected(constraints.policy.knowledge_bases.ids.clone()),
-                            presentations: ResourceSelection::selected(constraints.policy.presentations.ids.clone()),
+                            skills: ResourceSelection::selected(
+                                constraints.policy.skills.ids.clone(),
+                            ),
+                            tools: ResourceSelection::selected(
+                                constraints.policy.tools.ids.clone(),
+                            ),
+                            mcp_servers: ResourceSelection::selected(
+                                constraints.policy.mcp_servers.ids.clone(),
+                            ),
+                            knowledge_bases: ResourceSelection::selected(
+                                constraints.policy.knowledge_bases.ids.clone(),
+                            ),
+                            presentations: ResourceSelection::selected(
+                                constraints.policy.presentations.ids.clone(),
+                            ),
                             memory_enabled: Some(constraints.policy.memory_enabled),
                             prompt_caching_enabled: Some(constraints.policy.prompt_caching_enabled),
                             context_strategy: Some(constraints.policy.context_strategy.clone()),
@@ -380,9 +418,13 @@ impl ActorThreadSession {
             run_id.clone(),
         )
         .context("actor_root_identity_failed")?;
-        if let Some(attempt)=team_binding.as_ref().and_then(|b|b.team_attempt.as_ref()) {
-            anyhow::ensure!(!attempt.root_id.is_empty()&&attempt.approval_scope_id==attempt.root_id,"TEAM_SCOPE_DENIED");
-            next.thread_id=attempt.root_id.clone();next.root_thread_id=attempt.root_id.clone();
+        if let Some(attempt) = team_binding.as_ref().and_then(|b| b.team_attempt.as_ref()) {
+            anyhow::ensure!(
+                !attempt.root_id.is_empty() && attempt.approval_scope_id == attempt.root_id,
+                "TEAM_SCOPE_DENIED"
+            );
+            next.thread_id = attempt.root_id.clone();
+            next.root_thread_id = attempt.root_id.clone();
         }
         let record = self
             .persist(next)
@@ -430,10 +472,12 @@ impl ActorThreadSession {
         }
         if let Err(error) = self.persist_a2a_outputs(&root).await {
             tracing::error!(%error, "A2A output persistence is unconfirmed");
-            if !matches!(&result, AgentThreadResult::Failed { code, .. } if code == "thread_cleanup_unconfirmed") {
+            if !matches!(&result, AgentThreadResult::Failed { code, .. } if code == "thread_cleanup_unconfirmed")
+            {
                 result = AgentThreadResult::Failed {
                     code: "a2a_persistence_unconfirmed".into(),
-                    message: "A2A conversation or artifact persistence could not be confirmed".into(),
+                    message: "A2A conversation or artifact persistence could not be confirmed"
+                        .into(),
                 };
             }
         }
@@ -449,9 +493,16 @@ impl ActorThreadSession {
                 message: "Conversation history could not be confirmed in storage".into(),
             };
         }
-        if matches!(result, AgentThreadResult::Completed {..}) {
-            if let Some(binding)=&team_binding {
-                if let Some(control)=binding.team_yield.lock().map_err(|_|anyhow::anyhow!("TEAM_EFFECTS_UNCERTAIN"))?.clone(){result=AgentThreadResult::Yielded{control};}
+        if matches!(result, AgentThreadResult::Completed { .. }) {
+            if let Some(binding) = &team_binding {
+                if let Some(control) = binding
+                    .team_yield
+                    .lock()
+                    .map_err(|_| anyhow::anyhow!("TEAM_EFFECTS_UNCERTAIN"))?
+                    .clone()
+                {
+                    result = AgentThreadResult::Yielded { control };
+                }
             }
         }
         let mut next = self
@@ -475,40 +526,88 @@ impl ActorThreadSession {
     /// Commit transport-owned artifacts and host conversation before a durable
     /// terminal thread can release its context. The binding is correlation only.
     async fn persist_a2a_outputs(&self, root: &ActorRootBinding) -> anyhow::Result<()> {
-        if !self.persistence.supports_durable_a2a_bindings() { return Ok(()); }
-        let Some(principal) = self.owner.credential_principal() else { return Ok(()); };
-        let owner_key = principal.storage_key();
-        let records = self.persistence.list_a2a_bindings(&owner_key, &self.artifact.id).await?;
-        let Some(mut before) = records.into_iter().find(|record| record.run_id == root.record.thread.root_run_id) else {
+        if !self.persistence.supports_durable_a2a_bindings() {
+            return Ok(());
+        }
+        let Some(principal) = self.owner.credential_principal() else {
             return Ok(());
         };
-        let expected_session = format!("a2a-context-{}", crate::uar::api::a2a::durable::A2aBinding::storage_key_for(
-            &owner_key, &self.artifact.id, &before.context_id));
-        anyhow::ensure!(self.session_id == expected_session, "A2A host context identity mismatch");
-        self.manager.persist_instance_session(&self.owner, &self.session_id).await?;
+        let owner_key = principal.storage_key();
+        let records = self
+            .persistence
+            .list_a2a_bindings(&owner_key, &self.artifact.id)
+            .await?;
+        let Some(mut before) = records
+            .into_iter()
+            .find(|record| record.run_id == root.record.thread.root_run_id)
+        else {
+            return Ok(());
+        };
+        let expected_session = format!(
+            "a2a-context-{}",
+            crate::uar::api::a2a::durable::A2aBinding::storage_key_for(
+                &owner_key,
+                &self.artifact.id,
+                &before.context_id
+            )
+        );
+        anyhow::ensure!(
+            self.session_id == expected_session,
+            "A2A host context identity mismatch"
+        );
+        self.manager
+            .persist_instance_session(&self.owner, &self.session_id)
+            .await?;
         let artifacts = if let Some(collector) = &root.artifacts {
             collector.check_binding(&self.owner, &before.run_id)?;
             collector.close()?;
             collector.snapshot()?
-        } else { Vec::new() };
-        if artifacts.is_empty() { return Ok(()); }
+        } else {
+            Vec::new()
+        };
+        if artifacts.is_empty() {
+            return Ok(());
+        }
         loop {
             let mut after = before.clone();
-            after.revision = after.revision.checked_add(1).ok_or_else(|| anyhow::anyhow!("A2A revision exhausted"))?;
+            after.revision = after
+                .revision
+                .checked_add(1)
+                .ok_or_else(|| anyhow::anyhow!("A2A revision exhausted"))?;
             for artifact in &artifacts {
-                if !after.task.artifacts.iter().any(|existing| existing.artifact_id == artifact.artifact_id) {
-                    after.task.artifacts.push(crate::uar::api::a2a::types::Artifact {
-                        artifact_id: artifact.artifact_id.clone(), name: Some(artifact.name.clone()),
-                        description: Some(artifact.description.clone()),
-                        parts: vec![crate::uar::api::a2a::types::Part::Data { data: artifact.data.clone() }],
-                        metadata: std::collections::HashMap::new(),
-                    });
+                if !after
+                    .task
+                    .artifacts
+                    .iter()
+                    .any(|existing| existing.artifact_id == artifact.artifact_id)
+                {
+                    after
+                        .task
+                        .artifacts
+                        .push(crate::uar::api::a2a::types::Artifact {
+                            artifact_id: artifact.artifact_id.clone(),
+                            name: Some(artifact.name.clone()),
+                            description: Some(artifact.description.clone()),
+                            parts: vec![crate::uar::api::a2a::types::Part::Data {
+                                data: artifact.data.clone(),
+                            }],
+                            metadata: std::collections::HashMap::new(),
+                        });
                 }
             }
-            if self.persistence.compare_and_swap_a2a_binding(&before, &after).await? { return Ok(()); }
+            if self
+                .persistence
+                .compare_and_swap_a2a_binding(&before, &after)
+                .await?
+            {
+                return Ok(());
+            }
             // Cancellation intent and projection can race this final receipt.
             // Reload the same run; never move receipts to a successor run.
-            let current = self.persistence.load_a2a_binding(&owner_key, &self.artifact.id, &before.task_id).await?
+            let current = self
+                .persistence
+                .load_a2a_binding(&owner_key, &self.artifact.id, &before.task_id)
+                .await?
                 .ok_or_else(|| anyhow::anyhow!("A2A binding disappeared"))?;
             anyhow::ensure!(current.run_id == before.run_id, "A2A output run changed");
             before = current;
@@ -632,6 +731,17 @@ impl ActorThreadSession {
                     .await
             }
         };
+        // #421 fixture seam: the actual store committed successfully, but its
+        // caller loses that one acknowledgement. Production readback below is
+        // unchanged; no public fault API or alternate persistence path exists.
+        #[cfg(test)]
+        let write = if write.is_ok() && std::mem::take(&mut self.lose_next_persist_ack) {
+            Err(anyhow::anyhow!(
+                "fixture lost the committed actor acknowledgement"
+            ))
+        } else {
+            write
+        };
         let stored = match write {
             Ok(stored) => stored,
             Err(write_error) => {
@@ -656,5 +766,247 @@ impl ActorThreadSession {
         // The actor registry retains the receiver; an absent observer does not
         // undo the confirmed database write or turn it into a failed operation.
         let _ = self.state.send(Some(stored));
+    }
+}
+
+#[cfg(all(test, feature = "surreal-backend"))]
+mod persistence_ack_tests {
+    use super::*;
+    use crate::config::LlmConfig;
+    use crate::uar::persistence::providers::surreal::{HostSurrealBackend, SurrealDbProvider};
+    use crate::uar::runtime::matching::VectorMatcher;
+    use crate::uar::runtime::skills::SkillRegistry;
+    use crate::uar::security::claims::{UserClaims, UserContext};
+
+    struct Fixture {
+        session: ActorThreadSession,
+        provider: Arc<SurrealDbProvider>,
+        host: surrealdb::Surreal<surrealdb::engine::any::Any>,
+        directory: tempfile::TempDir,
+    }
+
+    impl Fixture {
+        async fn new() -> anyhow::Result<Self> {
+            let directory = tempfile::tempdir()?;
+            let endpoint = format!(
+                "surrealkv://{}",
+                directory.path().join("actor-ack.db").display()
+            );
+            let host = surrealdb::engine::any::connect(&endpoint).await?;
+            host.use_ns("production-readiness")
+                .use_db("actor-ack")
+                .await?;
+            let provider = Arc::new(
+                SurrealDbProvider::from_existing_client(
+                    host.clone(),
+                    HostSurrealBackend::SurrealKv,
+                )
+                .await?,
+            );
+            // This host-only persistence fixture never dispatches a model or
+            // authenticates over HTTP. Its synthetic trusted-host identity is
+            // namespace data, not a minted credential or admission bypass.
+            let user = UserContext {
+                user_id: "actor-ack-owner".to_owned(),
+                tenant_id: None,
+                authority: None,
+                host_authority: None,
+                claims: UserClaims {
+                    sub: "actor-ack-owner".to_owned(),
+                    name: None,
+                    roles: None,
+                    tenant_id: None,
+                    uar_instance_id: None,
+                    exp: usize::MAX,
+                },
+            };
+            let owner =
+                crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(&user)?;
+            let manager = Arc::new(
+                RunManager::new(
+                    LlmConfig::default(),
+                    Arc::new(crate::mcp::registry::McpRegistry::new_empty()),
+                    crate::session::SessionStore::new(),
+                    Arc::new(tokio::sync::RwLock::new(SkillRegistry::default())),
+                    Arc::new(VectorMatcher::new(
+                        Arc::new(
+                            crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
+                                Arc::new(
+                                    crate::uar::rag::embeddings::UnavailableEmbeddingBackend::new(
+                                        384,
+                                        "actor persistence fixture does not embed or dispatch",
+                                    ),
+                                ),
+                            ),
+                        ),
+                        0.75,
+                    )),
+                    None,
+                )
+                .await,
+            );
+            let (state, _receiver) = watch::channel(None);
+            let session = ActorThreadSession::new(
+                owner,
+                crate::uar::defaults::default_agent(),
+                "actor-ack-session".to_owned(),
+                manager,
+                provider.clone(),
+                CancellationToken::new(),
+                state,
+                Arc::new(tokio::sync::Mutex::new(None)),
+            );
+            Ok(Self {
+                session,
+                provider,
+                host,
+                directory,
+            })
+        }
+
+        fn root(&self) -> anyhow::Result<AgentThread> {
+            Ok(AgentThread::root(
+                self.session.owner.user_id().to_owned(),
+                "default-agent".to_owned(),
+                uuid::Uuid::new_v4().to_string(),
+            )?)
+        }
+
+        async fn rows(&self) -> anyhow::Result<Vec<PersistedAgentThread>> {
+            let mut response = self
+                .host
+                .query("SELECT VALUE data FROM agent_threads;")
+                .await?
+                .check()?;
+            let rows: Vec<String> = response.take(0)?;
+            rows.iter()
+                .map(|row| serde_json::from_str(row).map_err(anyhow::Error::from))
+                .collect()
+        }
+
+        async fn close(self) -> anyhow::Result<()> {
+            let manager = Arc::clone(&self.session.manager);
+            drop(self.session);
+            let manager_close = manager.shutdown_lifecycle().await;
+            let facade_close = self.provider.close_scope().await;
+            let engine_close = self.host.shutdown().await;
+            drop(self.directory);
+            anyhow::ensure!(
+                manager_close.released,
+                "fixture manager did not release: {manager_close:?}"
+            );
+            anyhow::ensure!(
+                facade_close.scope_released && facade_close.failure.is_none(),
+                "fixture facade did not release: {facade_close:?}"
+            );
+            engine_close?;
+            Ok(())
+        }
+    }
+
+    #[tokio::test]
+    async fn lost_committed_actor_ack_reconciles_exact_root_and_update_without_rewriting()
+    -> anyhow::Result<()> {
+        let mut fixture = Fixture::new().await?;
+        let outcome: anyhow::Result<()> = async {
+            let root = fixture.root()?;
+            fixture.session.inject_lost_persist_ack();
+            let committed = fixture.session.persist(root).await?;
+            anyhow::ensure!(
+                committed.revision == 0 && fixture.session.uncertain.is_none(),
+                "exact committed root was not reconciled"
+            );
+            anyhow::ensure!(
+                fixture.rows().await? == vec![committed.clone()],
+                "root acknowledgement loss created a duplicate or different record"
+            );
+            let mut terminal = committed.thread.clone();
+            terminal.status = super::super::AgentThreadStatus::Completed;
+            terminal.result = Some(AgentThreadResult::Completed {
+                output: "owned synthetic result".to_owned(),
+            });
+            terminal.updated_at = chrono::Utc::now();
+            fixture.session.inject_lost_persist_ack();
+            let updated = fixture.session.persist(terminal).await?;
+            anyhow::ensure!(
+                updated.revision == 1 && fixture.session.uncertain.is_none(),
+                "readback must not turn an acknowledged update into a second revision"
+            );
+            anyhow::ensure!(
+                fixture.rows().await? == vec![updated],
+                "lost update acknowledgement rewrote or duplicated the stored transition"
+            );
+            Ok(())
+        }
+        .await;
+        let cleanup = fixture.close().await;
+        outcome?;
+        cleanup
+    }
+
+    #[tokio::test]
+    async fn missing_or_stale_actor_readback_keeps_uncertainty_and_refuses_another_write()
+    -> anyhow::Result<()> {
+        let mut fixture = Fixture::new().await?;
+        let outcome: anyhow::Result<()> = async {
+            let root = fixture.root()?;
+            fixture.session.uncertain = Some(agent_threads::new_root(
+                fixture.session.owner.user_id(),
+                &root,
+            )?);
+            anyhow::ensure!(
+                fixture.session.reconcile_exact().await.is_err(),
+                "absent row cannot prove rollback or commit"
+            );
+            anyhow::ensure!(
+                fixture.session.persist(root.clone()).await.is_err(),
+                "uncertainty must prevent another write"
+            );
+            anyhow::ensure!(
+                fixture.rows().await?.is_empty(),
+                "absent readback must not trigger a blind mutation"
+            );
+            // Establish the old committed snapshot through the actual provider,
+            // then present an uncertain next revision without fabricating it in
+            // the store. Production exact readback must reject that old row.
+            let old = fixture
+                .provider
+                .create_agent_root(fixture.session.owner.user_id(), &root)
+                .await?;
+            fixture.session.current = Some(old.clone());
+            let mut terminal = old.thread.clone();
+            terminal.status = super::super::AgentThreadStatus::Completed;
+            terminal.result = Some(AgentThreadResult::Completed {
+                output: "not committed".to_owned(),
+            });
+            terminal.updated_at = chrono::Utc::now();
+            fixture.session.uncertain = Some(agent_threads::next_record(
+                fixture.session.owner.user_id(),
+                &old,
+                old.revision,
+                &terminal,
+            )?);
+            anyhow::ensure!(
+                fixture.session.reconcile_exact().await.is_err(),
+                "older revision cannot settle the uncertain transition"
+            );
+            anyhow::ensure!(
+                fixture.session.uncertain.is_some(),
+                "stale readback must keep the liability visible"
+            );
+            anyhow::ensure!(
+                fixture.session.persist(terminal).await.is_err(),
+                "stale readback must not authorize retry"
+            );
+            anyhow::ensure!(
+                fixture.rows().await? == vec![old],
+                "uncertain update changed the real store"
+            );
+            Ok(())
+        }
+        .await;
+        let cleanup = fixture.close().await;
+        outcome?;
+        cleanup
     }
 }

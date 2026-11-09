@@ -1,0 +1,57 @@
+{
+  "claim": "Synthetic safeguard controls only; fake Cargo/rustc. No Rust compilation or product behavior proved.",
+  "results": [
+    {
+      "name": "clean_profile_matrix",
+      "passed": true,
+      "exit_code": 0,
+      "cargo_calls": [
+        "test --locked --no-default-features --features minimal --lib --no-run",
+        "test --locked --no-default-features --features server-full --lib --no-run",
+        "test --locked --no-default-features --features server-full,postgres-backend --lib --no-run"
+      ],
+      "stdout": "mode=acceptance\nrepository=/private/var/folders/2l/dfb80qb56z99f_t41vyw6s5r0000gn/T/uar476-safeguard-1a__eyp2/repo\ntarget_directory=/private/var/folders/2l/dfb80qb56z99f_t41vyw6s5r0000gn/T/uar476-safeguard-1a__eyp2/repo/target\ncargo_profile=test\ntoolchain:\ncargo synthetic-fixture\nrustc synthetic-fixture\nsource_before:\ncommit=769b1f6888880f6693144c21694d1df3906248ac\ntree=dc113242aa238b693c06c3500fa12debf8641db3\nrecursive_submodules:\ncommand: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features minimal --lib --no-run\nFinished synthetic compile; no Rust code compiled\ncommand: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features server-full --lib --no-run\nFinished synthetic compile; no Rust code compiled\ncommand: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features server-full,postgres-backend --lib --no-run\nFinished synthetic compile; no Rust code compiled\nsource_after:\ncommit=769b1f6888880f6693144c21694d1df3906248ac\ntree=dc113242aa238b693c06c3500fa12debf8641db3\nrecursive_submodules:\nRUST_TEST_BASELINE_ACCEPTANCE_PASS: all three library harnesses compiled on unchanged committed source.\n",
+      "stderr": ""
+    },
+    {
+      "name": "dirty_source_refusal",
+      "passed": true,
+      "exit_code": 1,
+      "cargo_calls": [],
+      "stdout": "",
+      "stderr": "acceptance requires a clean committed checkout\nrust-test-baseline: source identity refused\n"
+    },
+    {
+      "name": "compile_failure",
+      "passed": true,
+      "exit_code": 42,
+      "cargo_calls": [
+        "test --locked --no-default-features --features minimal --lib --no-run"
+      ],
+      "stdout": "mode=acceptance\nrepository=/private/var/folders/2l/dfb80qb56z99f_t41vyw6s5r0000gn/T/uar476-safeguard-1a__eyp2/repo\ntarget_directory=/private/var/folders/2l/dfb80qb56z99f_t41vyw6s5r0000gn/T/uar476-safeguard-1a__eyp2/repo/target\ncargo_profile=test\ntoolchain:\ncargo synthetic-fixture\nrustc synthetic-fixture\nsource_before:\ncommit=769b1f6888880f6693144c21694d1df3906248ac\ntree=dc113242aa238b693c06c3500fa12debf8641db3\nrecursive_submodules:\ncommand: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features minimal --lib --no-run\nerror: controlled compile failure\n",
+      "stderr": ""
+    },
+    {
+      "name": "warning_refusal",
+      "passed": true,
+      "exit_code": 1,
+      "cargo_calls": [
+        "test --locked --no-default-features --features minimal --lib --no-run"
+      ],
+      "stdout": "mode=acceptance\nrepository=/private/var/folders/2l/dfb80qb56z99f_t41vyw6s5r0000gn/T/uar476-safeguard-1a__eyp2/repo\ntarget_directory=/private/var/folders/2l/dfb80qb56z99f_t41vyw6s5r0000gn/T/uar476-safeguard-1a__eyp2/repo/target\ncargo_profile=test\ntoolchain:\ncargo synthetic-fixture\nrustc synthetic-fixture\nsource_before:\ncommit=769b1f6888880f6693144c21694d1df3906248ac\ntree=dc113242aa238b693c06c3500fa12debf8641db3\nrecursive_submodules:\ncommand: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features minimal --lib --no-run\nwarning: controlled diagnostic\nFinished synthetic compile; no Rust code compiled\nwarning: controlled diagnostic\n",
+      "stderr": "rust-test-baseline: warnings emitted for minimal; compile is not accepted\n"
+    },
+    {
+      "name": "changed_source_refusal",
+      "passed": true,
+      "exit_code": 1,
+      "cargo_calls": [
+        "test --locked --no-default-features --features minimal --lib --no-run",
+        "test --locked --no-default-features --features server-full --lib --no-run",
+        "test --locked --no-default-features --features server-full,postgres-backend --lib --no-run"
+      ],
+      "stdout": "mode=acceptance\nrepository=/private/var/folders/2l/dfb80qb56z99f_t41vyw6s5r0000gn/T/uar476-safeguard-1a__eyp2/repo\ntarget_directory=/private/var/folders/2l/dfb80qb56z99f_t41vyw6s5r0000gn/T/uar476-safeguard-1a__eyp2/repo/target\ncargo_profile=test\ntoolchain:\ncargo synthetic-fixture\nrustc synthetic-fixture\nsource_before:\ncommit=769b1f6888880f6693144c21694d1df3906248ac\ntree=dc113242aa238b693c06c3500fa12debf8641db3\nrecursive_submodules:\ncommand: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features minimal --lib --no-run\nFinished synthetic compile; no Rust code compiled\ncommand: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features server-full --lib --no-run\nFinished synthetic compile; no Rust code compiled\ncommand: CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features server-full,postgres-backend --lib --no-run\nFinished synthetic compile; no Rust code compiled\n",
+      "stderr": "acceptance requires a clean committed checkout\nrust-test-baseline: source identity changed or became dirty\n"
+    }
+  ]
+}

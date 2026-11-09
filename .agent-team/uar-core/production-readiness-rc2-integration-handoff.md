@@ -1,0 +1,26 @@
+# RC.2 integration research handoff
+
+## Identity and scope
+
+- Inspected committed release source `af37c2f834f7b34f511ecc93f408e80205c94229` (`chore: record rc.2 macOS gate evidence`) against readiness checkout `33e765bb5d29a44e97d2813ad6d0be8bf3e2479d`.
+- Source-only inspection. No verification command was run; runtime/build behavior remains unverified.
+- This handoff is the only file written by this research task. No product source was edited.
+
+## Concrete overlap findings
+
+1. **Fallback context budgeting is the substantive RC.2 overlap.** `src/uar/runtime/turn/bindings.rs` adds `RunModelBindings::fallback_models()` (branch lines around 417), used in `src/uar/runtime/manager.rs` to resolve each fallback's window from run credentials, configured provider model registry, then global model catalog. The manager passes the map into `Orchestrator::with_fallback_context_windows`. In `src/llm/orchestrator.rs`, `fit_fallback_request` uses the destination's exact installed budget contract when present; otherwise it estimates input tokens, reserves output and tool-definition tokens, applies the configured history reduction strategy, and locally refuses overflow before fallback dispatch. Refusal is surfaced as a context overflow only when all fallbacks were locally refused. Unknown-window fallbacks preserve the prior unbudgeted path. The exact contract path and unknown-window path therefore remain distinct integration obligations.
+2. **RC.2 does not touch E6.** The committed branch does not modify `src/uar/runtime/cost_budget.rs`; the readiness checkout's `child_usage_charges_root_and_exhaustion_refuses_spawns_and_model_calls` still calls `.expect_err(...)` at line 1940. No branch evidence establishes that the reported E6 `Debug` bound issue is resolved.
+3. **RC.2 does not modify `src/llm/liter_driver.rs`; E7 concerns actual dispatched bytes, not request preflight.** In current source, `prepared_final_wire` obtains Liter's serialized request bytes and invokes `validate_dispatched_budget` (`src/llm/liter_driver.rs:242-255`). That validator returns immediately at lines 539-541 when `source.budget_contract` is absent. The later `build_chat_request` branch at lines 660-670 constructs/validates a profile preflight body in the no-contract case, but that does not close the actual-dispatch validation early return. Thus the previous handoff's assertion that preflight covers E7 was incorrect. E7 remains an integration gap; do not attribute its resolution to RC.2.
+4. **The actual branch file list includes a compiler owner migration.** `migrations/20261031010000_compiler_owner_scope.sql` adds nullable `owner` columns to `uar_specs`, `uar_reports`, and `uar_compiler_sessions`, plus owner indexes. Its comment says legacy NULL rows remain readable only by the installation-local `local-host` owner; merge acceptance must preserve that compatibility contract. The branch also changes `Cargo.toml` and `Cargo.lock` from `1.4.0-rc.1` to `1.4.0-rc.2`; `versions.toml` has no matching UAR release-version pin. It adds local-identity, compiler-owner-isolation, and fallback-destination-budget behavior fixtures/steps under `scripts/behaviors/`, revises `scripts/acceptance/fixtures/dedicated-runtime.mjs`, provider fault proxy and manual-host fixture, and updates several behavior steps. These add integration obligations around trusted local identity, owner isolation, fallback-budget outcomes, migration application/legacy rows, and release-version consistency.
+
+5. **JWT fixture bootstrap is relevant to the shared context-history fixture.** The branch adds `local_loopback_owner: false` to the `SecurityConfig` literal in `tests/context_history_integrity.rs`; the current shared `tests/support/harness_context.rs` helper authenticates a malformed token before minting/signing the fixture JWT (lines 28-33). That ordering enters the production verifier before `jsonwebtoken::encode` initializes its process-wide crypto provider, avoiding an order-dependent provider conflict. Preserve this bootstrap order when integrating the new field or consolidating fixture setup; the fixture derives identity from successful `authenticate_bearer_context` verification (lines 34-39). This is fixture initialization, not permission for test authentication plumbing in manual behavior scripts.
+
+## Readiness checkout condition observed
+
+At the time of the first inspection, `src/uar/runtime/turn/bindings.rs` contained literal conflict markers starting around line 429 adjacent to the branch accessor. The lead has since resolved that region; the markers were a transient observed integration state, not an outstanding conflict in the current checkout.
+
+## Unresolved decisions / limits
+
+- Lead owns merge/conflict resolution and deciding whether the `versions.toml` release identity needs updating.
+- Source review does not establish whether local-identity fixtures conform to the externally provisioned identity boundary, whether migration application works on supported database paths, or whether the fallback fitted request is correctly included in every exact final-wire budget/manifest path.
+- No test, build, lint, compiler, API, container, or other gate was run. No runtime-pass claim is made.

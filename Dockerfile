@@ -10,7 +10,7 @@
 #   - Node.js LTS >= 24  with npm + pnpm + bun
 #   - Python 3.13  with uv + maturin + pyo3-build-config
 #   - Go (latest)
-#   - wasmtime (CLI)  for AOT compilation of WASM components via Cranelift
+#   - wasmtime (CLI)  pinned with the runtime; discovered skills use plain WASM
 #
 # Build with:
 #   docker buildx build --platform linux/amd64 -t uar:latest .
@@ -25,7 +25,9 @@ ARG RUST_TOOLCHAIN=nightly-2026-07-18
 ARG NODE_MAJOR=24
 ARG PYTHON_VERSION=3.13
 ARG GO_VERSION=1.26.3
-ARG WASMTIME_VERSION=27.0.0
+# Keep aligned with both Wasmtime packages resolved in Cargo.lock. Plain
+# components are compiled by the runtime for its own engine/features/host target.
+ARG WASMTIME_VERSION=50.0.0
 # TinyGo is the only Go path to WASI P2 / Component Model. Pinned alongside Go.
 ARG TINYGO_VERSION=0.34.0
 
@@ -87,13 +89,24 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
         wasmtime
 
 # Rust nightly + WASM targets + cargo-installed WASM ecosystem tools.
-# `cargo-binstall` is installed first so subsequent `cargo binstall` calls
-# pull prebuilt binaries instead of compiling from source where possible.
+# Pin the official cargo-binstall archive and verify it before extraction.
+# This keeps the bootstrap independent of its source-build toolchain lints.
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
         | sh -s -- -y --default-toolchain ${RUST_TOOLCHAIN} --profile minimal \
                     --component rustfmt,clippy,rust-src \
     && rustup target add wasm32-wasip2 wasm32-wasip1 wasm32-unknown-unknown \
-    && cargo install --locked cargo-binstall \
+    && case "${TARGETARCH}" in \
+        amd64) binstall_arch=x86_64; binstall_sha=9e0e064f189a9abb9f8df5fb93c3c810ef5cc19e7212d998c7a64c9e4d3527d5 ;; \
+        arm64) binstall_arch=aarch64; binstall_sha=a235250cd684af9bf1e3a1e4c216b1d36e6c553553d5d789744f27689d81c2d6 ;; \
+        *) echo "Unsupported cargo-binstall architecture: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac \
+    && binstall_archive=/tmp/cargo-binstall.tgz \
+    && curl --proto '=https' --tlsv1.2 -fsSL \
+        "https://github.com/cargo-bins/cargo-binstall/releases/download/v1.26.2/cargo-binstall-${binstall_arch}-unknown-linux-musl.tgz" \
+        -o "${binstall_archive}" \
+    && printf '%s  %s\n' "${binstall_sha}" "${binstall_archive}" | sha256sum -c - \
+    && tar -xzf "${binstall_archive}" -C "${CARGO_HOME}/bin" cargo-binstall \
+    && rm "${binstall_archive}" \
     && cargo binstall --no-confirm --locked \
         cargo-component \
         wasm-tools \
@@ -153,7 +166,7 @@ RUN set -eux; \
     && apt-get update && apt-get install -y --no-install-recommends /tmp/tinygo.deb \
     && rm -f /tmp/tinygo.deb && rm -rf /var/lib/apt/lists/*
 
-# wasmtime CLI (provides `wasmtime compile` AOT path via Cranelift).
+# wasmtime CLI (operator tooling; no trusted native-cache loading is advertised).
 # Multi-arch: amd64 → x86_64, arm64 → aarch64 in the upstream tarball names.
 RUN set -eux; \
     case "${TARGETARCH}" in \
@@ -191,7 +204,7 @@ RUN set -eux; \
     wasmtime --version
 
 # -----------------------------------------------------------------------------
-# Stage 2: builder - compiles UAR, the SPA, and AOT-precompiles WASM skills.
+# Stage 2: builder - compiles UAR, the SPA, and stages plain WASM skills.
 # -----------------------------------------------------------------------------
 FROM toolchain AS builder
 
@@ -200,11 +213,22 @@ ARG UAR_CARGO_CACHE_KEY=default
 
 WORKDIR /src
 
-# Initialize submodules first so cargo's network step finds the vendored
-# skill-system + entity-management contents.
+# The build context must already include the pinned recursive submodule
+# checkout. Git metadata is excluded from the context.
 COPY . .
-RUN git config --global --add safe.directory '*' \
-    && git submodule update --init --recursive --depth 1 || true
+RUN for input in \
+        models.dev/package.json \
+        crates/prometheus-skill-system/skills/process/kbd-process-orchestrator/SKILL.md \
+        frontend/packages/prometheus-entity-management/package.json \
+        frontend/packages/prometheus-entity-management/packages/entity-graph-core/package.json \
+        frontend/packages/prometheus-entity-management/packages/entity-graph-react/package.json \
+        vendor/git/liter-llm/crates/liter-llm/Cargo.toml \
+        vendor/git/rust-mcp-filesystem/Cargo.toml; do \
+        if [ ! -f "$input" ]; then \
+            printf 'Missing vendored build input: %s. Initialize pinned submodules recursively before building.\n' "$input" >&2; \
+            exit 1; \
+        fi; \
+    done
 
 # Frontend: use the same pinned pnpm and immutable frontend lockfile as release
 # validation. The frontend remains an isolated workspace under `frontend/`.
@@ -240,17 +264,27 @@ RUN --mount=type=secret,id=github_token \
         --features "server-full,postgres-backend" \
         --bin universal-agent-runtime \
     && mkdir -p /out/bin \
-    && cp target/release/universal-agent-runtime /out/bin/
+    && cp target/release/universal-agent-runtime /out/bin/ \
+    && for model in target/release/build/xberg-tesseract-*/out/eng.traineddata; do \
+         if [ -f "$model" ] && printf '%s  %s\n' \
+           7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2 "$model" \
+           | sha256sum --check --status; then \
+           install -D -m 0644 "$model" /out/tessdata/eng.traineddata || exit 1; \
+           break; \
+         fi; \
+       done \
+    && test -s /out/tessdata/eng.traineddata \
+    && install -m 0644 "${CARGO_HOME}"/git/checkouts/xberg-*/ffb3b1a/crates/xberg-tesseract/licenses/tesseract-LICENSE \
+         /out/tessdata/LICENSE
 
-# AOT-precompile any shipped WASM component skills. The skill-system repo
-# doesn't ship .wasm files today; this loop is a no-op until authors add them,
-# but it keeps the contract documented and exercised.
+# Ship the actual plain components from the pinned skill pack. Native caches
+# are not a trusted distribution format: the runtime validates and compiles
+# these sources with its own engine/features/host architecture on registration.
 RUN mkdir -p /out/skills/wasm-builtin \
     && find crates/prometheus-skill-system/skills -name "skill.wasm" -type f 2>/dev/null \
        | while read -r wasm; do \
            name=$(basename "$(dirname "$wasm")"); \
-           echo "AOT compiling $wasm -> /out/skills/wasm-builtin/${name}.cwasm"; \
-           wasmtime compile -o "/out/skills/wasm-builtin/${name}.cwasm" "$wasm"; \
+           cp "$wasm" "/out/skills/wasm-builtin/${name}.wasm"; \
          done
 
 # Stage outputs that runtime needs.
@@ -279,6 +313,9 @@ ENV UAR_STATIC_DIR=/opt/uar/static \
     PNPM_STORE_DIR=/var/lib/uar/cache/pnpm
 
 COPY --from=builder /out/bin/universal-agent-runtime /usr/local/bin/universal-agent-runtime
+# The pinned xberg build verifies this English pack. Its Linux system lookup
+# can read it without materializing a cache or downloading data during OCR.
+COPY --from=builder /out/tessdata/ /usr/share/tesseract-ocr/5/tessdata/
 # Preserve restrictive source modes while making bundled assets readable by
 # the non-root runtime identity, including the mandatory governance policies.
 COPY --chown=65532:65532 --from=builder /out/static /opt/uar/static

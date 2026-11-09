@@ -54,6 +54,7 @@ enum LiveState {
     AwaitingApproval,
     Claimed,
     NativeClaimed,
+    ClaimedUnknownUnrecorded,
     ClaimedUnknown,
     Terminal,
     Cancelled,
@@ -286,10 +287,17 @@ impl AdmissionLifecycle {
             .cell(&invocation.invocation_id, LiveState::AwaitingApproval)
             .await;
         let mut state = cell.lock().await;
+        if *state == LiveState::ClaimedUnknown && outcome == AdmissionTerminalOutcome::OutcomeUnknown
+        {
+            return Ok(());
+        }
         anyhow::ensure!(
             matches!(
                 *state,
-                LiveState::Claimed | LiveState::NativeClaimed | LiveState::ClaimedUnknown
+                LiveState::Claimed
+                    | LiveState::NativeClaimed
+                    | LiveState::ClaimedUnknownUnrecorded
+                    | LiveState::ClaimedUnknown
             ),
             "Tool invocation was not claimed"
         );
@@ -327,7 +335,7 @@ impl AdmissionLifecycle {
             .await;
         let mut state = cell.lock().await;
         match *state {
-            LiveState::ClaimedUnknown => {
+            LiveState::ClaimedUnknown | LiveState::ClaimedUnknownUnrecorded => {
                 drop(state);
                 self.stop_watching(&invocation.invocation_id);
                 return Ok(AdmissionCancellationOutcome::AlreadyClaimed);
@@ -340,11 +348,15 @@ impl AdmissionLifecycle {
             LiveState::AwaitingApproval | LiveState::Claimed | LiveState::NativeClaimed => {}
         }
         let acknowledged_native = *state == LiveState::NativeClaimed;
+        let standalone_mcp_claim = invocation.execution_kind == ToolExecutionKind::HostMcp
+            && invocation.host_epoch == format!("standalone:{}", invocation.runtime_epoch);
         let cancellation = if matches!(*state, LiveState::Claimed | LiveState::NativeClaimed)
-            && invocation.admission_owner
-                == crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime
+            && (standalone_mcp_claim
+                || invocation.admission_owner
+                    == crate::uar::persistence::tool_admission::AdmissionOwner::UarRuntime)
         {
-            // A claimed runtime control may already have changed team state.
+            // A claimed runtime control or standalone MCP call may already
+            // have taken effect. Local admission cancellation cannot settle it.
             Ok(AdmissionCancellationOutcome::AlreadyClaimed)
         } else {
             host.cancel(invocation, admission_id, reason).await
@@ -369,7 +381,7 @@ impl AdmissionLifecycle {
                 ToolAdmissionEvidenceState::OutcomeUnknown
             }
         };
-        *state = LiveState::ClaimedUnknown;
+        *state = LiveState::ClaimedUnknownUnrecorded;
         self.save_evidence(&ToolAdmissionEvidence::new(
             invocation,
             admission_id,

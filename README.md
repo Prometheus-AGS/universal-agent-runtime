@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-FF6A3D" /></a>
-  <img alt="Version: 1.0.0" src="https://img.shields.io/badge/version-1.0.0-141C26" />
+  <img alt="Version: 1.4.0-rc.3" src="https://img.shields.io/badge/version-1.4.0--rc.3-141C26" />
   <a href="https://prometheus-ags.github.io/universal-agent-runtime/"><img alt="Documentation portal" src="https://img.shields.io/badge/docs-portal-2563EB" /></a>
 </p>
 
@@ -14,15 +14,25 @@
 
 Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent execution, model routing, typed streaming, tools, retrieval, and declarative agent UI. Its first-party operator interface is React 19 + TypeScript.
 
-UAR is at version **1.0.0**. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
+UAR is at Rust product version **1.4.0-rc.3** (release candidate). SDK/package/schema versions are independent. The first distribution is a Linux amd64 API pilot behind a trusted gateway. Full 1.4.0 qualification is still in progress. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
 
 The [GitHub Pages documentation portal](https://prometheus-ags.github.io/universal-agent-runtime/) covers installation, architecture, SDKs, skills, deployment, and security; begin with the [introduction](https://prometheus-ags.github.io/universal-agent-runtime/docs/intro). Its live routes are verified by the final documentation publication change.
 
+## Run the RC3 pilot
+
+Pull the Linux amd64 candidate and follow the [RC3 user guide](docs/releases/v1.4.0-rc.3.md) to configure the gateway, persistence and providers before starting it.
+
+```bash
+docker pull --platform linux/amd64 ghcr.io/prometheus-ags/universal-agent-runtime:v1.4.0-rc.3
+```
+
+The guide covers [pilot setup](docs/releases/v1.4.0-rc.3.md#pilot-quick-start), [SurrealKV upgrade and compatibility](docs/releases/v1.4.0-rc.3.md#compatibility-and-upgrade), [feature verification](docs/releases/v1.4.0-rc.3.md#runtime-changes-and-how-to-verify-them), and [rollback](docs/releases/v1.4.0-rc.3.md#troubleshooting-and-rollback).
+
 ## What is supported
 
-- OpenAI-compatible and Anthropic execution paths have named Tier 1 capability evidence. Local FastEmbed embeddings are also Tier 1.
-- The committed catalog contains metadata for 316 providers. A catalog entry is discovery data, not proof that execution is certified.
-- Catalog, availability, and policy routing are Stable. Adaptive learned routing is Experimental.
+- OpenAI-compatible, Anthropic, and embeddings evidence is specific to the observed configuration and artifact. Controlled image delivery proves transport. Real-model visual understanding requires its own evidence.
+- The compiled provider catalog is discovery metadata, not proof of execution certification.
+- Catalog filtering is metadata. Actual constrained primary/retry/fallback/graph dispatch is being qualified under #464; route-query success is advisory. Adaptive learned routing is Experimental.
 - MCP-discovered and native tools share schema validation, Cedar policy, approval, hard-deny, and audit controls. Native WASM tools are Preview and opt-in.
 - Web is Stable. Desktop/Tauri and native WASM are Preview. Mobile is Experimental. Browser-side arbitrary WASM execution is unsupported.
 
@@ -314,7 +324,7 @@ Release evidence includes source-bound security-audit results and signed supply-
 
 ## License
 
-UAR is version 1.0.0.
+The Rust product version is 1.4.0-rc.3; supported deployment and recovery claims follow the evidence-scoped [support matrix](docs/product-support-matrix.md).
 
 - **Code** — the runtime server, the SDKs (`sdks/python`, `sdks/rust`, `sdks/typescript`), and everything else in this repository: `MIT`. See [LICENSE](LICENSE).
 - **Documentation** (`docs/`, and Markdown elsewhere not covered by a more specific license): `CC-BY-4.0`. See [LICENSE-CC-BY-4.0.md](LICENSE-CC-BY-4.0.md).

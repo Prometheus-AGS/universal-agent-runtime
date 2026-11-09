@@ -89,9 +89,10 @@ if (!localCertifier.includes("crates/prometheus-skill-system/skills")) {
 if (!localCertifier.includes("src/uar/runtime/matching/models")) {
   throw new Error("native release archives must contain local model assets");
 }
-for (const guardedSurface of ["a2a_routes", "grpc_handle"]) {
+for (const guardedSurface of ["a2a_routes", "grpc_scope"]) {
   const pattern = new RegExp(
-    `#\\[cfg\\(feature = "a2a-transport"\\)\\][\\s\\S]{0,80}(?:let )?${guardedSurface}`,
+    `^[ \\t]*#\\[cfg\\(feature = "a2a-transport"\\)\\]\\s+let\\s+${guardedSurface}\\b`,
+    "m",
   );
   if (!pattern.test(server)) {
     throw new Error(`A2A public surface lacks capability guard: ${guardedSurface}`);

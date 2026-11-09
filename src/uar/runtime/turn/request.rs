@@ -1,4 +1,4 @@
-use crate::llm::Message;
+use crate::llm::{ContentPart, Message, MessageContent};
 use crate::uar::domain::{
     artifact::AgentArtifact,
     collaboration::EffectiveBindingReceipt,
@@ -88,6 +88,10 @@ pub struct CheckpointResume {
 pub struct RunExecutionRequest {
     pub artifact: AgentArtifact,
     pub input: Option<String>,
+    /// Current user content admitted by a trusted host. This remains typed so
+    /// canonical history can preserve admitted inline images; `input` holds
+    /// only its complete ordered text projection.
+    pub(crate) current_user_content: Option<MessageContent>,
     pub session_id: Option<String>,
     pub user_id: Option<String>,
     /// Host-verified user and tenant identity for executable resource bindings.
@@ -107,9 +111,17 @@ pub struct RunExecutionRequest {
     pub(crate) host_resources_marker: super::host::HostResourcesMarker,
     pub(crate) host_secret_scrubber: super::host::RunSecretScrubber,
     pub memory_hits: Vec<MemoryItem>,
+    /// Stable native-chat identity captured by the trusted ingress adapter.
+    pub client_turn_id: Option<String>,
+    pub user_message_id: Option<String>,
+    /// Content-free retrieval outcome; selection alone does not prove submission.
+    pub memory_context_provenance:
+        Option<crate::uar::memory::context_builder::MemoryContextProvenance>,
     pub resolved_policy: Option<EffectiveRunPolicy>,
     /// Safe admitted target identity, never a mutable definition.
     pub(crate) target_selection: Option<serde_json::Value>,
+    /// The chat ingress verified a model inherited from policy without pinning fallback authority.
+    pub(crate) inherited_chat_model: bool,
     /// Client output restrictions; these never grant template/resource access.
     pub presentation_negotiation: crate::uar::a2ui::presentation_selection::PresentationNegotiation,
     /// Restriction-only turn scope accepted from a verified host adapter.
@@ -171,10 +183,20 @@ impl RunExecutionRequest {
         self
     }
 
+    /// Retain trusted-host-admitted current user content without allowing it to
+    /// become a JSON or data-URI transport for text-only consumers.
+    #[must_use]
+    pub(crate) fn with_admitted_current_user_content(mut self, content: MessageContent) -> Self {
+        self.input = Some(current_user_text_projection(&content));
+        self.current_user_content = Some(content);
+        self
+    }
+
     pub fn new(artifact: AgentArtifact, input: String) -> Self {
         Self {
             artifact,
             input: Some(input),
+            current_user_content: None,
             session_id: None,
             user_id: None,
             verified_owner: None,
@@ -184,8 +206,12 @@ impl RunExecutionRequest {
             host_resources_marker: Default::default(),
             host_secret_scrubber: Default::default(),
             memory_hits: Vec::new(),
+            client_turn_id: None,
+            user_message_id: None,
+            memory_context_provenance: None,
             resolved_policy: None,
             target_selection: None,
+            inherited_chat_model: false,
             presentation_negotiation: Default::default(),
             host_policy_constraint: None,
             host_budget_constraint: None,
@@ -342,5 +368,19 @@ impl RunExecutionRequest {
         Ok(self.with_verified_owner(
             crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user)?,
         ))
+    }
+}
+
+pub(crate) fn current_user_text_projection(content: &MessageContent) -> String {
+    match content {
+        MessageContent::Text { content } => content.clone(),
+        MessageContent::Parts { content } => content
+            .iter()
+            .filter_map(|part| match part {
+                ContentPart::Text { text } => Some(text.as_str()),
+                ContentPart::ImageUrl { .. } => None,
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
     }
 }

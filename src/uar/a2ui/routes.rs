@@ -99,6 +99,10 @@ struct ArtifactResponseAck {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct A2uiActionPayload {
+    #[serde(default, alias = "interaction_id")]
+    pub interaction_id: Option<String>,
+    #[serde(default, alias = "surface_generation")]
+    pub surface_generation: Option<String>,
     pub surface_id: String,
     pub name: String,
     pub source_component_id: String,
@@ -114,6 +118,9 @@ pub struct A2uiActionPayload {
 
 #[derive(Debug, Serialize)]
 struct A2uiContinuationAck {
+    interaction_id: Option<String>,
+    retry_protected: bool,
+    outcome: &'static str,
     run_id: String,
     continuation_run_id: String,
     status: &'static str,
@@ -248,6 +255,272 @@ async fn continue_run(
     crate::uar::api::routes::require_matching_host_resources(&source_marker, &request)
         .map_err(|error| error.into_response())?;
     Ok(state.run_manager.execute_request(request).await)
+}
+
+async fn prepare_action_continuation(
+    state: &A2uiApiState,
+    run: &crate::uar::domain::runs::Run,
+    interaction: serde_json::Value,
+    user: &UserContext,
+    host: ContinuationHostInput,
+) -> Result<crate::uar::runtime::turn::RunExecutionRequest, axum::response::Response> {
+    let source_marker = run
+        .context
+        .get("host_resources")
+        .cloned()
+        .and_then(|value| serde_json::from_value(value).ok())
+        .unwrap_or_default();
+    let mut request = state
+        .run_manager
+        .prepare_interaction_request(&run.run_id, interaction, user, host.artifact)
+        .await
+        .map_err(|_| {
+            action_error(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "a2ui_continuation_unavailable",
+            )
+        })?;
+    crate::uar::api::routes::attach_host_resources(
+        &state.run_manager,
+        user,
+        &mut request,
+        host.run_credentials,
+        host.mcp_servers,
+        host.working_directory,
+        host.reasoning_effort,
+        None,
+    )
+    .await
+    .map_err(IntoResponse::into_response)?;
+    crate::uar::api::routes::require_matching_host_resources(&source_marker, &request)
+        .map_err(IntoResponse::into_response)?;
+    Ok(request)
+}
+
+type SurfaceAdmissionLocks =
+    std::collections::HashMap<String, std::sync::Weak<tokio::sync::Mutex<()>>>;
+
+/// Serialize explicit REST publication with declaration/claim on the same
+/// verified conversation. Weak entries retain no completed conversation state.
+async fn surface_admission(
+    owner: &str,
+    conversation: &str,
+) -> Result<tokio::sync::OwnedMutexGuard<()>, axum::response::Response> {
+    static LOCKS: std::sync::OnceLock<std::sync::Mutex<SurfaceAdmissionLocks>> =
+        std::sync::OnceLock::new();
+    let key =
+        crate::uar::persistence::a2ui_actions::digest(&serde_json::json!([owner, conversation]));
+    let lock = {
+        let mut locks = LOCKS
+            .get_or_init(Default::default)
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        locks.retain(|_, weak| weak.strong_count() > 0);
+        match locks.get(&key).and_then(std::sync::Weak::upgrade) {
+            Some(lock) => lock,
+            None => {
+                if locks.len() >= 1024 {
+                    return Err(action_error(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "a2ui_surface_admission_busy",
+                    ));
+                }
+                let lock = Arc::new(tokio::sync::Mutex::new(()));
+                locks.insert(key, Arc::downgrade(&lock));
+                lock
+            }
+        }
+    };
+    Ok(lock.lock_owned().await)
+}
+
+fn action_error(status: StatusCode, code: &'static str) -> axum::response::Response {
+    let mut body = serde_json::json!({"code":code});
+    if code == "a2ui_action_not_declared" {
+        body["error"] = serde_json::json!("action is not declared by the active A2UI surface");
+    }
+    (status, Json(body)).into_response()
+}
+
+/// REST surfaces are source-run scoped. Read the durable publication stream,
+/// not the process-local patch cache, so restart cannot resurrect a deleted button.
+async fn source_surfaces(
+    state: &A2uiApiState,
+    user: &UserContext,
+    run_id: &str,
+) -> crate::uar::api::agui_a2ui::SurfaceRecord {
+    use crate::uar::api::agui_a2ui::SurfaceRecord;
+    let mut record = SurfaceRecord::default();
+    let Some(db) = state
+        .run_manager
+        .persistence
+        .as_ref()
+        .filter(|db| db.supports_durable_run_history())
+    else {
+        record.mark_incomplete("unavailable");
+        return record;
+    };
+    let rows = match db.load_run_history_events(run_id).await {
+        Ok(rows) if !rows.is_empty() => rows,
+        _ => {
+            record.mark_incomplete("unavailable");
+            return record;
+        }
+    };
+    let mut events = Vec::new();
+    for row in rows {
+        match serde_json::from_value(row.event) {
+            Ok(event) => events.push(crate::uar::runtime::manager::StreamEvent {
+                id: row.event_id,
+                event,
+            }),
+            Err(_) => {
+                record.mark_incomplete("unavailable");
+                return record;
+            }
+        }
+    }
+    events.sort_by_key(|event| event.id);
+    let mut previous = 0_u64;
+    for event in &events {
+        if event.id != previous.saturating_add(1) {
+            record.mark_incomplete("unavailable");
+        }
+        previous = event.id;
+    }
+    record.fold_events(run_id, 0, u64::MAX, &events);
+    let Some(source) = state.run_manager.get_run_for_context(user, run_id).await else {
+        record.mark_incomplete("unavailable");
+        return record;
+    };
+    let (Ok(owner), Some(conversation)) = (
+        crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user),
+        source.conversation_id.as_deref(),
+    ) else {
+        record.mark_incomplete("unavailable");
+        return record;
+    };
+    let candidates = match db
+        .list_conversation_run_history(&owner.presentation_owner_key(), conversation)
+        .await
+    {
+        Ok(candidates) if candidates.len() < 65 => candidates,
+        Ok(_) => {
+            record.mark_incomplete("expired");
+            return record;
+        }
+        Err(_) => {
+            record.mark_incomplete("unavailable");
+            return record;
+        }
+    };
+    let mut source_seen = false;
+    for candidate in candidates {
+        let other: crate::uar::domain::runs::Run = match serde_json::from_value(candidate.run) {
+            Ok(run) => run,
+            Err(_) => {
+                record.mark_incomplete("unavailable");
+                return record;
+            }
+        };
+        if other.conversation_id.as_deref() != Some(conversation) {
+            continue;
+        }
+        if other.run_id == run_id {
+            source_seen = true;
+            continue;
+        }
+        if matches!(
+            other.status,
+            crate::uar::domain::runs::RunStatus::Pending
+                | crate::uar::domain::runs::RunStatus::Running
+                | crate::uar::domain::runs::RunStatus::Paused
+        ) {
+            record.mark_incomplete("unavailable");
+            continue;
+        }
+        let other_events = match db.load_run_history_events(&other.run_id).await {
+            Ok(events) if !events.is_empty() => events,
+            _ => {
+                record.mark_incomplete("unavailable");
+                continue;
+            }
+        };
+        for event in other_events {
+            match serde_json::from_value::<NormalizedEvent>(event.event) {
+                Ok(NormalizedEvent::ArtifactDisplay { artifact, .. })
+                    if artifact.artifact_type == "a2ui" =>
+                {
+                    if record.touches_live_surface(&artifact.content) {
+                        record.mark_incomplete("expired");
+                    }
+                }
+                Ok(NormalizedEvent::StatePatch { patch, .. }) => {
+                    if patch
+                        .iter()
+                        .any(|operation| record.touches_state_patch(operation))
+                    {
+                        record.mark_incomplete("expired");
+                    }
+                }
+                Ok(_) => {}
+                Err(_) => record.mark_incomplete("unavailable"),
+            }
+        }
+    }
+    if !source_seen {
+        record.mark_incomplete("unavailable");
+    }
+    record
+}
+
+async fn publish_interaction(
+    state: &A2uiApiState,
+    run_id: &str,
+    interaction_id: &str,
+    interaction: serde_json::Value,
+) {
+    // The patch records user intent only. The immutable receipt is the sole
+    // protected admission claim, and this patch never grants tool authority.
+    let operation = crate::uar::domain::events::StatePatchOp {
+        op: "add".to_owned(),
+        path: format!(
+            "/a2ui/actions/{}",
+            crate::uar::persistence::a2ui_actions::digest(&serde_json::json!(interaction_id))
+        ),
+        value: Some(interaction),
+    };
+    state.realtime_backbone.publish(run_id, operation.clone());
+    state
+        .run_manager
+        .emit_to_run(
+            run_id,
+            NormalizedEvent::StatePatch {
+                run_id: run_id.to_owned(),
+                patch: vec![operation],
+            },
+        )
+        .await;
+}
+
+async fn action_ack(
+    state: &A2uiApiState,
+    user: &UserContext,
+    receipt: &crate::uar::persistence::a2ui_actions::A2uiActionReceipt,
+) -> axum::response::Response {
+    let outcome = state.run_manager.a2ui_action_outcome(user, receipt).await;
+    (
+        StatusCode::ACCEPTED,
+        Json(A2uiContinuationAck {
+            run_id: receipt.source_run_id.clone(),
+            continuation_run_id: receipt.continuation_run_id.clone(),
+            status: "continued",
+            interaction_id: Some(receipt.interaction_id.clone()),
+            retry_protected: true,
+            outcome,
+        }),
+    )
+        .into_response()
 }
 
 // ── Handlers ──────────────────────────────────────────────────────────────────
@@ -787,9 +1060,22 @@ async fn submit_messages(
     Path(run_id): Path<String>,
     Json(body): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    if let Err(response) = surface_run(&state, &user, &run_id).await {
-        return response;
-    }
+    let run = match surface_run(&state, &user, &run_id).await {
+        Ok(run) => run,
+        Err(response) => return response,
+    };
+    let owner = user
+        .session_owner_key()
+        .unwrap_or_else(|_| format!("legacy-run:{}", run.run_id));
+    let _authority = match surface_admission(
+        &owner,
+        run.conversation_id.as_deref().unwrap_or(&run.run_id),
+    )
+    .await
+    {
+        Ok(guard) => guard,
+        Err(response) => return response,
+    };
     match publish_messages(&state, &run_id, body).await {
         Ok((artifact_id, surface_ids)) => (
             StatusCode::ACCEPTED,
@@ -809,19 +1095,6 @@ async fn submit_messages(
     }
 }
 
-fn json_contains_string(value: &serde_json::Value, expected: &str) -> bool {
-    match value {
-        serde_json::Value::String(value) => value == expected,
-        serde_json::Value::Array(values) => values
-            .iter()
-            .any(|value| json_contains_string(value, expected)),
-        serde_json::Value::Object(values) => values
-            .values()
-            .any(|value| json_contains_string(value, expected)),
-        _ => false,
-    }
-}
-
 /// Receive a standard A2UI action, validate it against the published surface,
 /// persist/broadcast the action state, and resume the agent in a continuation run.
 async fn submit_action(
@@ -830,67 +1103,170 @@ async fn submit_action(
     Path(run_id): Path<String>,
     Json(payload): Json<A2uiActionPayload>,
 ) -> impl IntoResponse {
-    let run = match surface_run(&state, &user, &run_id).await {
-        Ok(run) => run,
+    // Durable identity permits reconciliation only. A new claim still needs
+    // the original live presentation capture below, before any dispatch.
+    let Some(run) = state.run_manager.get_run_for_context(&user, &run_id).await else {
+        return action_error(StatusCode::NOT_FOUND, "a2ui_source_not_found");
+    };
+    use crate::uar::api::agui_a2ui;
+    use crate::uar::persistence::a2ui_actions::A2uiActionReceipt;
+    let owner = match user.session_owner_key() {
+        Ok(owner) => owner,
+        Err(_) => return action_error(StatusCode::UNAUTHORIZED, "verified_principal_required"),
+    };
+    let Some(thread) = run.conversation_id.as_deref() else {
+        return action_error(StatusCode::CONFLICT, "a2ui_thread_unavailable");
+    };
+    let _authority = match surface_admission(&owner, thread).await {
+        Ok(guard) => guard,
         Err(response) => return response,
     };
-    let surface_path = format!("/a2ui/surfaces/{}", payload.surface_id);
-    let replay = state.realtime_backbone.replay(&run_id);
-    let surface_exists = replay
-        .iter()
-        .any(|op| op.path.starts_with(&surface_path) && op.op != "remove");
-    let action_exists = replay.iter().any(|op| {
-        op.path.starts_with(&surface_path)
-            && op
-                .value
-                .as_ref()
-                .is_some_and(|value| json_contains_string(value, &payload.name))
-    });
-    if !surface_exists || !action_exists {
-        return (
-            StatusCode::UNPROCESSABLE_ENTITY,
-            Json(serde_json::json!({
-                "error": "action is not declared by the active A2UI surface"
-            })),
-        )
-            .into_response();
-    }
-
-    let interaction = serde_json::json!({
-        "surfaceId": payload.surface_id,
-        "name": payload.name,
-        "sourceComponentId": payload.source_component_id,
-        "timestamp": payload.timestamp,
-        "context": payload.context,
-        "a2uiClientDataModel": payload.a2ui_client_data_model,
-    });
-    let action_op = crate::uar::domain::events::StatePatchOp {
-        op: "add".to_string(),
-        path: format!("/a2ui/actions/{}", uuid::Uuid::new_v4()),
-        value: Some(interaction.clone()),
+    let forwarded = serde_json::json!({"a2uiAction":{"interaction_id":payload.interaction_id,"surface_generation":payload.surface_generation,
+        "userAction":{"surfaceId":payload.surface_id,"name":payload.name,"sourceComponentId":payload.source_component_id,
+            "context":payload.context,"timestamp":payload.timestamp},"dataModel":payload.a2ui_client_data_model}});
+    let action = match agui_a2ui::parse_action(Some(&forwarded)) {
+        Ok(Some(action)) => action,
+        _ => return action_error(StatusCode::BAD_REQUEST, "invalid_a2ui_action"),
     };
-    state.realtime_backbone.publish(&run_id, action_op.clone());
-    state
-        .run_manager
-        .emit_to_run(
-            &run_id,
-            NormalizedEvent::StatePatch {
-                run_id: run_id.clone(),
-                patch: vec![action_op],
-            },
-        )
-        .await;
-    let continuation_run_id =
-        match continue_run(&state, &run, interaction, &user, payload.host).await {
-            Ok(value) => value,
+    let db = state.run_manager.persistence.as_ref();
+    if let Some(interaction) = &payload.interaction_id {
+        let Some(db) = db.filter(|db| db.supports_durable_a2ui_actions()) else {
+            return action_error(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "durable_a2ui_actions_unsupported",
+            );
+        };
+        match db
+            .load_a2ui_action(&owner, &run.agent_id, thread, interaction)
+            .await
+        {
+            Ok(Some(receipt)) => {
+                if receipt.source_run_id != run_id
+                    || receipt.semantic_digest != action.semantic_digest()
+                {
+                    return action_error(StatusCode::CONFLICT, "a2ui_interaction_conflict");
+                }
+                return action_ack(&state, &user, &receipt).await;
+            }
+            Ok(None) => {}
+            Err(_) => {
+                return action_error(
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    "a2ui_interaction_outcome_uncertain",
+                );
+            }
+        }
+    }
+    if let Err(response) = surface_run(&state, &user, &run_id).await {
+        return response;
+    }
+    if let Err(rejection) =
+        agui_a2ui::refuse_for_graph(state.run_manager.uses_agent_graph_for(&run.agent_id))
+    {
+        return action_error(rejection.status, rejection.code);
+    }
+    if run.status != crate::uar::domain::runs::RunStatus::Done {
+        return action_error(StatusCode::CONFLICT, "a2ui_source_not_settled");
+    }
+    let record = source_surfaces(&state, &user, &run_id).await;
+    let (_, generation) = match action.declared_identity(&record) {
+        Ok(identity) => identity,
+        Err(rejection) => return action_error(rejection.status, rejection.code),
+    };
+    let interaction = serde_json::json!({"surfaceId":payload.surface_id,"surfaceGeneration":generation,
+        "interactionId":payload.interaction_id,"name":payload.name,"sourceComponentId":payload.source_component_id,
+        "timestamp":payload.timestamp,"context":payload.context,"a2uiClientDataModel":payload.a2ui_client_data_model});
+    let request =
+        match prepare_action_continuation(&state, &run, interaction.clone(), &user, payload.host)
+            .await
+        {
+            Ok(request) => request,
             Err(response) => return response,
         };
+    let continuation = uuid::Uuid::new_v4().to_string();
+    if let Some(interaction_id) = payload.interaction_id {
+        let receipt = A2uiActionReceipt {
+            owner,
+            agent_id: run.agent_id.clone(),
+            thread_id: thread.to_owned(),
+            interaction_id,
+            source_run_id: run_id,
+            surface_id: payload.surface_id,
+            surface_generation: generation,
+            component_id: payload.source_component_id,
+            action_name: payload.name,
+            semantic_digest: action.semantic_digest(),
+            continuation_run_id: continuation.clone(),
+            wire_binding: None,
+        };
+        let Some(db) = db else {
+            return action_error(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "durable_a2ui_actions_unsupported",
+            );
+        };
+        match db.create_a2ui_action(&receipt).await {
+            Ok(true) => {}
+            Ok(false) => {
+                return match db
+                    .load_a2ui_action(
+                        &receipt.owner,
+                        &receipt.agent_id,
+                        &receipt.thread_id,
+                        &receipt.interaction_id,
+                    )
+                    .await
+                {
+                    Ok(Some(saved))
+                        if saved.semantic_digest == receipt.semantic_digest
+                            && saved.source_run_id == receipt.source_run_id =>
+                    {
+                        action_ack(&state, &user, &saved).await
+                    }
+                    Ok(Some(_)) => action_error(StatusCode::CONFLICT, "a2ui_interaction_conflict"),
+                    _ => action_error(StatusCode::CONFLICT, "a2ui_interaction_outcome_uncertain"),
+                };
+            }
+            Err(_) => {
+                return action_error(
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    "a2ui_interaction_outcome_uncertain",
+                );
+            }
+        }
+        publish_interaction(
+            &state,
+            &receipt.source_run_id,
+            &receipt.interaction_id,
+            interaction,
+        )
+        .await;
+        state
+            .run_manager
+            .execute_request_with_run_id(request, continuation)
+            .await;
+        return action_ack(&state, &user, &receipt).await;
+    }
+    publish_interaction(
+        &state,
+        &run_id,
+        &uuid::Uuid::new_v4().to_string(),
+        interaction,
+    )
+    .await;
+    state
+        .run_manager
+        .execute_request_with_run_id(request, continuation.clone())
+        .await;
     (
         StatusCode::ACCEPTED,
         Json(A2uiContinuationAck {
             run_id,
-            continuation_run_id,
+            continuation_run_id: continuation,
             status: "continued",
+            interaction_id: None,
+            retry_protected: false,
+            outcome: "running",
         }),
     )
         .into_response()
@@ -1304,6 +1680,18 @@ async fn surface_test_trigger(
         Err(response) => return response,
     };
 
+    let owner = user
+        .session_owner_key()
+        .unwrap_or_else(|_| format!("legacy-run:{}", run.run_id));
+    let _authority = match surface_admission(
+        &owner,
+        run.conversation_id.as_deref().unwrap_or(&run.run_id),
+    )
+    .await
+    {
+        Ok(guard) => guard,
+        Err(response) => return response,
+    };
     let kind = match payload.kind.as_str() {
         "createSurface" => A2uiWireKind::CreateSurface,
         "updateComponents" => A2uiWireKind::UpdateComponents,
@@ -1372,6 +1760,55 @@ async fn surface_replay(
     (StatusCode::OK, Json(ops)).into_response()
 }
 
+/// Read only: a reserved receipt with no execution remains uncertain.
+async fn get_action_receipt(
+    State(state): State<A2uiApiState>,
+    Extension(user): Extension<UserContext>,
+    Path((run_id, interaction_id)): Path<(String, String)>,
+) -> axum::response::Response {
+    let Some(run) = state.run_manager.get_run_for_context(&user, &run_id).await else {
+        return action_error(StatusCode::NOT_FOUND, "a2ui_source_not_found");
+    };
+    let (Ok(owner), Some(thread), Some(db)) = (
+        user.session_owner_key(),
+        run.conversation_id.as_deref(),
+        state.run_manager.persistence.as_ref(),
+    ) else {
+        return action_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "a2ui_interaction_recovery_unavailable",
+        );
+    };
+    match db
+        .load_a2ui_action(&owner, &run.agent_id, thread, &interaction_id)
+        .await
+    {
+        Ok(Some(receipt)) if receipt.source_run_id == run_id => {
+            action_ack(&state, &user, &receipt).await
+        }
+        Ok(_) => action_error(StatusCode::NOT_FOUND, "a2ui_interaction_not_found"),
+        Err(_) => action_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "a2ui_interaction_recovery_unavailable",
+        ),
+    }
+}
+
+async fn surface_authority(
+    State(state): State<A2uiApiState>,
+    Extension(user): Extension<UserContext>,
+    Path(run_id): Path<String>,
+) -> axum::response::Response {
+    if let Err(response) = surface_run(&state, &user, &run_id).await {
+        return response;
+    }
+    (
+        StatusCode::OK,
+        Json(source_surfaces(&state, &user, &run_id).await.authority()),
+    )
+        .into_response()
+}
+
 // ── Router builders ───────────────────────────────────────────────────────────
 
 /// Build the A2UI schema listing router (mounted at `/api/uar/a2ui`).
@@ -1420,10 +1857,15 @@ pub fn build_response_router() -> Router<A2uiApiState> {
             "/runs/{run_id}/a2ui/surface-test-trigger",
             post(surface_test_trigger),
         )
-        .route(
-            "/runs/{run_id}/a2ui/surface-replay",
-            get(surface_replay),
-        )
+        .route("/runs/{run_id}/a2ui/surface-replay", get(surface_replay))
         .route("/runs/{run_id}/a2ui/messages", post(submit_messages))
         .route("/runs/{run_id}/a2ui/actions", post(submit_action))
+        .route(
+            "/runs/{run_id}/a2ui/actions/{interaction_id}",
+            get(get_action_receipt),
+        )
+        .route(
+            "/runs/{run_id}/a2ui/surface-authority",
+            get(surface_authority),
+        )
 }

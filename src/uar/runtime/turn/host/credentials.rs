@@ -166,7 +166,7 @@ impl RunCredentials {
     pub(crate) fn config_for(
         &self,
         provider_id: &str,
-        requested_model: Option<&str>,
+        requested_model_id: Option<&str>,
         mut base: crate::config::LlmConfig,
     ) -> Result<crate::config::LlmConfig, HostInputError> {
         let credential = self.0.get(provider_id).ok_or_else(|| {
@@ -178,22 +178,27 @@ impl RunCredentials {
         // Request credentials carry connection authority, not an administrator's
         // catalog price mapping for a previously selected provider/model.
         base.catalog_pricing_model = None;
-        let model = requested_model
+        let model = requested_model_id
             .filter(|model| !model.trim().is_empty())
             .map(str::to_owned)
-            .or_else(|| credential.default_model.clone())
+            .or_else(|| {
+                // Legacy credential defaults may use provider/model; the
+                // explicitly selected model ID is already separate.
+                let prefix = format!("{provider_id}/");
+                credential
+                    .default_model
+                    .as_deref()
+                    .map(|model| model.strip_prefix(&prefix).unwrap_or(model).to_owned())
+            })
             .ok_or_else(|| {
                 HostInputError::new(
                     "run_credential_invalid",
                     "selected provider requires a model",
                 )
             })?;
-        let qualified_prefix = format!("{provider_id}/");
-        base.model = model
-            .strip_prefix(&qualified_prefix)
-            .unwrap_or(&model)
-            .to_owned();
+        base.model.clone_from(&model);
         base.resolved_provider_id = Some(credential.provider_id.clone());
+        base.resolved_model_id = Some(model);
         base.host_provider_kind = Some(credential.provider_kind.protocol().to_owned());
         base.host_supplied_connection = true;
         base.api_key = Some(credential.api_key.expose_secret().to_owned());
@@ -245,4 +250,34 @@ fn validate_endpoint(value: &str) -> Result<(), HostInputError> {
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn explicit_credential_route_replaces_previous_model_without_stripping_alias() {
+        let credentials = RunCredentials::from_inputs(vec![RunCredentialInput {
+            provider_id: "groq".into(),
+            provider_kind: "openai_compatible".into(),
+            base_url: "http://127.0.0.1:1/v1".to_owned().into(),
+            api_key: "fixture-key".to_owned().into(),
+            default_model: Some("groq/legacy-default".into()),
+            context_window: None,
+        }])
+        .unwrap();
+        let mut base = crate::config::LlmConfig::default();
+        base.set_qualified_model("old-provider", "old-model");
+
+        let selected = credentials
+            .config_for("groq", Some("groq/compound"), base.clone())
+            .unwrap();
+        assert_eq!(selected.model, "groq/compound");
+        assert_eq!(selected.qualified_model_name(), "groq/groq/compound");
+
+        let default = credentials.config_for("groq", None, base).unwrap();
+        assert_eq!(default.model, "legacy-default");
+        assert_eq!(default.qualified_model_name(), "groq/legacy-default");
+    }
 }

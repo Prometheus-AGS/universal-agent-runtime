@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-01",
+  "gate": "011 A-C",
+  "operatorAuthorization": "Run A-C serially; stop on failures; Docker/installed-container closed",
+  "status": "STOPPED_GATE_A_BLOCKING_SOURCE_DEFECT",
+  "sourceInventory": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-011.json",
+  "firstParent": "33e765bb5d29a44e97d2813ad6d0be8bf3e2479d",
+  "pendingMergeParent": "af37c2f834f7b34f511ecc93f408e80205c94229",
+  "executed": [
+    {
+      "operation": "First code corrective/integration source review",
+      "report": ".agent-team/uar-core/reviews/production-readiness-context-repair/code-corrective-011.md",
+      "result": "E6/E7 corrected at source; new concrete fallback output ordering defect"
+    }
+  ],
+  "finding": {
+    "id": "E8",
+    "severityInReviewerReport": "MEDIUM",
+    "phaseDisposition": "BLOCKING",
+    "file": "src/llm/orchestrator.rs:2827",
+    "related": [
+      "src/llm/orchestrator.rs:1178",
+      "src/llm/orchestrator.rs:2859",
+      "src/llm/router.rs:95"
+    ],
+    "failureScenario": "Captured healthy fallback context8192/output maximum2048, primary request output cap16384, short plaintext/no exact contract: estimated fit rejects FixedRequestOverflow before final admission can narrow cap to2048. Smaller differences can unnecessarily displace history and misreport actual reserve.",
+    "requiredRepair": "Apply captured downward destination output restriction before estimating fallback allowance, retain fresh final prepared admission and honest estimated manifest.",
+    "evidence": "Source-level ordering defect reported by independent artifact critic; no runtime reproduction or compiler diagnostic claimed.",
+    "whyBlocking": "Selected #463/#464 fallback exit and preserved #388 destination budget behavior require usable allowed fallbacks. Reviewer generic severity APPROVE does not satisfy this phase behavior exit."
+  },
+  "notRun": [
+    "second corrective Rust-source review",
+    "Gate B ownership/source preflights",
+    "git add -A",
+    "normal git merge commit/hooks",
+    "clean three-profile acceptance guard",
+    "all Gate C commands",
+    "Docker/installed qualification"
+  ],
+  "productEditsDuringGate": [],
+  "verificationShellCommandsExecuted": [],
+  "reviewLimitation": "Native same-family corrective context; source-only; no runtime pass",
+  "gateStatus": "CLOSED_OPERATOR_LOCK",
+  "nextBoundedAction": "Source-only E8 integration repair, assertions/docs/handoff and renewed whole inventory; present exact failed/remaining gates for renewed operator approval. Do not repair or rerun automatically under stop-on-failure instruction."
+}

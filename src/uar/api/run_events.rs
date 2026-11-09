@@ -117,7 +117,7 @@ pub(crate) fn snapshot_schema() -> Value {
                     "properties": {
                         "eventId": {"type": "integer", "minimum": 1},
                         "eventName": {"type": "string", "description": "Existing public AG-UI SSE event name"},
-                        "data": {"description": "Existing public payload for eventName; no internal admission or credential objects"}
+                        "data": {"type": null, "description": "Existing public payload for eventName; no internal admission or credential objects"}
                     }
                 }
             }

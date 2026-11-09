@@ -43,7 +43,7 @@ use tracing::Instrument;
 use tracing::instrument;
 use uuid::Uuid;
 
-const EVENT_HISTORY_LIMIT: usize = 512;
+pub(crate) const EVENT_HISTORY_LIMIT: usize = 512;
 
 /// Default output allowance for a captured (non-team) child turn with no
 /// explicit cap: routed specialists observed reasoning past the 1,000 reserve.
@@ -67,6 +67,10 @@ struct DestinationBudgetDriver {
     inner: Arc<dyn LlmDriver>,
     contract: Option<crate::uar::runtime::context::budget::RequestBudgetContract>,
     output_token_cap: u32,
+    admission: Arc<crate::llm::router::DestinationAdmission>,
+    destination: String,
+    explicit_reasoning: bool,
+    finite_accounting_requires_proven_image_bound: bool,
 }
 
 #[async_trait::async_trait]
@@ -89,6 +93,23 @@ impl LlmDriver for DestinationBudgetDriver {
                 .output_token_cap
                 .map_or(self.output_token_cap, |cap| cap.min(self.output_token_cap)),
         );
+        let requirements =
+            crate::llm::router::requirements_for_final_request_with_explicit_reasoning(
+                &request,
+                self.explicit_reasoning,
+            )
+            .map_err(|_| crate::llm::router::DestinationAdmissionError::InvalidFinalRequest)?;
+        if self.finite_accounting_requires_proven_image_bound && requirements.needs_vision {
+            return Err(
+                crate::llm::router::DestinationAdmissionError::UnprovenImageBoundForFiniteAccounting
+                    .into(),
+            );
+        }
+        self.admission
+            .admit(&self.destination, &requirements)
+            .await
+            .map_err(anyhow::Error::from)?
+            .restrict_output(&mut request);
         self.inner.stream(request).await
     }
 }
@@ -122,7 +143,8 @@ struct EventHistory {
 impl EventHistory {
     fn publish(
         &mut self,
-        event: NormalizedEvent,
+        run_id: &str,
+        mut event: NormalizedEvent,
         sender: &broadcast::Sender<StreamEvent>,
         completion: Option<
             &std::sync::Mutex<crate::uar::runtime::thread::execution::RunCompletionCapture>,
@@ -130,6 +152,7 @@ impl EventHistory {
     ) -> StreamEvent {
         let id = self.next_id;
         self.next_id = self.next_id.saturating_add(1);
+        crate::uar::a2ui::protocol::stamp_surface_publication(run_id, id, &mut event);
         if let Some(completion) = completion {
             completion
                 .lock()
@@ -187,11 +210,11 @@ impl EventHistory {
         ) && !self.client_handoff_failed
             && let Some(handoff) = self.pending_client_handoff.take()
         {
-            published.push(self.publish(handoff, sender, completion));
+            published.push(self.publish(run_id, handoff, sender, completion));
         }
 
         if !terminal {
-            published.push(self.publish(event.clone(), sender, completion));
+            published.push(self.publish(run_id, event.clone(), sender, completion));
         }
         let observation_changed = self.presentation.is_none()
             || terminal
@@ -223,13 +246,13 @@ impl EventHistory {
                         value: Some(value),
                     }],
                 };
-                let projected = self.publish(projection, sender, completion);
+                let projected = self.publish(run_id, projection, sender, completion);
                 self.latest_presentation = Some(projected.clone());
                 published.push(projected);
             }
         }
         if terminal {
-            published.push(self.publish(event, sender, completion));
+            published.push(self.publish(run_id, event, sender, completion));
         }
         published
     }
@@ -649,6 +672,11 @@ fn checkpoint_request_identity(
         "user_id": request.user_id,
         "session_id": request.session_id,
         "input": request.input,
+        "current_user_content": request
+            .current_user_content
+            .as_ref()
+            .map(crate::uar::runtime::checkpoint::raw_digest)
+            .unwrap_or_else(|| "none".into()),
         "response_format": request.response_format,
         "state": serde_json::to_value(&resume.state)?,
         "history": serde_json::to_value(&resume.history)?,
@@ -1006,22 +1034,11 @@ fn provider_id_for_config(config: &LlmConfig) -> String {
         .unwrap_or_else(|| crate::llm::registry::split_model_string_pub(&config.model).0)
 }
 
-fn qualified_model_name(config: &LlmConfig) -> String {
-    let provider_id = provider_id_for_config(config);
-    let (model_provider, split_model_id) =
-        crate::llm::registry::split_model_string_pub(&config.model);
-    let model_id = if config.model.contains('/') && model_provider == provider_id {
-        split_model_id
-    } else {
-        config.model.clone()
-    };
-    format!("{provider_id}/{model_id}")
-}
-
 fn apply_routed_connection(mut base: LlmConfig, routed: LlmConfig) -> LlmConfig {
     let provider_changed = provider_id_for_config(&base) != provider_id_for_config(&routed);
     base.model = routed.model;
     base.resolved_provider_id = routed.resolved_provider_id;
+    base.resolved_model_id = routed.resolved_model_id;
     base.catalog_pricing_model = routed.catalog_pricing_model;
     if provider_changed {
         base.api_key = routed.api_key;
@@ -3475,6 +3492,10 @@ impl RunManager {
         self.execute_request(crate::uar::runtime::turn::RunExecutionRequest {
             artifact,
             input,
+            current_user_content: None,
+            client_turn_id: None,
+            user_message_id: None,
+            memory_context_provenance: None,
             session_id,
             user_id,
             memory_hits,
@@ -3486,6 +3507,7 @@ impl RunManager {
             host_secret_scrubber: Default::default(),
             resolved_policy: None,
             target_selection: None,
+            inherited_chat_model: false,
             presentation_negotiation: Default::default(),
             host_policy_constraint: None,
             host_budget_constraint: None,
@@ -3561,9 +3583,8 @@ impl RunManager {
                 }
                 return run_id;
             }
-            // Keep the large kernel future out of the HTTP admission future's
-            // inline state, as the captured child-run entry point already does.
-            Box::pin(self.execute_request_inner(request, run_id, None, None, None, None)).await
+            self.run_kernel_future(request, run_id, None, None, None, None)
+                .await
         })
     }
 
@@ -3948,16 +3969,38 @@ impl RunManager {
             crate::uar::runtime::thread::execution::RunCompletionCapture::observer_channel()
         };
         let run_id = root.record.thread.root_run_id.clone();
-        Box::pin(self.execute_request_inner(
+        self.run_kernel_future(
             request,
             run_id,
             Some(capture),
             Some(cancellation),
             None,
             Some(root),
-        ))
+        )
         .await;
         receiver
+    }
+
+    // Hosted and HTTP admission have both overflowed while polling the kernel.
+    // Return the boxed future before polling so its construction frame is gone.
+    #[inline(never)]
+    fn run_kernel_future(
+        &self,
+        request: crate::uar::runtime::turn::RunExecutionRequest,
+        run_id: String,
+        completion: Option<crate::uar::runtime::thread::execution::RunCompletionCapture>,
+        cancellation: Option<CancellationToken>,
+        inherited: Option<crate::uar::runtime::turn::bindings::InheritedRunBindings>,
+        root: Option<crate::uar::runtime::thread::actor_host::ActorRootBinding>,
+    ) -> futures::future::BoxFuture<'_, String> {
+        Box::pin(self.execute_request_inner(
+            request,
+            run_id,
+            completion,
+            cancellation,
+            inherited,
+            root,
+        ))
     }
 
     /// Host-only authenticated actor adapter. The explicit request confirms
@@ -4242,11 +4285,16 @@ impl RunManager {
         let crate::uar::runtime::turn::RunExecutionRequest {
             mut artifact,
             input,
+            current_user_content,
+            client_turn_id,
+            user_message_id,
+            mut memory_context_provenance,
             session_id,
             user_id,
             mut memory_hits,
             resolved_policy,
             target_selection,
+            inherited_chat_model,
             presentation_negotiation,
             seed_history,
             client_tools,
@@ -4274,6 +4322,8 @@ impl RunManager {
             host_sandbox_constraint,
             host_instructions,
         } = request;
+        let exact_target =
+            target_selection.is_some() && (!inherited_chat_model || checkpoint_resume.is_some());
         let output_token_cap = match (
             output_token_cap,
             client_tools
@@ -4339,7 +4389,19 @@ impl RunManager {
             .or(client_history.as_ref());
         let append_input = plan.append_input && client_tools.is_none();
         let skill_attachments = plan.requested_skill_ids;
+        // The typed ordinary ingress marks the complete session route, not
+        // only this turn's parts: a later text turn can retain an admitted
+        // image from warm history. Final admission applies the qualified
+        // adapter constraint only when the prepared request needs vision.
+        let canonical_typed_image_route = current_user_content.is_some();
         let input = input.unwrap_or_default();
+        let admitted_current_message = Message {
+            role: MessageRole::User,
+            content: current_user_content
+                .unwrap_or_else(|| crate::llm::MessageContent::text(input.clone())),
+            tool_call_id: None,
+            tool_calls: None,
+        };
         tracing::Span::current().record("run_id", &run_id);
         tracing::info!("Starting new run");
         let (tx, _) = broadcast::channel(256); // Buffer size 256
@@ -4741,7 +4803,21 @@ impl RunManager {
             let retained = self.sessions.get_or_create_for_user(&id, &session_owner);
             if let Some(saved) = saved {
                 // A concurrent request may already have warmed this session.
-                retained.seed_if_empty(&saved.messages());
+                if retained.seed_persisted_history_if_empty(&saved).is_err() {
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: "session_restore_failed".into(),
+                            message: "Stored conversation partition could not be restored".into(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    return run_id;
+                }
             }
             retained
         } else {
@@ -4969,6 +5045,12 @@ impl RunManager {
             let context = binding.representation_context().await?;
             context.narrow(&mut effective_policy)?;
             memory_hits.clear();
+            memory_context_provenance = Some(
+                crate::uar::memory::context_builder::MemoryContextProvenance::excluded(
+                    crate::uar::memory::context_builder::MemoryContextStatus::Refused,
+                    "representation_memory_scope_unsupported",
+                ),
+            );
             Ok(Some(context))
         }
         .await
@@ -5124,22 +5206,42 @@ impl RunManager {
             // Authorization has been re-established. Only now may the branch
             // replace a warm session with the checkpoint's protected history.
             session.clear();
-            for message in history {
-                if message.role != MessageRole::System {
-                    session.add_message(message.clone());
-                } else if client_tools.is_some() {
-                    // Caller instructions remain ordered caller content; they cannot
-                    // replace authoritative agent/system policy.
-                    let mut caller = message.clone();
-                    caller.role = MessageRole::User;
-                    session.add_message(caller);
-                }
-            }
+            let restored = history
+                .iter()
+                .filter_map(|message| {
+                    if message.role != MessageRole::System {
+                        Some(message.clone())
+                    } else if client_tools.is_some() {
+                        // Caller instructions remain ordered caller content; they cannot
+                        // replace authoritative agent/system policy.
+                        let mut caller = message.clone();
+                        caller.role = MessageRole::User;
+                        Some(caller)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+            // Checkpoints carry canonical content, not original presentation
+            // metadata. Restore explicit legacy provenance rather than inventing
+            // new message timestamps/identities for historical rows.
+            session.seed_if_empty(&restored);
         }
 
-        // 2. Add User Message
-        if append_input {
-            session.add_user_message(&input);
+        // Allocate the original presentation identity once; staging and retained
+        // publication reuse it without changing canonical model content.
+        let current_user_metadata = append_input.then(|| {
+            crate::session::SessionMessageMetadata::for_run(
+                user_message_id
+                    .clone()
+                    .unwrap_or_else(|| uuid::Uuid::new_v4().to_string()),
+                run_id.clone(),
+                client_turn_id.clone(),
+                crate::session::SessionMessageStatus::Running,
+            )
+        });
+        if let Some(metadata) = &current_user_metadata {
+            session.add_message_with_metadata(admitted_current_message.clone(), metadata.clone());
         }
 
         // Capture identity for credential resolution before `user_id` is moved
@@ -5150,7 +5252,11 @@ impl RunManager {
             .cloned();
         let session_id_for_creds = Some(session.id().to_string());
 
-        let dialogue = redacted_checkpoint_dialogue(&session);
+        let dialogue = RunDialogue(
+            redacted_checkpoint_dialogue(&session)
+                .0
+                .with_run_context(&run_id, client_turn_id.clone()),
+        );
         let effective_service_binding = service_binding.clone();
         let effective_collaboration_binding = collaboration_binding.as_ref().map(|binding| {
             serde_json::json!({
@@ -5489,6 +5595,13 @@ impl RunManager {
             state.tool_admission = Some(Arc::clone(&tool_admission));
         }
 
+        if !effective_policy.memory_enabled {
+            memory_hits.clear();
+            if memory_context_provenance.as_ref().is_none_or(|provenance| provenance.status == crate::uar::memory::context_builder::MemoryContextStatus::SelectedPrepared) {
+                memory_context_provenance = Some(crate::uar::memory::context_builder::MemoryContextProvenance::excluded(
+                    crate::uar::memory::context_builder::MemoryContextStatus::Disabled, "memory_disabled_by_effective_policy"));
+            }
+        }
         // 3. Prepare Messages
         let mut messages = Vec::new();
         let mut prompt_fragments =
@@ -5816,25 +5929,24 @@ impl RunManager {
                 } else {
                     let mut config = self.llm_config.clone();
                     if let Some(route) = &effective_policy.model {
-                        config.model = format!("{}/{}", route.provider_id, route.model_id);
-                        config.resolved_provider_id = Some(route.provider_id.clone());
+                        config.set_qualified_model(&route.provider_id, &route.model_id);
                     } else if !artifact.policy.provider.default.model.trim().is_empty() {
-                        config.model = format!("{}/{}", artifact.policy.provider.default.provider,
-                            artifact.policy.provider.default.model);
-                        config.resolved_provider_id = Some(artifact.policy.provider.default.provider.clone());
+                        let route = &artifact.policy.provider.default;
+                        config.set_qualified_model(&route.provider, &route.model);
                     }
                     if let Some(model) = &requested_model {
-                        let (provider, _) = crate::llm::registry::split_model_string_pub(&qualified_model_name(&config));
-                        config.model = if model.contains('/') { model.clone() } else { format!("{provider}/{model}") };
-                        let (selected_provider, _) = crate::llm::registry::split_model_string_pub(&config.model);
-                        config.resolved_provider_id = Some(selected_provider);
+                        let provider = provider_id_for_config(&config);
+                        let (provider, model) = model
+                            .split_once('/')
+                            .unwrap_or((provider.as_str(), model.as_str()));
+                        config.set_qualified_model(provider, model);
                     }
                     if config.model.trim().is_empty()
                         && let Some(registry) = &self.provider_registry
                         && let Some((provider, model)) = registry.default_model().await {
-                        config.model = format!("{provider}/{model}");
+                        config.set_qualified_model(&provider, &model);
                     }
-                    let (provider, model) = crate::llm::registry::split_model_string_pub(&qualified_model_name(&config));
+                    let (provider, model) = crate::llm::registry::split_model_string_pub(&config.qualified_model_name());
                     if let Some(registry) = &self.provider_registry {
                         let routed = registry.resolve_to_llm_config(&provider, &model).await
                             .ok_or_else(|| anyhow::anyhow!("auxiliary_model_unavailable"))?;
@@ -5865,7 +5977,7 @@ impl RunManager {
                         }
                         let profile = profiles.get(&format!("{provider}/{model}"))
                             .ok_or_else(|| anyhow::anyhow!("TEAM_ROUTE_PROFILE_MISMATCH"))?;
-                        config.model.clone_from(&profile.qualified_model);
+                        config.set_qualified_model(&provider, &model);
                         config.catalog_pricing_model = pricing_models.get(&profile.qualified_model).cloned();
                     }
                     let (config, decision) = resolve_credential_binding(config,
@@ -5882,7 +5994,7 @@ impl RunManager {
                 };
                 let model = match requested_model.as_deref() {
                     Some(model) => bindings.auxiliary_model(model)?,
-                    None => qualified_model_name(bindings.config()),
+                    None => bindings.primary_model().to_owned(),
                 };
                 let driver = bindings.auxiliary(&model)?;
                 let exact = self.destination_preparations.as_ref()
@@ -6107,6 +6219,9 @@ impl RunManager {
             .as_ref()
             .map_or(&self.global_mcp, |bindings| &bindings.mcp);
         let native_descriptors = native_skills.descriptors().await;
+        let preselection_needs_native_tools = native_descriptors.iter().any(|descriptor| {
+            descriptor.exposure != crate::uar::tools::descriptor::Exposure::Hidden
+        });
         // Elicitation is a governed host interaction, never a tool approval.
         // Children inherit the root's frozen connection/channel projection.
         if !child_run
@@ -6238,22 +6353,46 @@ impl RunManager {
                     .map(|resolved| (resolved.skill.id.clone(), resolved.skill.config.clone())),
             );
         }
+        let mut registered_team_tools = HashSet::new();
         let register_turn_tools = async {
             if effective_policy.tools.mode != SelectionMode::None {
                 if let Some(binding) = &collaboration_binding {
                     if let Some(attempt) = binding.team_attempt.as_ref().filter(|_| {
                         crate::uar::domain::execution_capabilities::team_execution_b_enabled()
                     }) {
-                        crate::uar::runtime::native_skills::team_tools::register(
-                            &native_skills,
-                            crate::uar::runtime::native_skills::team_tools::TeamToolBinding {
-                                catalog: Arc::clone(&binding.service),
-                                attempt: attempt.clone(),
-                                yielded: Arc::clone(&binding.team_yield),
-                            },
-                            &selected_tools,
-                        )
-                        .await?;
+                        let mut offered_team_tools = HashSet::new();
+                        if effective_policy.tool_approval != ToolApprovalPolicy::Deny {
+                            for name in
+                                crate::uar::runtime::native_skills::team_tools::TEAM_TOOL_NAMES
+                            {
+                                if !selected_tools.contains(name) {
+                                    continue;
+                                }
+                                let requires_approval = effective_policy.tool_approval == ToolApprovalPolicy::Ask
+                                    || crate::uar::runtime::native_skills::team_tools::approval_required(name);
+                                let decision = match &self.governance_engine {
+                                    Some(engine) => engine.tool_decision(&artifact.id, name, requires_approval).await,
+                                    None if requires_approval => crate::uar::governance::engine::ToolGovernanceDecision::RequireApproval,
+                                    None => crate::uar::governance::engine::ToolGovernanceDecision::Allow,
+                                };
+                                if decision
+                                    != crate::uar::governance::engine::ToolGovernanceDecision::Deny
+                                {
+                                    offered_team_tools.insert(name.to_owned());
+                                }
+                            }
+                        }
+                        registered_team_tools =
+                            crate::uar::runtime::native_skills::team_tools::register(
+                                &native_skills,
+                                crate::uar::runtime::native_skills::team_tools::TeamToolBinding {
+                                    catalog: Arc::clone(&binding.service),
+                                    attempt: attempt.clone(),
+                                    yielded: Arc::clone(&binding.team_yield),
+                                },
+                                &offered_team_tools,
+                            )
+                            .await?;
                     }
                 }
                 if let Some(bindings) = &inherited {
@@ -6285,7 +6424,7 @@ impl RunManager {
                     )
                     .await?;
             }
-            Ok::<(), crate::uar::tools::descriptor::ToolAssemblyError>(())
+            Ok::<(), anyhow::Error>(())
         };
         if let Err(error) = register_turn_tools.await {
             if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
@@ -6294,8 +6433,24 @@ impl RunManager {
             emitter
                 .emit(NormalizedEvent::Error {
                     run_id: run_id.clone(),
-                    code: "tool_collision".to_string(),
-                    message: error.to_string(),
+                    code: match error
+                        .downcast_ref::<crate::uar::tools::descriptor::ToolAssemblyError>()
+                    {
+                        Some(crate::uar::tools::descriptor::ToolAssemblyError::Collision(_)) => {
+                            "tool_collision"
+                        }
+                        Some(_) => "tool_assembly_failed",
+                        None => "team_control_eligibility_unavailable",
+                    }
+                    .to_owned(),
+                    message: if error
+                        .downcast_ref::<crate::uar::tools::descriptor::ToolAssemblyError>()
+                        .is_some()
+                    {
+                        error.to_string()
+                    } else {
+                        "Team control eligibility could not be established".to_owned()
+                    },
                 })
                 .await;
             emitter
@@ -6385,6 +6540,31 @@ impl RunManager {
             .into_iter()
             .map(|entry| entry.skill)
             .collect();
+        let preselection_needs_mcp_tools = activation_context
+            .lock()
+            .await
+            .mcp_descriptors()
+            .iter()
+            .any(|descriptor| {
+                descriptor.exposure != crate::uar::tools::descriptor::Exposure::Hidden
+            });
+        let preselection_needs_vision = session
+            .messages()
+            .iter()
+            .any(|message| message.content.has_images());
+        let preselection_needs_tools = client_tools.as_ref().is_some_and(|tools| {
+            !tools.tools.is_empty()
+                || matches!(
+                    tools.tool_choice.as_ref(),
+                    Some(crate::llm::ToolChoice::Required | crate::llm::ToolChoice::Named(_))
+                )
+        }) || preselection_needs_native_tools
+            || preselection_needs_mcp_tools;
+        let preselection_needs_structured_output = response_format
+            .as_ref()
+            .is_some_and(crate::llm::response_format::ResponseFormat::is_structured);
+        let preselection_needs_reasoning =
+            reasoning_effort.is_some_and(|effort| effort.thinking_budget().is_some());
         let policy_llm_config = if inherited.is_none()
             && let Some(ref registry) = self.provider_registry
         {
@@ -6458,6 +6638,11 @@ impl RunManager {
         let model_bindings_result = if let Some(bindings) = &inherited {
             bindings.models.for_policy(&bindings.policy)
         } else {
+            let mut hard_route_no_match = self.provider_registry.is_none()
+                && (preselection_needs_tools
+                    || preselection_needs_vision
+                    || preselection_needs_structured_output
+                    || preselection_needs_reasoning);
             let mut preferred_llm_config =
                 policy_llm_config.unwrap_or_else(|| self.llm_config.clone());
             let skill_preferred_model = (collaboration_binding.is_none()
@@ -6489,7 +6674,7 @@ impl RunManager {
                 // replace it, or turn missing operator selection into a model choice.
                 preferred_llm_config
             } else if let Some(ref registry) = self.provider_registry {
-                let policy_preferred_model = qualified_model_name(&preferred_llm_config);
+                let policy_preferred_model = preferred_llm_config.qualified_model_name();
                 let (policy_provider, _) =
                     crate::llm::registry::split_model_string_pub(&policy_preferred_model);
                 let preferred_model = match skill_preferred_model {
@@ -6513,6 +6698,10 @@ impl RunManager {
                 let router = crate::llm::ModelRouter::new(Arc::clone(registry));
                 let requirements = crate::llm::router::RouteRequirements {
                     preferred_provider: Some(preferred_provider),
+                    needs_tools: preselection_needs_tools,
+                    needs_vision: preselection_needs_vision,
+                    needs_structured_output: preselection_needs_structured_output,
+                    needs_reasoning: preselection_needs_reasoning,
                     ..crate::llm::router::RouteRequirements::default()
                 };
                 match router
@@ -6535,18 +6724,21 @@ impl RunManager {
                                 apply_routed_connection(preferred_llm_config, routed)
                             }
                             None => {
+                                hard_route_no_match =
+                                    requirements.has_hard_capability_requirement();
                                 tracing::warn!(
                                     selected_model = %selected_model,
-                                    "Routed model became unavailable during resolution; using policy-resolved configuration"
+                                    "Routed model became unavailable during resolution"
                                 );
                                 preferred_llm_config
                             }
                         }
                     }
                     None => {
+                        hard_route_no_match = requirements.has_hard_capability_requirement();
                         tracing::warn!(
                             preferred_model = %preferred_model,
-                            "No healthy registered model matched the run; using policy-resolved configuration"
+                            "No healthy registered model matched the run"
                         );
                         preferred_llm_config
                     }
@@ -6557,6 +6749,7 @@ impl RunManager {
                     tracing::info!(skill_id, model, "Skill overrides LLM model");
                     if config.model != model {
                         config.catalog_pricing_model = None;
+                        config.resolved_model_id = None;
                     }
                     config.model = model.to_string();
                 }
@@ -6609,13 +6802,19 @@ impl RunManager {
                 run_llm_config.thinking_budget = effort.thinking_budget();
             }
             let mut run_llm_config = run_llm_config;
-            let mut run_failover_config = if target_selection.is_some() {
+            let mut run_failover_config = if exact_target {
                 // Explicit target selection never authorizes another model or billing route.
                 let mut failover = self.failover_config.clone();
                 failover.enabled = false;
                 failover.fallback_models.clear();
                 failover
-            } else if run_credentials.is_some() || collaboration_binding.is_some() {
+            } else if !artifact.policy.provider.fallbacks.is_empty()
+                || run_credentials.is_some()
+                || collaboration_binding.is_some()
+            {
+                // A nonempty artifact list is the run's explicit fallback
+                // authority. Preserve global operational retry/health settings,
+                // but never merge an outside destination into that capture.
                 let mut failover = self.failover_config.clone();
                 failover.fallback_models = artifact
                     .policy
@@ -6680,7 +6879,7 @@ impl RunManager {
                 );
                 // Request credentials supply connection authority only. Restore
                 // the admitted complete alias and administrator-owned price.
-                run_llm_config.model.clone_from(&selected.qualified_model);
+                run_llm_config.set_qualified_model(provider, model);
                 run_llm_config.catalog_pricing_model =
                     pricing_models.get(&selected.qualified_model).cloned();
                 for fallback in &mut run_failover_config.fallback_models {
@@ -6730,23 +6929,93 @@ impl RunManager {
 
             let model_budget = Ok::<_, anyhow::Error>(shared_model_budget.clone());
 
-            let fallback_credential_decisions = async {
-                let mut decisions = std::collections::BTreeMap::new();
+            let fallback_credential_bindings = async {
+                let mut bindings = std::collections::BTreeMap::new();
                 if !run_failover_config.enabled {
-                    return Ok(decisions);
+                    return Ok(bindings);
                 }
+                let mut retained_fallbacks = Vec::new();
                 for fallback in &run_failover_config.fallback_models {
-                    let fallback_config =
-                        crate::llm::Orchestrator::fallback_llm_config(&run_llm_config, fallback);
-                    let (fallback_provider, _) =
+                    let (fallback_provider, fallback_model) =
                         crate::llm::registry::split_model_string_pub(&fallback.model);
+                    let fallback_config = if run_credentials.is_none()
+                        && !is_team_attempt
+                        && !artifact.policy.provider.fallbacks.is_empty()
+                    {
+                        let registry = self.provider_registry.as_deref().ok_or_else(|| {
+                            anyhow::anyhow!("artifact fallback requires registered provider config")
+                        })?;
+                        let Some(fallback_config) = registry
+                            .resolve_to_llm_config(&fallback_provider, &fallback_model)
+                            .await
+                        else {
+                            tracing::info!(
+                                model = %fallback.model,
+                                provider = %fallback_provider,
+                                "Skipping unavailable artifact fallback before binding capture"
+                            );
+                            continue;
+                        };
+                        fallback_config
+                    } else {
+                        let mut fallback_config = crate::llm::Orchestrator::fallback_llm_config(
+                            &run_llm_config,
+                            fallback,
+                        );
+                        // Legacy failover entries have no catalog pricing identity.
+                        // Do not carry the primary route's price onto a distinct
+                        // configured fallback.
+                        fallback_config.catalog_pricing_model = None;
+                        fallback_config
+                    };
+                    #[cfg(feature = "server")]
+                    let fallback_config = if inherited_chat_model {
+                        let Some(registry) = &self.provider_registry else {
+                            continue;
+                        };
+                        let Some(provider) = registry.get(&fallback_provider).await else {
+                            continue;
+                        };
+                        let registered_endpoint =
+                            (!provider.base_url.is_empty()).then_some(provider.base_url.as_str());
+                        if fallback_config
+                            .base_url
+                            .as_deref()
+                            .is_some_and(|endpoint| Some(endpoint) != registered_endpoint)
+                            || fallback_config
+                                .api_key
+                                .as_ref()
+                                .is_some_and(|key| Some(key) != provider.api_key.as_ref())
+                            || crate::uar::api::model_verification::current(
+                                &provider,
+                                &fallback_model,
+                                self.settings_manager.as_deref(),
+                                self.provider_service.as_deref(),
+                            )
+                            .await
+                            .is_none()
+                        {
+                            tracing::info!(
+                                model = %fallback.model,
+                                "Skipping fallback without matching current model verification"
+                            );
+                            continue;
+                        }
+                        // Model-only global entries inherit their registered connection.
+                        let mut fallback_config = fallback_config;
+                        fallback_config.base_url = registered_endpoint.map(str::to_owned);
+                        fallback_config.api_key = provider.api_key;
+                        fallback_config
+                    } else {
+                        fallback_config
+                    };
                     let fallback_config = match &run_credentials {
                         Some(credentials) => credentials
-                            .config_for(&fallback_provider, Some(&fallback.model), fallback_config)
+                            .config_for(&fallback_provider, Some(&fallback_model), fallback_config)
                             .map_err(anyhow::Error::from)?,
                         None => fallback_config,
                     };
-                    let (_, decision) = resolve_credential_binding(
+                    let (fallback_config, decision) = resolve_credential_binding(
                         fallback_config,
                         self.credential_policy.as_ref(),
                         self.provider_service.as_ref(),
@@ -6756,67 +7025,76 @@ impl RunManager {
                         run_credentials.is_some(),
                     )
                     .await?;
-                    decisions.insert(fallback.model.clone(), decision);
+                    bindings.insert(fallback.model.clone(), (fallback_config, decision));
+                    retained_fallbacks.push(fallback.clone());
                 }
-                Ok::<_, anyhow::Error>(decisions)
+                run_failover_config.fallback_models = retained_fallbacks;
+                run_failover_config.enabled = !run_failover_config.fallback_models.is_empty();
+                Ok::<_, anyhow::Error>(bindings)
             }
             .await;
 
             // Capture once before any summarization or model execution. Rebuilding
             // a client from the same config can resolve different environment or
             // provider credentials, and cannot serve as an inherited binding.
-            match (
-                model_budget,
-                team_profiles,
-                primary_credential_binding,
-                fallback_credential_decisions,
-            ) {
-                (
-                    Ok(model_budget),
-                    Ok((profiles, pricing_models)),
-                    Some(Ok((bound_config, primary_credential_decision))),
-                    Ok(fallback_credential_decisions),
-                ) => {
-                    if self.primary_driver.is_some()
-                        && self.credential_policy.is_shared()
-                        && run_credentials.is_none()
-                        && !is_team_attempt
-                    {
-                        Err(anyhow::anyhow!(
-                            "shared credential policy cannot verify a supplied primary driver"
-                        ))
-                    } else {
-                        crate::uar::runtime::turn::bindings::RunModelBindings::capture(
-                            bound_config,
-                            if run_credentials.is_some() || is_team_attempt {
-                                None
-                            } else {
-                                self.primary_driver.clone()
-                            },
-                            primary_credential_decision,
-                            fallback_credential_decisions,
-                            run_failover_config,
-                            if run_credentials.is_some() {
-                                None
-                            } else {
-                                self.provider_registry
-                                    .as_ref()
-                                    .map(|registry| Arc::clone(registry.health()))
-                            },
-                            model_budget,
-                            run_credentials.as_ref(),
-                            profiles,
-                            pricing_models,
-                            &mut emitter.secret_scrubber,
-                        )
-                        .await
+            if hard_route_no_match {
+                Err(anyhow::anyhow!(
+                    "no captured route satisfies required capabilities"
+                ))
+            } else {
+                match (
+                    model_budget,
+                    team_profiles,
+                    primary_credential_binding,
+                    fallback_credential_bindings,
+                ) {
+                    (
+                        Ok(model_budget),
+                        Ok((profiles, pricing_models)),
+                        Some(Ok((bound_config, primary_credential_decision))),
+                        Ok(fallback_credential_bindings),
+                    ) => {
+                        if self.primary_driver.is_some()
+                            && self.credential_policy.is_shared()
+                            && run_credentials.is_none()
+                            && !is_team_attempt
+                        {
+                            Err(anyhow::anyhow!(
+                                "shared credential policy cannot verify a supplied primary driver"
+                            ))
+                        } else {
+                            crate::uar::runtime::turn::bindings::RunModelBindings::capture(
+                                bound_config,
+                                if run_credentials.is_some() || is_team_attempt {
+                                    None
+                                } else {
+                                    self.primary_driver.clone()
+                                },
+                                primary_credential_decision,
+                                fallback_credential_bindings,
+                                run_failover_config,
+                                if run_credentials.is_some() {
+                                    None
+                                } else {
+                                    self.provider_registry
+                                        .as_ref()
+                                        .map(|registry| Arc::clone(registry.health()))
+                                },
+                                model_budget,
+                                run_credentials.as_ref(),
+                                profiles,
+                                pricing_models,
+                                &mut emitter.secret_scrubber,
+                            )
+                            .await
+                        }
                     }
+                    (Err(error), _, _, _) => Err(error),
+                    (_, Err(error), _, _) => Err(error),
+                    (_, _, Some(Err(error)), _) => Err(error),
+                    (_, _, _, Err(error)) => Err(error),
+                    (_, _, None, _) => Err(anyhow::anyhow!("credential binding unavailable")),
                 }
-                (Err(error), _, _, _) => Err(error),
-                (_, Err(error), _, _) => Err(error),
-                (_, _, Some(Err(error)), _) => Err(error),
-                (_, _, _, Err(error)) => Err(error),
-                (_, _, None, _) => Err(anyhow::anyhow!("credential binding unavailable")),
             }
         };
         let model_bindings = match model_bindings_result {
@@ -6889,6 +7167,32 @@ impl RunManager {
         };
 
         let run_llm_config = model_bindings.config().clone();
+        let destination_scope = model_bindings.destination_scope(exact_target);
+        let admitted_inline_image_destinations =
+            model_bindings.admitted_inline_image_destinations();
+        let admitted_run_local_plaintext_destinations =
+            model_bindings.admitted_run_local_plaintext_destinations();
+        let finite_accounting_requires_proven_image_bound =
+            model_bindings.budget().has_configured_limits();
+        let destination_admission = Arc::new(match &self.provider_registry {
+            Some(registry) => crate::llm::router::DestinationAdmission::new(
+                destination_scope,
+                admitted_inline_image_destinations,
+                Arc::clone(registry),
+            )
+            .with_admitted_inline_image_adapter_required(canonical_typed_image_route)
+            .with_admitted_run_local_plaintext_destinations(
+                admitted_run_local_plaintext_destinations,
+            ),
+            None => crate::llm::router::DestinationAdmission::without_registry(
+                destination_scope,
+                admitted_inline_image_destinations,
+            )
+            .with_admitted_inline_image_adapter_required(canonical_typed_image_route)
+            .with_admitted_run_local_plaintext_destinations(
+                admitted_run_local_plaintext_destinations,
+            ),
+        });
 
         // The retained artifact is execution authority, not a display copy.
         // Refuse this unsupported case instead of changing its revision/content.
@@ -6935,16 +7239,54 @@ impl RunManager {
             .bind_retained_session(retained_session.clone(), emitter.secret_scrubber.clone());
         let world_state = Arc::new(world_state);
         let mut projected_history = session.messages();
-        for message in &mut projected_history {
-            emitter.secret_scrubber.project_message(message);
+        if projected_history
+            .iter_mut()
+            .try_for_each(|message| emitter.secret_scrubber.project_canonical_message(message))
+            .is_err()
+        {
+            if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                state.run.status = RunStatus::Error;
+            }
+            emitter
+                .emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(),
+                    code: "canonical_history_invalid".into(),
+                    message: "Canonical history contains an unsupported inline image".into(),
+                })
+                .await;
+            emitter
+                .emit(NormalizedEvent::RunDone {
+                    run_id: run_id.clone(),
+                })
+                .await;
+            self.run_cancellations.write().await.remove(&run_id);
+            return run_id;
         }
         let projected_system = session
             .system_prompt()
             .map(|text| emitter.secret_scrubber.scrub(&text));
-        session.clear();
-        for message in &projected_history {
-            session.add_message(message.clone());
-            dialogue.0.add_message(message.clone());
+        if session
+            .project_message_content(projected_history.clone())
+            .is_err()
+            || dialogue.0.replace_message_history_from(&session).is_err()
+        {
+            if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                state.run.status = RunStatus::Error;
+            }
+            emitter
+                .emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(),
+                    code: "canonical_history_invalid".into(),
+                    message: "Canonical history identity could not be preserved".into(),
+                })
+                .await;
+            emitter
+                .emit(NormalizedEvent::RunDone {
+                    run_id: run_id.clone(),
+                })
+                .await;
+            self.run_cancellations.write().await.remove(&run_id);
+            return run_id;
         }
         if let Some(prompt) = projected_system {
             session.set_system_prompt(prompt.clone());
@@ -6955,19 +7297,114 @@ impl RunManager {
         // authorized checkpoint history retains its existing replace semantics.
         if staged_replaces_history {
             retained_session.clear();
-            for message in &projected_history {
-                retained_session.add_message(message.clone());
+            if retained_session
+                .replace_message_history_from(&session)
+                .is_err()
+            {
+                if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                    state.run.status = RunStatus::Error;
+                }
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: run_id.clone(),
+                        code: "canonical_history_invalid".into(),
+                        message: "Protected history partition could not be preserved".into(),
+                    })
+                    .await;
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: run_id.clone(),
+                    })
+                    .await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
             }
         } else {
             if let Some(mut seed) = staged_seed {
-                for message in &mut seed {
-                    emitter.secret_scrubber.project_message(message);
+                if seed
+                    .iter_mut()
+                    .try_for_each(|message| {
+                        emitter.secret_scrubber.project_canonical_message(message)
+                    })
+                    .is_err()
+                {
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: "canonical_history_invalid".into(),
+                            message: "Canonical history contains an unsupported inline image"
+                                .into(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
                 }
                 retained_session.seed_if_empty(&seed);
             }
             if append_input {
-                retained_session.add_user_message(emitter.secret_scrubber.scrub(&input));
+                let mut projected_current_message = admitted_current_message.clone();
+                if emitter
+                    .secret_scrubber
+                    .project_canonical_message(&mut projected_current_message)
+                    .is_err()
+                {
+                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                        state.run.status = RunStatus::Error;
+                    }
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: run_id.clone(),
+                            code: "canonical_history_invalid".into(),
+                            message: "Canonical history contains an unsupported inline image"
+                                .into(),
+                        })
+                        .await;
+                    emitter
+                        .emit(NormalizedEvent::RunDone {
+                            run_id: run_id.clone(),
+                        })
+                        .await;
+                    self.run_cancellations.write().await.remove(&run_id);
+                    return run_id;
+                }
+                if let Some(metadata) = &current_user_metadata {
+                    retained_session
+                        .add_message_with_metadata(projected_current_message, metadata.clone());
+                }
             }
+        }
+        let retained_session = retained_session.with_run_context(&run_id, client_turn_id.clone());
+        if let Some(db) = &self.persistence
+            && let Err(error) = db.save_session(&retained_session).await
+        {
+            retained_session
+                .set_run_history_status(&run_id, crate::session::SessionMessageStatus::Error);
+            if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                state.run.status = RunStatus::Error;
+            }
+            tracing::warn!(%error, run_id = %run_id, "Admitted conversation could not be persisted before dispatch");
+            emitter
+                .emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(),
+                    code: "session_persist_failed".into(),
+                    message: "Admitted conversation could not be saved before execution".into(),
+                })
+                .await;
+            emitter
+                .emit(NormalizedEvent::RunDone {
+                    run_id: run_id.clone(),
+                })
+                .await;
+            self.run_cancellations.write().await.remove(&run_id);
+            return run_id;
         }
         emitter
             .secret_scrubber
@@ -7005,6 +7442,27 @@ impl RunManager {
         // Capture before adding root-local handlers: retaining those handlers
         // here would form service -> kernel -> registry -> service ownership.
         let captured_native = Arc::new(native_skills.filtered(None).await);
+        let mut delegation_policy = effective_policy.clone();
+        if is_team_attempt && actor_root.is_some() {
+            // An unavailable attempt-bound control was deliberately not
+            // registered. It cannot become an executable root authority.
+            let captured_names = captured_native.names().await;
+            let tools = &mut delegation_policy.tools;
+            let selected_count = tools.ids.len();
+            tools.ids.retain(|name| {
+                !crate::uar::runtime::native_skills::team_tools::TEAM_TOOL_NAMES
+                    .contains(&name.as_str())
+                    || (registered_team_tools.contains(name.as_str())
+                        && captured_names.contains(name))
+            });
+            if tools.ids.len() != selected_count {
+                tools.mode = if tools.ids.is_empty() {
+                    SelectionMode::None
+                } else {
+                    SelectionMode::Selected
+                };
+            }
+        }
         let delegation_lifetime = crate::uar::runtime::turn::bindings::RunDelegationLifetime(
             verified_owner.clone().filter(|_| !child_run).map(|owner| {
                 Arc::new(crate::uar::runtime::turn::bindings::RunDelegationBindings {
@@ -7013,7 +7471,7 @@ impl RunManager {
                     instance_binding: instance_binding.clone(),
                     owner,
                     run_id: run_id.clone(),
-                    policy: effective_policy.clone(),
+                    policy: delegation_policy,
                     presentations: Arc::clone(&presentation_snapshot),
                     artifact: artifact.clone(),
                     thread_controls: actor_root.is_some(),
@@ -7126,13 +7584,7 @@ impl RunManager {
                 })
                 .collect::<Vec<_>>()
         };
-        let qualified_model = if is_team_attempt {
-            // Team profiles already capture the complete admitted provider/model.
-            // Qualifying again would hide its administrator-configured capacity.
-            run_llm_config.model.clone()
-        } else {
-            qualified_model_name(&run_llm_config)
-        };
+        let qualified_model = model_bindings.primary_model().to_owned();
         let (catalog_provider, catalog_model_id) =
             crate::llm::registry::split_model_string_pub(&qualified_model);
         let configured_model = if let Some(registry) = &self.provider_registry {
@@ -7358,18 +7810,33 @@ impl RunManager {
                     .filter(|message| message.role != MessageRole::System),
             );
             if append_input {
-                messages.push(Message {
-                    role: MessageRole::User,
-                    content: crate::llm::MessageContent::text(input.clone()),
-                    tool_call_id: None,
-                    tool_calls: None,
-                });
+                messages.push(admitted_current_message.clone());
             }
         } else {
             messages.extend(session.messages());
         }
-        for message in &mut messages {
-            emitter.secret_scrubber.project_message(message);
+        if messages
+            .iter_mut()
+            .try_for_each(|message| emitter.secret_scrubber.project_canonical_message(message))
+            .is_err()
+        {
+            if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                state.run.status = RunStatus::Error;
+            }
+            emitter
+                .emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(),
+                    code: "canonical_history_invalid".into(),
+                    message: "Canonical history contains an unsupported inline image".into(),
+                })
+                .await;
+            emitter
+                .emit(NormalizedEvent::RunDone {
+                    run_id: run_id.clone(),
+                })
+                .await;
+            self.run_cancellations.write().await.remove(&run_id);
+            return run_id;
         }
         emitter
             .secret_scrubber
@@ -7876,8 +8343,28 @@ impl RunManager {
         if let Some(update) = &world_update {
             world_state.commit(update).await;
         }
-        for message in &mut messages {
-            emitter.secret_scrubber.project_message(message);
+        if messages
+            .iter_mut()
+            .try_for_each(|message| emitter.secret_scrubber.project_canonical_message(message))
+            .is_err()
+        {
+            if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                state.run.status = RunStatus::Error;
+            }
+            emitter
+                .emit(NormalizedEvent::Error {
+                    run_id: run_id.clone(),
+                    code: "canonical_history_invalid".into(),
+                    message: "Canonical history contains an unsupported inline image".into(),
+                })
+                .await;
+            emitter
+                .emit(NormalizedEvent::RunDone {
+                    run_id: run_id.clone(),
+                })
+                .await;
+            self.run_cancellations.write().await.remove(&run_id);
+            return run_id;
         }
         if let Some(act) = reduce_report.context_action {
             emitter.emit(NormalizedEvent::ContextAction(act)).await;
@@ -8069,13 +8556,20 @@ impl RunManager {
             inner: model_bindings.primary(),
             contract: destination_budget_contract.clone(),
             output_token_cap: output_token_cap.unwrap_or(0),
+            admission: Arc::clone(&destination_admission),
+            destination: model_bindings.primary_model().to_string(),
+            explicit_reasoning: preselection_needs_reasoning,
+            finite_accounting_requires_proven_image_bound,
         });
 
         // Capture the resolved model id so the final RunDoneWithUsage event can
         // report which model actually answered (moved into the spawned task below).
         let run_model = run_llm_config.model.clone();
-        // Whether to compute per-request cost (captured before run_llm_config moves).
+        // The effective run setting still controls terminal cost events and alerts.
         let cost_tracking_enabled = run_llm_config.cost_tracking;
+        // Saved-agent connection resolution can omit the operator's metric setting.
+        let cost_metric_model = (self.llm_config.cost_tracking || cost_tracking_enabled)
+            .then(|| run_llm_config.qualified_model_name());
 
         let sandbox_lease = match self
             .sandbox_operations
@@ -8204,6 +8698,18 @@ impl RunManager {
             return run_id;
         }
 
+        let memory_context_fragment = prompt_fragments
+            .iter()
+            .find(|fragment| fragment.id == "retrieved.memory")
+            .map(crate::uar::runtime::prompt::PromptFragment::marked_content);
+        let memory_context_provenance = memory_context_provenance.or_else(|| {
+            Some(
+                crate::uar::memory::context_builder::MemoryContextProvenance::excluded(
+                    crate::uar::memory::context_builder::MemoryContextStatus::Unavailable,
+                    "memory_selection_provenance_unavailable",
+                ),
+            )
+        });
         let (orchestrator, graph_thread_delegate) = {
             let o = model_bindings
                 .orchestrator(mcp, Arc::clone(&native_skills))
@@ -8216,9 +8722,17 @@ impl RunManager {
                 .with_resilience_policy(turn_resilience_policy)
                 .with_tool_admission(Arc::clone(&tool_admission))
                 .with_resolved_turn(Arc::clone(&resolved_turn))
+                .with_memory_context_observation(
+                    memory_context_provenance.clone(),
+                    memory_context_fragment,
+                )
                 .with_client_tool_budget(Arc::new(model_bindings.budget().clone()))
                 .with_canonical_receipt_store(self.persistence.clone())
                 .with_secret_scrubber(emitter.secret_scrubber.clone())
+                .with_destination_admission(Arc::clone(&destination_admission))
+                .with_finite_accounting_requires_proven_image_bound(
+                    finite_accounting_requires_proven_image_bound,
+                )
                 .with_team_model_handoff(
                     collaboration_binding
                         .clone()
@@ -8750,7 +9264,19 @@ impl RunManager {
             // Counter for skill evolution — tracks tool completions across the full run.
             let mut tool_call_count: usize = 0;
 
-            // 2. Emit pre-call memory recall hits so the client knows what context was injected.
+            if let Some(provenance) = &memory_context_provenance {
+                emitter
+                    .emit(NormalizedEvent::StatePatch {
+                        run_id: execute_run_id.clone(),
+                        patch: vec![StatePatchOp {
+                            op: "replace".into(),
+                            path: "/memory_context".into(),
+                            value: Some(serde_json::json!(provenance)),
+                        }],
+                    })
+                    .await;
+            }
+            // Selection hits remain distinct from evidence of provider submission.
             if !memory_hits.is_empty() {
                 tracing::debug!(
                     run_id = %execute_run_id,
@@ -8862,6 +9388,14 @@ impl RunManager {
                                 run_id: execute_run_id.clone(), code: "approval_cleanup_unconfirmed".into(),
                                 message: "Cancelled approval state could not be persisted".into(),
                             }).await;
+                        }
+                        let status = if cleanup_failed { crate::session::SessionMessageStatus::Error } else { crate::session::SessionMessageStatus::Cancelled };
+                        execution_session.set_run_history_status(&execute_run_id, status);
+                        dialogue.0.set_run_history_status(&execute_run_id, status);
+                        if let Some(db) = &persistence_for_run && db.save_session(&execution_session).await.is_err() {
+                            // Conversation persistence does not undo confirmed host cleanup.
+                            // A real cleanup failure above remains authoritative Error.
+                            emitter.emit(NormalizedEvent::PresentationDiagnostic { run_id: execute_run_id.clone(), code: "session_persist_failed".into(), message: "Cancelled conversation could not be saved".into() }).await;
                         }
                         if let Some(state) = runs_for_completion.write().await.get_mut(&execute_run_id) {
                             state.run.status = if cleanup_failed { RunStatus::Error } else { RunStatus::Cancelled };
@@ -8983,6 +9517,35 @@ impl RunManager {
                         })
                         .await;
                 }
+                let history_status = if graph_succeeded {
+                    crate::session::SessionMessageStatus::Complete
+                } else {
+                    crate::session::SessionMessageStatus::Error
+                };
+                execution_session.set_run_history_status(&execute_run_id, history_status);
+                dialogue
+                    .0
+                    .set_run_history_status(&execute_run_id, history_status);
+                if let Some(db) = &persistence_for_run
+                    && db.save_session(&execution_session).await.is_err()
+                {
+                    graph_succeeded = false;
+                    execution_session.set_run_history_status(
+                        &execute_run_id,
+                        crate::session::SessionMessageStatus::Error,
+                    );
+                    dialogue.0.set_run_history_status(
+                        &execute_run_id,
+                        crate::session::SessionMessageStatus::Error,
+                    );
+                    emitter
+                        .emit(NormalizedEvent::Error {
+                            run_id: execute_run_id.clone(),
+                            code: "session_persist_failed".into(),
+                            message: "Graph conversation could not be saved".into(),
+                        })
+                        .await;
+                }
                 if let Some(state) = runs_for_completion.write().await.get_mut(&execute_run_id) {
                     state.run.status = if graph_succeeded {
                         RunStatus::Done
@@ -9014,10 +9577,16 @@ impl RunManager {
                 (Option<String>, Option<String>, String),
             > = std::collections::BTreeMap::new();
 
-            // Token usage tracking — accumulated across all LLM calls in this run.
-            let mut total_input_tokens: u32 = 0;
-            let mut total_output_tokens: u32 = 0;
-            let mut total_cache_read_tokens: u32 = 0;
+            // Observe submitted attempts independently from Usage presence, including
+            // retries and openings cancelled before their metadata reaches this loop.
+            let model_usage = crate::llm::orchestrator::ModelUsageObservation::default();
+            let tool_identity_rejected = Arc::new(std::sync::atomic::AtomicBool::new(false));
+            let orchestrator = Arc::new(
+                (*orchestrator)
+                    .clone()
+                    .with_model_usage(model_usage.clone())
+                    .with_tool_identity_rejection(Arc::clone(&tool_identity_rejected)),
+            );
 
             // 2. Execute Orchestrator
             #[cfg(feature = "bauar-native-admission-gate")]
@@ -9498,27 +10067,27 @@ impl RunManager {
                                     calls,
                                 })
                             }
+                            crate::normalized::NormalizedEvent::MemoryContextSubmitted {
+                                memory_ids,
+                                retrieval_method,
+                                request_content_sha256,
+                                model,
+                            } => Some(NormalizedEvent::StatePatch {
+                                run_id: execute_run_id.clone(),
+                                patch: vec![StatePatchOp {
+                                    op: "replace".into(),
+                                    path: "/memory_context".into(),
+                                    value: Some(
+                                        serde_json::json!({"status":"submitted", "reason_code":"memory_content_submitted",
+                                        "retrieval_method":retrieval_method,"memory_ids":memory_ids,
+                                        "evidence_basis":"final_driver_request_and_provider_response",
+                                        "request_content_sha256":request_content_sha256,"model":model}),
+                                    ),
+                                }],
+                            }),
                             crate::normalized::NormalizedEvent::Done => {
                                 orchestrator_completed = true;
                                 None
-                            }
-                            crate::normalized::NormalizedEvent::Usage {
-                                prompt_tokens,
-                                completion_tokens,
-                                total_tokens: _,
-                                cached_tokens,
-                                ..
-                            } => {
-                                total_input_tokens =
-                                    total_input_tokens.saturating_add(prompt_tokens);
-                                total_output_tokens =
-                                    total_output_tokens.saturating_add(completion_tokens);
-                                // CH-06: cache-read tokens are billed at a discounted
-                                // rate (`ModelCost::compute`) — accumulate them so the
-                                // run-level cost estimate below isn't overcharged.
-                                total_cache_read_tokens = total_cache_read_tokens
-                                    .saturating_add(cached_tokens.unwrap_or(0));
-                                None // Accumulate — emit on RunDone
                             }
                             _ => None, // Ignore other events for now
                         };
@@ -9669,6 +10238,12 @@ impl RunManager {
             }
 
             let mut interrupted_fragment = None;
+            if tool_identity_rejected.load(std::sync::atomic::Ordering::Acquire) {
+                // Identity rejection invalidates only the current unvalidated
+                // batch. Validated calls and ordinary interruptions still
+                // retain their recovery evidence.
+                partial_tool_calls.clear();
+            }
             for (_call_index, (id, name, arguments)) in partial_tool_calls {
                 let (Some(id), Some(name)) = (id, name) else {
                     continue;
@@ -9720,15 +10295,6 @@ impl RunManager {
                         accumulated_tool_calls.clone(),
                     )
                 });
-                if let Some(db) = &persistence_for_run
-                    && let Err(error) = db.save_session(&execution_session).await
-                {
-                    tracing::warn!(
-                        run_id = %execute_run_id,
-                        error = %error,
-                        "Failed to persist pending assistant tool turn"
-                    );
-                }
             } else if !accumulated_content.is_empty() {
                 if run_cancelled || run_failed {
                     let fragment = TurnInterrupted {
@@ -9752,15 +10318,6 @@ impl RunManager {
                         })
                     });
                     interrupted_fragment = Some(fragment);
-                    if let Some(db) = &persistence_for_run
-                        && let Err(error) = db.save_session(&execution_session).await
-                    {
-                        tracing::warn!(
-                            run_id = %execute_run_id,
-                            error = %error,
-                            "Failed to persist interrupted assistant turn"
-                        );
-                    }
                 } else {
                     dialogue.record(&execution_session, |history| {
                         history.add_assistant_message(accumulated_content.clone());
@@ -9768,22 +10325,49 @@ impl RunManager {
                 }
             }
 
-            // A successful text-only turn must be durable before its terminal
-            // event. Otherwise a restart silently loses both user and answer.
-            if !run_cancelled
-                && !run_failed
-                && let Some(db) = &persistence_for_run
+            // Commit actual outcome and partial/pending content together before
+            // terminal publication, including cancellation and empty/error turns.
+            let history_status = if run_cancelled {
+                crate::session::SessionMessageStatus::Cancelled
+            } else if run_failed {
+                crate::session::SessionMessageStatus::Error
+            } else {
+                crate::session::SessionMessageStatus::Complete
+            };
+            execution_session.set_run_history_status(&execute_run_id, history_status);
+            dialogue
+                .0
+                .set_run_history_status(&execute_run_id, history_status);
+            if let Some(db) = &persistence_for_run
                 && let Err(error) = db.save_session(&execution_session).await
             {
                 run_failed = true;
-                tracing::warn!(%error, run_id = %execute_run_id, "Failed to persist completed conversation");
-                emitter
-                    .emit(NormalizedEvent::Error {
+                let failed_status = if run_cancelled {
+                    crate::session::SessionMessageStatus::Cancelled
+                } else {
+                    crate::session::SessionMessageStatus::Error
+                };
+                execution_session.set_run_history_status(&execute_run_id, failed_status);
+                dialogue
+                    .0
+                    .set_run_history_status(&execute_run_id, failed_status);
+                tracing::warn!(%error, run_id = %execute_run_id, "Conversation terminal could not be persisted");
+                // Cancellation remains the terminal outcome. A save diagnostic
+                // must not seal native consumers before the final Cancelled.
+                let diagnostic = if run_cancelled {
+                    NormalizedEvent::PresentationDiagnostic {
                         run_id: execute_run_id.clone(),
                         code: "session_persist_failed".into(),
-                        message: "Completed conversation could not be saved".into(),
-                    })
-                    .await;
+                        message: "Conversation terminal could not be saved".into(),
+                    }
+                } else {
+                    NormalizedEvent::Error {
+                        run_id: execute_run_id.clone(),
+                        code: "session_persist_failed".into(),
+                        message: "Conversation terminal could not be saved".into(),
+                    }
+                };
+                emitter.emit(diagnostic).await;
             }
 
             let completed_active_skills = activation_context
@@ -9822,8 +10406,16 @@ impl RunManager {
                 }
             }
 
-            let total_tokens = total_input_tokens.saturating_add(total_output_tokens);
-            let has_usage = total_input_tokens > 0 || total_output_tokens > 0;
+            let usage = model_usage.totals();
+            let has_usage = usage.submitted_calls > 0 || usage.unresolved_calls > 0;
+            let input_usage_tokens = usage.input;
+            let output_usage_tokens = usage.output;
+            let total_tokens = input_usage_tokens
+                .zip(output_usage_tokens)
+                .and_then(|(input, output)| input.checked_add(output));
+            let cache_read_input_tokens = usage.cache_read;
+            let cache_creation_input_tokens = usage.cache_creation;
+            let uncached_input_tokens = usage.uncached_input;
 
             // Preserve run_id before it is moved into the RunDone event below.
             let evolution_run_id = execute_run_id.clone();
@@ -9889,17 +10481,18 @@ impl RunManager {
             }
             // Settle cost for any run that reported usage, cancelled or not, so a
             // cancelled run's spend reaches the durable ledger and the event stream.
-            let cost_usd_estimate = crate::uar::runtime::run_cost::settle_run_cost(
+            let cost_usd_estimate = crate::uar::runtime::run_cost::settle_run_cost_with_metric(
                 crate::uar::runtime::run_cost::RunCostInputs {
                     run_id: &execute_run_id,
                     session_id: execution_session.id(),
                     agent_id: &cost_scope_agent_id,
                     model: &run_model,
-                    input_tokens: total_input_tokens,
-                    output_tokens: total_output_tokens,
-                    cache_read_tokens: total_cache_read_tokens,
+                    input_tokens: input_usage_tokens.unwrap_or(0),
+                    output_tokens: output_usage_tokens.unwrap_or(0),
+                    cache_read_tokens: cache_read_input_tokens.unwrap_or(0),
                     cost_tracking_enabled,
                 },
+                cost_metric_model.as_deref(),
                 &cost_budget_for_run,
                 persistence_for_run.as_ref(),
                 &emitter,
@@ -9908,9 +10501,12 @@ impl RunManager {
             if run_cancelled {
                 tracing::info!(run_id = %execute_run_id, "Run cancelled; emitting terminal Cancelled event");
                 let usage = has_usage.then(|| crate::uar::domain::events::RunUsage {
-                    input_tokens: Some(total_input_tokens),
-                    output_tokens: Some(total_output_tokens),
-                    total_tokens: Some(total_tokens),
+                    input_tokens: input_usage_tokens,
+                    output_tokens: output_usage_tokens,
+                    total_tokens,
+                    cache_read_input_tokens,
+                    cache_creation_input_tokens,
+                    uncached_input_tokens,
                     cost_usd_estimate,
                     model: Some(run_model),
                 });
@@ -9924,9 +10520,12 @@ impl RunManager {
                 emitter
                     .emit(NormalizedEvent::RunDoneWithUsage {
                         run_id: execute_run_id,
-                        input_tokens: Some(total_input_tokens),
-                        output_tokens: Some(total_output_tokens),
-                        total_tokens: Some(total_tokens),
+                        input_tokens: input_usage_tokens,
+                        output_tokens: output_usage_tokens,
+                        total_tokens,
+                        cache_read_input_tokens,
+                        cache_creation_input_tokens,
+                        uncached_input_tokens,
                         cost_usd_estimate,
                         model: Some(run_model),
                     })
@@ -10389,6 +10988,118 @@ impl RunManager {
             .then_some(run)
     }
 
+    /// Join a logical receipt to its original durable admission, including
+    /// receipts reserved before the host captured the native artifact identity.
+    /// No catalog lookup may replace missing original admission proof.
+    #[cfg(feature = "server")]
+    pub(crate) async fn a2ui_action_binding(
+        &self,
+        user: &crate::uar::security::claims::UserContext,
+        receipt: &crate::uar::persistence::a2ui_actions::A2uiActionReceipt,
+    ) -> Option<crate::uar::persistence::agui_runs::AguiRunBinding> {
+        if user.session_owner_key().ok().as_deref() != Some(receipt.owner.as_str())
+            || receipt.validate().is_err()
+        {
+            return None;
+        }
+        let original = receipt.wire_binding.as_ref()?;
+        let db = self.persistence.as_ref()?;
+        let admitted = db.load_agui_run(&original.owner, &original.agent_id,
+            &original.thread_id, &original.wire_run_id).await.ok()??;
+        admitted.validate().ok()?;
+        let same_projection = admitted.revision == original.revision
+            && admitted.terminal == original.terminal;
+        let sealed_projection = original.terminal.is_none() && admitted.terminal.is_some()
+            && original.revision.checked_add(1) == Some(admitted.revision);
+        if !same_projection && !sealed_projection {
+            return None;
+        }
+        let mut identity = admitted.clone();
+        identity.revision = original.revision;
+        identity.terminal = original.terminal.clone();
+        // Native identity is captured after receipt reservation, before dispatch.
+        // An already captured snapshot can never be changed by this join.
+        if original.native_agent_id.is_none() {
+            identity.native_agent_id = None;
+        }
+        if &identity != original {
+            return None;
+        }
+        let native_agent = crate::uar::api::agui::admitted_agent(&admitted).ok()?;
+        let run = self.get_run_for_context(user, &admitted.native_run_id).await?;
+        if run.agent_id != native_agent
+            || run.conversation_id.as_deref() != Some(admitted.session_id.as_str())
+        {
+            return None;
+        }
+        // Declarations must still refer to the exact prior native source in
+        // the same immutable wire conversation, not another owner's history.
+        let sources = db.list_agui_runs(&original.owner, &original.agent_id,
+            &original.thread_id).await.ok()?;
+        let source = sources.iter().find(|source|
+            source.native_run_id == receipt.source_run_id
+                && source.ordinal < admitted.ordinal
+                && source.owner == admitted.owner
+                && source.agent_id == admitted.agent_id
+                && source.thread_id == admitted.thread_id
+                && source.session_id == admitted.session_id
+                && source.workspace_id == admitted.workspace_id
+                && source.terminal.is_some())?;
+        source.validate().ok()?;
+        let source_agent = crate::uar::api::agui::admitted_agent(source).ok()?;
+        let source_run = self.get_run_for_context(user, &source.native_run_id).await?;
+        if source_run.agent_id != source_agent
+            || source_run.conversation_id.as_deref() != Some(source.session_id.as_str())
+        {
+            return None;
+        }
+        Some(admitted)
+    }
+
+    /// Immutable action admission is not evidence of an executing producer.
+    /// Match the original continuation's owner, agent and conversation before
+    /// exposing terminal history; durable nonterminal history stays uncertain.
+    #[cfg(feature = "server")]
+    pub(crate) async fn a2ui_action_outcome(
+        &self,
+        user: &crate::uar::security::claims::UserContext,
+        receipt: &crate::uar::persistence::a2ui_actions::A2uiActionReceipt,
+    ) -> &'static str {
+        if user.session_owner_key().ok().as_deref() != Some(receipt.owner.as_str()) {
+            return "uncertain";
+        }
+        let native_agent = if receipt.wire_binding.is_some() {
+            let Some(binding) = self.a2ui_action_binding(user, receipt).await else {
+                return "uncertain";
+            };
+            match crate::uar::api::agui::admitted_agent(&binding) {
+                Ok(agent) => agent.to_owned(),
+                Err(_) => return "uncertain",
+            }
+        } else {
+            receipt.agent_id.clone()
+        };
+        let run = self
+            .get_run_for_context(user, &receipt.continuation_run_id)
+            .await
+            .filter(|run| {
+                run.agent_id == native_agent
+                    && run.conversation_id.as_deref() == Some(receipt.thread_id.as_str())
+            });
+        let resident = self
+            .has_resident_run_for_context(user, &receipt.continuation_run_id)
+            .await;
+        match run.map(|run| run.status) {
+            Some(RunStatus::Done) => "completed",
+            Some(RunStatus::Error) => "failed",
+            Some(RunStatus::Cancelled) => "cancelled",
+            Some(RunStatus::Pending | RunStatus::Running | RunStatus::Paused) if resident => {
+                "running"
+            }
+            Some(_) | None => "uncertain",
+        }
+    }
+
     /// List runs visible to the exact middleware-verified subject and tenant.
     ///
     /// This is intentionally the same ownership predicate as
@@ -10495,8 +11206,31 @@ impl RunManager {
     /// Handles stay in their slots across await so cancellation cannot detach work.
     pub(crate) async fn await_settled_run_status(&self, run_id: &str) -> anyhow::Result<RunStatus> {
         anyhow::ensure!(self.get_run(run_id).await.is_some(), "source_run_not_found");
+        self.await_retained_run_cleanup(run_id).await?;
+        // Joining establishes settlement for this waiter. A concurrent waiter
+        // may now hold the same producer slot for an idempotent join; probing
+        // that mutex with try_lock would incorrectly revoke this proof.
+        let status = self
+            .get_run(run_id)
+            .await
+            .ok_or_else(|| anyhow::anyhow!("run_settlement_unconfirmed"))?
+            .status;
+        anyhow::ensure!(
+            matches!(
+                status,
+                RunStatus::Done | RunStatus::Error | RunStatus::Cancelled
+            ),
+            "run_settlement_unconfirmed"
+        );
+        Ok(status)
+    }
+
+    /// Join any locally retained producer and graph root after ingress has
+    /// authenticated the exact native run. Absence of handles is not proof of
+    /// historical cleanup: this helper deliberately returns no run status.
+    pub(crate) async fn await_retained_run_cleanup(&self, run_id: &str) -> anyhow::Result<()> {
         let producer = self.checkpoint_producers.lock().await.get(run_id).cloned();
-        let joined = async {
+        let producer_result = async {
             if let Some(producer) = producer {
                 let mut producer = producer.lock().await;
                 match &mut *producer {
@@ -10518,32 +11252,18 @@ impl RunManager {
                     CheckpointProducer::Actor(root) => root.finish().await?,
                 }
             }
-            self.graph_roots.join_run(run_id).await?;
             Ok::<(), anyhow::Error>(())
         }
         .await;
-        if let Err(error) = joined {
+        // A failed producer join must not skip a separately retained graph root.
+        let graph_result = self.graph_roots.join_run(run_id).await;
+        if let Err(error) = producer_result.and(graph_result) {
             if let Some(state) = self.active_runs.write().await.get_mut(run_id) {
                 state.run.status = RunStatus::Error;
             }
             return Err(error);
         }
-        // Joining establishes settlement for this waiter. A concurrent waiter
-        // may now hold the same producer slot for an idempotent join; probing
-        // that mutex with try_lock would incorrectly revoke this proof.
-        let status = self
-            .get_run(run_id)
-            .await
-            .ok_or_else(|| anyhow::anyhow!("run_settlement_unconfirmed"))?
-            .status;
-        anyhow::ensure!(
-            matches!(
-                status,
-                RunStatus::Done | RunStatus::Error | RunStatus::Cancelled
-            ),
-            "run_settlement_unconfirmed"
-        );
-        Ok(status)
+        Ok(())
     }
 
     pub async fn get_run_for_owner(
@@ -10673,9 +11393,13 @@ pub struct EffectiveConfig {
 mod native_identity_tests {
     use super::*;
     use crate::llm::mock_driver::MockLlmDriver;
+    use crate::llm::registry::{ModelConfig, ProtocolSetting, ProviderConfig, ProviderRegistry};
     use crate::normalized::NormalizedEvent as ProviderEvent;
     use crate::uar::persistence::{PersistenceLayer, providers::memory::InMemoryProvider};
     use crate::uar::runtime::native_skill::NativeSkill;
+    use crate::uar::runtime::skills::service::{
+        SkillMatchingAlgorithm, SkillMatchingConfig, SkillMatchingEngine,
+    };
     use crate::uar::tools::descriptor::ToolEffect;
     use futures::FutureExt;
     use serde_json::{Value, json};
@@ -10792,6 +11516,49 @@ mod native_identity_tests {
 
     async fn exercise_manager(batch: Vec<ProviderEvent>, parallel: bool, succeeds: bool) {
         let store: Arc<dyn PersistenceLayer> = Arc::new(InMemoryProvider::new());
+        let skill_service = Arc::new(SkillService::new(Some(Arc::clone(&store)), None));
+        skill_service
+            .set_matching_config(SkillMatchingConfig {
+                engine: SkillMatchingEngine::Service,
+                algorithm: SkillMatchingAlgorithm::Keyword,
+                ..SkillMatchingConfig::default()
+            })
+            .await;
+        let llm_config = LlmConfig {
+            model: "openai/gpt-4o".into(),
+            api_key: Some("identity-fixture-key".into()),
+            cost_tracking: false,
+            parallel_tool_calls: Some(parallel),
+            ..LlmConfig::default()
+        };
+        let providers = Arc::new(ProviderRegistry::new());
+        providers.set_llm_defaults(&llm_config).await;
+        providers
+            .register(ProviderConfig {
+                id: "openai".into(),
+                display_name: "Native identity fixture".into(),
+                base_url: "http://127.0.0.1:1/v1".into(),
+                api_key: llm_config.api_key.clone(),
+                protocol: ProtocolSetting::Chat,
+                default_model: Some("gpt-4o".into()),
+                models: vec![ModelConfig {
+                    id: "gpt-4o".into(),
+                    pricing_identity: None,
+                    execution_profile: None,
+                    display_name: None,
+                    context_window: None,
+                    supports_vision: false,
+                    supports_tools: true,
+                    supports_reasoning: false,
+                    supports_structured_output: false,
+                    supports_streaming: true,
+                    max_output_tokens: None,
+                    enabled: true,
+                }],
+                enabled: true,
+            })
+            .await
+            .expect("register the fixture's tool-capable destination");
         let sessions = SessionStore::new();
         let calls = Arc::new(AtomicUsize::new(0));
         let skills = Arc::new(NativeSkillRegistry::new());
@@ -10809,16 +11576,10 @@ mod native_identity_tests {
             ],
         ]));
         let manager = RunManager::new(
-            LlmConfig {
-                model: "openai/gpt-4o".into(),
-                api_key: Some("identity-fixture-key".into()),
-                cost_tracking: false,
-                parallel_tool_calls: Some(parallel),
-                ..LlmConfig::default()
-            },
+            llm_config,
             Arc::new(McpRegistry::new_empty()),
             sessions.clone(),
-            Arc::new(RwLock::new(SkillRegistry::new(None, None))),
+            Arc::clone(skill_service.registry()),
             Arc::new(crate::uar::runtime::matching::VectorMatcher::new(
                 Arc::new(
                     crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
@@ -10835,6 +11596,8 @@ mod native_identity_tests {
             Some(Arc::clone(&store)),
         )
         .await
+        .with_skill_service(skill_service)
+        .with_provider_registry(providers)
         .with_native_skills(skills)
         .with_llm_driver(driver.clone());
 
@@ -10843,18 +11606,23 @@ mod native_identity_tests {
         let outcome = AssertUnwindSafe(async {
             tokio::time::timeout(WAIT, async {
                 let mut artifact = crate::uar::defaults::default_agent();
+                artifact.policy.provider.default.provider = "openai".into();
+                artifact.policy.provider.default.model = "gpt-4o".into();
                 artifact.extensions.insert("uar.run_policy".into(), json!({"version":1,
                     "tool_approval": if succeeds { ToolApprovalPolicy::Auto } else { ToolApprovalPolicy::Ask }}));
                 let mut request = crate::uar::runtime::turn::RunExecutionRequest::new(artifact, "identity fixture".into());
                 request.session_id = Some("native-identity-conversation".into());
                 let run_id = manager.execute_request(request).await;
+                let is_completion = |event: &StreamEvent| matches!(event.event,
+                    NormalizedEvent::RunDone { .. } | NormalizedEvent::RunDoneWithUsage { .. });
                 let events = loop {
                     let events = manager.history_since(&run_id, None).await.expect("real run history");
-                    if events.iter().any(|event| matches!(event.event, NormalizedEvent::RunDone { .. })) {
+                    if events.iter().any(is_completion) {
                         break events;
                     }
                     tokio::task::yield_now().await;
                 };
+                assert_eq!(events.iter().filter(|event| is_completion(event)).count(), 1);
                 let (dialogue, conversation_id, owner) = {
                     let runs = manager.active_runs.read().await;
                     let state = runs.get(&run_id).expect("executed run remains retained");
@@ -10863,10 +11631,15 @@ mod native_identity_tests {
                 let conversation = sessions.get_for_user(&conversation_id, &owner).expect("real retained conversation").messages();
                 let receipts = store.list_canonical_tool_receipts(&owner, &run_id).await.unwrap();
                 let requests = driver.requests();
+                let error_codes = events.iter().filter_map(|event| match &event.event {
+                    NormalizedEvent::Error { code, .. } => Some(code.as_str()),
+                    _ => None,
+                }).collect::<Vec<_>>();
                 assert!(events.iter().all(|event| !matches!(event.event,
                     NormalizedEvent::ToolCallApprovalRequired { .. } | NormalizedEvent::ToolCallDenied { .. })));
                 if succeeds {
-                    assert!(events.iter().all(|event| !matches!(event.event, NormalizedEvent::Error { .. })));
+                    assert!(events.iter().all(|event| !matches!(event.event, NormalizedEvent::Error { .. })),
+                        "unexpected errors {error_codes:?} after {} provider requests", requests.len());
                     let starts = events.iter().enumerate().filter_map(|(position, event)| match &event.event {
                         NormalizedEvent::ToolStart { call_index, tool_call_id, tool, input, .. } =>
                             Some((position, *call_index, tool_call_id.as_str(), tool.as_str(), input.clone())),
@@ -10912,7 +11685,8 @@ mod native_identity_tests {
                     }
                 } else {
                     assert!(events.iter().any(|event| matches!(&event.event,
-                        NormalizedEvent::Error { code, .. } if code == "provider_stream_failed")));
+                        NormalizedEvent::Error { code, .. } if code == "provider_stream_failed")),
+                        "expected provider_stream_failed, got {error_codes:?} after {} provider requests", requests.len());
                     assert!(events.iter().all(|event| !matches!(event.event,
                         NormalizedEvent::ToolStart { .. } | NormalizedEvent::ToolEnd { .. })));
                     assert_dialogue_pairs(&dialogue, &[]);
@@ -11335,5 +12109,154 @@ mod credential_layer_tests {
         .expect("config source decision");
         assert_eq!(config.api_key.as_deref(), Some("configured-key"));
         assert!(config.host_supplied_connection);
+    }
+}
+
+#[cfg(test)]
+mod retained_terminal_cleanup_tests {
+    use super::*;
+    use crate::uar::rag::embeddings::{UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend};
+    use crate::uar::runtime::matching::VectorMatcher;
+
+    async fn manager() -> RunManager {
+        RunManager::new(
+            LlmConfig::default(), Arc::new(McpRegistry::new_empty()), SessionStore::new(),
+            Arc::new(RwLock::new(SkillRegistry::default())),
+            Arc::new(VectorMatcher::new(Arc::new(SwappableEmbeddingBackend::new(Arc::new(
+                UnavailableEmbeddingBackend::new(384, "cleanup regression does not embed"),
+            ))), 0.75)), None,
+        ).await
+    }
+
+    async fn resident_terminal(manager: &RunManager) {
+        let (sender, _) = broadcast::channel(8);
+        manager.active_runs.write().await.insert("owned".into(), RunStreamState {
+            run: Run { run_id: "owned".into(), agent_id: "agent".into(),
+                conversation_id: Some("session".into()), user_id: None,
+                status: RunStatus::Done, context: serde_json::json!({}) },
+            caller_handoff_confirmation: Arc::new(Mutex::new(())), approval_root_run_id: None,
+            verified_owner: None, presentations: None,
+            dialogue: RunDialogue(SessionStore::new().get_or_create_for_user("session", "anonymous")),
+            sender, history: Arc::new(Mutex::new(EventHistory {
+                next_id: 1, buffer: VecDeque::new(), presentation: None,
+                latest_presentation: None, pending_client_handoff: None, client_handoff_failed: false,
+            })), completion: None, delegation: None, tool_admission: None,
+            actor_spawn_descriptor: None, actor_tool_approval: None, started_at: Instant::now(),
+            terminal_at: None, last_detached_at: None,
+        });
+    }
+
+    #[tokio::test]
+    async fn resident_terminal_waits_for_outer_producer_and_cancelled_join_retains_handle() {
+        let manager = manager().await;
+        resident_terminal(&manager).await;
+        let (release, held) = oneshot::channel();
+        let handle = tokio::spawn(async move { held.await.unwrap(); });
+        let slot = Arc::new(Mutex::new(CheckpointProducer::Ordinary(Some(handle))));
+        manager.checkpoint_producers.lock().await.insert("owned".into(), slot.clone());
+        {
+            let wait = manager.await_settled_run_status("owned");
+            tokio::pin!(wait);
+            assert!(futures::poll!(wait.as_mut()).is_pending());
+            // Dropping this waiter releases the lock without detaching the
+            // still-held producer. A later observer must join the same handle.
+        }
+        assert!(matches!(&*slot.lock().await, CheckpointProducer::Ordinary(Some(_))));
+        assert!(manager.settled_run_status("owned").await.is_none());
+        release.send(()).unwrap();
+        assert_eq!(manager.await_settled_run_status("owned").await.unwrap(), RunStatus::Done);
+        assert!(matches!(&*slot.lock().await, CheckpointProducer::Ordinary(None)));
+        assert_eq!(manager.await_settled_run_status("owned").await.unwrap(), RunStatus::Done);
+        manager.shutdown_lifecycle().await;
+    }
+
+    #[tokio::test]
+    async fn absent_resident_row_still_joins_retained_owned_producer_without_claiming_status() {
+        let manager = manager().await;
+        let (release, held) = oneshot::channel();
+        let completed = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let producer_completed = completed.clone();
+        let handle = tokio::spawn(async move {
+            held.await.unwrap();
+            producer_completed.store(true, std::sync::atomic::Ordering::SeqCst);
+        });
+        manager.checkpoint_producers.lock().await.insert("historical".into(),
+            Arc::new(Mutex::new(CheckpointProducer::Ordinary(Some(handle)))));
+        assert!(manager.get_run("historical").await.is_none());
+        let wait = manager.await_retained_run_cleanup("historical");
+        tokio::pin!(wait);
+        assert!(futures::poll!(wait.as_mut()).is_pending());
+        assert!(!completed.load(std::sync::atomic::Ordering::SeqCst));
+        release.send(()).unwrap();
+        wait.await.unwrap();
+        assert!(completed.load(std::sync::atomic::Ordering::SeqCst));
+        assert!(manager.get_run("historical").await.is_none());
+        assert!(manager.await_settled_run_status("historical").await.is_err());
+        manager.shutdown_lifecycle().await;
+    }
+
+    #[tokio::test]
+    async fn failed_retained_producer_cannot_report_resident_success() {
+        let manager = manager().await;
+        resident_terminal(&manager).await;
+        let handle = tokio::spawn(async { panic!("owned producer failure"); });
+        manager.checkpoint_producers.lock().await.insert("owned".into(),
+            Arc::new(Mutex::new(CheckpointProducer::Ordinary(Some(handle)))));
+        assert!(manager.await_settled_run_status("owned").await.is_err());
+        assert_eq!(manager.get_run("owned").await.unwrap().status, RunStatus::Error);
+        assert_eq!(manager.await_settled_run_status("owned").await.unwrap(), RunStatus::Error);
+        manager.shutdown_lifecycle().await;
+    }
+}
+
+#[cfg(test)]
+mod surface_publication_identity_tests {
+    use super::*;
+
+    #[test]
+    fn actual_history_publication_replaces_producer_claim_before_retention_and_fanout() {
+        let mut history = EventHistory {
+            next_id: 17, buffer: VecDeque::new(), presentation: None,
+            latest_presentation: None, pending_client_handoff: None, client_handoff_failed: false,
+        };
+        let (sender, mut receiver) = broadcast::channel(8);
+        let content = serde_json::json!({"version":"v0.9","updateDataModel":{
+            "surfaceId":"ticket","path":"/answer","value":"updated"
+        }}).to_string();
+        let event = NormalizedEvent::ArtifactDisplay {
+            run_id: "actual-source".into(), artifact: ArtifactPayload {
+                artifact_id: "native-artifact".into(), artifact_type: "a2ui".into(),
+                title: "surface".into(), content, language: None,
+                metadata: serde_json::json!({"surface_generations":{"ticket":"producer-claim","foreign":"claim"}}),
+            },
+        };
+        let published = history.publish("actual-source", event, &sender, None);
+        let expected = crate::uar::a2ui::protocol::surface_generation("actual-source", 17, "ticket");
+        let NormalizedEvent::ArtifactDisplay { artifact, .. } = &published.event else { unreachable!() };
+        assert_eq!(artifact.metadata["surface_generations"], serde_json::json!({"ticket":expected}));
+        let retained = history.buffer.back().unwrap();
+        let fanout = receiver.try_recv().unwrap();
+        assert_eq!(retained.id, 17);
+        assert_eq!(fanout.id, 17);
+        let serialized = serde_json::to_value(&published.event).unwrap();
+        assert_eq!(serde_json::to_value(&retained.event).unwrap(), serialized);
+        assert_eq!(serde_json::to_value(&fanout.event).unwrap(), serialized);
+        // Durable/session replay consumes the original event, never the current cursor.
+        let recovered: NormalizedEvent = serde_json::from_value(serialized.clone()).unwrap();
+        assert_eq!(serde_json::to_value(recovered).unwrap(), serialized);
+
+        let update = NormalizedEvent::StatePatch { run_id: "actual-source".into(), patch: vec![
+            StatePatchOp { op: "replace".into(), path: "/a2ui/surfaces/ticket/dataModel".into(),
+                value: Some(serde_json::json!({"path":"/answer","value":"newer"})) },
+            StatePatchOp { op: "add".into(), path: "/a2ui/surface_generations/ticket".into(),
+                value: Some(serde_json::json!("producer-claim")) },
+        ]};
+        let update = history.publish("actual-source", update, &sender, None);
+        let NormalizedEvent::StatePatch { patch, .. } = update.event else { unreachable!() };
+        let stamps: Vec<_> = patch.iter().filter(|op| op.path == "/a2ui/surface_generations/ticket").collect();
+        assert_eq!(stamps.len(), 1);
+        assert_eq!(stamps[0].value, Some(serde_json::json!(
+            crate::uar::a2ui::protocol::surface_generation("actual-source", 18, "ticket"))));
+        assert_ne!(expected, crate::uar::a2ui::protocol::surface_generation("actual-source", 18, "ticket"));
     }
 }

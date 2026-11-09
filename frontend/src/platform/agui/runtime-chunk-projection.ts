@@ -1,5 +1,6 @@
 import type { Chunk, SkillActivationChunk } from "@/shared/content/chunk";
 import { agentSelectionChunk } from "@/shared/content/agent-selection";
+import { artifactDisplayChunk } from "@/shared/content/artifact-display";
 
 import type { UarAguiEvent } from "./agui-schema";
 
@@ -24,6 +25,17 @@ function text(value: unknown, fallback = ""): string {
 
 function number(value: unknown, fallback = 0): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+/** The numeric summary cannot represent independently unavailable counters. */
+export function completeAguiUsage(usage: Record<string, unknown> | undefined): {
+  inputTokens: number; outputTokens: number; totalTokens: number;
+} | undefined {
+  const { inputTokens, outputTokens, totalTokens } = usage ?? {};
+  if (typeof inputTokens !== "number" || !Number.isFinite(inputTokens)
+    || typeof outputTokens !== "number" || !Number.isFinite(outputTokens)
+    || typeof totalTokens !== "number" || !Number.isFinite(totalTokens)) return undefined;
+  return { inputTokens, outputTokens, totalTokens };
 }
 
 function selectionMethod(value: unknown): SkillActivationChunk["selectionMethod"] {
@@ -72,18 +84,29 @@ export function toRuntimeChunk(event: UarAguiEvent, receivedAt: number): Chunk |
       return { ...base, kind: "step", name: text(event.stepName, text(event.name, "Step")), status: event.type === "STEP_STARTED" ? "started" : "finished", durationMs: typeof event.durationMs === "number" ? event.durationMs : undefined };
     case "RUN_FINISHED": {
       const usage = record(record(event.result).usage);
+      const counts = completeAguiUsage(usage);
+      if (!counts) return { ...base, kind: "raw", type: event.type, payload: event };
       return {
         ...base,
         kind: "usage",
-        inputTokens: number(usage.inputTokens),
-        outputTokens: number(usage.outputTokens),
-        totalTokens: number(usage.totalTokens),
+        ...counts,
         costUsd: typeof usage.costUsdEstimate === "number" ? usage.costUsdEstimate : undefined,
         model: typeof usage.model === "string" ? usage.model : undefined,
       };
     }
-    case "RUN_ERROR":
+    case "RUN_ERROR": {
+      if (event.code === "CANCELLED") {
+        const usage = record(record(event.result).usage);
+        const counts = completeAguiUsage(usage);
+        if (counts) {
+          return { ...base, kind: "usage", ...counts,
+            costUsd: typeof usage.costUsdEstimate === "number" ? usage.costUsdEstimate : undefined,
+            model: typeof usage.model === "string" ? usage.model : undefined };
+        }
+        return { ...base, kind: "raw", type: event.type, payload: event };
+      }
       return { ...base, kind: "error", message: text(event.message, "Run failed"), code: typeof event.code === "string" ? event.code : undefined };
+    }
     case "RAW":
     case "MESSAGES_SNAPSHOT":
       return { ...base, kind: "raw", type: event.type, payload: event };
@@ -166,14 +189,12 @@ function customChunk(
     case "uar.tool.denied":
       return { ...base, kind: "tool-denied", toolCallId: text(value.tool_call_id, text(value.toolCallId, event.eventId)), toolName: text(value.tool_name, text(value.toolName, text(value.name, "Tool"))), reason: text(value.reason, "Denied by policy"), policy: text(value.policy) || undefined };
     case "uar.artifact.available": {
-      const profile = text(value.profile);
-      if (profile.startsWith("a2ui")) {
-        return { ...base, kind: "a2ui-display", profile, component: text(value.component, text(value.artifact_type, "surface")), version: text(value.version) || undefined, payload: value.payload ?? value, validation: value.validation === "invalid" || value.validation === "unknown-component" ? value.validation : "valid", validationError: text(value.validation_error, text(value.validationError)) || undefined };
-      }
-      return { ...base, kind: "artifact", artifactId: text(value.artifact_id, text(value.artifactId, event.eventId)), title: text(value.title) || undefined, mime: text(value.mime, text(value.artifact_type, "application/octet-stream")), content: typeof value.content === "string" ? value.content : JSON.stringify(value.content ?? value), url: text(value.url) || undefined, bytes: typeof value.bytes === "number" ? value.bytes : undefined };
+      const display = artifactDisplayChunk(value, base);
+      if (display) return display;
+      return { ...base, kind: "artifact", artifactId: text(value.artifact_id, text(value.artifactId, event.eventId)), title: text(value.title) || undefined, mime: text(value.mime, text(value.artifactType, text(value.artifact_type, "application/octet-stream"))), content: typeof value.content === "string" ? value.content : JSON.stringify(value.content ?? value), url: text(value.url) || undefined, bytes: typeof value.bytes === "number" ? value.bytes : undefined };
     }
     case "uar.artifact.input_required":
-      return { ...base, kind: "a2ui-input", profile: text(value.profile, "a2ui/v0.9"), component: text(value.component, text(value.artifact_type, "input")), requestId: text(value.request_id, text(value.requestId, event.eventId)), payload: value.payload ?? value, status: "awaiting" };
+      return { ...base, kind: "a2ui-input", profile: text(value.profile, "a2ui/v0.9"), component: text(value.component, text(value.artifactType, text(value.artifact_type, "input"))), requestId: text(value.request_id, text(value.requestId, event.eventId)), payload: value.payload ?? value, status: "awaiting" };
     default:
       return { ...base, kind: "raw", type: name, payload: event.value };
   }

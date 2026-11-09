@@ -10,8 +10,16 @@
 //! doesn't use since it drives its own `main()` via the Cucumber runner).
 #[path = "integration/live"]
 mod live {
+    #[expect(
+        dead_code,
+        reason = "the shared run_scoped and finish_case cleanup methods serve libtest cases"
+    )]
     #[path = "harness.rs"]
     pub mod harness;
+    #[expect(
+        dead_code,
+        reason = "the shared delay and prompt-prefix fixtures serve other live targets"
+    )]
     #[path = "stub_llm.rs"]
     pub mod stub_llm;
 }

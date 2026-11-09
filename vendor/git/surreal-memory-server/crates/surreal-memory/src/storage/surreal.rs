@@ -793,7 +793,7 @@ impl SurrealStorage {
                     .as_ref()
                     .context("Embedded path required for embedded mode")?;
                 tracing::info!("Connecting to embedded SurrealDB at: {}", path);
-                surrealdb::engine::any::connect((format!("rocksdb://{}", path), sdk_config)).await?
+                surrealdb::engine::any::connect((format!("surrealkv://{}", path), sdk_config)).await?
             }
             SurrealMode::Server => {
                 let endpoint = config

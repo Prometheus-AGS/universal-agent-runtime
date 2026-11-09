@@ -37,6 +37,10 @@ Resuming a run SHALL restore the checkpoint's stored state, messages, protected 
 - **WHEN** a checkpoint contains previously truncated tool data or data no longer authorized for use
 - **THEN** the runtime reports incomplete history or blocked authorization, never reconstructs missing bytes, and does not dispatch revoked content
 
+#### Scenario: Resume without verified admission evidence
+- **WHEN** a resume request has only raw checkpoint metadata without verified admission evidence, including a row with a mismatched authorization digest, or enters through the legacy path without verified admission
+- **THEN** the runtime refuses the resume without executing the graph, calling the model provider, or mutating the existing conversation history
+
 ## REMOVED Requirements
 
 ### Requirement: Every tool call has exactly one tool result before dispatch

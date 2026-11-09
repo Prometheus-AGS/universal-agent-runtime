@@ -1,0 +1,13 @@
+{
+  "role": "rust-reviewer",
+  "status": "WORKFLOW_BLOCKED_NO_REVIEW",
+  "requiredByRole": [
+    "cargo check",
+    "cargo clippy -- -D warnings",
+    "cargo fmt --check",
+    "cargo test"
+  ],
+  "reason": "Role mandatory broad execution conflicts with explicitly scoped source-only task and lead-owned serial phase-exit packet. No commands executed.",
+  "fallback": "Fresh-context native artifact-critic; same-family weaker isolation labelled. This does not count as specialized Rust role approval.",
+  "productionEdit": false
+}

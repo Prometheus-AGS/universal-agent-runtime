@@ -1,4 +1,6 @@
-use crate::uar::rag::embeddings::{EmbeddingBackend, EmbeddingConfig, EmbeddingError};
+use crate::uar::rag::embeddings::{
+    EmbeddingBackend, EmbeddingBatch, EmbeddingConfig, EmbeddingError, EmbeddingTokenUsage,
+};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -57,8 +59,15 @@ impl EmbeddingBackend for VoyageEmbeddingBackend {
     }
 
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+        Ok(self.embed_with_usage(texts).await?.vectors)
+    }
+
+    async fn embed_with_usage(&self, texts: &[&str]) -> Result<EmbeddingBatch, EmbeddingError> {
         if texts.is_empty() {
-            return Ok(vec![]);
+            return Ok(EmbeddingBatch {
+                vectors: Vec::new(),
+                usage: EmbeddingTokenUsage::default(),
+            });
         }
 
         let body = VoyageRequest {
@@ -73,25 +82,56 @@ impl EmbeddingBackend for VoyageEmbeddingBackend {
             .json(&body)
             .send()
             .await
-            .map_err(|e| EmbeddingError::RequestFailed(format!("HTTP request failed: {e}")))?;
+            .map_err(|_| {
+                EmbeddingError::RequestFailed("Embedding provider transport failed".into())
+            })?;
 
         let status = resp.status();
         if !status.is_success() {
-            let text = resp
-                .text()
-                .await
-                .unwrap_or_else(|_| "<unreadable>".to_string());
             return Err(EmbeddingError::RequestFailed(format!(
-                "Voyage returned {status}: {text}"
+                "Embedding provider returned HTTP {}",
+                status.as_u16()
             )));
         }
 
-        let resp: VoyageResponse = resp
-            .json()
-            .await
-            .map_err(|e| EmbeddingError::RequestFailed(format!("failed to parse response: {e}")))?;
+        let resp: VoyageResponse = resp.json().await.map_err(|_| {
+            EmbeddingError::RequestFailed(
+                "Embedding provider returned invalid JSON or fields".into(),
+            )
+        })?;
 
-        Ok(resp.data.into_iter().map(|d| d.embedding).collect())
+        let mut data = resp.data;
+        if data.len() != texts.len() {
+            return Err(EmbeddingError::RequestFailed(
+                "Embedding provider returned an incomplete batch".into(),
+            ));
+        }
+        data.sort_by_key(|item| item.index);
+        for (index, item) in data.iter().enumerate() {
+            if item.index != index {
+                return Err(EmbeddingError::RequestFailed(
+                    "Embedding provider returned invalid batch indices".into(),
+                ));
+            }
+            if item.embedding.len() != self.vector_dimension {
+                return Err(EmbeddingError::DimensionMismatch {
+                    expected: self.vector_dimension,
+                    actual: item.embedding.len(),
+                });
+            }
+            if item.embedding.iter().any(|value| !value.is_finite()) {
+                return Err(EmbeddingError::RequestFailed(
+                    "Embedding provider returned a non-finite vector".into(),
+                ));
+            }
+        }
+        Ok(EmbeddingBatch {
+            vectors: data.into_iter().map(|item| item.embedding).collect(),
+            usage: EmbeddingTokenUsage {
+                total_tokens: resp.usage.and_then(|usage| usage.total_tokens),
+                ..EmbeddingTokenUsage::default()
+            },
+        })
     }
 }
 
@@ -104,10 +144,18 @@ struct VoyageRequest {
 #[derive(Deserialize)]
 struct VoyageResponse {
     data: Vec<VoyageEmbedding>,
+    #[serde(default)]
+    usage: Option<VoyageUsage>,
+}
+
+#[derive(Deserialize)]
+struct VoyageUsage {
+    total_tokens: Option<u64>,
 }
 
 #[derive(Deserialize)]
 struct VoyageEmbedding {
+    index: usize,
     embedding: Vec<f32>,
 }
 

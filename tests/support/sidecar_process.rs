@@ -13,11 +13,10 @@
 pub mod approval_events;
 pub use approval_events::approval_ids;
 
-use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
 use tokio::process::Child;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use serde_json::Value;
 use tokio::io::{AsyncBufReadExt as _, AsyncReadExt as _, AsyncWriteExt as _};

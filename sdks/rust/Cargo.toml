@@ -41,7 +41,7 @@ webpki-root-certs = { version = "=1.0.11", optional = true }
 liter-llm = { path = "../../vendor/git/liter-llm/crates/liter-llm", features = ["full"], optional = true }
 
 # Embedded mode - re-export the core crate
-universal-agent-runtime = { version = "=1.4.0-rc.2", path = "../..", optional = true, default-features = false }
+universal-agent-runtime = { version = "=1.4.0-rc.3", path = "../..", optional = true, default-features = false }
 
 [dev-dependencies]
 tokio-test = "0.4"
@@ -65,10 +65,8 @@ required-features = ["ios-acceptance"]
 [patch.crates-io]
 # Match UAR's observed iOS FP16 correction under this independent lockfile.
 gemm-common = { path = "../../vendor/patches/gemm-common-0.19.0" }
-# Independent SDK builds need the same awaited datastore lifecycle as UAR.
-surrealdb = { path = "../../vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0" }
-surrealdb-engine-api = { path = "../../vendor/patches/surrealdb-lifecycle/surrealdb-engine-api-3.3.0" }
-surrealdb-engine-local = { path = "../../vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-3.3.0" }
-surrealdb-core = { path = "../../vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0" }
-surrealdb-kvs-surrealkv = { path = "../../vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-3.3.0" }
-surrealdb-kvs-rocksdb = { path = "../../vendor/patches/surrealdb-lifecycle/surrealdb-kvs-rocksdb-3.3.0" }
+# Independent SDK builds use the same embedded dependency closure as UAR.
+surrealdb = { path = "../../vendor/patches/surrealdb-lifecycle/surrealdb-4.0.0" }
+surrealdb-core = { path = "../../vendor/patches/surrealdb-lifecycle/surrealdb-core-4.0.0" }
+surrealdb-engine-local = { path = "../../vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-4.0.0" }
+surrealdb-kvs-surrealkv = { path = "../../vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-4.0.0" }

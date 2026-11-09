@@ -6,6 +6,10 @@ const CONFLICT: &str = "Provider tool call identity changed within one stream in
 const MISSING: &str = "Provider native tool call identity is missing";
 const DUPLICATE: &str = "Provider native tool call identity is duplicated";
 
+#[derive(Debug, thiserror::Error)]
+#[error("{0}")]
+struct Rejected(&'static str);
+
 pub(super) fn merge(
     current: &mut Option<String>,
     incoming: Option<&str>,
@@ -49,7 +53,17 @@ pub(super) fn validate_native_batch<'a>(
 }
 
 pub(super) fn failure(reason: &'static str) -> anyhow::Error {
-    super::ProviderError::new(None, super::ProviderErrorKind::Stream, None, reason).into()
+    anyhow::Error::new(super::ProviderError::new(
+        None,
+        super::ProviderErrorKind::Stream,
+        None,
+        reason,
+    ))
+    .context(Rejected(reason))
+}
+
+pub(super) fn is_rejection(error: &anyhow::Error) -> bool {
+    error.downcast_ref::<Rejected>().is_some()
 }
 
 #[cfg(test)]
@@ -74,7 +88,14 @@ mod tests {
         assert_eq!(id.as_deref(), Some(" exact-id "));
         assert_eq!(merge(&mut id, Some("different-private-id")), Err(CONFLICT));
         assert_eq!(id.as_deref(), Some(" exact-id "));
-        assert_eq!(failure(CONFLICT).to_string(), CONFLICT);
+        let error = failure(CONFLICT);
+        assert_eq!(error.to_string(), CONFLICT);
+        assert!(is_rejection(&error));
+        assert_eq!(
+            super::super::ProviderError::from_anyhow(&error).unwrap().code(),
+            "provider_stream_failed"
+        );
+        assert!(!is_rejection(&anyhow::anyhow!(CONFLICT)));
     }
 
     #[test]

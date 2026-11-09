@@ -175,7 +175,10 @@ async fn harness(keys: impl FnOnce() -> Vec<Jwk>) -> Harness {
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             Arc::new(RwLock::new(SkillRegistry::default())),
-            Arc::new(VectorMatcher::new(Arc::new(SwappableEmbeddingBackend::new(embeddings)), 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             Some(persistence),
         )
         .await

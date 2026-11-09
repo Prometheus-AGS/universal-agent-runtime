@@ -1,0 +1,10 @@
+{
+  "protocol": "uar.native-chat-admission-fixture/v1",
+  "dedicated": true,
+  "namespace": "native-chat-REPLACE",
+  "identity": { "sourceCommit": "REPLACE_40_HEX", "imageDigest": "sha256:REPLACE_64_HEX", "configDigest": "REPLACE_64_HEX", "platform": "linux/amd64" },
+  "model": "REPLACE_PROVIDER/REPLACE_MODEL",
+  "agents": { "ordinary": "REPLACE_EXTERNALLY_PROVISIONED_AGENT", "effect": "REPLACE_EXTERNALLY_PROVISIONED_GOVERNED_RECORD_AGENT", "approval": "REPLACE_EXTERNALLY_PROVISIONED_APPROVAL_AGENT" },
+  "peer": { "protocol": "uar.native-chat-admission-peer/v1", "journal": "/REPLACE_ABSOLUTE_CREATE_ONLY_PROVIDER_JOURNAL", "recordLog": "/REPLACE_ABSOLUTE_RECORD_MCP_LOG", "toolName": "REPLACE_EXACT_ADVERTISED_GOVERNED_RECORD_WRITE_NAME", "wireModel": "REPLACE_MODEL", "retriesDisabled": true, "fallbacksDisabled": true, "visionEnabled": true },
+  "interrupted": { "sessionId": "REPLACE_EXTERNALLY_CAPTURED_SESSION", "clientTurnId": "REPLACE_ORIGINAL_TURN", "userMessageId": "REPLACE_ORIGINAL_USER", "runId": "REPLACE_ORIGINAL_RUN", "caseId": "REPLACE_ORIGINAL_CASE_UUID", "expectedPartial": "synthetic native partial", "restartCompleted": true }
+}

@@ -7109,6 +7109,41 @@ Branch `fix/batch2-small-fixes` from main `6231f903` (after PR #459). Closed #38
 - Gate 5 attempt 2: the text-parity scenario only (`anthropic-messages-parity.feature:6`).
 - Gate 5 attempt 2 (`scenario-runtime-configuration-002.log`): 4/4 passed, 29/29 steps. Because cucumber-js merges config paths with CLI paths, the run also included the three runtime-configuration scenarios that had already passed, so it was broader than the single failed scenario. All five scenarios have now passed. Doc-only follow-up: `docs/ANTHROPIC_MESSAGES.md` now says the parity feature doesn't compare non-zero usage. Gate complete.
 
+
+## 2026-10-31 — Production readiness #476 baseline
+Created isolated production-readiness-476 worktree from actual HEAD 964e8168, branch codex/production-readiness-476; original dirty fix/batch3-identity preserved. Read tracker/children, KBD/VLBV and evidence; repaired duplicate fixture field and implemented local safeguard/hook/docs plus OpenSpec delta. Implementation boundary recorded. No verification had run at boundary. Existing original-checkout Cargo process owns shared build directory; preserve it and serialize gates. Liter policy/gitlink drift awaits operator decision.
+
+### #476 baseline phase-exit checkpoint
+Synthetic safeguard controls passed5/5. Hook positive selectors passed6/6; README negative first oracle expected wrong exit for forced --command, corrected targeted oracle passed; initial failure retained. Independent Rust and shell/hook reviews found no actionable findings. OpenSpec validation exit0. Full cargo fmt --all -- --check exit1 with broad existing diffs (no writes). pnpm production audit exit1:21vulnerabilities. No real Rust compile/test or candidate commit was started because original-checkout Cargo PID69032 owns shared host build directory. Phase implementation complete, acceptance BLOCKED; no release/runtime PASS. Exact resume and pending source-policy decision recorded in KBD; no early gate violation by this team.
+
+
+## 2026-10-31 — Retain current Liter source
+Resumed production-readiness-476 after operator selected current Liter source. Added bounded #466 policy alignment to #462 phase plan before editing versions.toml; no dependency source or lockfile change. Original Cargo PID69032 finished, but a new original-checkout batch PID40283 now occupies host-global build directory. Preserve it; no overlapping compiler gate started.
+
+
+## #476 baseline acceptance and observed fixture repair
+Clean committed a3bceb9a passed3library profiles and16specified regression assertions. Full server-full inventory exit101 before execution exposed integration fixture API drift and shared helper warnings; raw diagnostic receipt retained. Added one bounded fixture compatibility cohort to the same #462 phase. Gate closed for implementation; no temporary source patches or warning suppression. Local per-worktree build-dir/cache settings resolve observed shared path file-open stalls; no other chat process was killed or source reset.
+
+
+### 2026-10-31 — #476/#462 resumed phase-exit acceptance
+
+Operator asked to inspect shared Cargo availability and resume bounded phases without routine approvals. Source/process inspection found no active Cargo/rustc or shared lock holder; original checkout/processes preserved. Final fixture reviews had no actionable findings. Ordinary hook produced8e0602ee; clean3-profile guard and16specified regressions passed, exact hashes in ignored receipt003. Full-target compile inventory failed in unrelated settings fixtures; full-library857pass/8fail/1ignored. These are retained separately, no global PASS. Proper-feature approval control compiles but18warnings fail zero-warning rule, so one two-file warning cohort was recorded and delegated with CLOSED verification lock. All running acceptance processes finished before source edits resumed; no early gate or paid/external effect.
+
+
+### 2026-10-31 — #462 scoped phase boundary
+
+5aa36a40 clean committed three-profile library compilation,4history+11embeddings+1OpenAPI assertions and retained proper-feature approval-control compile all pass warning-free. Receipt is .kbd-orchestrator/phases/production-readiness-476-baseline/evidence/acceptance-5aa36a40.json. Full historical inventories still have unrelated settings compilation and8library assertion failures; no global/release PASS. No tests during complete repair cohorts; no original-checkout/process/config edits, paid calls or external publication. Next bounded work is typed ordinary-chat image transport plus actual capability/destination admission, preserving #388; final platform lane choice remains operator-owned and qualification-specific.
+
+
+### 2026-10-31 — #463/#464 whole-phase source work
+
+Operatorselected Linuxamd64containerAPIs. Ingress/runtime/provider sourceauthored typedcurrent content, boundeddecoding, fullsafe text projection/canonical history, capturedactualdestination/adaptor facts andpre-sendcapability/finitecost gates. Leadintegrationrefined legacytext precedence, publicRouteRequirements compatibility, None/defaultreasoning, nativeAnthropicpreservation, warmroute marker andrawJSON debug leakage. Allare sourceinspections/edits, not runtime findings or passingreview. FocusedexistingCucumber/controlledpeer scenarios andsyntheticassets prepared, withwrongcandidate/local-egress fixture refinements pending. #466currentclaims/version/recovery summary updated, nothingcertified. No test/build/lint/format/compilerprobe/Docker/service/readiness/reviewgate duringthisphase. Prior5aa36a40acceptanceremainsbaselineonly.
+
+Source-only frontierrevision2preservesrevision1 andexplicitlydeferstruecoldimagecheckpoint/native lifecycle to#469/#465 (no automaticproducer ondefaultgraph), andpublicstrictrealimage selectorunsupported (onlyexistingsyntheticstrictcontractexposed). No fakeexecutableplaceholder orpass-by-omission. Mandatorycurrenttransport/scope/privacy/finitecost observationsremain. Realmodelspend andactualcontainerqualificationstillpending.
+
+
+- 2026-10-31 #476 capability/dispatch: inventory001 recorded all nine source/fixture/documentation items complete before independent artifact reviews; zero tests/builds run. Reviews found formatter binding/context catalog re-entry and fixture lifetime/accounting-oracle/null-tools instrumentation defects. One coherent repair cohort is CLOSED pending all fixes and renewed inventory. Native same-family source critics are weaker than cross-family; specialized Rust role required unplanned commands and declined without execution. Python review disclosed incidental README narrative exposure. External candidate identity endpoint/topology remains a nonsecret fixture prerequisite; no other chat state/process/config touched.
+
 ## 2026-10-30 — Batch 3 (#422, #392, #380): implementation-complete inventory
 
 Branch `fix/batch3-identity` from main `964e8168` (after PR #461, confirmed MERGED on GitHub). Closed #419, #420, #385, #396 and #391 against `964e8168`; an earlier close cited the wrong commit and was reopened and corrected. The gate is CLOSED until the operator approves.
@@ -7234,6 +7269,40 @@ Source: `33221c3a` plus working-tree diff sha256 prefix `035df622c36c98ef` (19 t
 - Gate 7 COMPLETE on macOS: 85 of 86 catalog configs pass (all 12 first-pass failures fixed or rerun to PASS); `agent.cucumber.mjs` not run (needs a separately provisioned owned UAR). Not covered: gates 5–6 and the 72 first-pass catalog passes ran on `30c7f806…`, before the session race fix; only the 12 reruns ran on the final `999c7e8a…`.
 - OpenSpec: race-fix delta added under conversation-history-integrity; `openspec validate rc2-ownership-budgets` valid (`openspec-validate-003.log`). Release note validation table, CHANGELOG and known limits updated. Nothing committed.
 
+2026-10-31 — #476 capability/dispatch source33e: exact clean three-profile lib baseline and16required regressions passed. Local Linux image attempt001 failed BuildKit transport EOF during Rust compilation, no release-image/runtime credit; private connection to same existing daemon recovered without shared service/config changes. Affected context target:27pass/4fail/2pre-existing frozen diagnostics ignored, normal compile warning-free. Verification CLOSED for bounded E1-E5 source/fixture repair cohort; keep #388 integrity, admission and truthful evidence. No candidate services or paid calls.
+
+
+2026-10-31 production-readiness476 gate reconciliation: retained trusted-host/gateway Linux amd64 contract. Source inventory009 and all three handoffs complete; no build-lock holders observed. Latest supplied operator lock requires explicit gate instruction; canonical waypoint/progress corrected CLOSED rather than relying on prior inferred authorization. No verification executed. Gate request010 proposes only isolated source review; all edited behavior remains unverified. Other checkout/services untouched.
+
+
+2026-11-01 production-readiness476: completed operator-authorized isolated source-only review010. Code critic and independent-context Rust-focused native fallback each found E6 unsatisfied expect_err Debug bound and E7 no-contract final profile guard loss; specialized role unavailable without prohibited mandatory Cargo. No tests/builds/checks/product edits; other chat untouched. Evidence source-review-010.json. Findings OPEN; renewed source repair inventory required before named operator-approved gates.
+
+
+2026-11-01 #476 implementation boundary011: E6/E7 source-repaired by separate writers, rc.2 af37c2f8 integrated with preserved readiness authority/fallback semantics, owner migration and opt-in false identity policy. Own snapshot a3b5b6f8 restored/retained; other chat untouched.18/18 implementation items complete; all handoffs collected. No tests/builds/reviews/checks during cohort. Standard merge commit remains pending normal hook approval, not bypassed. Exact proposed gate-request011 presented; compilation, runtime, warnings, current Linux artifact and migration/recovery remain unverified.
+
+
+2026-11-01 #476 gate011 stopped on E8 source defect from first isolated corrective review: fallback fit uses primary output cap before captured destination downward restriction, refusing viable fallback/unnecessarily dropping history. E6/E7 source-corrected, runtime unverified. Second review, normal merge commit/hooks, all native tests/builds and Docker NOT RUN. Gate CLOSED, other chat untouched, pending merge/snapshot preserved. Receipt gate-011-attempt-001.json; next bounded work is source-only ordering repair with meaningful assertion and renewed inventory, pending operator direction.
+
+
+2026-11-01 #476 E8 source implementation boundary012: estimated fallback fit now receives destination-narrowed output via existing live admission before arithmetic; exact/unknown-window compatibility and final admission retained. One worker owned orchestrator source/tests and handoff; six synthetic-stream orchestration cases authored. All19implementation items complete, no unresolved source task. No tests/builds/reviews/checks/commit/hooks or Docker executed; other chat untouched. Pending standard rc.2 merge remains uncommitted. Inventory012 and exact gate-request012 presented for operator approval; all gates CLOSED.
+
+
+2026-11-01 #476 Gate012: A two serial source reviews pass scoped source assessment. B lsof noholders/status/submodules recorded; approved normal commit hooks: deployment Actions policy PASS, minimal Rust lib harness FAIL101 at liter_driver.rs:246 missing Option closing > (three parser/type diagnostics). Commit failed1; no commit/full profiles/clean guard/C checks/Docker. Raw target/gate-012-commit-001.log and tracked receipt preserve exact outcome. Stop-on-failure honored, no code edit/retry; gate CLOSED. Other chat checkout/services untouched.
+
+
+2026-11-01 #476 delimiter source repair/inventory013: missing Option closing > inserted in prepared_final_wire return type at liter_driver.rs:246 with no adjacent code/test changes. Writer handoff complete; full20/20 implementation ledger complete, pending rc.2 merge and own recovery snapshot preserved, other chat untouched. No gates executed; gate012 minimal compile failure remains failure evidence. Exact proposed gate-request013 prepared; all gates CLOSED until explicit approval. Compiler/warning/runtime behavior unverified.
+
+
+2026-11-01 #476 Gate013 stopped at C: local rc.2 integration committed b3e5eda9 with normal hooks, exact tree4ac3aaba warning-free3profile baseline PASS. Context integration warning-free compile then29pass/2fail/2historicalignored101: pending tool persistence absent and checkpoint wait Elapsed. Two formerly failing final-wire/summary cases nowPASS. Remaining C/E8/16required assertions and all Docker/installed gates NOT_RUN. No code patch/retry after failure; original chat untouched. Full receipt gate-013-attempt-001.json, canonical gate CLOSED pending operator-directed bounded investigation/repair/inventory.
+
+
+2026-11-01 #476 source-only pending/checkpoint cohort: pending tool source repair and actual capability fixture implemented, assertions preserved/strengthened. Runtime + fixture handoffs and extra pre-node graph source trace collected. Graph cause remains unresolved from source/retainedtimeout; current diagnostic reporting retains3s and every denial/history/count assertion, no graph behavior guessed. Partial inventory014 openly21/22, graph repair unfinished. All gates CLOSED, zero verification/review/build/commit/hooks/services. Exact one-time diagnostic-exception proposal014 prepared for operator approval; previous b3e5eda9 compile acceptance historical to new edits. Other chat preserved.
+
+
+2026-11-01 #476 approved diagnostic exception014: source review clear, one full contexttarget warningfreecompile7m40 then29pass/2fail/2ignored101. Both actualstagecodes skill_matching_unavailable before protected content/RunStart; graph execution/provider counts0. Diagnostics obtained requested prerequisite, not phase acceptance; pending source patch unexercised. No retry/sourceedit/commit/hooks/othergate/Docker; other chat untouched. Exception consumed, gates CLOSED. Receipt gate-014-attempt-001.json; next source task shared matching admission, then renewed full inventory/exact commands.
+
+
+2026-11-01 #476 source repair/inventory015: shared skill_matching_unavailable traced to selected Service without actual bound service in persisted fixtures. Fixture writer attached real Service/Keyword+same registry to both; independent runtime source trace confirms, no production default change. Matching context assertions added while all original pending durable/resume and graph3s/denial/history/counter assertions retained. Current full source22/22 and handoffs complete, runtime unverified. Zero gates/commit/hooks/services during repair; other chat preserved. Exact gate-request015 prepared; all gates CLOSED, diagnostic014 consumed and historical failure retained.
 ### 2026-11-03 — Issue #386 Execute handoff
 
 Authored UAR media authority, durable effects, a trusted-host API, a deterministic mock peer, local credential-free Cucumber scenarios and OpenSpec artifacts. The canonical KBD registration was rejected because the installed runtime is attached to an older run than the checkout waypoint. The phase handoff is in .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/backlog/issue-386-media-authority.md. No verification ran. Gate CLOSED, issue open, fixture and canonical registration pending.

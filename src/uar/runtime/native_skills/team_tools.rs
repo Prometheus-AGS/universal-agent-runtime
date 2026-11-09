@@ -3,14 +3,22 @@ use crate::uar::{
     compiler::collaboration::CollaborationCatalogService,
     domain::{team_execution::TeamExecutionAttempt, team_wait::*},
     runtime::native_skill::{NativeExecutionContext, NativeSkill, NativeSkillRegistry},
-    tools::descriptor::{ApprovalClass, Exposure, ToolAssemblyError, ToolEffect, ToolSource},
+    tools::descriptor::{ApprovalClass, Exposure, ToolEffect, ToolSource},
 };
 use serde_json::{Value, json};
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashSet,
+    sync::{Arc, Mutex},
+};
 
 /// Peer controls materialized only for a qualified, bound team attempt.
 pub(crate) const TEAM_TOOL_NAMES: [&str; 4] =
     ["team_roster", "team_send", "team_delegate", "team_wait"];
+
+/// Descriptor approval semantics shared with advertisement preflight.
+pub(crate) fn approval_required(name: &str) -> bool {
+    matches!(name, "team_send" | "team_delegate")
+}
 
 #[derive(Clone)]
 pub(crate) struct TeamToolBinding {
@@ -38,13 +46,13 @@ impl NativeSkill for TeamTool {
                 "List currently authorized teammates and current teamRevision for optimistic delegation. Identities are host-resolved; prompts and histories are private. Omit cursor or send an empty string for the first page; use nextCursor unchanged for subsequent pages."
             }
             "team_send" => {
-                "Queue an attributed message to an authorized peer. This never starts a model turn."
+                "Queue an attributed message to an authorized peer after required approval. This never starts a model turn. A refused result does not queue a message."
             }
             "team_delegate" => {
-                "Delegate a bounded task atomically to an authorized team member. Supply current teamRevision from team_roster (or initial context); queued work runs through the team controller."
+                "Delegate a bounded task atomically to an authorized team member after required approval. Supply current teamRevision from team_roster (or initial context); queued work runs through the team controller. A recoverable refused result requires correcting the request; it did not delegate work."
             }
             _ => {
-                "Durably wait for all delegated target tasks to end, including failure/cancellation. This ends your current turn; the host admits a fresh continuation with ordered outcomes. No later tool call in this batch runs."
+                "Durably wait for all delegated target tasks to end, including failure/cancellation. An accepted wait ends your current turn; the host admits a fresh continuation with ordered outcomes. No later tool call in that batch runs. A recoverable refused result does not yield: correct the targets or refresh the roster before continuing."
             }
         }
     }
@@ -76,10 +84,10 @@ impl NativeSkill for TeamTool {
         }
     }
     fn approval_class(&self) -> ApprovalClass {
-        if matches!(self.name, "team_roster" | "team_wait") {
-            ApprovalClass::NotRequired
-        } else {
+        if approval_required(self.name) {
             ApprovalClass::Required
+        } else {
+            ApprovalClass::NotRequired
         }
     }
     fn exposure(&self) -> Exposure {
@@ -120,21 +128,22 @@ impl NativeSkill for TeamTool {
                 let r: crate::uar::domain::team_context::RosterRequest =
                     serde_json::from_value(args)
                         .map_err(|_| anyhow::anyhow!("TEAM_CONTEXT_REQUIRED_UNSUPPORTED"))?;
-                Ok(service
-                    .team_roster(a, r.cursor, u64::from(r.limit))
-                    .await
-                    .map_err(safe_error)?)
+                control_result(service.team_roster(a, r.cursor, u64::from(r.limit)).await)
             }
-            "team_send" => Ok(service.team_send(a, serde_json::from_value(args)?).await?),
-            "team_delegate" => Ok(service
-                .team_delegate(a, serde_json::from_value(args)?)
-                .await?),
+            "team_send" => {
+                control_result(service.team_send(a, serde_json::from_value(args)?).await)
+            }
+            "team_delegate" => control_result(
+                service
+                    .team_delegate(a, serde_json::from_value(args)?)
+                    .await,
+            ),
             _ => {
                 let request: TeamWaitRequest = serde_json::from_value(args)?;
-                let result = service
-                    .request_team_wait(a, request.clone())
-                    .await
-                    .map_err(safe_error)?;
+                let result = match service.request_team_wait(a, request.clone()).await {
+                    Ok(result) => result,
+                    Err(error) => return control_result(Err(error)),
+                };
                 let wait_id = result["waitId"]
                     .as_str()
                     .ok_or_else(|| anyhow::anyhow!("TEAM_WAIT_INVALIDATED"))?
@@ -182,10 +191,18 @@ impl NativeSkill for TeamTool {
 pub(crate) async fn register(
     registry: &NativeSkillRegistry,
     binding: TeamToolBinding,
-    allowed: &std::collections::HashSet<String>,
-) -> Result<(), ToolAssemblyError> {
+    allowed: &HashSet<String>,
+) -> anyhow::Result<HashSet<&'static str>> {
+    // The same current authority powers roster capabilities and native tool
+    // availability. Selection and governance can narrow this set further.
+    let eligible = binding
+        .catalog
+        .eligible_team_controls(&binding.attempt)
+        .await
+        .map_err(safe_error)?;
+    let mut registered = HashSet::new();
     for name in TEAM_TOOL_NAMES {
-        if !allowed.contains(name) {
+        if !allowed.contains(name) || !eligible.iter().any(|candidate| candidate == name) {
             continue;
         }
         registry
@@ -195,8 +212,30 @@ pub(crate) async fn register(
                 pending: Mutex::new(None),
             })
             .await?;
+        registered.insert(name);
     }
-    Ok(())
+    Ok(registered)
+}
+
+fn control_result(
+    result: Result<Value, crate::uar::compiler::collaboration::CollaborationError>,
+) -> anyhow::Result<Value> {
+    use crate::uar::compiler::collaboration::CollaborationError;
+    match result {
+        Ok(value) => Ok(value),
+        // These exact catalog returns happen without committing the requested
+        // command. Storage/authority/identity failures are deliberately excluded.
+        Err(CollaborationError::Conflict(code))
+            if matches!(
+                code.as_str(),
+                "TEAM_REVISION_CONFLICT" | "TEAM_WAIT_CYCLE" | "TEAM_PENDING_LIMIT"
+            ) =>
+        {
+            Ok(json!({"status":"refused","recoverable":true,"code":code,
+                "effect":"not_committed","action":"refresh_roster_or_correct_request"}))
+        }
+        Err(error) => Err(safe_error(error)),
+    }
 }
 
 fn safe_error(error: crate::uar::compiler::collaboration::CollaborationError) -> anyhow::Error {
@@ -214,4 +253,45 @@ fn safe_error(error: crate::uar::compiler::collaboration::CollaborationError) ->
         _ => "TEAM_SCOPE_DENIED",
     };
     anyhow::anyhow!(serde_json::json!({"code":code,"retryable":false,"action":if code=="TEAM_BUDGET_EXHAUSTED"{"increase-budget"}else{"reconcile"}}).to_string())
+}
+
+#[cfg(test)]
+mod control_outcome_tests {
+    use super::*;
+    use crate::uar::compiler::collaboration::CollaborationError;
+
+    #[test]
+    fn benign_control_refusal_is_explicitly_not_committed() {
+        for code in [
+            "TEAM_REVISION_CONFLICT",
+            "TEAM_WAIT_CYCLE",
+            "TEAM_PENDING_LIMIT",
+        ] {
+            let result = control_result(Err(CollaborationError::Conflict(code.into()))).unwrap();
+            assert_eq!(result["status"], "refused");
+            assert_eq!(result["recoverable"], true);
+            assert_eq!(result["effect"], "not_committed");
+            assert_eq!(result["code"], code);
+        }
+    }
+
+    #[test]
+    fn scope_integrity_and_uncertainty_are_not_recoverable_success() {
+        for code in [
+            "TEAM_SCOPE_DENIED",
+            "TEAM_COMMAND_CONFLICT",
+            "TEAM_EFFECTS_UNCERTAIN",
+            "TEAM_EXECUTION_EPOCH_STALE",
+        ] {
+            assert!(control_result(Err(CollaborationError::Conflict(code.into()))).is_err());
+        }
+        assert!(
+            control_result(Err(CollaborationError::Storage(
+                "private source detail".into()
+            )))
+            .unwrap_err()
+            .to_string()
+            .contains("TEAM_EFFECTS_UNCERTAIN")
+        );
+    }
 }

@@ -1,5 +1,12 @@
 # Durable checkpoint resume
 
+Use the [canonical interface recovery table](../product-support-matrix.md#execution-and-recovery-guarantees)
+and [finite final checklist](../releases/v1.4.0-final.md) for the selected Linux
+amd64 trusted-gateway scope. This mechanism description is not current whole-set
+or installed-container acceptance. The public unsupported continuation error is
+HTTP503 `checkpoint_resume_unsupported`; controller/list capability refusals can
+use `capability_unsupported` separately.
+
 The checkpoint API can reconstruct an authorized run after an orderly runtime
 shutdown. It uses protected persisted source metadata rather than a live run in
 the old process. Local SurrealKV and qualified durable networked SurrealDB have

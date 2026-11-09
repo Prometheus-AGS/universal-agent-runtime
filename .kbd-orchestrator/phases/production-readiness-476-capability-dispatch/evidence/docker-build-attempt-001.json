@@ -1,0 +1,21 @@
+{
+  "recordedAt": "2026-10-31T21:30:20.901107+00:00",
+  "phase": "production-readiness-476-capability-dispatch",
+  "kind": "actual Linux amd64 customer image build",
+  "status": "FAILED_INFRASTRUCTURE",
+  "sourceCommit": "33e765bb5d29a44e97d2813ad6d0be8bf3e2479d",
+  "sourceTree": "bd8c6ef594c4f2cd854569c76b6ac583f4e501cf",
+  "command": "env PATH=/usr/local/bin:$PATH docker buildx build --builder colima --load --platform linux/amd64 --build-arg UAR_CARGO_BUILD_JOBS=1 --tag uar:production-readiness-476-33e765bb5d29 --file Dockerfile .",
+  "exitCode": 1,
+  "session": 37901,
+  "log": "target/production-readiness-476/capability-linux-amd64-build-001.log",
+  "logSha256": "243bbdf658fdc693ad47ad0ae3e90642099560144bf61237446b8b80e9cfce5f",
+  "observedError": "failed to receive status: rpc error: code = Unavailable desc = error reading from server: EOF",
+  "rustResult": "INCOMPLETE: no Rust compiler error/warning observed in captured output; no successful release build established",
+  "frontend": "Build step completed; existing Vite/Rolldown and dependency warnings retained; not zero-warning frontend certification",
+  "image": "NOT_PRODUCED_OR_CONFIRMED",
+  "behavior": "NOT_EXERCISED",
+  "sourceEditsDuringGate": false,
+  "next": "Read-only backend and owned compiler process inspection; no duplicate build until process disposition established. Preserve shared Docker/VM/config/caches; no restart/prune/kill of others.",
+  "recovery": "Owned host Unix-socket SSH connection reaches same existing local daemonID b2083d2a-b69c-4873-a97b-13002463e926/BuildKit0.16.0; no shared VM/Docker/SSH config or service restart. Retry deferred until E cohort complete."
+}

@@ -19,7 +19,7 @@ vi.mock("@assistant-ui/react", async (importOriginal) => {
 
 vi.mock("@/features/chat/components/a2ui-artifact-block", () => ({
   A2uiDisplayBlock: ({ artifactType }: { artifactType: string }) => <div data-testid="policy-a2ui-display">{artifactType}</div>,
-  A2uiInputBlock: ({ artifactType }: { artifactType: string }) => <div data-testid="policy-a2ui-input">{artifactType}</div>,
+  A2uiInputBlock: ({ artifactType, artifactId }: { artifactType: string; artifactId: string }) => <div data-testid="policy-a2ui-input" data-artifact-id={artifactId}>{artifactType}</div>,
 }));
 
 const base = { id: "chunk-1", at: "2026-08-08T00:00:00.000Z", seq: 1 };
@@ -104,6 +104,20 @@ describe("ChunkRenderer", () => {
   it("routes A2UI chunks through the maintained policy component", () => {
     render(<ChunkRenderer chunk={{ ...base, kind: "a2ui-display", profile: "a2ui/v0.9", component: "Card", payload: {}, validation: "valid" }} />);
     expect(screen.getByTestId("policy-a2ui-display")).toHaveTextContent("Card");
+  });
+
+  it("passes original input identity instead of the local card ID and refuses missing identity", () => {
+    const input = { ...base, id: "local-card", kind: "a2ui-input" as const, profile: "a2ui/v0.9",
+      component: "confirm", requestId: "native-run", runId: "native-run", status: "awaiting" as const };
+    const { rerender } = render(<ChunkRenderer chunk={{ ...input, toolCallId: "original-legacy-artifact", payload: {} }} />);
+    expect(screen.getByTestId("policy-a2ui-input")).toHaveAttribute("data-artifact-id", "original-legacy-artifact");
+    rerender(<ChunkRenderer chunk={{ ...input, payload: { artifactId: "original-native-artifact" } }} />);
+    expect(screen.getByTestId("policy-a2ui-input")).toHaveAttribute("data-artifact-id", "original-native-artifact");
+    rerender(<ChunkRenderer chunk={{ ...input, toolCallId: "", payload: { artifactId: "" } }} />);
+    expect(screen.queryByTestId("policy-a2ui-input")).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("This input is unavailable. Request a fresh input form.");
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.queryByRole("form")).toBeNull();
   });
 
   it("registers every visible chunk family and no trace-only kind", () => {

@@ -224,7 +224,7 @@ async fn producer_drains_before_owned_embedded_engine_close_and_one_reopen() -> 
 
     release_producer
         .send(())
-        .context("release database-dependent producer")?;
+        .map_err(|()| anyhow::anyhow!("release database-dependent producer"))?;
     provider_query_finished_receipt
         .await
         .context("producer query completed before engine finalization")?;
@@ -316,7 +316,8 @@ async fn host_owned_surreal_client_remains_usable_after_uar_scope_release() -> R
 #[tokio::test]
 async fn owned_provider_close_failure_is_retained_by_the_supervisor() -> Result<()> {
     let directory = tempfile::tempdir().context("create owned-close fixture directory")?;
-    let endpoint = format!("surrealkv://{}", directory.path().join("owned-close.db").display());
+    let store = directory.path().join("owned-close.db");
+    let endpoint = format!("surrealkv://{}", store.display());
     let provider = Arc::new(
         SurrealDbProvider::new(
             &endpoint,
@@ -331,9 +332,17 @@ async fn owned_provider_close_failure_is_retained_by_the_supervisor() -> Result<
 
     provider
         .client()
-        .shutdown()
-        .await
-        .context("acknowledge the externally initiated engine closure")?;
+        .query("CREATE close_failure_canary:before SET marker = 'flush-on-close'")
+        .await?
+        .check()?;
+
+    // Block the real shutdown memtable flush in this disposable store.
+    // Repeating a successful SDK shutdown would replay that success.
+    let sstables = store.join("sstables");
+    std::fs::rename(&sstables, store.join("sstables-before-fault"))
+        .context("retain the fixture SSTable directory")?;
+    std::fs::write(&sstables, b"block the shutdown SSTable flush")
+        .context("make the fixture SSTable directory unwritable as a directory")?;
 
     let supervisor = RuntimeSupervisor::new("lifecycle-owned-resources");
     let provider_for_finalizer = Arc::clone(&provider);
@@ -357,7 +366,11 @@ async fn owned_provider_close_failure_is_retained_by_the_supervisor() -> Result<
         "supervisor fabricated successful release after owned provider close failure"
     );
     anyhow::ensure!(
-        report.failures.iter().any(|failure| failure.contains("owned provider propagated close failure")),
+        report.failures.iter().any(|failure| {
+            failure.contains("owned provider propagated close failure")
+                && failure.contains("closing storage")
+                && failure.contains("closing the database")
+        }),
         "supervisor report did not retain the provider close failure: {:?}",
         report.failures
     );
@@ -370,5 +383,59 @@ async fn owned_provider_close_failure_is_retained_by_the_supervisor() -> Result<
         !resource_report.released && !resource_report.failures.is_empty(),
         "resource report did not retain its failed physical close"
     );
+    Ok(())
+}
+
+#[tokio::test]
+async fn owned_surreal_shutdown_closes_live_streams_and_rejects_cloned_admission() -> Result<()> {
+    use futures::StreamExt as _;
+
+    let directory = tempfile::tempdir().context("create live-stream lifecycle store")?;
+    let endpoint = format!(
+        "surrealkv://{}",
+        directory.path().join("live-stream.db").display()
+    );
+    let namespace = "live-stream-lifecycle";
+    let provider =
+        SurrealDbProvider::new(&endpoint, None, None, Some(namespace), Some(namespace)).await?;
+    let clone = provider.client();
+    clone.query("DEFINE TABLE upgrade_close_canary").await?.check()?;
+    let mut stream: surrealdb::Stream<Vec<surrealdb::types::Value>> =
+        clone.select("upgrade_close_canary").live().await?;
+    clone
+        .query("CREATE upgrade_close_canary:before SET marker = 'live-before-close'")
+        .await?
+        .check()?;
+    let change = tokio::time::timeout(std::time::Duration::from_secs(10), stream.next())
+        .await
+        .context("active live stream did not observe the pre-close write")?
+        .context("live stream ended before shutdown")??;
+    assert_eq!(change.action, surrealdb::types::Action::Create);
+
+    let closed = provider.close_scope().await;
+    assert!(closed.engine_close_acknowledged, "{closed:?}");
+    assert!(closed.failure.is_none(), "{closed:?}");
+    let ended = tokio::time::timeout(std::time::Duration::from_secs(10), stream.next())
+        .await
+        .context("live stream remained open after acknowledged close")?;
+    assert!(ended.is_none(), "live stream must end after owned shutdown");
+    let refused = clone
+        .query("CREATE upgrade_close_canary:late SET marker = 'must-not-write'")
+        .await;
+    assert!(refused.is_err(), "a retained clone admitted work after close");
+
+    // Reopen before dropping the old provider, clone or stream. This exercises
+    // the physical close contract independently of reference-counted cleanup.
+    let reopened =
+        SurrealDbProvider::new(&endpoint, None, None, Some(namespace), Some(namespace)).await?;
+    let mut selected = reopened
+        .client()
+        .query("SELECT VALUE marker FROM upgrade_close_canary ORDER BY marker")
+        .await?
+        .check()?;
+    let markers: Vec<String> = selected.take(0)?;
+    assert_eq!(markers, ["live-before-close"]);
+    let closed = reopened.close_scope().await;
+    assert!(closed.engine_close_acknowledged && closed.failure.is_none(), "{closed:?}");
     Ok(())
 }

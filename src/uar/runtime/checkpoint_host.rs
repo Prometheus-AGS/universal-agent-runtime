@@ -80,8 +80,16 @@ impl CheckpointHost {
                 .map_err(|_| crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Invalid)?;
             binding.revalidate(&artifact.artifact).await?;
         }
-        let projected = self.scrubber.project_value(serde_json::to_value(state)?);
-        let state: GraphState = serde_json::from_value(projected)?;
+        // Generic graph state remains secret-projected. Canonical message
+        // history is projected separately so a previously admitted inline
+        // image survives checkpoint protection only when it still satisfies
+        // the shared strict inline-image grammar.
+        let mut state = state.clone();
+        let data = self.scrubber.project_value(serde_json::to_value(&state.data)?);
+        state.data = serde_json::from_value(data)?;
+        for message in &mut state.messages {
+            self.scrubber.project_canonical_message_json(message)?;
+        }
         let checkpoint = Checkpoint::new(
             &self.source.run_id,
             self.source.conversation_id.as_deref().ok_or_else(|| anyhow::anyhow!("checkpoint session required"))?,

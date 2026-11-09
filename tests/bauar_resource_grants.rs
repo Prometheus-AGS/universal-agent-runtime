@@ -4,6 +4,10 @@ mod peer;
 #[path = "support/sidecar_process.rs"]
 mod sidecar_process;
 #[path = "integration/live/stub_llm.rs"]
+#[expect(
+    dead_code,
+    reason = "resource-grant cases use exact stub responses, not delayed or prompt-prefix responses"
+)]
 mod stub_llm;
 
 use peer::{Host, OWNER_A, OWNER_B, Peer, SCOPE, grant, now};

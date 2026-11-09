@@ -3,6 +3,28 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use thiserror::Error;
 
+/// Provider-reported counters. `None` is unavailable; `Some(0)` is measured zero.
+/// Counters are independent: a missing total is never inferred from the prompt.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Deserialize)]
+pub struct EmbeddingTokenUsage {
+    /// Tokens used by the prompt, when reported for the complete batch.
+    pub prompt_tokens: Option<u64>,
+    /// Total tokens, when reported for the complete batch.
+    pub total_tokens: Option<u64>,
+    /// Native provider billing units, kept separate from processed-token counts.
+    #[serde(skip_deserializing)]
+    pub billed_input_tokens: Option<u64>,
+}
+
+/// Vectors and accounting returned by one pinned embedding backend.
+#[derive(Debug)]
+pub struct EmbeddingBatch {
+    /// One vector per input, in input order.
+    pub vectors: Vec<Vec<f32>>,
+    /// Counts reported by the backend, without estimates or implied billing.
+    pub usage: EmbeddingTokenUsage,
+}
+
 /// Unified embedding backend for RAG and skill matching.
 ///
 /// Implementations may be local (FastEmbed, Candle) or hosted (OpenAI, Voyage,
@@ -44,6 +66,15 @@ pub trait EmbeddingBackend: Send + Sync + Debug {
     /// `texts` (unless `texts` is empty, in which case an empty vector is
     /// returned). Each inner vector has `vector_dimension()` elements.
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError>;
+
+    /// Embed with optional accounting on this same backend instance.
+    /// Existing adapters keep their vector API and report unavailable counters.
+    async fn embed_with_usage(&self, texts: &[&str]) -> Result<EmbeddingBatch, EmbeddingError> {
+        Ok(EmbeddingBatch {
+            vectors: self.embed(texts).await?,
+            usage: EmbeddingTokenUsage::default(),
+        })
+    }
 
     /// Release local inference resources after the trusted host has closed
     /// admission and joined all accepted work. Backends without owned local
@@ -166,7 +197,9 @@ pub fn build_local_backend(
     }
     #[cfg(feature = "local-models")]
     {
-        Ok(Arc::new(fastembed::FastEmbedBackend::new_with_scope(config, scope)?))
+        Ok(Arc::new(fastembed::FastEmbedBackend::new_with_scope(
+            config, scope,
+        )?))
     }
     #[cfg(not(feature = "local-models"))]
     {

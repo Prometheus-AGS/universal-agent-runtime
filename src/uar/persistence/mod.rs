@@ -1,5 +1,5 @@
-pub mod scoped;
 pub mod knowledge_namespace;
+pub mod scoped;
 use crate::session::Session;
 use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
 use crate::uar::domain::knowledge::{
@@ -14,17 +14,18 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+pub mod a2ui_actions;
 pub mod accounting;
-pub mod agui_runs;
-pub mod capabilities;
-pub mod client_tools;
-pub mod mcp_elicitations;
-pub mod approval_decisions;
-pub mod ingestion_records;
 pub mod agent_instances;
 pub mod agent_threads;
+pub mod agui_runs;
+pub mod approval_decisions;
+pub mod capabilities;
 pub mod channel_observers;
 pub mod checkpoint_resume;
+pub mod client_tools;
+pub mod ingestion_records;
+pub mod mcp_elicitations;
 pub mod observers;
 pub mod presentations;
 pub mod providers;
@@ -34,7 +35,7 @@ pub mod tool_admission;
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use agent_instances::{AgentInstanceRecord, AgentInstanceStoreError};
 use agent_threads::{CanonicalToolReceipt, PersistedAgentThread};
-use channel_observers::{ChannelInboxEntry, ChannelSubscription, ChannelObserverStoreError};
+use channel_observers::{ChannelInboxEntry, ChannelObserverStoreError, ChannelSubscription};
 use observers::{
     ObserverOccurrence, ObserverOccurrenceBounds, ObserverStoreError, ObserverSubscription,
 };
@@ -48,7 +49,11 @@ pub(crate) fn tenant_storage_key(owner_id: &str, resource_id: &str) -> String {
 /// A subject that resembles a credential key must never acquire old history.
 pub(crate) fn session_storage_key(owner_id: &str, session_id: &str) -> String {
     let key = tenant_storage_key(owner_id, session_id);
-    if owner_id.starts_with("v1:k:") { format!("principal-session:{key}") } else { key }
+    if owner_id.starts_with("v1:k:") {
+        format!("principal-session:{key}")
+    } else {
+        key
+    }
 }
 
 /// Metadata for a file uploaded during a chat session.
@@ -100,7 +105,9 @@ impl DurableStoreEligibility {
 
 #[async_trait]
 pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
-    fn supports_durable_client_tools(&self) -> bool { false }
+    fn supports_durable_client_tools(&self) -> bool {
+        false
+    }
 
     /// Every durable capability flag of this store, keyed by its `supports_*`
     /// method name. Hosts serve this so clients can see what a store refuses
@@ -123,69 +130,288 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
         })
     }
     /// Persist before exposing a caller-tool handoff. Existing batches are never overwritten.
-    async fn create_client_tool_continuation(&self, _row: &client_tools::ClientToolContinuation) -> Result<bool> { anyhow::bail!("durable_client_tools_unsupported") }
-    async fn load_client_tool_continuation(&self, _owner: &str, _tenant: Option<&str>, _agent: &str, _batch: &str) -> Result<Option<client_tools::ClientToolContinuation>> { anyhow::bail!("durable_client_tools_unsupported") }
-    async fn load_client_tool_continuation_for_run(&self, _owner: &str, _tenant: Option<&str>, _agent: &str, _run: &str) -> Result<Option<client_tools::ClientToolContinuation>> { anyhow::bail!("durable_client_tools_unsupported") }
+    async fn create_client_tool_continuation(
+        &self,
+        _row: &client_tools::ClientToolContinuation,
+    ) -> Result<bool> {
+        anyhow::bail!("durable_client_tools_unsupported")
+    }
+    async fn load_client_tool_continuation(
+        &self,
+        _owner: &str,
+        _tenant: Option<&str>,
+        _agent: &str,
+        _batch: &str,
+    ) -> Result<Option<client_tools::ClientToolContinuation>> {
+        anyhow::bail!("durable_client_tools_unsupported")
+    }
+    async fn load_client_tool_continuation_for_run(
+        &self,
+        _owner: &str,
+        _tenant: Option<&str>,
+        _agent: &str,
+        _run: &str,
+    ) -> Result<Option<client_tools::ClientToolContinuation>> {
+        anyhow::bail!("durable_client_tools_unsupported")
+    }
     /// Recover a protocol session's trusted selected agent without a caller-supplied agent override.
-    async fn load_client_tool_continuation_for_session(&self, _owner: &str, _tenant: Option<&str>, _session: &str, _batch: &str) -> Result<Option<client_tools::ClientToolContinuation>> { anyhow::bail!("durable_client_tools_unsupported") }
+    async fn load_client_tool_continuation_for_session(
+        &self,
+        _owner: &str,
+        _tenant: Option<&str>,
+        _session: &str,
+        _batch: &str,
+    ) -> Result<Option<client_tools::ClientToolContinuation>> {
+        anyhow::bail!("durable_client_tools_unsupported")
+    }
     /// Atomic full-batch claim/completion. A miss must not authorize host effects.
-    async fn compare_and_swap_client_tool_continuation(&self, _before: &client_tools::ClientToolContinuation, _after: &client_tools::ClientToolContinuation) -> Result<bool> { anyhow::bail!("durable_client_tools_unsupported") }
+    async fn compare_and_swap_client_tool_continuation(
+        &self,
+        _before: &client_tools::ClientToolContinuation,
+        _after: &client_tools::ClientToolContinuation,
+    ) -> Result<bool> {
+        anyhow::bail!("durable_client_tools_unsupported")
+    }
 
-    fn supports_durable_mcp_elicitations(&self) -> bool { false }
-    async fn create_mcp_elicitation(&self, _row: &mcp_elicitations::McpElicitationRecord) -> Result<()> { anyhow::bail!("durable_elicitation_unsupported") }
-    async fn list_mcp_elicitations(&self, _owner: &str, _run: &str) -> Result<Vec<mcp_elicitations::McpElicitationRecord>> { anyhow::bail!("durable_elicitation_unsupported") }
-    async fn compare_and_swap_mcp_elicitation(&self, _before: &mcp_elicitations::McpElicitationRecord, _after: &mcp_elicitations::McpElicitationRecord) -> Result<bool> { anyhow::bail!("durable_elicitation_unsupported") }
-    fn supports_durable_tool_receipts(&self) -> bool { false }
-    fn supports_durable_agui_runs(&self) -> bool { false }
-    async fn create_agui_run(&self, _row: &agui_runs::AguiRunBinding, _previous: Option<&agui_runs::AguiRunBinding>) -> Result<bool> { anyhow::bail!("durable_agui_unsupported") }
-    async fn load_agui_run(&self, _owner: &str, _agent: &str, _thread: &str, _run: &str) -> Result<Option<agui_runs::AguiRunBinding>> { anyhow::bail!("durable_agui_unsupported") }
-    async fn list_agui_runs(&self, _owner: &str, _agent: &str, _thread: &str) -> Result<Vec<agui_runs::AguiRunBinding>> { anyhow::bail!("durable_agui_unsupported") }
-    async fn compare_and_swap_agui_run(&self, _before: &agui_runs::AguiRunBinding, _after: &agui_runs::AguiRunBinding) -> Result<bool> { anyhow::bail!("durable_agui_unsupported") }
+    fn supports_durable_mcp_elicitations(&self) -> bool {
+        false
+    }
+    async fn create_mcp_elicitation(
+        &self,
+        _row: &mcp_elicitations::McpElicitationRecord,
+    ) -> Result<()> {
+        anyhow::bail!("durable_elicitation_unsupported")
+    }
+    async fn list_mcp_elicitations(
+        &self,
+        _owner: &str,
+        _run: &str,
+    ) -> Result<Vec<mcp_elicitations::McpElicitationRecord>> {
+        anyhow::bail!("durable_elicitation_unsupported")
+    }
+    async fn compare_and_swap_mcp_elicitation(
+        &self,
+        _before: &mcp_elicitations::McpElicitationRecord,
+        _after: &mcp_elicitations::McpElicitationRecord,
+    ) -> Result<bool> {
+        anyhow::bail!("durable_elicitation_unsupported")
+    }
+    fn supports_durable_tool_receipts(&self) -> bool {
+        false
+    }
+    fn supports_durable_a2ui_actions(&self) -> bool {
+        false
+    }
+    /// Create once, before host dispatch. An unknown write outcome never authorizes retry.
+    async fn create_a2ui_action(&self, _row: &a2ui_actions::A2uiActionReceipt) -> Result<bool> {
+        anyhow::bail!("durable_a2ui_actions_unsupported")
+    }
+    async fn load_a2ui_action(
+        &self,
+        _owner: &str,
+        _agent: &str,
+        _thread: &str,
+        _interaction: &str,
+    ) -> Result<Option<a2ui_actions::A2uiActionReceipt>> {
+        anyhow::bail!("durable_a2ui_actions_unsupported")
+    }
+    fn supports_durable_agui_runs(&self) -> bool {
+        false
+    }
+    async fn create_agui_run(
+        &self,
+        _row: &agui_runs::AguiRunBinding,
+        _previous: Option<&agui_runs::AguiRunBinding>,
+    ) -> Result<bool> {
+        anyhow::bail!("durable_agui_unsupported")
+    }
+    async fn load_agui_run(
+        &self,
+        _owner: &str,
+        _agent: &str,
+        _thread: &str,
+        _run: &str,
+    ) -> Result<Option<agui_runs::AguiRunBinding>> {
+        anyhow::bail!("durable_agui_unsupported")
+    }
+    async fn list_agui_runs(
+        &self,
+        _owner: &str,
+        _agent: &str,
+        _thread: &str,
+    ) -> Result<Vec<agui_runs::AguiRunBinding>> {
+        anyhow::bail!("durable_agui_unsupported")
+    }
+    async fn compare_and_swap_agui_run(
+        &self,
+        _before: &agui_runs::AguiRunBinding,
+        _after: &agui_runs::AguiRunBinding,
+    ) -> Result<bool> {
+        anyhow::bail!("durable_agui_unsupported")
+    }
     /// Host reconciliation only: excluded producer plus resolved effects, never
     /// elapsed time or an absent actor. Unsupported stores retain cancellation.
-    async fn reconcile_a2a_cancellation(&self, _owner: &str, _user: &str, _agent: &str, _task: &str) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> { Ok(None) }
-    fn supports_durable_a2a_bindings(&self) -> bool { false }
-    async fn create_a2a_binding(&self, _record: &crate::uar::api::a2a::durable::A2aBinding) -> Result<bool> { anyhow::bail!("durable_a2a_bindings_unsupported") }
-    async fn load_a2a_binding(&self, _owner: &str, _agent: &str, _task: &str) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> { anyhow::bail!("durable_a2a_bindings_unsupported") }
-    async fn compare_and_swap_a2a_binding(&self, _before: &crate::uar::api::a2a::durable::A2aBinding, _after: &crate::uar::api::a2a::durable::A2aBinding) -> Result<bool> { anyhow::bail!("durable_a2a_bindings_unsupported") }
-    async fn list_a2a_bindings(&self, _owner: &str, _agent: &str) -> Result<Vec<crate::uar::api::a2a::durable::A2aBinding>> { anyhow::bail!("durable_a2a_bindings_unsupported") }
+    async fn reconcile_a2a_cancellation(
+        &self,
+        _owner: &str,
+        _user: &str,
+        _agent: &str,
+        _task: &str,
+    ) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> {
+        Ok(None)
+    }
+    fn supports_durable_a2a_bindings(&self) -> bool {
+        false
+    }
+    async fn create_a2a_binding(
+        &self,
+        _record: &crate::uar::api::a2a::durable::A2aBinding,
+    ) -> Result<bool> {
+        anyhow::bail!("durable_a2a_bindings_unsupported")
+    }
+    async fn load_a2a_binding(
+        &self,
+        _owner: &str,
+        _agent: &str,
+        _task: &str,
+    ) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> {
+        anyhow::bail!("durable_a2a_bindings_unsupported")
+    }
+    async fn compare_and_swap_a2a_binding(
+        &self,
+        _before: &crate::uar::api::a2a::durable::A2aBinding,
+        _after: &crate::uar::api::a2a::durable::A2aBinding,
+    ) -> Result<bool> {
+        anyhow::bail!("durable_a2a_bindings_unsupported")
+    }
+    async fn list_a2a_bindings(
+        &self,
+        _owner: &str,
+        _agent: &str,
+    ) -> Result<Vec<crate::uar::api::a2a::durable::A2aBinding>> {
+        anyhow::bail!("durable_a2a_bindings_unsupported")
+    }
 
     /// Restart-durable public run history. Every published event is written
     /// through; a terminal-only snapshot does not satisfy the contract.
-    fn supports_durable_run_history(&self) -> bool { false }
-    async fn upsert_run_history_record(&self, _record: &run_history::RunHistoryRecord) -> Result<()> { anyhow::bail!("durable_run_history_unsupported") }
-    async fn load_run_history_record(&self, _run_id: &str) -> Result<Option<run_history::RunHistoryRecord>> { anyhow::bail!("durable_run_history_unsupported") }
-    async fn append_run_history_event(&self, _event: &run_history::RunHistoryEvent) -> Result<()> { anyhow::bail!("durable_run_history_unsupported") }
-    async fn load_run_history_events(&self, _run_id: &str) -> Result<Vec<run_history::RunHistoryEvent>> { anyhow::bail!("durable_run_history_unsupported") }
+    fn supports_durable_run_history(&self) -> bool {
+        false
+    }
+    async fn upsert_run_history_record(
+        &self,
+        _record: &run_history::RunHistoryRecord,
+    ) -> Result<()> {
+        anyhow::bail!("durable_run_history_unsupported")
+    }
+    /// Bounded owner/conversation snapshot. A full 65 rows signals incomplete authority.
+    async fn list_conversation_run_history(
+        &self,
+        _owner: &str,
+        _conversation: &str,
+    ) -> Result<Vec<run_history::RunHistoryRecord>> {
+        anyhow::bail!("durable_conversation_run_history_unsupported")
+    }
+    async fn load_run_history_record(
+        &self,
+        _run_id: &str,
+    ) -> Result<Option<run_history::RunHistoryRecord>> {
+        anyhow::bail!("durable_run_history_unsupported")
+    }
+    async fn append_run_history_event(&self, _event: &run_history::RunHistoryEvent) -> Result<()> {
+        anyhow::bail!("durable_run_history_unsupported")
+    }
+    async fn load_run_history_events(
+        &self,
+        _run_id: &str,
+    ) -> Result<Vec<run_history::RunHistoryEvent>> {
+        anyhow::bail!("durable_run_history_unsupported")
+    }
 
-    async fn bind_accounting_delegation(&self, _link: &accounting::AccountingDelegation) -> Result<()> { Err(accounting::AccountingError::Unsupported.into()) }
-    async fn get_accounting_delegation(&self, _digest: &str) -> Result<Option<accounting::AccountingCall>> { Err(accounting::AccountingError::Unsupported.into()) }
+    async fn bind_accounting_delegation(
+        &self,
+        _link: &accounting::AccountingDelegation,
+    ) -> Result<()> {
+        Err(accounting::AccountingError::Unsupported.into())
+    }
+    async fn get_accounting_delegation(
+        &self,
+        _digest: &str,
+    ) -> Result<Option<accounting::AccountingCall>> {
+        Err(accounting::AccountingError::Unsupported.into())
+    }
     /// Durable accounting is a host capability, not an in-memory fallback.
-    fn supports_durable_accounting(&self) -> bool { false }
+    fn supports_durable_accounting(&self) -> bool {
+        false
+    }
     /// Captured backing-store eligibility for admission and durable-work gates.
     fn durable_store_eligibility(&self) -> DurableStoreEligibility {
         DurableStoreEligibility::UnsupportedBackend
     }
-    async fn admit_remote_grant(&self, _owner: &str, _accounting_id: &str,
+    async fn admit_remote_grant(
+        &self,
+        _owner: &str,
+        _accounting_id: &str,
         _grant: &crate::uar::api::a2a::contract::UarUsageGrant,
-        _activity: accounting::RemoteGrantActivity) -> Result<accounting::RemoteGrantState> {
+        _activity: accounting::RemoteGrantActivity,
+    ) -> Result<accounting::RemoteGrantState> {
         Err(accounting::AccountingError::Unsupported.into())
     }
-    async fn ensure_accounting_scope(&self, _id: &accounting::ScopeIdentity, _limits: &accounting::ScopeLimits) -> Result<accounting::AccountingScope> { Err(accounting::AccountingError::Unsupported.into()) }
-    async fn get_accounting_scope(&self, _id: &accounting::ScopeIdentity) -> Result<Option<accounting::AccountingScope>> { Err(accounting::AccountingError::Unsupported.into()) }
-    async fn update_accounting_scope(&self, _change: &accounting::ScopeUpdate) -> Result<accounting::AccountingScope> { Err(accounting::AccountingError::Unsupported.into()) }
-    async fn admit_accounting_call(&self, _admission: &accounting::CallAdmission) -> Result<accounting::AccountingCall> { Err(accounting::AccountingError::Unsupported.into()) }
-    async fn record_accounting_usage(&self, _usage: &accounting::CallUsage) -> Result<accounting::AccountingCall> { Err(accounting::AccountingError::Unsupported.into()) }
-    async fn list_accounting_calls(&self, _owner: &str, _run: &str) -> Result<Vec<accounting::AccountingCall>> { Err(accounting::AccountingError::Unsupported.into()) }
+    async fn ensure_accounting_scope(
+        &self,
+        _id: &accounting::ScopeIdentity,
+        _limits: &accounting::ScopeLimits,
+    ) -> Result<accounting::AccountingScope> {
+        Err(accounting::AccountingError::Unsupported.into())
+    }
+    async fn get_accounting_scope(
+        &self,
+        _id: &accounting::ScopeIdentity,
+    ) -> Result<Option<accounting::AccountingScope>> {
+        Err(accounting::AccountingError::Unsupported.into())
+    }
+    async fn update_accounting_scope(
+        &self,
+        _change: &accounting::ScopeUpdate,
+    ) -> Result<accounting::AccountingScope> {
+        Err(accounting::AccountingError::Unsupported.into())
+    }
+    async fn admit_accounting_call(
+        &self,
+        _admission: &accounting::CallAdmission,
+    ) -> Result<accounting::AccountingCall> {
+        Err(accounting::AccountingError::Unsupported.into())
+    }
+    async fn record_accounting_usage(
+        &self,
+        _usage: &accounting::CallUsage,
+    ) -> Result<accounting::AccountingCall> {
+        Err(accounting::AccountingError::Unsupported.into())
+    }
+    async fn list_accounting_calls(
+        &self,
+        _owner: &str,
+        _run: &str,
+    ) -> Result<Vec<accounting::AccountingCall>> {
+        Err(accounting::AccountingError::Unsupported.into())
+    }
 
     /// Acceptance is unavailable unless bytes, job, and document commit atomically.
-    fn supports_durable_ingestion(&self) -> bool { false }
+    fn supports_durable_ingestion(&self) -> bool {
+        false
+    }
 
-    async fn accept_ingestion(&self, _document: &KnowledgeDocument, _source: &[u8]) -> Result<ingestion_records::IngestionJob> {
+    async fn accept_ingestion(
+        &self,
+        _document: &KnowledgeDocument,
+        _source: &[u8],
+    ) -> Result<ingestion_records::IngestionJob> {
         Err(ingestion_records::IngestionStoreError::Unsupported.into())
     }
 
-    async fn discover_ingestion(&self, _limit: usize) -> Result<Vec<ingestion_records::IngestionJob>> {
+    async fn discover_ingestion(
+        &self,
+        _limit: usize,
+    ) -> Result<Vec<ingestion_records::IngestionJob>> {
         Err(ingestion_records::IngestionStoreError::Unsupported.into())
     }
 
@@ -198,20 +424,35 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
         Err(ingestion_records::IngestionStoreError::Unsupported.into())
     }
 
-    async fn get_ingestion_job(&self, _owner: &str, _document: &str) -> Result<Option<ingestion_records::IngestionJob>> {
+    async fn get_ingestion_job(
+        &self,
+        _owner: &str,
+        _document: &str,
+    ) -> Result<Option<ingestion_records::IngestionJob>> {
         Err(ingestion_records::IngestionStoreError::Unsupported.into())
     }
 
-    async fn get_ingestion_source(&self, _job: &ingestion_records::IngestionJob) -> Result<Option<Vec<u8>>> {
+    async fn get_ingestion_source(
+        &self,
+        _job: &ingestion_records::IngestionJob,
+    ) -> Result<Option<Vec<u8>>> {
         Err(ingestion_records::IngestionStoreError::Unsupported.into())
     }
 
-    async fn transition_ingestion(&self, _before: &ingestion_records::IngestionJob, _after: &ingestion_records::IngestionJob) -> Result<bool> {
+    async fn transition_ingestion(
+        &self,
+        _before: &ingestion_records::IngestionJob,
+        _after: &ingestion_records::IngestionJob,
+    ) -> Result<bool> {
         Err(ingestion_records::IngestionStoreError::Unsupported.into())
     }
 
     /// Commits the complete chunk generation, embedding identity and Indexed state together.
-    async fn publish_ingestion(&self, _job: &ingestion_records::IngestionJob, _publication: &ingestion_records::IngestionPublication) -> Result<()> {
+    async fn publish_ingestion(
+        &self,
+        _job: &ingestion_records::IngestionJob,
+        _publication: &ingestion_records::IngestionPublication,
+    ) -> Result<()> {
         Err(ingestion_records::IngestionStoreError::Unsupported.into())
     }
 
@@ -221,47 +462,88 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     }
 
     /// Atomically freeze a KB's retained sources and revoke/requeue every member.
-    async fn begin_knowledge_regeneration(&self, _owner: &str, _kb: &str,
-        _target: &crate::uar::domain::knowledge::EmbeddingFingerprint)
-        -> Result<crate::uar::domain::knowledge::KnowledgeRegeneration> {
+    async fn begin_knowledge_regeneration(
+        &self,
+        _owner: &str,
+        _kb: &str,
+        _target: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<crate::uar::domain::knowledge::KnowledgeRegeneration> {
         Err(ingestion_records::IngestionStoreError::Unsupported.into())
     }
 
     /// Channel-source observations are a separate, explicitly negotiated profile.
-    fn supports_channel_observers(&self) -> bool { false }
+    fn supports_channel_observers(&self) -> bool {
+        false
+    }
 
-    fn channel_observer_unavailable_reason(&self) -> &'static str { "durable_channel_store_unavailable" }
+    fn channel_observer_unavailable_reason(&self) -> &'static str {
+        "durable_channel_store_unavailable"
+    }
 
-    async fn create_channel_subscription(&self, _record: &ChannelSubscription) -> Result<ChannelSubscription> {
+    async fn create_channel_subscription(
+        &self,
+        _record: &ChannelSubscription,
+    ) -> Result<ChannelSubscription> {
         Err(ChannelObserverStoreError::Unsupported.into())
     }
 
-    async fn load_channel_subscription(&self, _owner: &str, _workspace: &str, _id: &str) -> Result<Option<ChannelSubscription>> {
+    async fn load_channel_subscription(
+        &self,
+        _owner: &str,
+        _workspace: &str,
+        _id: &str,
+    ) -> Result<Option<ChannelSubscription>> {
         Err(ChannelObserverStoreError::Unsupported.into())
     }
 
-    async fn list_channel_subscriptions(&self, _owner: &str, _workspace: &str) -> Result<Vec<ChannelSubscription>> {
+    async fn list_channel_subscriptions(
+        &self,
+        _owner: &str,
+        _workspace: &str,
+    ) -> Result<Vec<ChannelSubscription>> {
         Err(ChannelObserverStoreError::Unsupported.into())
     }
 
-    async fn compare_and_swap_channel_subscription(&self, _before: &ChannelSubscription, _after: &ChannelSubscription) -> Result<bool> {
+    async fn compare_and_swap_channel_subscription(
+        &self,
+        _before: &ChannelSubscription,
+        _after: &ChannelSubscription,
+    ) -> Result<bool> {
         Err(ChannelObserverStoreError::Unsupported.into())
     }
 
-    async fn create_channel_inbox_entry(&self, _record: &ChannelInboxEntry) -> Result<ChannelInboxEntry> {
+    async fn create_channel_inbox_entry(
+        &self,
+        _record: &ChannelInboxEntry,
+    ) -> Result<ChannelInboxEntry> {
         Err(ChannelObserverStoreError::Unsupported.into())
     }
 
-    async fn load_channel_inbox_entry(&self, _owner: &str, _workspace: &str, _subscription: &str, _delivery: &str) -> Result<Option<ChannelInboxEntry>> {
+    async fn load_channel_inbox_entry(
+        &self,
+        _owner: &str,
+        _workspace: &str,
+        _subscription: &str,
+        _delivery: &str,
+    ) -> Result<Option<ChannelInboxEntry>> {
         Err(ChannelObserverStoreError::Unsupported.into())
     }
 
     /// Read the exact owner's subscription inbox without changing its cursor or state.
-    async fn list_channel_inbox_entries(&self, _owner: &str, _workspace: &str, _subscription: &str) -> Result<Vec<ChannelInboxEntry>> {
+    async fn list_channel_inbox_entries(
+        &self,
+        _owner: &str,
+        _workspace: &str,
+        _subscription: &str,
+    ) -> Result<Vec<ChannelInboxEntry>> {
         Err(ChannelObserverStoreError::Unsupported.into())
     }
 
-    async fn compare_and_swap_channel_inbox_entry(&self, _before: &ChannelInboxEntry, _after: &ChannelInboxEntry) -> Result<bool> {
+    async fn compare_and_swap_channel_inbox_entry(
+        &self,
+        _before: &ChannelInboxEntry,
+        _after: &ChannelInboxEntry,
+    ) -> Result<bool> {
         Err(ChannelObserverStoreError::Unsupported.into())
     }
 
@@ -624,23 +906,45 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     // =========================================================================
 
     /// Identity-aware retrieval; concrete durable stores fence one read snapshot.
-    async fn search_knowledge_scoped_in_space(&self, owner_id: &str, kb_ids: &[&str],
-        query_vec: &[f32], limit: usize, min_score: f32,
-        embedding: &crate::uar::domain::knowledge::EmbeddingFingerprint) -> Result<Vec<KnowledgeMatch>> {
+    async fn search_knowledge_scoped_in_space(
+        &self,
+        owner_id: &str,
+        kb_ids: &[&str],
+        query_vec: &[f32],
+        limit: usize,
+        min_score: f32,
+        embedding: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<Vec<KnowledgeMatch>> {
         let mut before = Vec::new();
         for id in kb_ids {
-            let kb = self.get_knowledge_base(owner_id, id).await?
+            let kb = self
+                .get_knowledge_base(owner_id, id)
+                .await?
                 .ok_or_else(|| anyhow::anyhow!("knowledge base unavailable"))?;
-            anyhow::ensure!(!kb.regeneration_unavailable(), "knowledge regeneration is incomplete");
+            anyhow::ensure!(
+                !kb.regeneration_unavailable(),
+                "knowledge regeneration is incomplete"
+            );
             kb.ensure_embedding_space(embedding)?;
-            before.push(((*id).to_owned(), kb.config.indexed_embedding, kb.config.regeneration));
+            before.push((
+                (*id).to_owned(),
+                kb.config.indexed_embedding,
+                kb.config.regeneration,
+            ));
         }
-        let result = self.search_knowledge_scoped(owner_id, kb_ids, query_vec, limit, min_score).await?;
+        let result = self
+            .search_knowledge_scoped(owner_id, kb_ids, query_vec, limit, min_score)
+            .await?;
         for (id, indexed, regeneration) in before {
-            let after = self.get_knowledge_base(owner_id, &id).await?
+            let after = self
+                .get_knowledge_base(owner_id, &id)
+                .await?
                 .ok_or_else(|| anyhow::anyhow!("knowledge base was revoked during retrieval"))?;
-            anyhow::ensure!(after.config.indexed_embedding == indexed && after.config.regeneration == regeneration,
-                "knowledge generation changed during retrieval");
+            anyhow::ensure!(
+                after.config.indexed_embedding == indexed
+                    && after.config.regeneration == regeneration,
+                "knowledge generation changed during retrieval"
+            );
         }
         Ok(result)
     }
@@ -739,20 +1043,33 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     ) -> Result<Vec<CanonicalToolReceipt>>;
 
     /// Whether approval history survives a process restart on this provider.
-    fn supports_durable_approvals(&self) -> bool { false }
+    fn supports_durable_approvals(&self) -> bool {
+        false
+    }
 
-    async fn create_approval_record(&self, _record: &approval_decisions::ApprovalRecord) -> Result<()> {
+    async fn create_approval_record(
+        &self,
+        _record: &approval_decisions::ApprovalRecord,
+    ) -> Result<()> {
         anyhow::bail!("Approval persistence is unavailable")
     }
 
     /// CAS one pending challenge. Human resolution checks the original deadline
     /// at the storage serialization point; a late intent commits Expired and
     /// returns false rather than authorizing Approved or replacing it with Denied.
-    async fn transition_approval_record(&self, _before: &approval_decisions::ApprovalRecord, _after: &approval_decisions::ApprovalRecord) -> Result<bool> {
+    async fn transition_approval_record(
+        &self,
+        _before: &approval_decisions::ApprovalRecord,
+        _after: &approval_decisions::ApprovalRecord,
+    ) -> Result<bool> {
         anyhow::bail!("Approval persistence is unavailable")
     }
 
-    async fn list_approval_records(&self, _owner: &str, _run: &str) -> Result<Vec<approval_decisions::ApprovalRecord>> {
+    async fn list_approval_records(
+        &self,
+        _owner: &str,
+        _run: &str,
+    ) -> Result<Vec<approval_decisions::ApprovalRecord>> {
         anyhow::bail!("Approval persistence is unavailable")
     }
 
@@ -892,32 +1209,75 @@ pub trait PersistenceLayer: Send + Sync + std::fmt::Debug {
     // =========================================================================
 
     /// Trusted containment registrations never imply exclusion by themselves.
-    async fn register_supervisor_domain(&self, _registration: &crate::uar::runtime::supervisor::SupervisorRegistration) -> Result<()> { Err(crate::uar::runtime::supervisor::SupervisorError::Unsupported.into()) }
-    async fn load_supervisor_domain(&self, _epoch: &str) -> Result<Option<crate::uar::runtime::supervisor::SupervisorRegistration>> { Err(crate::uar::runtime::supervisor::SupervisorError::Unsupported.into()) }
-    async fn create_supervisor_challenge(&self, _challenge: &crate::uar::runtime::supervisor::SupervisorChallenge) -> Result<()> { Err(crate::uar::runtime::supervisor::SupervisorError::Unsupported.into()) }
-    async fn load_supervisor_challenge(&self, _id: &str) -> Result<Option<crate::uar::runtime::supervisor::SupervisorChallenge>> { Err(crate::uar::runtime::supervisor::SupervisorError::Unsupported.into()) }
-    async fn commit_supervisor_checkpoint_exclusion(&self, _proof: &crate::uar::runtime::supervisor::VerifiedSupervisorExclusion) -> Result<()> { Err(crate::uar::runtime::supervisor::SupervisorError::Unsupported.into()) }
+    async fn register_supervisor_domain(
+        &self,
+        _registration: &crate::uar::runtime::supervisor::SupervisorRegistration,
+    ) -> Result<()> {
+        Err(crate::uar::runtime::supervisor::SupervisorError::Unsupported.into())
+    }
+    async fn load_supervisor_domain(
+        &self,
+        _epoch: &str,
+    ) -> Result<Option<crate::uar::runtime::supervisor::SupervisorRegistration>> {
+        Err(crate::uar::runtime::supervisor::SupervisorError::Unsupported.into())
+    }
+    async fn create_supervisor_challenge(
+        &self,
+        _challenge: &crate::uar::runtime::supervisor::SupervisorChallenge,
+    ) -> Result<()> {
+        Err(crate::uar::runtime::supervisor::SupervisorError::Unsupported.into())
+    }
+    async fn load_supervisor_challenge(
+        &self,
+        _id: &str,
+    ) -> Result<Option<crate::uar::runtime::supervisor::SupervisorChallenge>> {
+        Err(crate::uar::runtime::supervisor::SupervisorError::Unsupported.into())
+    }
+    async fn commit_supervisor_checkpoint_exclusion(
+        &self,
+        _proof: &crate::uar::runtime::supervisor::VerifiedSupervisorExclusion,
+    ) -> Result<()> {
+        Err(crate::uar::runtime::supervisor::SupervisorError::Unsupported.into())
+    }
 
     /// True only for an atomic protected envelope, durable claim and exclusion store.
-    fn supports_durable_checkpoint_resume(&self) -> bool { false }
+    fn supports_durable_checkpoint_resume(&self) -> bool {
+        false
+    }
 
     /// Atomically create immutable checkpoint bytes and complete owner metadata.
-    async fn save_resumable_checkpoint(&self, _envelope: &checkpoint_resume::CheckpointResumeEnvelope) -> Result<()> {
+    async fn save_resumable_checkpoint(
+        &self,
+        _envelope: &checkpoint_resume::CheckpointResumeEnvelope,
+    ) -> Result<()> {
         Err(checkpoint_resume::CheckpointResumeError::Unsupported.into())
     }
 
     /// Load exact principal-scoped resume evidence before any live-run lookup.
-    async fn load_checkpoint_resume(&self, _owner_key: &str, _run_id: &str, _checkpoint_id: &str) -> Result<Option<checkpoint_resume::CheckpointResumeEnvelope>> {
+    async fn load_checkpoint_resume(
+        &self,
+        _owner_key: &str,
+        _run_id: &str,
+        _checkpoint_id: &str,
+    ) -> Result<Option<checkpoint_resume::CheckpointResumeEnvelope>> {
         Err(checkpoint_resume::CheckpointResumeError::Unsupported.into())
     }
 
     /// List protected checkpoint envelopes for one complete verified principal.
-    async fn list_checkpoint_resumes(&self, _owner_key: &str, _run_id: &str) -> Result<Vec<checkpoint_resume::CheckpointResumeEnvelope>> {
+    async fn list_checkpoint_resumes(
+        &self,
+        _owner_key: &str,
+        _run_id: &str,
+    ) -> Result<Vec<checkpoint_resume::CheckpointResumeEnvelope>> {
         Err(checkpoint_resume::CheckpointResumeError::Unsupported.into())
     }
 
     /// Claim one source run and exact revision only after trusted predecessor exclusion.
-    async fn claim_checkpoint_resume(&self, _envelope: &checkpoint_resume::CheckpointResumeEnvelope, _claim: &checkpoint_resume::CheckpointContinuationClaim) -> Result<checkpoint_resume::CheckpointClaimOutcome> {
+    async fn claim_checkpoint_resume(
+        &self,
+        _envelope: &checkpoint_resume::CheckpointResumeEnvelope,
+        _claim: &checkpoint_resume::CheckpointContinuationClaim,
+    ) -> Result<checkpoint_resume::CheckpointClaimOutcome> {
         Err(checkpoint_resume::CheckpointResumeError::Unsupported.into())
     }
 

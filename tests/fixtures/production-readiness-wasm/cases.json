@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "classification": "authored-fixture-not-executed-evidence",
+  "mode": "plain-component-only",
+  "runtime": { "wasmtime": "50.0.0", "wasmtime_wasi": "50.0.0", "source": "Cargo.lock", "engine": "WasmSkillRuntime::new", "target": "actual runtime host; no distributed native cache" },
+  "reference": {
+    "artifact": "reference.wasm",
+    "upstream_path": "crates/prometheus-skill-system/skills/react/prometheus-entity-skills/entity-graph-optimize/skill.wasm",
+    "source": "crates/prometheus-skill-system/skills/react/prometheus-entity-skills/entity-graph-optimize/component/src/lib.rs",
+    "wit": "crates/prometheus-skill-system/skills/react/prometheus-entity-skills/entity-graph-optimize/component/wit/skill.wit",
+    "pin_source": "crates/prometheus-skill-system/substrate/exec-tier-w/versions.toml:reference_component.artifact_sha256",
+    "declared_sha256": "ba438895404a23985d5226735b8f362cf3e8044894a1140852ba0992f2fdbe78",
+    "world": "prometheus:component@0.1.0",
+    "wit_bindgen": "0.46.0",
+    "input": "",
+    "expected_result": { "kbd": { "available": false }, "evolver": { "available": false }, "refiner": { "available": false }, "openspec": { "available": false } }
+  },
+  "cases": [
+    { "id": "plain-reference", "entry": "WasmSkillRuntime::register then run", "oracle": "safe source compilation; isolated empty kv-store yields all four markers false", "evidence": "unrun" },
+    { "id": "malformed-plain", "artifact": "malformed.wasm", "oracle": "invalid_component_source; skill not registered", "evidence": "unrun" },
+    { "id": "untrusted-native", "artifact": "untrusted.cwasm", "oracle": "native_component_untrusted before reading or deserializing; no skill registered", "evidence": "unrun" },
+    { "id": "stale-or-other-target-native", "oracle": "all .cwasm refused by policy irrespective of asserted runtime/target/features; an adjacent manifest cannot grant trust", "evidence": "unrun; not a successful deserialization compatibility test" },
+    { "id": "renamed-native", "oracle": "ELF-like bytes named .wasm rejected by the safe source loader", "evidence": "unrun" },
+    { "id": "governed-tool-denied", "entry": "existing governed tool admission only if a WASM execution lane is separately promoted", "oracle": "denied tool/capability has no effects; direct runtime fixture is not governance evidence", "evidence": "excluded from first Linux API promotion; no product wiring asserted" }
+  ]
+}

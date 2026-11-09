@@ -95,9 +95,8 @@ async fn run_main() -> u8 {
         } else {
             ConfigManager::load(cli).await
         };
-        let config_manager = configuration.map_err(|error| {
-            anyhow::anyhow!("Failed to load configuration: {error:?}")
-        })?;
+        let config_manager = configuration
+            .map_err(|error| anyhow::anyhow!("Failed to load configuration: {error:?}"))?;
         configuration_owner = Some(std::sync::Arc::clone(&config_manager));
         // Strict mode is enabled if the operator passed `--strict-config` or set
         // `UAR_STRICT_CONFIG=true`. It makes any runtime reload that would change
@@ -123,12 +122,20 @@ async fn run_main() -> u8 {
             Some(Command::Credentials { action }) => {
                 let CredentialAction::InitializeRevisions { writers_quiesced } = action;
                 let result = uar::security::credentials::maintenance::initialize_revisions(
-                    &config_manager.current(), writers_quiesced,
-                ).await;
+                    &config_manager.current(),
+                    writers_quiesced,
+                )
+                .await;
                 match result {
                     Ok(summary) => match serde_json::to_string(&summary) {
-                        Ok(summary) => { println!("{summary}"); 0 }
-                        Err(_) => { eprintln!("credential_revision_output_failed"); 1 }
+                        Ok(summary) => {
+                            println!("{summary}");
+                            0
+                        }
+                        Err(_) => {
+                            eprintln!("credential_revision_output_failed");
+                            1
+                        }
                     },
                     Err(_) => {
                         eprintln!("credential_revision_initialization_refused_or_unavailable");
@@ -145,10 +152,14 @@ async fn run_main() -> u8 {
                 uar::compiler::run_compile(&path, out.as_deref()).await
             }
             #[cfg(windows)]
-            Some(Command::Service) => unreachable!("Windows service handled before telemetry setup"),
+            Some(Command::Service) => {
+                unreachable!("Windows service handled before telemetry setup")
+            }
         };
         Ok::<i32, anyhow::Error>(code)
-    }).catch_unwind().await;
+    })
+    .catch_unwind()
+    .await;
 
     let mut code = match outcome {
         Ok(Ok(code)) => code as u8,
@@ -163,28 +174,41 @@ async fn run_main() -> u8 {
         }
     };
     if let Some(configuration) = configuration_owner {
-        match std::panic::AssertUnwindSafe(configuration.close_watchers()).catch_unwind().await {
-            Ok(Ok(())) => {},
+        match std::panic::AssertUnwindSafe(configuration.close_watchers())
+            .catch_unwind()
+            .await
+        {
+            Ok(Ok(())) => {}
             Ok(Err(error)) => {
                 eprintln!("UAR configuration cleanup failed: {error:#}");
-                if code == 0 { code = 1; }
+                if code == 0 {
+                    code = 1;
+                }
             }
             Err(_) => {
                 eprintln!("UAR configuration cleanup panicked; release is unconfirmed");
-                if code == 0 { code = 1; }
+                if code == 0 {
+                    code = 1;
+                }
             }
         }
     }
     if let Some(provider) = &otel_provider {
-        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| provider.shutdown())) {
-            Ok(Ok(())) => {},
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            uar::telemetry::shutdown(provider)
+        })) {
+            Ok(Ok(())) => {}
             Ok(Err(error)) => {
                 eprintln!("UAR telemetry cleanup failed: {error}");
-                if code == 0 { code = 1; }
+                if code == 0 {
+                    code = 1;
+                }
             }
             Err(_) => {
                 eprintln!("UAR telemetry cleanup panicked; release is unconfirmed");
-                if code == 0 { code = 1; }
+                if code == 0 {
+                    code = 1;
+                }
             }
         }
     }

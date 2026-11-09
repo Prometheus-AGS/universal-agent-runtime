@@ -12,7 +12,9 @@ use universal_agent_runtime::uar::domain::knowledge::{KbConfig, KnowledgeBase};
 use universal_agent_runtime::uar::persistence::PersistenceLayer;
 use universal_agent_runtime::uar::persistence::providers::memory::InMemoryProvider;
 use universal_agent_runtime::uar::rag::chunking::ChunkingStrategy;
-use universal_agent_runtime::uar::rag::embeddings::{EmbeddingBackend, EmbeddingError};
+use universal_agent_runtime::uar::rag::embeddings::{
+    EmbeddingBackend, EmbeddingError, swappable::SwappableEmbeddingBackend,
+};
 use universal_agent_runtime::uar::rag::ingest::IngestService;
 
 #[derive(Debug)]
@@ -60,7 +62,7 @@ async fn service_with_kb(kb_strategy: Option<ChunkingStrategy>) -> IngestService
     }
     IngestService::new(
         persistence,
-        Arc::new(StubBackend),
+        Arc::new(SwappableEmbeddingBackend::new(Arc::new(StubBackend))),
         ChunkingStrategy::Sentence,
     )
 }

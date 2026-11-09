@@ -1,0 +1,143 @@
+{
+  "recorded_at": "2026-10-31T16:24:17.656195+00:00",
+  "source_sha": "5aa36a40ac0661ad358f50db8a066b5f5a1c4263",
+  "source_tree": "113d8cc44ea15377ed81918862b687d57d4949e1",
+  "clean_worktree": true,
+  "scope": "Library test harness compilation and16specified assertions only; not installed product/platform/provider qualification.",
+  "baseline": "PASS all3profiles on unchanged committed source and recursive pins",
+  "regressions": {
+    "presentation_history": {
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    },
+    "embeddings": {
+      "passed": 11,
+      "failed": 0,
+      "ignored": 0
+    },
+    "openapi": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "environment": {
+    "CARGO_BUILD_BUILD_DIR": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/build",
+    "CARGO_CACHE_RUSTC_INFO": "0",
+    "RUSTC_WRAPPER": "",
+    "PATH_prefix": "/usr/local/bin",
+    "host": "x86_64-apple-darwin",
+    "cargo": "1.99.0-nightly59800466c",
+    "rustc": "1.99.0-nightlyb6839f4d0"
+  },
+  "inputs": [
+    {
+      "path": "Cargo.toml",
+      "sha256": "e2b3e88b10d2b190ccc8cd70baf57fcfa3f842bdabcc2dddf19dd3b3a02e7636"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "f129e0743308a9a2f94b0ceaa0b235dce57c9f82b4159d268ebf6d4e10413ad1"
+    },
+    {
+      "path": "versions.toml",
+      "sha256": "0e353df1172c464da3cf7326bf4e84db657201caf23a108fc3fd2c5f8edf305d"
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "sha256": "d5a8793f42828a223749a6f50df95db82d3f237307e80414314d60f89faf5414"
+    },
+    {
+      "path": ".cargo/config.toml",
+      "sha256": "b8da292a25b840d96e94a5f4e4271fd7d66bf36a479a430ff0d6be73fddd3541"
+    }
+  ],
+  "artifacts": [
+    {
+      "features": "minimal",
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/build/debug/deps/universal_agent_runtime-e07fe3128eb75e0f",
+      "sha256": "90120fa969a5936c16b30b9abd44a4f3c590142b98d8eae7952f09c2cb50d390",
+      "bytes": 412696752
+    },
+    {
+      "features": "server-full",
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/build/debug/deps/universal_agent_runtime-e278d783f0a6eba4",
+      "sha256": "32b8ae005efdc494f71a2256cf670b29537435df9cbbe40caee23ea8e9bd542c",
+      "bytes": 684244552
+    },
+    {
+      "features": "server-full,postgres-backend",
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/build/debug/deps/universal_agent_runtime-268cb1abffbd0f37",
+      "sha256": "033ad4c023db3aa0b361c646a4b855bf9281e687986f9f5809aae3308ade5eeb",
+      "bytes": 688357128
+    }
+  ],
+  "logs": [
+    {
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/production-readiness-476/exact-commit-baseline-004.log",
+      "sha256": "26d3a6e3aae9df4cc6dc3da105d78647441e4bd59ef7e086097a8e9725d2829e"
+    },
+    {
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/production-readiness-476/history-004.log",
+      "sha256": "2672edaa00583f3181bc6ab74cd5098c0f37c0473a56fbdbe6b6e21f58a9c7d0"
+    },
+    {
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/production-readiness-476/embeddings-004.log",
+      "sha256": "50a841b8832624a7e3c0a410e07debc873369bdbb50eee2753e0b8d23b9c54d9"
+    },
+    {
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/production-readiness-476/openapi-004.log",
+      "sha256": "7346683f64e1a281fcbb96e62a04a3ffd8431d923d0a0a09caf9452170039708"
+    },
+    {
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/production-readiness-476/full-server-full-compile-003.log",
+      "sha256": "9412a744576380db4cec0eb64b70b6b00866673a49d14a3aedf33a49322ce028"
+    },
+    {
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/production-readiness-476/full-library-003.log",
+      "sha256": "e7098b7c7105b30c0b5ff2c0ae45ab9a3d875b78294c44067096f3dcad9fd245"
+    },
+    {
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/production-readiness-476/warning-repair-commit-001.log",
+      "sha256": "24fd062cf4b47552d473a1ce31f860a7c175f614455b445a9c2b0626ebe05da4"
+    },
+    {
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/production-readiness-476/approval-dev-compile-004.log",
+      "sha256": "b96e16083080ab3f937e6df1b897283dcff685db4da3ae0983368b85fc317067"
+    }
+  ],
+  "completed_at": "2026-10-31T16:32:25.787758+00:00",
+  "final_clean_source": true,
+  "phase_disposition": "EXIT_SATISFIED_WITH_EXPLICIT_UNRELATED_INVENTORY_FAILURES; not release qualification",
+  "approval_control_compile": {
+    "status": "PASS_WARNING_FREE",
+    "command": "cargo test --locked --no-default-features --features server-full,postgres-backend,in-memory-backend --test approval_recovery --no-run",
+    "qualifier_executed": false,
+    "log_sha256": "b96e16083080ab3f937e6df1b897283dcff685db4da3ae0983368b85fc317067",
+    "artifact": {
+      "path": "/Users/gqadonis/.claude/worktrees/production-readiness-476/target/build/debug/deps/approval_recovery-5725fad1c89ff6ec",
+      "sha256": "b264e997d30d6e26ede6e6317fbcb09eb03fa48905899cca813aa8efdf7ffc62",
+      "bytes": 270198192
+    }
+  },
+  "unrelated_inventory": {
+    "source": "8e0602eecbd37504e8cdf8945f2f1c5537ff6701",
+    "all_targets_compile": "FAILED101 four settings_persistence fixture API errors; no bodies executed",
+    "library_execution": {
+      "passed": 857,
+      "failed": 8,
+      "ignored": 1,
+      "exit_code": 101
+    },
+    "final_candidate_full_inventory": "NOT_RERUN; failures remain unresolved/unverified on final candidate; only two-file warning repair since prior inventory",
+    "format": "FAILED historical broad check; no formatter writes or repeat",
+    "dependency_audit": "FAILED historical unchanged dependency audit21findings; no unrelated upgrades"
+  },
+  "evidence_limits": [
+    "No installed release artifact qualification",
+    "No live provider/vision/capability certification",
+    "No PG parity/runtime recovery or full-harness durability certification",
+    "No temporary patches, hidden exclusions, test deletion/ignore, blanket lint suppression or Actions product checks"
+  ]
+}

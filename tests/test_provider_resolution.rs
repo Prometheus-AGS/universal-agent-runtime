@@ -7,6 +7,7 @@ use universal_agent_runtime::config::LlmConfig;
 use universal_agent_runtime::llm::{ProviderRegistry, registry::ProviderConfig};
 use universal_agent_runtime::mcp::registry::McpRegistry;
 use universal_agent_runtime::session::SessionStore;
+use universal_agent_runtime::uar::rag::embeddings::swappable::SwappableEmbeddingBackend;
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 
@@ -22,7 +23,10 @@ fn make_vector_matcher() -> Arc<universal_agent_runtime::uar::runtime::matching:
                 "embeddings are not exercised by these tests",
             ),
         );
-    Arc::new(universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(backend, 0.75))
+    Arc::new(universal_agent_runtime::uar::runtime::matching::VectorMatcher::new(
+        Arc::new(SwappableEmbeddingBackend::new(backend)),
+        0.75,
+    ))
 }
 
 async fn make_manager(model: &str) -> RunManager {

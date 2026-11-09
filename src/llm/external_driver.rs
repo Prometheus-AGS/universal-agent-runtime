@@ -58,12 +58,14 @@ impl std::fmt::Debug for ExternalLlmDriver {
 #[async_trait]
 impl LlmDriver for ExternalLlmDriver {
     async fn stream(&self, req: LlmRequest) -> anyhow::Result<ExternalDriverStream> {
+        super::orchestrator::record_provider_preparation();
         if req.budget_contract.is_some() {
             return Err(ProviderError::invalid_request(
                 "External LLM driver has no supported final-wire budget contract",
             )
             .into());
         }
+        super::orchestrator::record_provider_submission();
         match (self.handler)(req).await {
             Ok(stream) => Ok(Box::pin(stream.map(|event| match event {
                 Ok(event) => Ok(event),

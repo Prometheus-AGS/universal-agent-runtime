@@ -1,0 +1,229 @@
+//! This module defines the operations for object storage using the [object_store](https://docs.rs/object_store/latest/object_store/)
+//! crate. This will enable the user to store objects using local file storage,
+//! memory, or cloud storage such as S3 or GCS.
+
+use std::sync::{Arc, LazyLock};
+#[cfg(not(target_family = "wasm"))]
+use std::{env, fs};
+
+use anyhow::Result;
+use bytes::Bytes;
+use futures::stream::BoxStream;
+use object_store::path::Path;
+use object_store::{ObjectStore, ObjectStoreExt, parse_url};
+use sha1::{Digest, Sha1};
+use url::Url;
+
+#[cfg(not(target_family = "wasm"))]
+pub(crate) mod connector;
+
+/// Builds the store `url` names, as [`parse_url`] does, except that a cloud
+/// client (S3, GCS, Azure) is built through
+/// [`connector::BundledRootsConnector`] so it trusts the same roots as a
+/// bucket backend.
+fn store_for_url(url: &Url) -> object_store::Result<Box<dyn ObjectStore>> {
+	#[cfg(not(target_family = "wasm"))]
+	{
+		use object_store::ObjectStoreScheme;
+		use object_store::aws::AmazonS3Builder;
+		use object_store::azure::MicrosoftAzureBuilder;
+		use object_store::gcp::GoogleCloudStorageBuilder;
+
+		use self::connector::BundledRootsConnector;
+
+		let (scheme, path) = ObjectStoreScheme::parse(url)?;
+		Path::parse(path)?;
+		let url = url.to_string();
+		match scheme {
+			ObjectStoreScheme::AmazonS3 => {
+				return Ok(Box::new(
+					AmazonS3Builder::new()
+						.with_url(url)
+						.with_http_connector(BundledRootsConnector)
+						.build()?,
+				));
+			}
+			ObjectStoreScheme::GoogleCloudStorage => {
+				return Ok(Box::new(
+					GoogleCloudStorageBuilder::new()
+						.with_url(url)
+						.with_http_connector(BundledRootsConnector)
+						.build()?,
+				));
+			}
+			ObjectStoreScheme::MicrosoftAzure => {
+				return Ok(Box::new(
+					MicrosoftAzureBuilder::new()
+						.with_url(url)
+						.with_http_connector(BundledRootsConnector)
+						.build()?,
+				));
+			}
+			ObjectStoreScheme::Local | ObjectStoreScheme::Memory | ObjectStoreScheme::Http | _ => {}
+		}
+	}
+	parse_url(url).map(|(store, _)| store)
+}
+
+fn initialize_store(env_var: &str, default_dir: &str) -> Arc<dyn ObjectStore> {
+	match std::env::var(env_var) {
+		Ok(url) => {
+			let url =
+				Url::parse(&url).unwrap_or_else(|_| panic!("Expected a valid url for {}", env_var));
+			let store = store_for_url(&url)
+				.unwrap_or_else(|_| panic!("Expected a valid url for {}", env_var));
+			if url.scheme() == "file" {
+				#[cfg(not(target_family = "wasm"))]
+				{
+					let path_buf = url.to_file_path().expect("valid file path");
+					let path = path_buf.to_str().expect("valid utf8 path");
+					if !path_buf.as_path().exists() {
+						fs::create_dir_all(path_buf.as_path())
+							.unwrap_or_else(|_| panic!("Failed to create directory {:?}", path));
+					}
+					Arc::new(
+						object_store::local::LocalFileSystem::new_with_prefix(path)
+							.expect("Failed to create LocalFileSystem"),
+					)
+				}
+
+				#[cfg(target_family = "wasm")]
+				{
+					Arc::new(object_store::memory::InMemory::new())
+				}
+			} else {
+				Arc::new(store)
+			}
+		}
+		Err(_) => {
+			info!(
+				"No {} environment variable found, using default directory {}",
+				env_var, default_dir
+			);
+			default_store(default_dir)
+		}
+	}
+}
+
+/// The store used when no URL is configured: a local file system store rooted
+/// at `default_dir`, resolved against the current directory and created if
+/// absent.
+#[cfg(not(target_family = "wasm"))]
+fn default_store(default_dir: &str) -> Arc<dyn ObjectStore> {
+	let path =
+		env::current_dir().expect("current directory should be accessible").join(default_dir);
+	if !path.exists() || !path.is_dir() {
+		fs::create_dir_all(&path)
+			.unwrap_or_else(|_| panic!("Failed to create directory {:?}", path));
+	}
+	// As long as the provided path is correct, the following should never panic
+	Arc::new(
+		object_store::local::LocalFileSystem::new_with_prefix(path)
+			.expect("valid local filesystem path"),
+	)
+}
+
+/// The store used when no URL is configured: an in-memory store. A browser has
+/// no file system and no current directory, so `default_dir` is not resolved.
+#[cfg(target_family = "wasm")]
+fn default_store(_default_dir: &str) -> Arc<dyn ObjectStore> {
+	Arc::new(object_store::memory::InMemory::new())
+}
+
+static STORE: LazyLock<Arc<dyn ObjectStore>> =
+	LazyLock::new(|| initialize_store("SURREAL_OBJECT_STORE", "store"));
+
+static CACHE: LazyLock<Arc<dyn ObjectStore>> =
+	LazyLock::new(|| initialize_store("SURREAL_CACHE_STORE", "cache"));
+
+/// Streams the file from the local system or memory object storage.
+pub async fn stream(
+	file: String,
+) -> Result<BoxStream<'static, Result<Bytes, object_store::Error>>> {
+	match CACHE.get(&Path::from(file.as_str())).await {
+		Ok(data) => Ok(data.into_stream()),
+		_ => Ok(STORE.get(&Path::from(file.as_str())).await?.into_stream()),
+	}
+}
+
+/// Gets the file from the local file system or memory object storage.
+pub async fn get(file: &str) -> Result<Vec<u8>> {
+	match CACHE.get(&Path::from(file)).await {
+		Ok(data) => Ok(data.bytes().await?.to_vec()),
+		_ => {
+			let data = STORE.get(&Path::from(file)).await?;
+			CACHE.put(&Path::from(file), data.bytes().await?.into()).await?;
+			Ok(CACHE.get(&Path::from(file)).await?.bytes().await?.to_vec())
+		}
+	}
+}
+
+/// Puts the file into the local file system or memory object storage.
+pub async fn put(file: &str, data: Vec<u8>) -> Result<()> {
+	let _ = STORE.put(&Path::from(file), Bytes::from(data).into()).await?;
+	Ok(())
+}
+
+/// Deletes the file from the backing object store and invalidates any cached
+/// copy. Treats a missing file as success so callers can use it to ensure a
+/// path is gone without racing against concurrent deletes.
+pub async fn del(file: &str) -> Result<()> {
+	let path = Path::from(file);
+	swallow_not_found(STORE.delete(&path).await)?;
+	swallow_not_found(CACHE.delete(&path).await)
+}
+
+fn swallow_not_found(r: std::result::Result<(), object_store::Error>) -> Result<()> {
+	match r {
+		Ok(())
+		| Err(object_store::Error::NotFound {
+			..
+		}) => Ok(()),
+		Err(e) => Err(e.into()),
+	}
+}
+
+/// Hashes the bytes of a file to a string for the storage of a file.
+pub fn hash(data: &[u8]) -> String {
+	let mut hasher = Sha1::new();
+	hasher.update(data);
+	let result = hasher.finalize();
+	let mut output = hex::encode(result);
+	output.truncate(6);
+	output
+}
+
+#[cfg(test)]
+mod tests {
+	use std::env;
+
+	use super::*;
+	#[test]
+	fn test_initialize_store_env_var() {
+		let url = "file:///tmp/test_store";
+		unsafe { env::set_var("SURREAL_OBJECT_STORE", url) };
+		let store = initialize_store("SURREAL_OBJECT_STORE", "store");
+		// Assert the store is initialized with the correct URL
+		assert!(store.to_string().contains("store"));
+
+		unsafe { env::remove_var("SURREAL_OBJECT_STORE") };
+		assert!(env::var("SURREAL_OBJECT_STORE").is_err());
+		let store = initialize_store("SURREAL_OBJECT_STORE", "store");
+		debug!("{store:?}");
+		let current_dir = env::current_dir().unwrap();
+		assert!(env::current_dir().unwrap().join("store").exists());
+		// Remove the dir
+		fs::remove_dir_all(current_dir.join("store")).unwrap();
+	}
+
+	#[tokio::test]
+	async fn default_store_writes_under_the_default_dir() {
+		let tmp = temp_dir::TempDir::new().unwrap();
+		// An absolute `default_dir` replaces the current directory in the join.
+		let root = tmp.path().join("store");
+		let store = default_store(root.to_str().unwrap());
+		assert!(root.is_dir());
+		store.put(&Path::from("model.surml"), Bytes::from_static(b"model").into()).await.unwrap();
+		assert_eq!(fs::read(root.join("model.surml")).unwrap(), b"model");
+	}
+}

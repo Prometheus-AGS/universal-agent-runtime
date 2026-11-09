@@ -1,0 +1,63 @@
+{
+  "schema": "uar.memory-context-fixture/v1",
+  "namespace": "memory-context-__OWNED_NAMESPACE__",
+  "identity": {
+    "source_commit": "__FINAL_FULL_SET_40_HEX__",
+    "artifact_sha256": "__FINAL_CUSTOMER_ARTIFACT_64_HEX__"
+  },
+  "peer": {
+    "base_url": "http://127.0.0.1:4661/",
+    "journal_path": "/__EXTERNAL_OWNER_FRESH_ABSOLUTE_JOURNAL__.jsonl",
+    "source_sha256": "__MEMORY_CONTEXT_PEER_SOURCE_64_HEX__"
+  },
+  "profiles": {
+    "positive": {
+      "base_url": "http://127.0.0.1:1961/",
+      "foreign_base_url": "http://127.0.0.1:1962/",
+      "workspace": "memory-context-__OWNED_NAMESPACE__",
+      "model": "memory-context-peer/memory-context-model",
+      "wire_model": "memory-context-model",
+      "config_sha256": "__POSITIVE_CONFIG_64_HEX__",
+      "independent_memory_store_id": "memory-context-__OWNED_NAMESPACE__-positive",
+      "identity_binding": { "same_runtime": true, "distinct_verified_principals": true },
+      "auto_capture": false,
+      "embedding_dimension": 2,
+      "embedding_model": "memory-context-fixture-2",
+      "injection_min_similarity": 0.5,
+      "fallbacks_enabled": false,
+      "retries_enabled": false
+    },
+    "absent": {
+      "base_url": "http://127.0.0.1:1963/",
+      "foreign_base_url": "http://127.0.0.1:1964/",
+      "workspace": "memory-context-__OWNED_NAMESPACE__",
+      "model": "memory-context-peer/memory-context-model",
+      "wire_model": "memory-context-model",
+      "config_sha256": "__ABSENT_CUTOFF_CONFIG_64_HEX__",
+      "independent_memory_store_id": "memory-context-__OWNED_NAMESPACE__-absent",
+      "identity_binding": { "same_runtime": true, "distinct_verified_principals": true },
+      "auto_capture": false,
+      "embedding_dimension": 2,
+      "embedding_model": "memory-context-fixture-2",
+      "injection_min_similarity": null,
+      "fallbacks_enabled": false,
+      "retries_enabled": false
+    },
+    "budget": {
+      "base_url": "http://127.0.0.1:1965/",
+      "foreign_base_url": "http://127.0.0.1:1966/",
+      "workspace": "memory-context-__OWNED_NAMESPACE__",
+      "model": "memory-context-peer/memory-context-tiny",
+      "wire_model": "memory-context-tiny",
+      "config_sha256": "__TINY_CONTEXT_CONFIG_64_HEX__",
+      "independent_memory_store_id": "memory-context-__OWNED_NAMESPACE__-budget",
+      "identity_binding": { "same_runtime": true, "distinct_verified_principals": true },
+      "auto_capture": false,
+      "embedding_dimension": 2,
+      "embedding_model": "memory-context-fixture-2",
+      "injection_min_similarity": 0.5,
+      "fallbacks_enabled": false,
+      "retries_enabled": false
+    }
+  }
+}

@@ -4,6 +4,8 @@ packages:
   - frontend/packages/*
   - frontend/packages/prometheus-entity-management/packages/*
 
+verifyDepsBeforeRun: error
+
 overrides:
   'dompurify@<3.4.14': 3.4.14
   esbuild: 0.28.1

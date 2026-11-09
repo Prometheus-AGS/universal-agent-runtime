@@ -20,7 +20,7 @@ use futures::{Stream, StreamExt};
 use sha2::{Digest, Sha256};
 use tokio::sync::RwLock;
 use tower::ServiceExt;
-use universal_agent_runtime::config::{FailoverConfig, FallbackModel, LlmConfig};
+use universal_agent_runtime::config::{FailoverConfig, FallbackModel, LlmConfig, ServiceInstanceConfig};
 use universal_agent_runtime::llm::{
     DestinationRequestPreparation, DestinationRequestPreparations, EndpointRequestProfile,
     EndpointRequestTransform, LiterLlmDriver, LlmDriver, LlmRequest, Message, MessageContent,
@@ -30,10 +30,12 @@ use universal_agent_runtime::llm::{
 use universal_agent_runtime::mcp::registry::McpRegistry;
 use universal_agent_runtime::normalized::NormalizedEvent;
 use universal_agent_runtime::session::SessionStore;
+use universal_agent_runtime::uar::api::routes::RunApiState;
+use universal_agent_runtime::uar::compiler::collaboration::CollaborationCatalogService;
 use universal_agent_runtime::uar::defaults::default_agent;
 use universal_agent_runtime::uar::domain::events::NormalizedEvent as RunEvent;
 use universal_agent_runtime::uar::rag::embeddings::{
-    EmbeddingBackend, UnavailableEmbeddingBackend,
+    EmbeddingBackend, UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend,
 };
 use universal_agent_runtime::uar::runtime::context::{
     budget::{
@@ -52,6 +54,7 @@ use universal_agent_runtime::uar::runtime::prompt::{
 };
 use universal_agent_runtime::uar::runtime::skills::SkillRegistry;
 use universal_agent_runtime::uar::security::claims::{UserClaims, UserContext};
+use universal_agent_runtime::uar::service_instance::ServiceInstanceAuthority;
 use universal_agent_runtime::uar::settings::resilience_policy::ResiliencePolicy;
 use wiremock::{
     Mock, MockServer, ResponseTemplate,
@@ -302,7 +305,10 @@ async fn run_manager_with_policy(
             Arc::new(McpRegistry::new_empty()),
             sessions,
             Arc::new(RwLock::new(SkillRegistry::default())),
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await
@@ -1522,6 +1528,7 @@ fn metadata_usage(total: u32) -> NormalizedEvent {
         total_tokens: total,
         cached_tokens: None,
         cache_creation_tokens: None,
+        uncached_input_tokens: None,
     }
 }
 
@@ -1979,7 +1986,17 @@ async fn last_event_id_replays_only_subsequent_chat_events() {
         },
     };
     let app = universal_agent_runtime::uar::api::router()
-        .with_state(manager)
+        .with_state(Arc::new(RunApiState {
+            manager,
+            collaboration_catalog: Arc::new(CollaborationCatalogService::in_memory()),
+            service_instance: Arc::new(ServiceInstanceAuthority::new(
+                &ServiceInstanceConfig::default(),
+                "model-path-replay-instance",
+                "http://127.0.0.1",
+                false,
+                &[],
+            )),
+        }))
         .layer(Extension(user));
     let response = app
         .oneshot(

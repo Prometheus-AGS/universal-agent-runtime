@@ -523,7 +523,10 @@ impl SettingsManager {
     pub async fn skill_matching_engine_for_admission(
         &self,
     ) -> Result<crate::uar::runtime::skills::service::SkillMatchingEngine> {
-        Ok(self.get_typed_for_admission("skills.matching.engine").await?.unwrap_or_default())
+        Ok(self
+            .get_typed_for_admission("skills.matching.engine")
+            .await?
+            .unwrap_or_default())
     }
 
     /// Resolve the intent classifier from its committed `intent_classifier.*` settings.
@@ -533,15 +536,25 @@ impl SettingsManager {
         fallback: &crate::uar::runtime::matching::intent::ClassifierConfig,
     ) -> Result<crate::uar::runtime::matching::intent::ClassifierConfig> {
         Ok(crate::uar::runtime::matching::intent::ClassifierConfig {
-            backend: self.get_typed_for_admission("intent_classifier.backend").await?
+            backend: self
+                .get_typed_for_admission("intent_classifier.backend")
+                .await?
                 .unwrap_or_else(|| fallback.backend.clone()),
-            topk: self.get_typed_for_admission("intent_classifier.topk").await?
+            topk: self
+                .get_typed_for_admission("intent_classifier.topk")
+                .await?
                 .unwrap_or(fallback.topk),
-            accept_threshold: self.get_typed_for_admission("intent_classifier.accept_threshold").await?
+            accept_threshold: self
+                .get_typed_for_admission("intent_classifier.accept_threshold")
+                .await?
                 .unwrap_or(fallback.accept_threshold),
-            margin_threshold: self.get_typed_for_admission("intent_classifier.margin_threshold").await?
+            margin_threshold: self
+                .get_typed_for_admission("intent_classifier.margin_threshold")
+                .await?
                 .unwrap_or(fallback.margin_threshold),
-            wasm_component_path: self.get_typed_for_admission("intent_classifier.wasm_component_path").await?
+            wasm_component_path: self
+                .get_typed_for_admission("intent_classifier.wasm_component_path")
+                .await?
                 .unwrap_or_else(|| fallback.wasm_component_path.clone()),
         })
     }
@@ -591,7 +604,10 @@ impl SettingsManager {
     }
 
     async fn set_value_locked(&self, key: &str, value: Value) -> Result<()> {
-        anyhow::ensure!(!key.starts_with("internal.model-verification."), "Model verification receipts are operation-owned");
+        anyhow::ensure!(
+            !key.starts_with("internal.model-verification."),
+            "Model verification receipts are operation-owned"
+        );
         if self.sidecar_feature_locks
             && SIDECAR_LOCKED_OFF_SETTINGS.contains(&key)
             && value.as_bool() != Some(false)
@@ -1086,7 +1102,10 @@ impl SettingsManager {
     }
 
     pub(crate) async fn invalidate_model_verification(&self, key: &str) -> Result<()> {
-        anyhow::ensure!(key.starts_with("internal.model-verification."), "invalid proof key");
+        anyhow::ensure!(
+            key.starts_with("internal.model-verification."),
+            "invalid proof key"
+        );
         self.persistence.delete_setting(key).await?;
         self.cache.write().await.remove(key);
         Ok(())
@@ -1094,17 +1113,42 @@ impl SettingsManager {
 
     /// Write an operation-owned proof through the existing typed settings store.
     pub(crate) async fn record_model_verification(&self, key: &str, data: Value) -> Result<()> {
-        anyhow::ensure!(key.starts_with("internal.model-verification."), "invalid proof key");
-        let kind = make_type("Model verification receipts", "internal-model-verification", json!({
-            "type":"object", "required":["verified_at", "configuration_digest"],
-            "properties":{"verified_at":{"type":"string"},"configuration_digest":{"type":"string"}},
-            "additionalProperties":false
-        }));
-        self.register_extension(kind.clone(), vec![make_setting(&kind, key, "Model verification", data.clone())]).await?;
-        let existing = self.persistence.get_setting(key).await?.ok_or_else(|| anyhow::anyhow!("proof missing"))?;
-        let setting = Settings { data, updated_at:Some(Utc::now()), ..existing };
+        anyhow::ensure!(
+            key.starts_with("internal.model-verification."),
+            "invalid proof key"
+        );
+        let kind = make_type(
+            "Model verification receipts",
+            "internal-model-verification",
+            json!({
+                "type":"object", "required":["verified_at", "configuration_digest"],
+                "properties":{"verified_at":{"type":"string"},"configuration_digest":{"type":"string"}},
+                "additionalProperties":false
+            }),
+        );
+        self.register_extension(
+            kind.clone(),
+            vec![make_setting(&kind, key, "Model verification", data.clone())],
+        )
+        .await?;
+        let existing = self
+            .persistence
+            .get_setting(key)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("proof missing"))?;
+        let setting = Settings {
+            data,
+            updated_at: Some(Utc::now()),
+            ..existing
+        };
         self.persistence.upsert_setting(&setting).await?;
-        self.cache.write().await.insert(key.to_owned(), CacheEntry {setting, meta:SettingsMeta::from_config(SettingSource::Api)});
+        self.cache.write().await.insert(
+            key.to_owned(),
+            CacheEntry {
+                setting,
+                meta: SettingsMeta::from_config(SettingSource::Api),
+            },
+        );
         Ok(())
     }
 
@@ -1948,7 +1992,12 @@ fn build_core_schema(
             }
         });
         let st = make_type("Skill Matching", "skills.matching", schema);
-        let settings = vec![make_setting(&st, "skills.matching.engine", "Matching Engine", json!("service"))];
+        let settings = vec![make_setting(
+            &st,
+            "skills.matching.engine",
+            "Matching Engine",
+            json!("service"),
+        )];
         result.push((st, settings));
     }
 
@@ -2551,6 +2600,9 @@ fn build_core_schema(
                     "x-control": "toggle" },
                 "inject_context": { "type": "boolean", "title": "Inject Memory Context",
                     "x-control": "toggle" },
+                "injection_min_similarity": { "type": ["number", "null"], "minimum": -1.0, "maximum": 1.0,
+                    "title": "Minimum Injection Similarity",
+                    "description": "Inclusive cosine cutoff. Null refuses automatic injection until an operator configures a cutoff; memory tools are unchanged." },
                 "embedding_provider": { "type": "string", "title": "Embedding Provider",
                     "enum": ["openai", "cohere", "local"], "x-control": "select" },
                 "embedding_model": { "type": "string", "title": "Embedding Model",
@@ -2595,6 +2647,12 @@ fn build_core_schema(
                 "memory.inject_context",
                 "Inject Context",
                 json!(m.inject_context),
+            ),
+            make_setting(
+                &st,
+                "memory.injection_min_similarity",
+                "Minimum Injection Similarity",
+                json!(m.injection_min_similarity),
             ),
             make_setting(
                 &st,
@@ -2908,10 +2966,18 @@ fn build_core_schema(
                 "Embedding Model",
                 json!(config.llm.embedding.model),
             ),
-            make_setting(&st, "llm.embedding.vector_dimension", "Embedding Vector Dimension",
-                json!(config.llm.embedding.vector_dimension)),
-            make_setting(&st, "llm.embedding.send_dimensions", "Send Embedding Dimensions",
-                json!(config.llm.embedding.send_dimensions)),
+            make_setting(
+                &st,
+                "llm.embedding.vector_dimension",
+                "Embedding Vector Dimension",
+                json!(config.llm.embedding.vector_dimension),
+            ),
+            make_setting(
+                &st,
+                "llm.embedding.send_dimensions",
+                "Send Embedding Dimensions",
+                json!(config.llm.embedding.send_dimensions),
+            ),
         ];
         result.push((st, settings));
     }

@@ -48,14 +48,14 @@ describe("RunEventPersistence", () => {
     });
   });
 
-  test("coalesces text content once at an explicit end", async () => {
+  test("writes deltas immediately and coalesces text content once at an explicit end", async () => {
     await writer.ingest(row("TEXT_MESSAGE_CONTENT", "2:0", 32, { delta: "hello " }));
     await writer.ingest(row("TEXT_MESSAGE_CONTENT", "3:0", 48, { delta: "world" }));
-    expect(store.appendRunEvent).not.toHaveBeenCalled();
+    expect(store.appendRunEvent).toHaveBeenCalledTimes(2);
 
     await writer.ingest(row("TEXT_MESSAGE_END", "4:0", 64));
 
-    expect(store.appendRunEvent).toHaveBeenCalledTimes(1);
+    expect(store.appendRunEvent).toHaveBeenCalledTimes(3);
     expect(store.appendRunEvent).toHaveBeenCalledWith(expect.objectContaining({
       runId: "server-run-1",
       eventId: "4:0",
@@ -86,6 +86,8 @@ describe("RunEventPersistence", () => {
     }), timings);
 
     expect(vi.mocked(store.appendRunEvent).mock.calls.map(([event]) => event.type)).toEqual([
+      "TEXT_MESSAGE_CONTENT",
+      "REASONING_MESSAGE_CONTENT",
       "TEXT_MESSAGE_END",
       "REASONING_MESSAGE_END",
       "RUN_FINISHED",
@@ -96,6 +98,7 @@ describe("RunEventPersistence", () => {
       phaseTimings: timings,
       usage: { totalTokens: 42, costUsdEstimate: 0.01 },
       costUsd: 0.01,
+      nativeTerminal: { runId: "server-run-1", eventId: "3:0" },
     }));
   });
 
@@ -121,17 +124,46 @@ describe("RunEventPersistence", () => {
     ]);
   });
 
-  test("keeps an official server run identity for transport-level finalization", async () => {
+  test("local finalization keeps native identity but never certifies its outcome", async () => {
     await writer.ingest(row("RUN_STARTED", "1:0", 16));
-    await writer.finish("finished");
+    await writer.finish();
 
     expect(store.finishRun).toHaveBeenCalledWith(expect.objectContaining({
       id: "server-run-1",
-      status: "finished",
+      status: "interrupted",
     }));
     expect(store.startRun).not.toHaveBeenCalledWith(expect.objectContaining({
       id: "local-run-1",
     }));
+    expect(vi.mocked(store.finishRun).mock.calls[0]?.[0].nativeTerminal).toBeUndefined();
+  });
+
+  test("refuses a foreign attached native identity before any persistence write", async () => {
+    writer = new RunEventPersistence(store, {
+      threadId: "thread-1", fallbackRunId: "server-run-1", nativeRunId: "server-run-1",
+    });
+    const terminal = row("RUN_FINISHED", "terminal", 48);
+    await expect(writer.ingest({
+      ...terminal, runId: "foreign-run", payload: { ...terminal.payload, runId: "foreign-run" },
+    })).rejects.toThrow("identity conflicts");
+    await expect(writer.ingest({
+      ...terminal, payload: { ...terminal.payload, runId: "foreign-run" },
+    })).rejects.toThrow("identity conflicts");
+    expect(store.startRun).not.toHaveBeenCalled();
+    expect(store.appendRunEvent).not.toHaveBeenCalled();
+    expect(store.finishRun).not.toHaveBeenCalled();
+  });
+
+  test("a terminal without explicit native identity supplies no interruption override", async () => {
+    const terminal = row("RUN_FINISHED", "terminal", 48);
+    const withoutIdentity = { ...terminal, payload: { ...terminal.payload } };
+    delete withoutIdentity.runId;
+    delete withoutIdentity.payload.runId;
+    await writer.ingest(withoutIdentity);
+    expect(store.finishRun).toHaveBeenCalledWith(expect.objectContaining({
+      id: "local-run-1", status: "interrupted",
+    }));
+    expect(vi.mocked(store.finishRun).mock.calls[0]?.[0].nativeTerminal).toBeUndefined();
   });
 
   test("flushes separate message ids as separate terminal-fallback spans", async () => {
@@ -151,6 +183,8 @@ describe("RunEventPersistence", () => {
       messageId: event.payload.messageId,
       content: event.payload.content,
     }))).toEqual([
+      { type: "TEXT_MESSAGE_CONTENT", messageId: "message-1", content: undefined },
+      { type: "TEXT_MESSAGE_CONTENT", messageId: "message-2", content: undefined },
       { type: "TEXT_MESSAGE_END", messageId: "message-1", content: "first" },
       { type: "TEXT_MESSAGE_END", messageId: "message-2", content: "second" },
       { type: "RUN_FINISHED", messageId: undefined, content: undefined },

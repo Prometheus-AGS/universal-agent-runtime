@@ -29,6 +29,7 @@ use std::sync::Arc;
 
 use backon::Retryable;
 use futures::{Stream, StreamExt};
+use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
 use crate::config::{FailoverConfig, FallbackModel, LlmConfig};
@@ -123,7 +124,7 @@ fn build_driver_inner(
         );
         return Ok(Arc::new(super::anthropic_driver::AnthropicDriver::new(
             api_key,
-            model_id,
+            llm_config.resolved_model_id.clone().unwrap_or(model_id),
             llm_config.base_url.clone(),
             None,
             None,
@@ -141,11 +142,22 @@ fn build_driver_inner(
         max_retries = llm_config.max_retries,
         "Built LLM client with effective request timeout"
     );
-    Ok(Arc::new(super::LiterLlmDriver::new(
-        client_config,
-        llm_config.model.clone(),
-        llm_config.parallel_tool_calls,
-    )?))
+    let driver = match (&llm_config.resolved_provider_id, &llm_config.resolved_model_id) {
+        (Some(provider), Some(model)) => super::LiterLlmDriver::from_selected_route(
+            client_config,
+            llm_config.model.clone(),
+            provider_id,
+            format!("{provider}/{model}"),
+            model.clone(),
+            llm_config.parallel_tool_calls,
+        )?,
+        _ => super::LiterLlmDriver::new(
+            client_config,
+            llm_config.model.clone(),
+            llm_config.parallel_tool_calls,
+        )?,
+    };
+    Ok(Arc::new(driver))
 }
 
 type DriverEventStream = Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>;
@@ -179,20 +191,166 @@ impl std::fmt::Display for FallbackBudgetRefusal {
 
 impl std::error::Error for FallbackBudgetRefusal {}
 
+/// Read-only run usage evidence. This is separate from billing reservations and
+/// settlement: absent counters never erase an applicable per-call report.
+#[derive(Clone, Default)]
+pub(crate) struct ModelUsageObservation(Arc<std::sync::Mutex<Vec<Arc<ModelCallObservation>>>>);
+
+#[derive(Default)]
+struct ModelCallObservation {
+    // 0 = unresolved opening, 1 = known local preparation, 2 = submitted.
+    submission: std::sync::atomic::AtomicU8,
+    usage: std::sync::Mutex<Option<(u32, u32, Option<u32>, Option<u32>, Option<u32>)>>,
+}
+
+#[derive(Default, Debug, PartialEq, Eq)]
+pub(crate) struct ModelUsageTotals {
+    pub submitted_calls: usize,
+    pub unresolved_calls: usize,
+    pub input: Option<u32>,
+    pub output: Option<u32>,
+    pub cache_read: Option<u32>,
+    pub cache_creation: Option<u32>,
+    pub uncached_input: Option<u32>,
+}
+
+impl ModelCallObservation {
+    fn submitted(&self) {
+        self.submission.store(2, std::sync::atomic::Ordering::Release);
+    }
+
+    fn observe(&self, event: &NormalizedEvent) {
+        if let NormalizedEvent::Usage {
+            prompt_tokens, completion_tokens, cached_tokens, cache_creation_tokens, uncached_input_tokens, ..
+        } = event {
+            let mut usage = self.usage.lock().unwrap_or_else(|error| error.into_inner());
+            let previous = *usage;
+            let uncached = uncached_input_tokens.or_else(|| {
+                prompt_tokens.checked_sub((*cached_tokens)?).and_then(|input| {
+                    input.checked_sub((*cache_creation_tokens)?)
+                })
+            });
+            *usage = Some((
+                previous.map_or(*prompt_tokens, |old| old.0.max(*prompt_tokens)),
+                previous.map_or(*completion_tokens, |old| old.1.max(*completion_tokens)),
+                previous.and_then(|old| old.2).into_iter().chain(*cached_tokens).max(),
+                previous.and_then(|old| old.3).into_iter().chain(*cache_creation_tokens).max(),
+                previous.and_then(|old| old.4).into_iter().chain(uncached).max(),
+            ));
+        }
+    }
+}
+
+impl ModelUsageObservation {
+    fn begin_call(&self) -> Arc<ModelCallObservation> {
+        let call = Arc::new(ModelCallObservation::default());
+        self.0.lock().unwrap_or_else(|error| error.into_inner()).push(call.clone());
+        call
+    }
+
+    pub(crate) fn totals(&self) -> ModelUsageTotals {
+        let calls = self.0.lock().unwrap_or_else(|error| error.into_inner());
+        let mut submitted_calls = 0;
+        let mut unresolved_calls = 0;
+        let reports = calls.iter().filter_map(|call| {
+            match call.submission.load(std::sync::atomic::Ordering::Acquire) {
+                1 => None,
+                2 => {
+                    submitted_calls += 1;
+                    Some(*call.usage.lock().unwrap_or_else(|error| error.into_inner()))
+                }
+                _ => {
+                    // An uninstrumented failure/cancelled opening cannot certify
+                    // no send. Keep availability unknown without counting arrival.
+                    unresolved_calls += 1;
+                    Some(None)
+                }
+            }
+        }).collect::<Vec<_>>();
+        if reports.is_empty() {
+            return ModelUsageTotals::default();
+        }
+        ModelUsageTotals {
+            submitted_calls,
+            unresolved_calls,
+            input: reports.iter().try_fold(0u32, |total, report| total.checked_add(report.as_ref()?.0)),
+            output: reports.iter().try_fold(0u32, |total, report| total.checked_add(report.as_ref()?.1)),
+            cache_read: reports.iter().try_fold(0u32, |total, report| total.checked_add(report.as_ref()?.2?)),
+            cache_creation: reports.iter().try_fold(0u32, |total, report| total.checked_add(report.as_ref()?.3?)),
+            uncached_input: reports.iter().try_fold(0u32, |total, report| total.checked_add(report.as_ref()?.4?)),
+        }
+    }
+}
+
+tokio::task_local! {
+    static MODEL_CALL_OBSERVATION: Arc<ModelCallObservation>;
+}
+
+/// Native adapters establish that no transport has yet been submitted. A
+/// cancellation or refusal in this local section cannot manufacture a call.
+pub(crate) fn record_provider_preparation() {
+    let _ = MODEL_CALL_OBSERVATION.try_with(|call| {
+        let _ = call.submission.compare_exchange(
+            0, 1, std::sync::atomic::Ordering::AcqRel,
+            std::sync::atomic::Ordering::Acquire,
+        );
+    });
+}
+
+/// Called by host leaf adapters after local refusal points, immediately before
+/// transport submission. It proves an attempted send, not provider acceptance.
+pub(crate) fn record_provider_submission() {
+    let _ = MODEL_CALL_OBSERVATION.try_with(|call| call.submitted());
+}
+
 async fn open_driver_stream(
     driver: &dyn LlmDriver,
     request: LlmRequest,
     start_timeout: std::time::Duration,
     idle_timeout: std::time::Duration,
+    memory_submission: Option<NormalizedEvent>,
+    observation: &ModelUsageObservation,
 ) -> anyhow::Result<DriverEventStream> {
-    let mut stream = tokio::time::timeout(start_timeout, driver.stream(request))
-        .await
-        .map_err(|_| {
-            super::ProviderError::timeout(format!(
-                "LLM stream start timed out after {} ms",
-                start_timeout.as_millis()
-            ))
-        })??;
+    let call = observation.begin_call();
+    let opened = tokio::time::timeout(
+        start_timeout,
+        MODEL_CALL_OBSERVATION.scope(call.clone(), driver.stream(request)),
+    ).await;
+    let mut stream = match opened {
+        Ok(Ok(stream)) => stream,
+        Ok(Err(error)) => {
+            let local_refusal = matches!(
+                error.downcast_ref::<crate::uar::runtime::cost_budget::BudgetFailureOrigin>(),
+                Some(crate::uar::runtime::cost_budget::BudgetFailureOrigin::Admission)
+            );
+            if local_refusal {
+                // A leaf hook wins over classification: HTTP rejection after
+                // transport submission is still an applicable call.
+                let _ = call.submission.compare_exchange(
+                    0, 1, std::sync::atomic::Ordering::AcqRel,
+                    std::sync::atomic::Ordering::Acquire,
+                );
+            }
+            return Err(error);
+        }
+        Err(_) => return Err(super::ProviderError::timeout(format!(
+            "LLM stream start timed out after {} ms", start_timeout.as_millis()
+        )).into()),
+    };
+
+    // A returned stream is positive submission evidence for custom adapters
+    // that do not expose a leaf transport hook. Failed uninstrumented adapters
+    // cannot prove no dispatch; they remain unresolved. The native/bridge hooks
+    // retain actual failed submissions.
+    call.submitted();
+    let mut stream = Box::pin(async_stream::stream! {
+        while let Some(event) = stream.next().await {
+            if let Ok(event) = &event {
+                call.observe(event);
+            }
+            yield event;
+        }
+    });
 
     // Provider lifecycle/usage metadata is not committed assistant output.
     // Keep this prelude inside the retry boundary; otherwise Anthropic's
@@ -230,9 +388,34 @@ async fn open_driver_stream(
         ))
     })??;
     prelude.extend(first);
-    Ok(Box::pin(
-        futures::stream::iter(prelude.into_iter().map(Ok::<_, anyhow::Error>)).chain(stream),
-    ))
+    let stream =
+        futures::stream::iter(prelude.into_iter().map(Ok::<_, anyhow::Error>)).chain(stream);
+    Ok(Box::pin(async_stream::stream! {
+        let mut memory_submission = memory_submission;
+        futures::pin_mut!(stream);
+        while let Some(event) = stream.next().await {
+            let event = match event {
+                Ok(event) => event,
+                Err(error) => { yield Err(error); break; }
+            };
+            if matches!(&event, NormalizedEvent::Error { .. }) {
+                memory_submission = None;
+            }
+            let response_observed = match &event {
+                NormalizedEvent::MessageDelta { text }
+                | NormalizedEvent::ThinkingDelta { text }
+                | NormalizedEvent::ReasoningDelta { text } => !text.is_empty(),
+                NormalizedEvent::ToolCallDelta { .. }
+                | NormalizedEvent::ToolCallComplete { .. }
+                | NormalizedEvent::Done => true,
+                _ => false,
+            };
+            if response_observed && let Some(receipt) = memory_submission.take() {
+                yield Ok(receipt);
+            }
+            yield Ok(event);
+        }
+    }))
 }
 
 fn prepend_attempt_manifest(
@@ -297,8 +480,13 @@ struct ToolCallAccumulator {
 #[derive(Clone)]
 pub struct Orchestrator {
     llm_config: LlmConfig,
+    /// The captured route used for preparation and admission. The config model
+    /// remains the bound driver's wire alias.
+    primary_destination: String,
     mcp: Arc<McpRegistry>,
     driver: Arc<dyn LlmDriver>,
+    model_usage: ModelUsageObservation,
+    tool_identity_rejected: Option<Arc<std::sync::atomic::AtomicBool>>,
     /// Ordered fallback drivers activated when the primary driver errors.
     fallback_drivers: Vec<FailoverTarget>,
     /// Controls when/how to switch to the fallback driver.
@@ -335,6 +523,12 @@ pub struct Orchestrator {
     /// Exact model/template/settings contracts used to rebuild every provider
     /// attempt from canonical history.
     destination_preparations: Option<Arc<DestinationRequestPreparations>>,
+    /// Immutable host-captured authority and live admission evaluator for
+    /// every public provider send in this run.
+    destination_admission: Option<Arc<super::router::DestinationAdmission>>,
+    /// The trusted host has a finite accounting envelope that requires a
+    /// proven image bound before any provider stream can open.
+    finite_accounting_requires_proven_image_bound: bool,
     /// Known context window of each failover destination, keyed by qualified
     /// model. A destination absent here is dispatched without a budget check.
     fallback_context_windows: BTreeMap<String, usize>,
@@ -355,6 +549,13 @@ pub struct Orchestrator {
     team_model_handoff: Option<crate::uar::runtime::turn::CollaborationRunBinding>,
     client_graph_state: Option<serde_json::Value>,
     client_tool_budget: Option<Arc<crate::uar::runtime::cost_budget::ModelCallBudget>>,
+    memory_context_observation: Option<MemoryContextObservation>,
+}
+
+#[derive(Clone)]
+struct MemoryContextObservation {
+    provenance: crate::uar::memory::context_builder::MemoryContextProvenance,
+    marked_fragment: String,
 }
 
 #[derive(Clone)]
@@ -954,9 +1155,12 @@ impl Orchestrator {
         driver: Arc<dyn LlmDriver>,
     ) -> Self {
         Self {
+            primary_destination: llm_config.model.clone(),
             llm_config,
             mcp,
             driver,
+            model_usage: ModelUsageObservation::default(),
+            tool_identity_rejected: None,
             fallback_drivers: Vec::new(),
             failover_config: FailoverConfig::default(),
             health_monitor: None,
@@ -978,6 +1182,8 @@ impl Orchestrator {
             cache_strategy: None,
             request_budget_contract: None,
             destination_preparations: None,
+            destination_admission: None,
+            finite_accounting_requires_proven_image_bound: false,
             fallback_context_windows: BTreeMap::new(),
             endpoint_settings_profiles: BTreeMap::new(),
             canonical_history: None,
@@ -993,7 +1199,99 @@ impl Orchestrator {
             team_model_handoff: None,
             client_graph_state: None,
             client_tool_budget: None,
+            memory_context_observation: None,
         }
+    }
+
+    #[must_use]
+    pub(crate) fn with_primary_destination(mut self, destination: &str) -> Self {
+        self.primary_destination = destination.to_owned();
+        self
+    }
+
+    /// Bind a fresh run's observational usage without changing accounting.
+    pub(crate) fn with_model_usage(mut self, usage: ModelUsageObservation) -> Self {
+        self.model_usage = usage;
+        self
+    }
+
+    /// Observe an invalid provisional batch before it can become recovery history.
+    pub(crate) fn with_tool_identity_rejection(
+        mut self,
+        rejected: Arc<std::sync::atomic::AtomicBool>,
+    ) -> Self {
+        self.tool_identity_rejected = Some(rejected);
+        self
+    }
+
+    /// Observe inclusion without changing prompt preparation or dispatch authority.
+    #[must_use]
+    pub(crate) fn with_memory_context_observation(
+        mut self,
+        provenance: Option<crate::uar::memory::context_builder::MemoryContextProvenance>,
+        fragment: Option<String>,
+    ) -> Self {
+        self.memory_context_observation = provenance.zip(fragment).and_then(
+            |(provenance, marked_fragment)| {
+                (provenance.status
+                    == crate::uar::memory::context_builder::MemoryContextStatus::SelectedPrepared
+                    && !provenance.memory_ids.is_empty()
+                    && !marked_fragment.is_empty())
+                .then_some(MemoryContextObservation {
+                    provenance,
+                    marked_fragment,
+                })
+            },
+        );
+        self
+    }
+
+    fn prepared_memory_submission(
+        &self,
+        model: &str,
+        request: &LlmRequest,
+    ) -> anyhow::Result<Option<NormalizedEvent>> {
+        let Some(observation) = &self.memory_context_observation else {
+            return Ok(None);
+        };
+        let contains_fragment = |content: &serde_json::Value| match content {
+            serde_json::Value::String(text) => text.contains(&observation.marked_fragment),
+            serde_json::Value::Array(parts) => parts.iter().any(|part| {
+                part.get("type").and_then(serde_json::Value::as_str) == Some("text")
+                    && part
+                        .get("text")
+                        .and_then(serde_json::Value::as_str)
+                        .is_some_and(|text| text.contains(&observation.marked_fragment))
+            }),
+            _ => false,
+        };
+        let retained = request.messages.iter().any(|message| {
+            message.get("role").and_then(serde_json::Value::as_str) == Some("system")
+                && message.get("content").is_some_and(&contains_fragment)
+        });
+        // Native Anthropic overrides message-derived system content when these
+        // blocks exist. Require the selected fragment to survive that path too.
+        let override_retained = request
+            .anthropic_system
+            .as_ref()
+            .is_none_or(|blocks| contains_fragment(&serde_json::Value::Array(blocks.clone())));
+        if !retained || !override_retained {
+            return Ok(None);
+        }
+        let content = serde_json::to_vec(&serde_json::json!({
+            "messages": request.messages,
+            "anthropic_system": request.anthropic_system,
+        }))
+        .map_err(|_| anyhow::anyhow!("Memory submission receipt serialization failed"))?;
+        Ok(Some(NormalizedEvent::MemoryContextSubmitted {
+            memory_ids: observation.provenance.memory_ids.clone(),
+            retrieval_method: observation.provenance.retrieval_method.clone(),
+            request_content_sha256: Sha256::digest(content)
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>(),
+            model: model.to_owned(),
+        }))
     }
 
     /// Share host-owned activations without persisting their reclaimable bodies
@@ -1054,6 +1352,63 @@ impl Orchestrator {
         self
     }
 
+    /// Attach the host-captured destination authority used after every final
+    /// attempt preparation and immediately before opening a driver stream.
+    #[must_use]
+    pub(crate) fn with_destination_admission(
+        mut self,
+        admission: Arc<super::router::DestinationAdmission>,
+    ) -> Self {
+        self.destination_admission = Some(admission);
+        self
+    }
+
+    /// Carry the host's finite-accounting rule to every final prepared send.
+    /// This is a policy input, not an inference from image encoding or model
+    /// metadata.
+    #[must_use]
+    pub(crate) fn with_finite_accounting_requires_proven_image_bound(
+        mut self,
+        required: bool,
+    ) -> Self {
+        self.finite_accounting_requires_proven_image_bound = required;
+        self
+    }
+
+    async fn admit_prepared_user_attempt(
+        &self,
+        destination: &str,
+        request: &mut LlmRequest,
+    ) -> anyhow::Result<()> {
+        let requirements = super::router::requirements_for_final_request_with_explicit_reasoning(
+            request,
+            self.llm_config
+                .reasoning_effort
+                .is_some_and(|effort| effort.thinking_budget().is_some()),
+        )
+        .map_err(|_| super::router::DestinationAdmissionError::InvalidFinalRequest)?;
+        if self.finite_accounting_requires_proven_image_bound && requirements.needs_vision {
+            return Err(
+                super::router::DestinationAdmissionError::UnprovenImageBoundForFiniteAccounting
+                    .into(),
+            );
+        }
+        let Some(admission) = &self.destination_admission else {
+            return Ok(());
+        };
+        admission
+            .admit(destination, &requirements)
+            .await?
+            .restrict_output(request);
+        Ok(())
+    }
+
+    fn is_destination_admission_failure(error: &anyhow::Error) -> bool {
+        error
+            .downcast_ref::<super::router::DestinationAdmissionError>()
+            .is_some()
+    }
+
     /// Bind opaque provider continuity retained by the trusted host.
     #[must_use]
     pub fn with_protected_continuity(mut self, continuity: ProtectedContinuity) -> Self {
@@ -1104,13 +1459,19 @@ impl Orchestrator {
         if has_exact_contract {
             return Ok((source.clone(), None));
         }
+        // Reserve the destination's downward output limit before displacing
+        // history. Exact preparations above must install their own contract
+        // before admission; the primary contract is not their capacity claim.
+        // This estimate does not replace fresh admission after preparation.
+        let mut fitted = source.clone();
+        self.admit_prepared_user_attempt(model, &mut fitted).await?;
         let refuse = |error: &ReduceHistoryError| {
             anyhow::Error::new(FallbackBudgetRefusal {
                 code: error.code(),
                 message: error.to_string(),
             })
         };
-        let reserved_output = source
+        let reserved_output = fitted
             .output_token_cap
             .map_or(RESPONSE_RESERVE_TOKENS, |cap| cap as usize);
         let tool_tokens = tool_definition_tokens(model, &source.tools);
@@ -1143,12 +1504,14 @@ impl Orchestrator {
             })
         };
         if required_before <= input_allowance {
-            return Ok((source.clone(), Some(report(required_before, 0, 0))));
+            return Ok((fitted, Some(report(required_before, 0, 0))));
         }
-        let strategy = self.skill_activation.as_ref().map_or(
-            crate::uar::context::ContextStrategy::Auto,
-            |activation| activation.strategy.clone(),
-        );
+        let strategy = self
+            .skill_activation
+            .as_ref()
+            .map_or(crate::uar::context::ContextStrategy::Auto, |activation| {
+                activation.strategy.clone()
+            });
         let (reduced, reduction) = reduce_history_with_input_allowance(
             messages,
             &strategy,
@@ -1165,7 +1528,6 @@ impl Orchestrator {
             (0, required_before.saturating_sub(required_after)),
             |action| (action.messages_removed, action.tokens_saved),
         );
-        let mut fitted = source.clone();
         fitted.messages = reduced
             .iter()
             .map(|message| serde_json::json!(message))
@@ -1190,11 +1552,13 @@ impl Orchestrator {
         fragments: &[crate::uar::runtime::prompt::PromptFragment],
     ) -> anyhow::Result<LlmRequest> {
         for message in &mut request.messages {
-            self.secret_scrubber.project_message_json(message);
+            self.secret_scrubber
+                .project_canonical_message_json(message)?;
         }
         let mut canonical_messages = canonical_messages.to_vec();
         for message in &mut canonical_messages {
-            self.secret_scrubber.project_message_json(message);
+            self.secret_scrubber
+                .project_canonical_message_json(message)?;
         }
         let mut fragments = fragments.to_vec();
         self.secret_scrubber.project_fragments(&mut fragments);
@@ -1236,22 +1600,38 @@ impl Orchestrator {
         fragments: &[crate::uar::runtime::prompt::PromptFragment],
     ) -> anyhow::Result<LlmRequest> {
         let mut request = self.prepare_attempt(model, request, canonical_messages, fragments)?;
-        if let Some(format) = self.resolved_turn.as_ref().and_then(|turn| turn.response_format()) {
+        if let Some(format) = self
+            .resolved_turn
+            .as_ref()
+            .and_then(|turn| turn.response_format())
+        {
             format.validate()?;
             // The native Anthropic driver has no response-format wire field.
             // Do not let its ignored extra_params become a successful fallback.
-            let provider = if model == self.llm_config.model {
-                self.llm_config.host_provider_kind.as_deref()
+            let provider = if model == self.primary_destination {
+                self.llm_config
+                    .host_provider_kind
+                    .as_deref()
                     .or(self.llm_config.resolved_provider_id.as_deref())
                     .unwrap_or_else(|| super::detect_provider(model))
-            } else { super::detect_provider(model) };
-            anyhow::ensure!(!format.is_structured() || provider != "anthropic",
-                "provider capability error: response_format is unsupported by the captured Anthropic path");
-            let projected = self.secret_scrubber.project_json_text(&serde_json::to_string(format)?);
-            let projected: super::response_format::ResponseFormat = serde_json::from_str(&projected)?;
+            } else {
+                super::detect_provider(model)
+            };
+            anyhow::ensure!(
+                !format.is_structured() || provider != "anthropic",
+                "provider capability error: response_format is unsupported by the captured Anthropic path"
+            );
+            let projected = self
+                .secret_scrubber
+                .project_json_text(&serde_json::to_string(format)?);
+            let projected: super::response_format::ResponseFormat =
+                serde_json::from_str(&projected)?;
             projected.validate()?;
-            request.extra_params.get_or_insert_with(|| serde_json::json!({}))
-                .as_object_mut().ok_or_else(|| anyhow::anyhow!("Request parameters must be an object"))?
+            request
+                .extra_params
+                .get_or_insert_with(|| serde_json::json!({}))
+                .as_object_mut()
+                .ok_or_else(|| anyhow::anyhow!("Request parameters must be an object"))?
                 .insert("response_format".into(), serde_json::to_value(projected)?);
         }
         Ok(request)
@@ -1303,6 +1683,11 @@ impl Orchestrator {
     }
 
     fn provider_failure(&self, error: &anyhow::Error, streaming: bool) -> NormalizedEvent {
+        if super::tool_call_identity::is_rejection(error)
+            && let Some(rejected) = &self.tool_identity_rejected
+        {
+            rejected.store(true, std::sync::atomic::Ordering::Release);
+        }
         if !self.endpoint_settings_profiles.is_empty() {
             let diagnostic = super::team_failure::diagnostic(error, streaming);
             tracing::warn!(
@@ -1882,6 +2267,7 @@ impl Orchestrator {
         let mut config = base.clone();
         config.model.clone_from(&fallback.model);
         config.resolved_provider_id = None;
+        config.resolved_model_id = None;
         config.api_key.clone_from(&fallback.api_key);
         config.base_url.clone_from(&fallback.base_url);
         config
@@ -2278,7 +2664,7 @@ impl Orchestrator {
 
                 if let Some(activation) = &orchestrator.skill_activation {
                     let destination_contract = orchestrator.destination_preparations.as_ref()
-                        .and_then(|preparations| preparations.budget_contract(&orchestrator.llm_config.model))
+                        .and_then(|preparations| preparations.budget_contract(&orchestrator.primary_destination))
                         .or(orchestrator.request_budget_contract.as_ref());
                     let input_allowance = match destination_contract {
                         Some(contract) => crate::uar::runtime::context::budget::input_allowance_for_limits(&contract.limits)
@@ -2475,7 +2861,7 @@ impl Orchestrator {
                         .map(|_| dialect_params.clone()),
                     budget_contract: orchestrator.request_budget_contract.clone(),
                 };
-                let primary_model = orchestrator.llm_config.model.clone();
+                let primary_model = orchestrator.primary_destination.clone();
                 let req = match orchestrator.prepare_user_attempt(
                     &primary_model,
                     base_req.clone(),
@@ -2566,7 +2952,7 @@ impl Orchestrator {
 
                 if orchestrator.endpoint_settings_profiles.is_empty() {
                     tracing::debug!(request_id = %request_id, iteration,
-                        messages = ?req.messages, tool_count = req.tools.len(),
+                        message_count = req.messages.len(), tool_count = req.tools.len(),
                         "Sending request to LLM driver");
                 } else {
                     tracing::debug!(request_id = %request_id, iteration,
@@ -2620,7 +3006,7 @@ impl Orchestrator {
                         let model = retry_model.clone();
                         async move {
                             let profiled = !orchestrator.endpoint_settings_profiles.is_empty();
-                            let request = orchestrator.prepare_user_attempt(
+                            let mut request = orchestrator.prepare_user_attempt(
                                 &model,
                                 source,
                                 &canonical,
@@ -2628,7 +3014,9 @@ impl Orchestrator {
                             ).map_err(|error| super::team_failure::at_stage(
                                 error, super::team_failure::TeamFailureStage::Preparation, profiled,
                             ))?;
+                            orchestrator.admit_prepared_user_attempt(&model, &mut request).await?;
                             let manifest = orchestrator.attempt_manifest(&model, &request);
+                            let memory_submission = orchestrator.prepared_memory_submission(&model, &request)?;
                             if let Some(binding) = &orchestrator.team_model_handoff {
                                 if let Some(attempt) = &binding.team_attempt {
                                     binding.service.validate_team_model_handoff(attempt).await
@@ -2641,6 +3029,8 @@ impl Orchestrator {
                                 request,
                                 stream_start_timeout,
                                 stream_idle_timeout,
+                                memory_submission,
+                                &orchestrator.model_usage,
                             )
                             .await.map_err(|error| super::team_failure::at_stage(error,
                                 super::team_failure::TeamFailureStage::Opening, profiled))?;
@@ -2717,6 +3107,13 @@ impl Orchestrator {
                             yield orchestrator.provider_failure(&e, false);
                             break;
                         }
+                        Err(e) if Orchestrator::is_destination_admission_failure(&e) => {
+                            // Admission failures occur before a provider send.
+                            // They must not cool down the primary or manufacture
+                            // fallback authority from a rejected destination.
+                            yield orchestrator.provider_failure(&e, false);
+                            break;
+                        }
                         Err(e) if orchestrator.failover_config.enabled => {
                             if let Some(health) = &orchestrator.health_monitor {
                                 health
@@ -2781,15 +3178,17 @@ impl Orchestrator {
                                     &canonical_message_json,
                                     &step_fragments,
                                 ) {
-                                    Ok(request) => {
-                                        let mut manifest = orchestrator
-                                            .attempt_manifest(&fallback.model, &request);
-                                        if let Some(fit) = fallback_fit {
-                                            manifest["context_fit"] = fit;
-                                        }
+                                    Ok(mut request) => {
                                         async {
+                                            orchestrator.admit_prepared_user_attempt(&fallback.model, &mut request).await?;
+                                            let mut manifest = orchestrator
+                                                .attempt_manifest(&fallback.model, &request);
+                                            if let Some(fit) = fallback_fit {
+                                                manifest["context_fit"] = fit;
+                                            }
                                             if let Some(binding)=&orchestrator.team_model_handoff {if let Some(attempt)=&binding.team_attempt {binding.service.validate_team_model_handoff(attempt).await?;}}
-                                            let stream=open_driver_stream(fallback.driver.as_ref(),request,stream_start_timeout,stream_idle_timeout).await?;
+                                            let memory_submission = orchestrator.prepared_memory_submission(&fallback.model, &request)?;
+                                            let stream=open_driver_stream(fallback.driver.as_ref(),request,stream_start_timeout,stream_idle_timeout,memory_submission,&orchestrator.model_usage).await?;
                                             if let Some(binding)=&orchestrator.team_model_handoff {if let Some(attempt)=&binding.team_attempt {binding.service.record_team_model_handoff(attempt).await?;}}
                                             Ok::<_,anyhow::Error>(prepend_attempt_manifest(stream,manifest))
                                         }.await
@@ -2805,6 +3204,15 @@ impl Orchestrator {
                                         skill_usage.model = fallback.model.clone();
                                         fallback_stream = Some(s);
                                         break;
+                                    }
+                                    Err(fe) if Orchestrator::is_destination_admission_failure(&fe) => {
+                                        tracing::info!(
+                                            request_id = %request_id,
+                                            fallback_model = %fallback.model,
+                                            error = %orchestrator.provider_log_summary(&fe),
+                                            "Skipping fallback rejected by destination admission"
+                                        );
+                                        fallback_errors.push(format!("{}: admission rejected", fallback.model));
                                     }
                                     Err(fe) => {
                                         if let Some(health) = &orchestrator.health_monitor {
@@ -2950,6 +3358,7 @@ impl Orchestrator {
                                     }
                                 }
                                 NormalizedEvent::ToolCallComplete { call_index, id, name, arguments_json } => {
+                                    let completion_only = !tool_accumulators.contains_key(call_index);
                                     let acc = tool_accumulators.entry(*call_index).or_default();
                                     if let Err(reason) = super::tool_call_identity::merge(&mut acc.id, Some(id.as_str())) {
                                         yield orchestrator.provider_failure(&super::tool_call_identity::failure(reason), true);
@@ -2958,6 +3367,18 @@ impl Orchestrator {
                                     acc.name = Some(name.clone()); acc.arguments = arguments_json.clone();
                                     has_tool_calls = true;
                                     finish_reason = Some("tool_calls".to_string());
+                                    // Completion-only adapters still observed a pending call if
+                                    // the stream later fails. Give the native host the same
+                                    // partial observation as a delta adapter, without publishing
+                                    // a completion or authorizing execution before validation.
+                                    if completion_only && orchestrator.resolved_turn.as_ref().and_then(|turn| turn.client_tools()).is_none() {
+                                        yield NormalizedEvent::ToolCallDelta {
+                                            call_index: *call_index,
+                                            id: acc.id.as_ref().filter(|id| !id.trim().is_empty()).cloned(),
+                                            name: Some(name.clone()),
+                                            arguments_delta: Some(arguments_json.clone()),
+                                        };
+                                    }
                                 }
                                 NormalizedEvent::Done => {
                                     saw_terminal = true;
@@ -3139,8 +3560,8 @@ impl Orchestrator {
                     tracing::debug!(
                         request_id = %request_id,
                         tool_id = %tc.id,
-                        arguments = %orchestrator.secret_scrubber.project_json_text(&tc.function.arguments),
-                        "Tool call arguments"
+                        tool_name = %tc.function.name,
+                        "Tool call prepared"
                     );
                 }
 
@@ -3762,7 +4183,9 @@ impl Orchestrator {
 
         let canonical = req.messages.clone();
         let fragments = self.canonical_fragments.as_deref().unwrap_or(&[]);
-        let req = self.prepare_attempt(&self.llm_config.model, req, &canonical, fragments)?;
+        let mut req = self.prepare_attempt(&self.primary_destination, req, &canonical, fragments)?;
+        self.admit_prepared_user_attempt(&self.primary_destination, &mut req)
+            .await?;
 
         // Stream from the driver and collect message deltas
         let mut stream = self.driver.stream(req).await?;
@@ -3834,7 +4257,324 @@ mod tests {
         }
     }
 
+    fn usage_report(input: u32, output: u32, read: Option<u32>, creation: Option<u32>) -> NormalizedEvent {
+        NormalizedEvent::Usage {
+            prompt_tokens: input,
+            completion_tokens: output,
+            total_tokens: input + output,
+            cached_tokens: read,
+            cache_creation_tokens: creation,
+            uncached_input_tokens: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn usage_completeness_follows_actual_two_call_tool_loops() {
+        for (first, second, expected) in [
+            (None, Some((7, 5, Some(3), Some(2))), (None, None, None, None)),
+            (Some((7, 5, Some(3), Some(2))), None, (None, None, None, None)),
+            (Some((7, 5, Some(3), Some(2))), Some((11, 13, Some(1), Some(4))), (Some(18), Some(18), Some(4), Some(6))),
+            (Some((0, 0, Some(0), Some(0))), Some((0, 0, Some(0), Some(0))), (Some(0), Some(0), Some(0), Some(0))),
+            (Some((7, 5, None, Some(2))), Some((11, 13, Some(1), Some(4))), (Some(18), Some(18), None, Some(6))),
+            (Some((7, 5, Some(3), None)), Some((11, 13, Some(1), Some(4))), (Some(18), Some(18), Some(4), None)),
+        ] {
+            let mut tool_step = Vec::new();
+            if let Some((input, output, read, creation)) = first {
+                tool_step.push(usage_report(input, output, read, creation));
+                tool_step.push(usage_report(input, output, read, creation));
+            }
+            tool_step.extend([
+                NormalizedEvent::ToolCallComplete {
+                    call_index: 0, id: "usage-tool-call".into(), name: "a2ui_render".into(),
+                    arguments_json: "{\"messages\":[]}".into(),
+                },
+                NormalizedEvent::Done,
+            ]);
+            let mut final_step = Vec::new();
+            if let Some((input, output, read, creation)) = second {
+                final_step.push(usage_report(input, output, read, creation));
+            }
+            final_step.extend([
+                NormalizedEvent::MessageDelta { text: "complete".into() }, NormalizedEvent::Done,
+            ]);
+            let driver = Arc::new(MockLlmDriver::new(vec![tool_step, final_step]));
+            let skills = Arc::new(NativeSkillRegistry::new());
+            skills.register(RenderSkill).await.expect("usage tool registers");
+            let observed = ModelUsageObservation::default();
+            let orchestrator = Orchestrator::from_driver(
+                LlmConfig::default(), Arc::new(McpRegistry::empty()), skills, driver.clone(),
+            ).with_model_usage(observed.clone());
+            let events = orchestrator.chat("render once").await.expect("tool loop opens")
+                .collect::<Vec<_>>().await;
+            assert!(!events.iter().any(|event| matches!(event, NormalizedEvent::Error { .. })));
+            assert_eq!(driver.call_count(), 2);
+            assert!(driver.requests()[1].messages.iter().any(|message| {
+                message.get("tool_call_id").and_then(serde_json::Value::as_str) == Some("usage-tool-call")
+            }));
+            let totals = observed.totals();
+            assert_eq!(totals.submitted_calls, 2);
+            assert_eq!(totals.unresolved_calls, 0);
+            assert_eq!((totals.input, totals.output, totals.cache_read, totals.cache_creation), expected);
+        }
+    }
+
+    #[test]
+    fn native_uncached_input_remains_independent_of_cache_availability() {
+        let observation = ModelUsageObservation::default();
+        let first = observation.begin_call();
+        first.submitted();
+        first.observe(&NormalizedEvent::Usage {
+            prompt_tokens: 12, completion_tokens: 5, total_tokens: 17,
+            cached_tokens: Some(3), cache_creation_tokens: Some(2),
+            uncached_input_tokens: Some(7),
+        });
+        let second = observation.begin_call();
+        second.submitted();
+        second.observe(&NormalizedEvent::Usage {
+            prompt_tokens: 7, completion_tokens: 5, total_tokens: 12,
+            cached_tokens: None, cache_creation_tokens: None,
+            uncached_input_tokens: Some(7),
+        });
+        let totals = observation.totals();
+        assert_eq!(totals.input, Some(19));
+        assert_eq!(totals.uncached_input, Some(14));
+        assert_eq!(totals.cache_read, None);
+        assert_eq!(totals.cache_creation, None);
+
+        let unsupported = ModelUsageObservation::default();
+        let call = unsupported.begin_call();
+        call.submitted();
+        call.observe(&usage_report(7, 5, None, None));
+        assert_eq!(unsupported.totals().input, Some(7));
+        assert_eq!(unsupported.totals().uncached_input, None);
+    }
+
+    struct UsageOpeningDriver {
+        first: &'static str,
+        calls: AtomicUsize,
+    }
+
+    #[async_trait::async_trait]
+    impl LlmDriver for UsageOpeningDriver {
+        async fn stream(&self, _: LlmRequest) -> anyhow::Result<DriverEventStream> {
+            if self.calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                match self.first {
+                    "local_refusal" => {
+                        record_provider_preparation();
+                        return Err(super::super::ProviderError::invalid_request("local fixture refusal").into());
+                    }
+                    "unknown" => return Err(anyhow::anyhow!("uninstrumented fixture outcome")),
+                    "submitted_missing" => {
+                        record_provider_submission();
+                        return Err(super::super::ProviderError::timeout("submitted fixture timeout").into());
+                    }
+                    "submitted_known" => {
+                        record_provider_submission();
+                        return Ok(Box::pin(futures::stream::iter([
+                            Ok(usage_report(7, 5, Some(3), Some(2))),
+                            Err(super::super::ProviderError::timeout("prelude failure").into()),
+                        ])));
+                    }
+                    "pending_known" => {
+                        record_provider_submission();
+                        return Ok(Box::pin(futures::stream::once(async {
+                            Ok(usage_report(7, 5, Some(3), Some(2)))
+                        }).chain(futures::stream::pending())));
+                    }
+                    _ => unreachable!("fixture mode"),
+                }
+            }
+            Ok(Box::pin(futures::stream::iter([
+                Ok(usage_report(11, 13, Some(1), Some(4))),
+                Ok(NormalizedEvent::MessageDelta { text: "complete".into() }),
+                Ok(NormalizedEvent::Done),
+            ])))
+        }
+    }
+
+    #[tokio::test]
+    async fn usage_completeness_includes_retry_fallback_and_unknown_openings() {
+        use crate::uar::settings::resilience_policy::ResiliencePolicy;
+        for fallback in [false, true] {
+            for first in ["submitted_missing", "submitted_known", "local_refusal", "unknown"] {
+                if !fallback && matches!(first, "local_refusal" | "unknown") {
+                    continue; // These failures are deliberately non-retryable.
+                }
+                let observed = ModelUsageObservation::default();
+                let primary = Arc::new(UsageOpeningDriver { first, calls: AtomicUsize::new(0) });
+                let final_driver = Arc::new(MockLlmDriver::new(vec![vec![
+                    usage_report(11, 13, Some(1), Some(4)),
+                    NormalizedEvent::MessageDelta { text: "complete".into() }, NormalizedEvent::Done,
+                ]]));
+                let config = LlmConfig { max_retries: 1, ..Default::default() };
+                let mut orchestrator = Orchestrator::from_driver(
+                    config, Arc::new(McpRegistry::empty()), Arc::new(NativeSkillRegistry::new()), primary.clone(),
+                ).with_model_usage(observed.clone()).with_resilience_policy(ResiliencePolicy {
+                    retries_enabled: !fallback, retry_max_attempts: 2,
+                    retry_base_delay_ms: 1, retry_max_delay_ms: 1, retry_jitter_mode: "none".into(),
+                    ..Default::default()
+                });
+                if fallback {
+                    orchestrator = orchestrator.with_failovers(
+                        vec![("external/usage-fallback".into(), final_driver.clone())],
+                        FailoverConfig { enabled: true, ..Default::default() },
+                    );
+                }
+                let events = orchestrator.chat("complete").await.expect("usage attempt opens")
+                    .collect::<Vec<_>>().await;
+                assert!(!events.iter().any(|event| matches!(event, NormalizedEvent::Error { .. })));
+                assert_eq!(primary.calls.load(Ordering::SeqCst), if fallback { 1 } else { 2 });
+                let totals = observed.totals();
+                assert_eq!(totals.submitted_calls, if matches!(first, "local_refusal" | "unknown") { 1 } else { 2 });
+                assert_eq!(totals.unresolved_calls, usize::from(first == "unknown"));
+                let expected = match first {
+                    "local_refusal" => (Some(11), Some(13), Some(1), Some(4)),
+                    "submitted_known" => (Some(18), Some(18), Some(4), Some(6)),
+                    _ => (None, None, None, None),
+                };
+                assert_eq!((totals.input, totals.output, totals.cache_read, totals.cache_creation), expected);
+                if first == "submitted_known" {
+                    let calls = observed.0.lock().expect("usage observation");
+                    assert_eq!(*calls[0].usage.lock().expect("first report"), Some((7, 5, Some(3), Some(2), Some(2))));
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn cancelled_opening_retains_submitted_prelude_usage() {
+        let observed = ModelUsageObservation::default();
+        let driver = UsageOpeningDriver { first: "pending_known", calls: AtomicUsize::new(0) };
+        let request = LlmRequest {
+            messages: vec![], tools: vec![], tool_choice: None, parallel_tool_calls: None,
+            output_token_cap: None, cache_strategy: None, thinking_config: None,
+            anthropic_system: None, extra_params: None, budget_contract: None,
+        };
+        let opening = open_driver_stream(&driver, request, std::time::Duration::from_secs(30),
+            std::time::Duration::from_secs(30), None, &observed);
+        let mut opening = Box::pin(opening);
+        assert!(futures::poll!(&mut opening).is_pending());
+        drop(opening);
+        assert_eq!(observed.totals(), ModelUsageTotals {
+            submitted_calls: 1, unresolved_calls: 0, input: Some(7), output: Some(5),
+            cache_read: Some(3), cache_creation: Some(2), uncached_input: Some(2),
+        });
+        // An additional real submission without a report must not erase the
+        // retained first report or advertise its partial total as complete.
+        let missing = observed.begin_call();
+        missing.submitted();
+        assert_eq!(observed.totals().input, None);
+        assert_eq!(*observed.0.lock().expect("calls")[0].usage.lock().expect("known report"),
+            Some((7, 5, Some(3), Some(2), Some(2))));
+    }
+
     struct RenderSkill;
+
+    #[tokio::test]
+    async fn memory_submission_requires_retained_system_content_and_provider_response() {
+        use crate::uar::memory::context_builder::{MemoryContextProvenance, MemoryContextStatus};
+        for (retained, provider_error, selected, metadata_first) in [
+            (true, false, true, false),
+            (false, false, true, false),
+            (true, true, true, false),
+            (true, false, false, false),
+            (true, false, true, true),
+        ] {
+            let fragment = "<memory-context>synthetic indigo orchard</memory-context>";
+            let driver = Arc::new(MockLlmDriver::new(vec![if provider_error {
+                vec![
+                    NormalizedEvent::Error {
+                        message: "synthetic refusal".into(),
+                        code: Some("fixture_refusal".into()),
+                    },
+                    NormalizedEvent::Done,
+                ]
+            } else {
+                let mut events = Vec::new();
+                if metadata_first {
+                    events.push(NormalizedEvent::Custom {
+                        source: "synthetic-provider".into(),
+                        event_name: "metadata".into(),
+                        payload: serde_json::json!({"synthetic":true}),
+                    });
+                }
+                events.extend([
+                    NormalizedEvent::MessageDelta {
+                        text: "observed".into(),
+                    },
+                    NormalizedEvent::Done,
+                ]);
+                events
+            }]));
+            let orchestrator = Orchestrator::from_driver(
+                LlmConfig::default(),
+                Arc::new(McpRegistry::empty()),
+                Arc::new(NativeSkillRegistry::new()),
+                driver.clone(),
+            )
+            .with_resilience_policy(crate::uar::settings::resilience_policy::ResiliencePolicy {
+                retries_enabled: false,
+                ..Default::default()
+            })
+            .with_memory_context_observation(
+                Some(MemoryContextProvenance {
+                    status: if selected {
+                        MemoryContextStatus::SelectedPrepared
+                    } else {
+                        MemoryContextStatus::NoMatch
+                    },
+                    reason_code: "synthetic_selection".into(),
+                    retrieval_method: "owner_scoped_hybrid".into(),
+                    memory_ids: vec!["synthetic-memory-id".into()],
+                }),
+                Some(fragment.into()),
+            );
+            let history: Vec<Message> = serde_json::from_value(serde_json::json!([
+                {"role":"system","content":if retained { fragment } else { "bounded system content" }},
+                // A matching user string never substitutes for retained system context.
+                {"role":"user","content":fragment}
+            ])).unwrap();
+            let events = orchestrator
+                .chat_with_history(history)
+                .await
+                .unwrap()
+                .collect::<Vec<_>>()
+                .await;
+            let receipts = events
+                .iter()
+                .filter_map(|event| match event {
+                    NormalizedEvent::MemoryContextSubmitted {
+                        memory_ids,
+                        request_content_sha256,
+                        ..
+                    } => Some((memory_ids, request_content_sha256)),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            assert_eq!(
+                receipts.len(),
+                usize::from(retained && !provider_error && selected)
+            );
+            if let Some((ids, digest)) = receipts.first() {
+                assert_eq!(ids.as_slice(), ["synthetic-memory-id"]);
+                let requests = driver.requests();
+                let request = requests.last().unwrap();
+                let expected = serde_json::to_vec(&serde_json::json!({"messages":request.messages,"anthropic_system":request.anthropic_system})).unwrap();
+                assert_eq!(
+                    **digest,
+                    Sha256::digest(expected)
+                        .iter()
+                        .map(|byte| format!("{byte:02x}"))
+                        .collect::<String>()
+                );
+                assert!(
+                    !serde_json::to_string(&events)
+                        .unwrap()
+                        .contains("indigo orchard")
+                );
+            }
+        }
+    }
 
     struct SearchSkill {
         calls: Arc<AtomicUsize>,
@@ -4620,7 +5360,9 @@ mod tests {
 
     #[tokio::test]
     async fn native_identity_failed_or_incomplete_streams_discard_pending_completions() {
-        for caller_tools in [false, true] {
+        for (caller_tools, completion_only) in
+            [(false, false), (false, true), (true, false), (true, true)]
+        {
             for (kind, terminal) in [
                 ("normalized", false),
                 ("normalized", true),
@@ -4628,7 +5370,12 @@ mod tests {
                 ("typed", true),
                 ("eof", false),
             ] {
-                let mut batch = vec![Ok(identity_complete(3, "retained-private-id"))];
+                let mut batch = if completion_only {
+                    Vec::new()
+                } else {
+                    vec![Ok(identity_delta(3, Some("retained-private-id")))]
+                };
+                batch.push(Ok(identity_complete(3, "retained-private-id")));
                 if terminal {
                     batch.push(Ok(NormalizedEvent::Done));
                 }
@@ -4685,6 +5432,31 @@ mod tests {
                         | NormalizedEvent::ClientToolsRequested { .. }
                         | NormalizedEvent::Done
                 )));
+                let observations = events
+                    .iter()
+                    .filter_map(|event| match event {
+                        NormalizedEvent::ToolCallDelta {
+                            call_index: 3,
+                            id,
+                            name,
+                            arguments_delta,
+                        } => Some((id.as_deref(), name.as_deref(), arguments_delta.as_deref())),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>();
+                assert_eq!(
+                    observations,
+                    if caller_tools {
+                        Vec::new()
+                    } else {
+                        vec![(
+                            Some("retained-private-id"),
+                            Some("search_web"),
+                            Some(r#"{"query":"identity fixture"}"#),
+                        )]
+                    },
+                    "native partial observation is complete once, while caller metadata stays private"
+                );
                 assert_eq!(calls.load(Ordering::SeqCst), 0);
                 assert_eq!(approvals.load(Ordering::SeqCst), 0);
                 assert_eq!(driver.requests.lock().unwrap().len(), 1);
@@ -4985,6 +5757,50 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn captured_destination_admits_streaming_and_non_streaming_with_bare_wire_alias() {
+        use crate::llm::router::{DestinationAdmission, DestinationScope};
+
+        let driver = Arc::new(MockLlmDriver::echo());
+        let orchestrator = Orchestrator::from_driver(
+            LlmConfig {
+                model: "gpt-4o".into(),
+                resolved_provider_id: Some("openai".into()),
+                ..LlmConfig::default()
+            },
+            Arc::new(McpRegistry::empty()),
+            Arc::new(NativeSkillRegistry::new()),
+            driver.clone(),
+        )
+        .with_primary_destination("openai/gpt-4o")
+        .with_destination_admission(Arc::new(DestinationAdmission::without_registry(
+            DestinationScope::Exact {
+                primary: "openai/gpt-4o".into(),
+            },
+            Default::default(),
+        )));
+
+        let stream = orchestrator.chat("hello").await.expect("start stream");
+        let events = stream.collect::<Vec<_>>().await;
+        assert!(events.iter().all(|event| !matches!(event, NormalizedEvent::Error { .. })));
+        assert!(events.iter().any(|event| matches!(event,
+            NormalizedEvent::MessageDelta { text } if text == "Hello from mock!")));
+        assert_eq!(driver.call_count(), 1);
+
+        let response = orchestrator
+            .chat_non_streaming(vec![Message {
+                role: MessageRole::User,
+                content: MessageContent::text("hello"),
+                tool_call_id: None,
+                tool_calls: None,
+            }])
+            .await
+            .expect("non-streaming request uses the same captured route");
+        assert_eq!(response, "Hello from mock!");
+        assert_eq!(driver.call_count(), 2);
+        assert_eq!(orchestrator.llm_config.model, "gpt-4o");
+    }
+
+    #[tokio::test]
     async fn declares_registered_native_skills_to_the_model() {
         let driver = Arc::new(MockLlmDriver::echo());
         let native_skills = Arc::new(NativeSkillRegistry::new());
@@ -5149,6 +5965,312 @@ mod tests {
                 .iter()
                 .all(|event| !matches!(event, NormalizedEvent::ToolResult { success: false, .. }))
         );
+    }
+
+    // Supplemental synthetic-stream regression: registry admission, fallback
+    // preparation, reduction and the emitted attempt manifest use production
+    // orchestration; the drivers only capture requests and supply stream events.
+    #[tokio::test]
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Keep the E8 orchestration cases and captured dispatch assertions together"
+    )]
+    async fn fallback_stream_reserves_destination_output_before_fitting_history() {
+        use crate::llm::registry::{
+            ModelConfig, ProtocolSetting, ProviderConfig, ProviderRegistry,
+        };
+        use crate::llm::router::{DestinationAdmission, DestinationScope};
+        use crate::uar::runtime::context::token_service::TokenService;
+        use crate::uar::settings::resilience_policy::ResiliencePolicy;
+        use std::collections::BTreeSet;
+
+        for (caller_cap, long_history, live_admission, exact_preparation, expected_cap) in [
+            (Some(16_384), false, true, false, 2_048),
+            (Some(4_096), true, true, false, 2_048),
+            (Some(1_024), true, true, false, 1_024),
+            (None, false, true, false, 2_048),
+            (Some(4_096), false, false, false, 4_096),
+            (Some(16_384), false, true, true, 2_048),
+        ] {
+            let primary_model = "e8-primary/model";
+            let fallback_model = "e8-fallback/model";
+            let registry = Arc::new(ProviderRegistry::new());
+            for (provider, window, maximum) in [
+                ("e8-primary", 32_768, 16_384),
+                ("e8-fallback", 8_192, 2_048),
+            ] {
+                registry
+                    .register(ProviderConfig {
+                        id: provider.into(),
+                        display_name: provider.into(),
+                        base_url: "http://e8-fixture.invalid/v1".into(),
+                        api_key: None,
+                        protocol: ProtocolSetting::Auto,
+                        default_model: Some("model".into()),
+                        models: vec![ModelConfig {
+                            id: "model".into(),
+                            pricing_identity: None,
+                            execution_profile: None,
+                            display_name: None,
+                            context_window: Some(window),
+                            supports_vision: false,
+                            supports_tools: true,
+                            supports_reasoning: false,
+                            supports_structured_output: true,
+                            supports_streaming: true,
+                            max_output_tokens: Some(maximum),
+                            enabled: true,
+                        }],
+                        enabled: true,
+                    })
+                    .await
+                    .expect("E8 destination registers");
+            }
+            let optional = if long_history {
+                "optional ".repeat(4_600)
+            } else {
+                "short optional history".into()
+            };
+            let history_json = serde_json::json!([
+                {"role":"system","content":"pinned E8 policy"},
+                {"role":"user","content":optional},
+                {"role":"assistant","content":"","tool_calls":[{
+                    "id":"prior-call","type":"function","function":{
+                        "name":"prior_tool","arguments":"{}"
+                    }
+                }]},
+                {"role":"tool","tool_call_id":"prior-call","content":"protected prior result"},
+                {"role":"user","content":"continue from the retained history"}
+            ]);
+            let history: Vec<Message> = serde_json::from_value(history_json.clone()).unwrap();
+            if long_history && caller_cap == Some(4_096) {
+                let tokens = TokenService::count_messages(fallback_model, &history);
+                assert!(
+                    tokens > 4_096 && tokens < 6_144,
+                    "fixture must expose unnecessary displacement under the old reserve: {tokens}"
+                );
+            }
+            let turn = identity_turn("e8-output-order", true);
+            let mut input = turn.client_tools().unwrap().clone();
+            input.tools.clear();
+            input.tool_choice = None;
+            input.output_token_cap = caller_cap;
+            let primary = Arc::new(FailingDriver::default());
+            let fallback = Arc::new(MockLlmDriver::echo());
+            let mut orchestrator = Orchestrator::from_driver(
+                LlmConfig {
+                    model: primary_model.into(),
+                    resolved_provider_id: Some("e8-primary".into()),
+                    ..LlmConfig::default()
+                },
+                Arc::new(McpRegistry::empty()),
+                Arc::new(NativeSkillRegistry::new()),
+                primary.clone(),
+            )
+            .with_resolved_turn(Arc::new(
+                turn.with_client_tools(Some(input))
+                    .with_output_token_cap(caller_cap),
+            ))
+            .with_failovers(
+                vec![(fallback_model.into(), fallback.clone())],
+                FailoverConfig {
+                    enabled: true,
+                    ..FailoverConfig::default()
+                },
+            )
+            .with_fallback_context_windows(BTreeMap::from([(fallback_model.into(), 8_192)]))
+            .with_cache_strategy(Some(CacheStrategy::default()))
+            .with_resilience_policy(ResiliencePolicy {
+                retries_enabled: false,
+                ..ResiliencePolicy::default()
+            });
+            let exact_settings = serde_json::json!({
+                "temperature": 0.25,
+                "response_format": {"type":"json_schema","json_schema":{
+                    "name":"e8_result","strict":true,
+                    "schema":{"type":"object","properties":{"ok":{"type":"boolean"}},
+                        "required":["ok"],"additionalProperties":false}
+                }}
+            });
+            let mut expected_contract = None;
+            if exact_preparation {
+                use crate::llm::prompt_dialect::TemplateDestination;
+                use crate::llm::{EndpointRequestProfile, EndpointRequestTransform};
+                use crate::uar::runtime::context::budget::RequestBudgetContract;
+                use crate::uar::runtime::prompt::{
+                    Authority, PromptFragment, PromptRole, PromptSection, PromptTemplateLayout,
+                    PromptTemplateProfile, PromptTemplateSelector, Retention,
+                };
+
+                let mut profiles = Vec::new();
+                for (provider, window, output) in [
+                    ("e8-primary", 32_768, 16_384),
+                    ("e8-fallback", 8_192, 2_048),
+                ] {
+                    let model = format!("{provider}/model");
+                    let mut contract =
+                        RequestBudgetContract::synthetic_exact("http://e8-fixture.invalid/v1");
+                    contract.destination_model = model.clone();
+                    contract.limits.context_tokens = window;
+                    contract.limits.independent_input_tokens = None;
+                    contract.limits.output_tokens = output;
+                    if provider == "e8-primary" {
+                        // The source carries the primary's larger capacity.
+                        // Admitting it against the fallback before installing
+                        // that fallback's own contract would falsely refuse.
+                        orchestrator = orchestrator.with_request_budget_contract(contract.clone());
+                    } else {
+                        expected_contract = Some(contract.clone());
+                    }
+                    profiles.push(DestinationRequestPreparation {
+                        destination: TemplateDestination {
+                            provider_id: provider.into(),
+                            endpoint_kind: "fixture-chat".into(),
+                            model_id: "model".into(),
+                            model_revision: "e8-v1".into(),
+                            verified_family_revision: None,
+                            generic_contract_eligible: false,
+                        },
+                        template: PromptTemplateProfile {
+                            id: model.clone(),
+                            revision: "e8-v1".into(),
+                            selector: PromptTemplateSelector::Exact {
+                                provider_id: provider.into(),
+                                endpoint_kind: "fixture-chat".into(),
+                                model_id: "model".into(),
+                                model_revision: "e8-v1".into(),
+                            },
+                            layout: PromptTemplateLayout::Plain,
+                            required_slots: vec![PromptSection::HostInstructions],
+                            supported_roles: vec![PromptRole::System],
+                            wire_contract_id: "e8-wire-v1".into(),
+                        },
+                        request_profile: EndpointRequestProfile {
+                            profile_id: model.clone(),
+                            profile_revision: "e8-v1".into(),
+                            provider_id: provider.into(),
+                            endpoint_kind: "fixture-chat".into(),
+                            endpoint_fingerprint: contract.destination_endpoint_fingerprint.clone(),
+                            qualified_model: model.clone(),
+                            wire_model: model,
+                            model_revision: "e8-v1".into(),
+                            settings_revision: "e8-v1".into(),
+                            transform: EndpointRequestTransform::OpenAiCompatibleChatV1,
+                            allowed_request_fields: vec![
+                                "model".into(),
+                                "messages".into(),
+                                "temperature".into(),
+                                "response_format".into(),
+                                "max_completion_tokens".into(),
+                                "stream".into(),
+                            ],
+                            output_ceiling: Some(contract.output_ceiling),
+                        },
+                        budget_contract: contract,
+                        exact_settings: Some(exact_settings.clone()),
+                        compatible_continuity: Vec::new(),
+                    });
+                }
+                orchestrator = orchestrator.with_destination_preparations(
+                    Arc::new(
+                        DestinationRequestPreparations::new(profiles)
+                            .expect("E8 exact destination contracts validate"),
+                    ),
+                    history.clone(),
+                    vec![PromptFragment::new(
+                        "e8-host",
+                        PromptSection::HostInstructions,
+                        "e8-fixture",
+                        Authority::Policy,
+                        PromptRole::System,
+                        Retention::Session,
+                        "pinned E8 policy",
+                    )],
+                );
+            }
+            if live_admission {
+                orchestrator =
+                    orchestrator.with_destination_admission(Arc::new(DestinationAdmission::new(
+                        DestinationScope::PrimaryWithFallbacks {
+                            primary: primary_model.into(),
+                            fallbacks: BTreeSet::from([fallback_model.into()]),
+                        },
+                        BTreeSet::new(),
+                        registry,
+                    )));
+            }
+            let events = orchestrator
+                .chat_with_history(history)
+                .await
+                .expect("E8 fallback stream starts")
+                .collect::<Vec<_>>()
+                .await;
+            assert!(
+                !events
+                    .iter()
+                    .any(|event| matches!(event, NormalizedEvent::Error { .. })),
+                "fallback should dispatch: {events:?}"
+            );
+            assert_eq!(primary.requests.lock().unwrap().len(), 1);
+            let requests = fallback.requests();
+            assert_eq!(
+                requests.len(),
+                1,
+                "captured fallback must receive the request"
+            );
+            let request = &requests[0];
+            assert_eq!(request.output_token_cap, Some(expected_cap));
+            assert_eq!(
+                serde_json::Value::Array(request.messages.clone()),
+                history_json,
+                "both optional history and the pinned system/tool group must survive"
+            );
+            assert!(request.cache_strategy.is_some());
+            assert_eq!(request.budget_contract, expected_contract);
+            if exact_preparation {
+                assert_eq!(
+                    request.extra_params.as_ref(),
+                    Some(&exact_settings),
+                    "destination settings and response schema survive exact preparation"
+                );
+            }
+            let manifest = events
+                .iter()
+                .find_map(|event| match event {
+                    NormalizedEvent::Custom {
+                        source,
+                        event_name,
+                        payload,
+                    } if source == "uar.request"
+                        && event_name == "attempt_manifest"
+                        && payload["destination_model"] == fallback_model =>
+                    {
+                        Some(payload)
+                    }
+                    _ => None,
+                })
+                .expect("fallback attempt manifest is emitted");
+            if exact_preparation {
+                assert!(
+                    manifest.get("context_fit").is_none(),
+                    "exact destinations must bypass estimated fitting"
+                );
+                assert_eq!(manifest["budgeting"]["contract_present"], true);
+                continue;
+            }
+            assert_eq!(
+                manifest["context_fit"]["reserved_output_tokens"],
+                expected_cap
+            );
+            assert_eq!(
+                manifest["context_fit"]["input_allowance"],
+                8_192 - expected_cap
+            );
+            assert_eq!(manifest["context_fit"]["counting"], "estimated");
+            assert_eq!(manifest["context_fit"]["messages_removed"], 0);
+            assert_eq!(manifest["context_fit"]["displaced"], false);
+            assert_eq!(manifest["budgeting"]["fit_guarantee"], false);
+        }
     }
 
     #[tokio::test]

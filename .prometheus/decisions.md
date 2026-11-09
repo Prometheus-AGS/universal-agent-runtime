@@ -2694,6 +2694,29 @@ Decision: replace the single plan with (1) `a2ui-surface-state-patches`, (2) a d
     forwarding.
 - **Next:** KBD child phase `identity-pass-through`, Assess and Plan only.
 
+
+## 2026-10-31 — Production readiness #476 baseline
+Production-readiness #476 uses bounded useful KBD phases and operator-authorized phase-exit acceptance. Prior identity-pass-through projection preserved; no assertion of completing its pending 26 tasks. Primary service/sidecar lanes and restricted PG contract reuse current decisions. #462 adds exact committed library-test compilation, without certifying runtime behavior.
+
+
+## 2026-10-31 — Retain current Liter source
+Operator selected “Retain current Liter source” in the pending provenance question. Aligned versions.toml liter_llm_commit to current HEAD gitlink/materialized submodule 0d74c56659943e3fa44a3c8e6d51a27514f3b35c. Liter remains2.3.0; source is unchanged. Supersedes this session’s pending policy/source decision. Rationale: retain the committed prepared-streaming-body accounting repair. Qualification is still pending; policy alignment is not runtime evidence.
+
+
+### 2026-10-31 — bounded#463/#464 input/dispatch slice
+
+After scoped#462exit5aa36a40, select existing ordinary OpenAI aliases, last server-owned current user turn, inline standard padded-base64 PNG/JPEG, maximum8images/turn, existing10MiB total envelope and pinned xberg100*1024*1024 decoded/live limit. Eight bounds repeated decoder work at public ingress; no remote fetching, upload resolution, new codec dependency or broad protocol/SDK certification. All other images are explicitly excluded/unqualified with existing implemented Anthropic/direct behavior preserved. Generic adapter construction facts and actual captured destinations gate new ordinary sends; declared metadata is not model certification. Preserve#388; no real-image guaranteed-fit/finite-accounting claim without validated counting. Deterministic mounted evidence does not close real visual understanding. User authorized defining bounded paths; final promotion lane and paid-model qualification remain separate operator decisions.
+
+
+### 2026-10-31 — operator-selected promotion lane
+
+Operator answered the explicit lane question: Linux amd64 container APIs (recommended). This supersedes earlier draft native-Mac investigation as the first promotion target. Surreal default/PG18restrictions remain, ARM64/Windows/mobile/native archives unqualified. Current root Dockerfile release API artifact and installed owned container observations are required; native Mac proof is supplementary. No production deployment/publishing/signing/paid calls follow from this choice.
+
+
+## 2026-10-31 — Final fallback authority and output restriction in #476
+
+Source integration found ordinary noncredential roots ignored nonempty artifact fallback lists, unlike child/credential authority. Preserve exact-target exclusion and legacy empty-list global behavior; bind nonempty explicit members before capture. Registered final fallback output was also ignored on ordinary sends. Use the private final admission result to apply only a downward registered cap to typed output and any existing exact contract, before driver/accounting. Never install a synthetic exact image profile or manufacture a real-image token bound to satisfy fixtures. These are source-present repairs; actual mounted outcomes remain NOT_EXERCISED.
+
 ## 2026-10-30 — JWT validator (#422) and local loopback owner (#392), batch3-identity
 
 Recorded by uar-trust-tools. Source-only change; nothing compiled or run at the
@@ -2730,6 +2753,10 @@ time of recording (verification lock CLOSED).
     (`ConnectInfo`). This does not protect against a proxy, which is why the
     flag defaults off.
 
+2026-10-31 — #476 first Linux amd64 APIs run behind a trusted host/gateway (explicit operator choice). Direct remote multi-user promotion excluded. Actual active host config already uses trusted_local/JWToptional/settings-admin-key-check-disabled local policy; older ~/.uar defaults were not active. Reuse existing policy only for isolated local fixture; no production gateway or remote-admission certificate follows.
+
+
+2026-11-01 — #476 rc.2 integration: operator requested incorporating the committed rc.2 branch before continuing. Integrated exact af37c2f834f7b34f511ecc93f408e80205c94229 with standard --no-commit merge, preserving readiness destination authority plus rc.2 estimated fallback fitting, owner migration and JWT boundaries. Source snapshot a3b5b6f8e6b6222cfaa9ad419c4ca8e5df083bd7 retained for recovery; it contains only this worktree work. Other checkout/branch/services unchanged. Commit is deliberately pending because ordinary hooks run prohibited gates; do not bypass hooks or claim merged ancestry until approved commit succeeds. Historical macOS receipts do not qualify this tree/Linux artifact.
 ### 2026-11-03 — Issue #386 media scope and recovery
 
 The operator selected UAR plus a mock peer and explicit scoped session approval. The host attests user confirmation and worker identity. The grant binds an exact action/modality/capability tuple to an immutable scope. An effect claim commits an unknown receipt before handoff. Retrying an unknown attempt can duplicate an effect, so recovery must reconcile the original attempt using peer evidence.

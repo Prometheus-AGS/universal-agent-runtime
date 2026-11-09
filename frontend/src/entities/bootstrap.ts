@@ -7,6 +7,7 @@ import {
   registerPresentationAssignmentEntities,
   registerPresentationProvenanceEntities,
   registerA2uiActionEntities,
+  registerChatTurnEntities,
   bindA2uiActionPersistence,
   persistGraphToStorage,
   startLocalFirstGraph,
@@ -77,6 +78,7 @@ export async function bootstrapEntityGraph() {
   registerPresentationAssignmentEntities();
   registerPresentationProvenanceEntities();
   registerA2uiActionEntities();
+  registerChatTurnEntities();
 }
 
 export async function initializeDurableEntityGraph(

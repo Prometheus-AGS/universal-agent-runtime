@@ -18,6 +18,11 @@ Acceptance SHALL cover persisted agents, effective skill and context strategies,
 - **WHEN** a knowledge base with retained indexed source changes to a different embedding space and its required regeneration workflow is exercised
 - **THEN** regenerated retrieval and grounded inference succeed without mixed-generation results or source loss, including the designed interrupted-rebuild recovery
 
+#### Scenario: Installed same-width regeneration uses an owned provider
+- **WHEN** the existing same-width scenario runs against the bound Linux release candidate with a host-provisioned loopback embedding peer
+- **THEN** it uses the ordinary settings and knowledge APIs to refuse the old index, regenerate the original document and retrieve its fact with the replacement space
+- **AND** the test carries no credentials or host restart logic in this lane, and restores the original settings and removes its disposable knowledge base
+
 #### Scenario: A selected strategy has no effective implementation
 - **WHEN** a required selectable classifier or context strategy falls back or lacks its promised effect
 - **THEN** the requested strategy is not certified by its configuration label and remains an explicit implementation or acceptance blocker

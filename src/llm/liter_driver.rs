@@ -25,7 +25,7 @@ use crate::uar::telemetry::metrics as telemetry_metrics;
 
 use super::{
     EndpointRequestProfile, EndpointRequestTransform, LlmDriver, LlmRequest, ProfiledWireReceipt,
-    ProviderError,
+    PreparedFinalWireBudget, ProviderError,
 };
 
 /// Accumulated state for a streaming tool call being assembled from deltas.
@@ -53,6 +53,8 @@ fn uses_generic_chat_adapter(config: &ClientConfig, model: &str) -> bool {
         && model.strip_prefix("dashscope/").unwrap_or(model) != "tongyi-embedding-vision-plus"
 }
 
+const GENERIC_ENDPOINT_HINT: &str = "uar-settings-profile";
+
 /// LLM driver powered by liter-llm's `DefaultClient`.
 ///
 /// Handles provider auto-detection, streaming, and tool-call normalization
@@ -60,10 +62,16 @@ fn uses_generic_chat_adapter(config: &ClientConfig, model: &str) -> bool {
 pub struct LiterLlmDriver {
     client: Arc<DefaultClient>,
     model: String,
+    selected_request_model: Option<SelectedRequestModel>,
     parallel_tool_calls: Option<bool>,
     budget_endpoint_fingerprint: Option<String>,
     endpoint_profile: Option<EndpointRequestProfile>,
     generic_chat_adapter: bool,
+}
+
+enum SelectedRequestModel {
+    Generic(String),
+    Special { provider: String, model: String },
 }
 
 #[allow(clippy::missing_fields_in_debug)]
@@ -107,15 +115,21 @@ impl LiterLlmDriver {
         config.load_env = false;
         config.redact_base_url = true;
         config.transport = config.transport.with_redirects_disabled(true);
-        // Liter pins generic chat when an explicit URL and a non-native hint are supplied.
-        let client = Arc::new(DefaultClient::new(config, Some("uar-settings-profile"))?);
-        Self::from_client(
+        // The successful constructor branch is the adapter fact: its constant
+        // hint selects Liter's generic endpoint handling independently of the
+        // configured wire model's provider spelling.
+        let client = Arc::new(DefaultClient::new(config, Some(GENERIC_ENDPOINT_HINT))?);
+        let mut driver = Self::from_client(
             client,
             profile.qualified_model.clone(),
             parallel_tool_calls,
             fingerprint,
-        )
-        .with_endpoint_profile(profile)
+        );
+        // `from_client` is deliberately opaque. This constructor owns the
+        // successful generic-compatible branch, so it alone may record that
+        // concrete adapter fact for the captured endpoint profile.
+        driver.generic_chat_adapter = true;
+        driver.with_endpoint_profile(profile)
     }
     /// Create a new driver from a `ClientConfig` and model identifier.
     ///
@@ -139,11 +153,48 @@ impl LiterLlmDriver {
         Ok(Self {
             client,
             model,
+            selected_request_model: None,
             parallel_tool_calls,
             budget_endpoint_fingerprint,
             endpoint_profile: None,
             generic_chat_adapter,
         })
+    }
+
+    /// Build a selected route with separate accounting and provider-wire identities.
+    pub(crate) fn from_selected_route(
+        config: ClientConfig,
+        previous_model: String,
+        adapter_provider: &str,
+        destination: String,
+        wire_model: String,
+        parallel_tool_calls: Option<bool>,
+    ) -> anyhow::Result<Self> {
+        if config.base_url.is_none() {
+            return Self::new(config, previous_model, parallel_tool_calls);
+        }
+        // The selected provider or explicit host protocol owns the adapter.
+        // A gateway's literal alias may start with another provider's name.
+        let adapter_model = format!("{adapter_provider}/{wire_model}");
+        let generic = uses_generic_chat_adapter(&config, &adapter_model);
+        let hint = if generic {
+            GENERIC_ENDPOINT_HINT
+        } else {
+            adapter_model.as_str()
+        };
+        let fingerprint = config.base_url.as_deref().map(endpoint_fingerprint);
+        let client = Arc::new(DefaultClient::new(config, Some(hint))?);
+        let mut driver = Self::from_client(client, destination, parallel_tool_calls, fingerprint);
+        driver.generic_chat_adapter = generic;
+        driver.selected_request_model = Some(if generic {
+            SelectedRequestModel::Generic(wire_model)
+        } else {
+            SelectedRequestModel::Special {
+                provider: adapter_provider.to_owned(),
+                model: adapter_model,
+            }
+        });
+        Ok(driver)
     }
 
     /// Create a driver from a pre-built `DefaultClient`.
@@ -157,6 +208,7 @@ impl LiterLlmDriver {
         Self {
             client,
             model,
+            selected_request_model: None,
             parallel_tool_calls,
             budget_endpoint_fingerprint,
             endpoint_profile: None,
@@ -199,23 +251,16 @@ impl LiterLlmDriver {
         &self,
         request: &LlmRequest,
     ) -> anyhow::Result<ProfiledWireReceipt> {
-        let prepared = build_chat_request(
-            &self.model,
-            self.parallel_tool_calls,
-            self.budget_endpoint_fingerprint.as_deref(),
-            self.endpoint_profile.as_ref(),
-            self.generic_chat_adapter,
-            request,
-        )?;
-        let serialized = prepared
-            .validated_wire
-            .ok_or_else(|| anyhow::anyhow!("request has no validated endpoint profile"))?;
-        let counted_tokens = request
-            .budget_contract
-            .as_ref()
-            .map(|contract| TokenService::count_serialized(contract.counting, &serialized))
-            .transpose()?
-            .map(|count| count.tokens);
+        let prepared = self.build_chat_request(request)?;
+        anyhow::ensure!(
+            self.endpoint_profile.is_some(),
+            "request has no validated endpoint profile"
+        );
+        // Liter owns provider routing-prefix normalization and any supported
+        // transform. Its prepared bytes are therefore the only body this
+        // receipt can certify.
+        let (serialized, final_count) = self.prepared_final_wire(request, &prepared)?;
+        let counted_tokens = final_count.map(|count| count.tokens);
         let digest = Sha256::digest(&serialized);
         let mut sha256 = String::with_capacity(digest.len() * 2);
         use std::fmt::Write as _;
@@ -230,9 +275,47 @@ impl LiterLlmDriver {
     }
 }
 
+impl LiterLlmDriver {
+    fn build_chat_request(&self, request: &LlmRequest) -> anyhow::Result<PreparedChatRequest> {
+        build_chat_request_for_model(
+            &self.model,
+            self.parallel_tool_calls,
+            self.budget_endpoint_fingerprint.as_deref(),
+            self.endpoint_profile.as_ref(),
+            self.generic_chat_adapter,
+            self.selected_request_model.as_ref(),
+            request,
+        )
+    }
+
+    /// Prepare Liter's endpoint-bound stream representation for a request that
+    /// has already passed UAR's typed request construction.
+    fn prepared_final_wire(
+        &self,
+        source: &LlmRequest,
+        prepared: &PreparedChatRequest,
+    ) -> anyhow::Result<(Vec<u8>, Option<crate::uar::runtime::context::token_service::CountedTokens>)> {
+        let serialized = self.client.chat_stream_request_body(&prepared.request)?;
+        let final_count = validate_dispatched_budget(
+            &self.model,
+            match &self.selected_request_model {
+                Some(SelectedRequestModel::Generic(model)) => Some(model.as_str()),
+                _ => None,
+            },
+            self.endpoint_profile.as_ref(),
+            source,
+            prepared,
+            &serialized,
+        )?;
+        Ok((serialized, final_count))
+    }
+}
+
 struct PreparedChatRequest {
     request: ChatCompletionRequest,
-    validated_wire: Option<Vec<u8>>,
+    /// UAR preflight serialization. The leaf certifies Liter's transformed
+    /// bytes separately immediately before dispatch.
+    preflight_wire: Option<Vec<u8>>,
 }
 
 fn validate_endpoint_profile(
@@ -417,6 +500,7 @@ fn profiled_wire_body(
 
 fn enforce_request_budget(
     model: &str,
+    exact_wire_model: Option<&str>,
     budget_endpoint_fingerprint: Option<&str>,
     endpoint_profile: Option<&EndpointRequestProfile>,
     source: &LlmRequest,
@@ -463,7 +547,7 @@ fn enforce_request_budget(
 
     let final_body = match endpoint_profile {
         Some(profile) => profiled_wire_body(model, profile, request, Some(output_tokens))?,
-        None => openai_compatible_wire_body(model, request)?,
+        None => openai_compatible_wire_body(exact_wire_model.unwrap_or(model), request)?,
     };
     let (required_field, incompatible_field) = match contract.output_ceiling {
         OutputCeilingField::MaxTokens => ("max_tokens", "max_completion_tokens"),
@@ -497,12 +581,126 @@ fn enforce_request_budget(
     Ok(Some(serialized))
 }
 
+/// Revalidate the bytes produced by Liter's prepared stream request immediately
+/// before dispatch. `ChatCompletionRequest` retains the host-selected model,
+/// template, settings, output ceiling, and protected messages; Liter owns only
+/// the endpoint's literal provider transformation of that immutable request.
+fn validate_dispatched_budget(
+    model: &str,
+    exact_wire_model: Option<&str>,
+    endpoint_profile: Option<&EndpointRequestProfile>,
+    source: &LlmRequest,
+    prepared: &PreparedChatRequest,
+    serialized: &[u8],
+) -> anyhow::Result<Option<crate::uar::runtime::context::token_service::CountedTokens>> {
+    let validates_controls = source.budget_contract.is_some() || endpoint_profile.is_some();
+    if !validates_controls && exact_wire_model.is_none() {
+        return Ok(None);
+    }
+    let body: serde_json::Value = serde_json::from_slice(serialized)?;
+    let literal_model = body
+        .get("model")
+        .and_then(serde_json::Value::as_str)
+        .filter(|model| !model.trim().is_empty())
+        .ok_or_else(|| anyhow::anyhow!("final provider request has no literal model"))?;
+    if let Some(exact_wire_model) = exact_wire_model {
+        anyhow::ensure!(
+            literal_model == exact_wire_model,
+            "final provider request does not preserve the selected wire model"
+        );
+    }
+    if !validates_controls {
+        return Ok(None);
+    }
+    let budget = match source.budget_contract.clone() {
+        Some(mut contract) => {
+            if let Some(cap) = source.output_token_cap {
+                contract.limits.output_tokens = contract.limits.output_tokens.min(i64::from(cap));
+            }
+            let output_tokens = u64::try_from(contract.limits.output_tokens)
+                .map_err(|_| anyhow::anyhow!("invalid negative output reservation"))?;
+            Some((contract, output_tokens))
+        }
+        None => None,
+    };
+    let expected = match endpoint_profile {
+        Some(profile) => profiled_wire_body(
+            model,
+            profile,
+            &prepared.request,
+            budget.as_ref().map(|(_, output_tokens)| *output_tokens),
+        )?,
+        // The supported synthetic contract is generic OpenAI-compatible JSON.
+        // Its literal model is selected by the captured Liter adapter; all
+        // other request controls must remain byte-for-byte equivalent at the
+        // JSON-value layer after that literal selection.
+        None => openai_compatible_wire_body(literal_model, &prepared.request)?,
+    };
+    anyhow::ensure!(
+        body == expected,
+        "final provider request does not preserve the prepared wire controls"
+    );
+    // Settings-only profiles still bind the exact model and controls after
+    // Liter's transform, even when no token-counting contract is available.
+    let Some((contract, output_tokens)) = budget else {
+        return Ok(None);
+    };
+    let (required_field, incompatible_field) = match contract.output_ceiling {
+        OutputCeilingField::MaxTokens => ("max_tokens", "max_completion_tokens"),
+        OutputCeilingField::MaxCompletionTokens => ("max_completion_tokens", "max_tokens"),
+    };
+    anyhow::ensure!(
+        body.get(required_field).and_then(serde_json::Value::as_u64) == Some(output_tokens)
+            && body.get(incompatible_field).is_none(),
+        "final provider request does not enforce the reserved {output_tokens}-token output ceiling"
+    );
+    anyhow::ensure!(
+        body.get("stream") == Some(&serde_json::Value::Bool(true)),
+        "final provider request does not preserve streaming"
+    );
+    let count = TokenService::count_serialized(contract.counting, serialized)?;
+    let outcome = plan_budget(&BudgetInput {
+        limits: contract.limits,
+        protected_request: count.clone(),
+        eligible_prose: Vec::new(),
+    });
+    let BudgetOutcome::Fit(plan) = outcome else {
+        anyhow::bail!("request budget rejected final provider serialization: {outcome:?}");
+    };
+    let final_outcome = validate_final_count(&plan, &count);
+    anyhow::ensure!(
+        matches!(final_outcome, BudgetOutcome::Fit(_)),
+        "final provider request validation failed: {final_outcome:?}"
+    );
+    Ok(Some(count))
+}
+
 fn build_chat_request(
     model: &str,
     parallel_tool_calls: Option<bool>,
     budget_endpoint_fingerprint: Option<&str>,
     endpoint_profile: Option<&EndpointRequestProfile>,
     generic_chat_adapter: bool,
+    req: &LlmRequest,
+) -> anyhow::Result<PreparedChatRequest> {
+    build_chat_request_for_model(
+        model,
+        parallel_tool_calls,
+        budget_endpoint_fingerprint,
+        endpoint_profile,
+        generic_chat_adapter,
+        None,
+        req,
+    )
+}
+
+fn build_chat_request_for_model(
+    model: &str,
+    parallel_tool_calls: Option<bool>,
+    budget_endpoint_fingerprint: Option<&str>,
+    endpoint_profile: Option<&EndpointRequestProfile>,
+    generic_chat_adapter: bool,
+    selected_request_model: Option<&SelectedRequestModel>,
     req: &LlmRequest,
 ) -> anyhow::Result<PreparedChatRequest> {
     anyhow::ensure!(
@@ -513,9 +711,16 @@ fn build_chat_request(
     let messages = convert_messages(&req.messages, req.budget_contract.is_some())?;
     let tools = convert_tools(&req.tools)?;
 
+    let (adapter_model, exact_wire_model) = match selected_request_model {
+        Some(SelectedRequestModel::Generic(wire_model)) => (model, Some(wire_model.as_str())),
+        Some(SelectedRequestModel::Special { model, .. }) => (model.as_str(), None),
+        None => (model, None),
+    };
     let mut chat_req = ChatCompletionRequest::default();
-    chat_req.model =
-        endpoint_profile.map_or_else(|| model.to_owned(), |profile| profile.wire_model.clone());
+    chat_req.model = endpoint_profile.map_or_else(
+        || adapter_model.to_owned(),
+        |profile| profile.wire_model.clone(),
+    );
     chat_req.messages = messages;
     chat_req.tools = if tools.is_empty() { None } else { Some(tools) };
     chat_req.parallel_tool_calls = req.parallel_tool_calls.or(parallel_tool_calls);
@@ -524,7 +729,7 @@ fn build_chat_request(
     let provider = if generic_chat_adapter {
         "openai-compatible"
     } else {
-        super::detect_provider(model)
+        super::detect_provider(adapter_model)
     };
     if req.parallel_tool_calls.is_some()
         && !matches!(
@@ -644,8 +849,9 @@ fn build_chat_request(
             "provider capability error: response_format is unsupported by the {provider} Liter adapter");
         chat_req.response_format = Some(serde_json::from_value(serde_json::to_value(format)?)?);
     }
-    let mut validated_wire = enforce_request_budget(
+    let mut preflight_wire = enforce_request_budget(
         model,
+        exact_wire_model,
         budget_endpoint_fingerprint,
         endpoint_profile,
         req,
@@ -660,56 +866,37 @@ fn build_chat_request(
             );
         }
         let final_body = profiled_wire_body(model, profile, &chat_req, None)?;
-        validated_wire = Some(serde_json::to_vec(&final_body)?);
+        preflight_wire = Some(serde_json::to_vec(&final_body)?);
+    }
+    if let Some(wire_model) = exact_wire_model {
+        // Pinned Liter strips the generic adapter's `custom/` prefix once.
+        // Supply that transport prefix even when the literal itself starts with it.
+        chat_req.model = format!("custom/{wire_model}");
     }
     Ok(PreparedChatRequest {
         request: chat_req,
-        validated_wire,
+        preflight_wire,
     })
 }
 
-/// Prove that a budgeted request fits the supported final-wire contract before
-/// handing it to a driver. The leaf repeats this check with its actual endpoint
-/// binding immediately before dispatch; this early pass lets host-owned helper
-/// calls reject an oversized chunk without opening a provider connection.
-/// Compute the reservation from the same validated bytes used by the leaf driver.
-/// Approximate counts are never promoted into enforceable budget evidence.
-pub(crate) fn request_budget_bound(model: &str, req: &LlmRequest) -> anyhow::Result<(u64, u64)> {
-    let contract = req
-        .budget_contract
-        .as_ref()
-        .ok_or_else(|| anyhow::anyhow!("request budget contract is required"))?;
-    let prepared = build_chat_request(
-        model,
-        Some(true),
-        Some(&contract.destination_endpoint_fingerprint),
-        None,
-        false,
-        req,
-    )?;
-    let bytes = prepared
-        .validated_wire
-        .as_ref()
-        .ok_or_else(|| anyhow::anyhow!("validated final request bytes are required"))?;
-    let count = TokenService::count_serialized(contract.counting, bytes)?;
-    anyhow::ensure!(
-        count.quality != crate::uar::runtime::context::token_service::CountQuality::Approximate,
-        "approximate input counts cannot reserve a finite budget"
-    );
-    let output = u64::try_from(contract.limits.output_tokens)?;
-    let reasoning = u64::try_from(contract.limits.additional_reasoning_tokens)?;
-    let uncertainty = u64::try_from(contract.limits.count_uncertainty_tokens)?;
-    Ok((
-        count
-            .tokens
-            .checked_add(uncertainty)
-            .ok_or_else(|| anyhow::anyhow!("input reservation overflow"))?,
-        output
-            .checked_add(reasoning)
-            .ok_or_else(|| anyhow::anyhow!("output reservation overflow"))?,
-    ))
+fn request_contains_image_parts(request: &LlmRequest) -> bool {
+    request.messages.iter().any(|message| {
+        message
+            .get("content")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|parts| {
+                parts.iter().any(|part| {
+                    part.get("type").and_then(serde_json::Value::as_str) == Some("image_url")
+                        && part.get("image_url").is_some()
+                })
+            })
+    })
 }
 
+/// Validate the existing auxiliary request contract before its governed leaf
+/// dispatch. This preflight has no bound Liter client, so it is not durable
+/// final-wire reservation evidence; the leaf validates actual transformed
+/// bytes immediately before dispatch.
 pub(crate) fn preflight_budgeted_request(model: &str, req: &LlmRequest) -> anyhow::Result<()> {
     let contract = req
         .budget_contract
@@ -739,6 +926,43 @@ fn record_call_latency(model: &str, call_start: std::time::Instant) {
 
 #[async_trait::async_trait]
 impl LlmDriver for LiterLlmDriver {
+    fn supports_admitted_inline_images(&self) -> bool {
+        // Only constructors that own the successful pinned `DefaultClient::new`
+        // branch set this. `from_client` stays opaque and false, so this reports
+        // actual adapter construction independently of catalog capabilities.
+        self.generic_chat_adapter
+    }
+
+    fn prepared_final_wire_budget(
+        &self,
+        request: &LlmRequest,
+    ) -> anyhow::Result<PreparedFinalWireBudget> {
+        let contract = request
+            .budget_contract
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("prepared final-wire budget requires a request budget contract"))?;
+        anyhow::ensure!(
+            !request_contains_image_parts(request),
+            "final-wire JSON does not prove a finite image accounting bound"
+        );
+        let prepared = self.build_chat_request(request)?;
+        let (_, final_count) = self.prepared_final_wire(request, &prepared)?;
+        let input_tokens = final_count
+            .ok_or_else(|| anyhow::anyhow!("prepared final-wire budget was not validated"))?
+            .tokens;
+        let effective_output = request
+            .output_token_cap
+            .map_or(contract.limits.output_tokens, |cap| {
+                contract.limits.output_tokens.min(i64::from(cap))
+            });
+        let output_tokens = u64::try_from(effective_output)
+            .map_err(|_| anyhow::anyhow!("invalid negative output reservation"))?;
+        Ok(PreparedFinalWireBudget {
+            input_tokens,
+            output_tokens,
+        })
+    }
+
     fn with_bound_model(&self, model: &str) -> anyhow::Result<Arc<dyn LlmDriver>> {
         let (provider, _) = self.model.split_once('/').ok_or_else(|| {
             anyhow::anyhow!("Inherited driver has no qualified provider identity")
@@ -765,6 +989,18 @@ impl LlmDriver for LiterLlmDriver {
         );
         driver.endpoint_profile = self.endpoint_profile.clone();
         driver.generic_chat_adapter = self.generic_chat_adapter;
+        driver.selected_request_model = match &self.selected_request_model {
+            Some(SelectedRequestModel::Generic(_)) => {
+                Some(SelectedRequestModel::Generic(requested_model.to_owned()))
+            }
+            Some(SelectedRequestModel::Special { provider, .. }) => {
+                Some(SelectedRequestModel::Special {
+                    provider: provider.clone(),
+                    model: format!("{provider}/{requested_model}"),
+                })
+            }
+            None => None,
+        };
         Ok(Arc::new(driver))
     }
 
@@ -778,27 +1014,25 @@ impl LlmDriver for LiterLlmDriver {
         req: LlmRequest,
     ) -> anyhow::Result<std::pin::Pin<Box<dyn Stream<Item = anyhow::Result<NormalizedEvent>> + Send>>>
     {
-        let prepared = build_chat_request(
-            &self.model,
-            self.parallel_tool_calls,
-            self.budget_endpoint_fingerprint.as_deref(),
-            self.endpoint_profile.as_ref(),
-            self.generic_chat_adapter,
-            &req,
-        )
-        .map_err(|error| ProviderError::invalid_request(error.to_string()))?;
+        super::orchestrator::record_provider_preparation();
+        let has_image_parts = request_contains_image_parts(&req);
+        let prepared = self
+            .build_chat_request(&req)
+            .map_err(|error| ProviderError::invalid_request(error.to_string()))?;
         // Count the same preserving final wire representation used for dispatch.
         // Real model JSON tokenization is an estimate unless an installed exact
         // destination contract proves the framing; catalog metadata cannot do so.
-        let wire_receipt = if prepared.validated_wire.is_some() || self.generic_chat_adapter
+        let wire_receipt = if prepared.preflight_wire.is_some() || self.generic_chat_adapter
             || matches!(super::detect_provider(&self.model), "openai" | "azure" | "azure_openai") {
-            let wire = self.client.chat_stream_request_body(&prepared.request)
-                .map_err(ProviderError::from_liter)?;
-            anyhow::ensure!(prepared.validated_wire.as_ref().is_none_or(|validated| validated == &wire),
-                "Final provider request differs from validated budget serialization");
+            let (wire, final_count) = self
+                .prepared_final_wire(&req, &prepared)
+                .map_err(|error| ProviderError::invalid_request(error.to_string()))?;
             let counting = req.budget_contract.as_ref().map(|contract| contract.counting)
                 .unwrap_or(crate::uar::runtime::context::token_service::SerializedCountingContract::ApproximateCl100kJsonV1);
-            let count = TokenService::count_serialized(counting, &wire)?;
+            let count = match final_count {
+                Some(count) => count,
+                None => TokenService::count_serialized(counting, &wire)?,
+            };
             let quality = match count.quality {
                 crate::uar::runtime::context::token_service::CountQuality::Exact => "exact",
                 crate::uar::runtime::context::token_service::CountQuality::ValidatedUpperBound => "validated_upper_bound",
@@ -811,7 +1045,10 @@ impl LlmDriver for LiterLlmDriver {
                 "counted_input_tokens":count.tokens, "serialized_bytes":wire.len(),
                 "serialized_sha256":Sha256::digest(&wire).iter().map(|byte| format!("{byte:02x}")).collect::<String>(),
                 "tools_included":true, "instructions_included":true,
-                "fit_guarantee":req.budget_contract.is_some(),
+                // A final JSON count bounds the serialized wire body, not a
+                // real provider's image-token accounting. No inspected
+                // destination contract establishes that missing evidence.
+                "fit_guarantee":req.budget_contract.is_some() && !has_image_parts,
                 "reserved_output_tokens":req.budget_contract.as_ref().map(|contract| contract.limits.output_tokens),
                 "output_ceiling_enforced":prepared.request.max_tokens.is_some() || prepared.request.max_completion_tokens.is_some(),
             }))
@@ -827,6 +1064,7 @@ impl LlmDriver for LiterLlmDriver {
         // a per-call latency histogram when the returned stream finishes.
         let call_start = std::time::Instant::now();
         let call_span = tracing::Span::current();
+        super::orchestrator::record_provider_submission();
         let mut chunk_stream = self
             .client
             .chat_stream(chat_req)
@@ -932,6 +1170,7 @@ impl LlmDriver for LiterLlmDriver {
                             completion_tokens: usage.completion_tokens as u32,
                             total_tokens: usage.total_tokens as u32,
                             cached_tokens: cached_read.map(|t| t as u32),
+                            uncached_input_tokens: None,
                             cache_creation_tokens: None,
                         });
                     }
@@ -1001,6 +1240,27 @@ mod prompt_caching_tests {
     use futures::StreamExt;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
+    fn assert_final_wire_budget_receipt(
+        event: Option<anyhow::Result<NormalizedEvent>>,
+        destination: &str,
+    ) {
+        let event = event.expect("budget receipt event").expect("valid budget receipt");
+        let NormalizedEvent::Custom {
+            source,
+            event_name,
+            payload,
+        } = &event
+        else {
+            panic!("expected the final-wire budget receipt before provider events: {event:?}");
+        };
+        assert_eq!(source, "uar.request");
+        assert_eq!(event_name, "budget_receipt");
+        assert_eq!(payload["schema_version"], "uar.request-budget.v1");
+        assert_eq!(payload["representation"], "final_provider_request");
+        assert_eq!(payload["destination_model"], destination);
+        assert_eq!(payload["serialized_request"], true);
+    }
+
     fn request(cache_strategy: Option<CacheStrategy>) -> LlmRequest {
         LlmRequest {
             messages: vec![serde_json::json!({"role": "user", "content": "hello"})],
@@ -1043,6 +1303,278 @@ mod prompt_caching_tests {
             serde_json::to_value(enabled).expect("serialize enabled request"),
             serde_json::to_value(disabled).expect("serialize disabled request"),
             "UAR prompt-caching policy must not alter OpenAI-compatible bodies"
+        );
+    }
+
+    fn settings_only_profile_request(wire_model: &str) -> (LiterLlmDriver, LlmRequest) {
+        let base_url = "http://127.0.0.1:1/v1";
+        let config = liter_llm::ClientConfigBuilder::new("test-key")
+            .base_url(base_url)
+            .build();
+        let profile = EndpointRequestProfile {
+            profile_id: "settings-only-test".into(),
+            profile_revision: "1".into(),
+            provider_id: "gateway".into(),
+            endpoint_kind: "openai-compatible-chat".into(),
+            endpoint_fingerprint: endpoint_fingerprint(base_url),
+            qualified_model: "gateway/custom/model-a".into(),
+            wire_model: wire_model.into(),
+            model_revision: "1".into(),
+            settings_revision: "1".into(),
+            transform: EndpointRequestTransform::OpenAiCompatibleChatV1,
+            allowed_request_fields: [
+                "model", "messages", "stream", "stream_options", "tools", "tool_choice",
+                "parallel_tool_calls", "temperature", "response_format",
+            ]
+            .into_iter()
+            .map(str::to_owned)
+            .collect(),
+            output_ceiling: None,
+        };
+        let driver = LiterLlmDriver::from_endpoint_profile(config, None, profile)
+            .expect("construct settings-only profile driver");
+        let mut req = request(None);
+        req.parallel_tool_calls = Some(false);
+        req.tool_choice = Some(crate::llm::ToolChoice::Named("lookup".into()));
+        req.tools = vec![serde_json::json!({"type":"function","function":{
+            "name":"lookup", "strict":true,
+            "parameters":{"type":"object","properties":{},"additionalProperties":false}
+        }})];
+        req.extra_params = Some(serde_json::json!({
+            "temperature":0.2,
+            "response_format":{"type":"json_schema","json_schema":{
+                "name":"answer", "strict":true,
+                "schema":{"type":"object","properties":{},"additionalProperties":false}
+            }}
+        }));
+        (driver, req)
+    }
+
+    #[test]
+    fn settings_only_profile_refuses_liter_rewritten_wire_alias() {
+        let (driver, req) = settings_only_profile_request("custom/model-a");
+        assert!(req.budget_contract.is_none());
+        let prepared = build_chat_request(
+            driver.model(),
+            driver.parallel_tool_calls,
+            driver.budget_endpoint_fingerprint.as_deref(),
+            driver.endpoint_profile.as_ref(),
+            driver.generic_chat_adapter,
+            &req,
+        )
+        .expect("settings-only profile passes preflight");
+        let preflight: serde_json::Value = serde_json::from_slice(
+            prepared.preflight_wire.as_deref().expect("profile preflight"),
+        )
+        .expect("decode preflight");
+        let actual = driver.client.chat_stream_request_body(&prepared.request)
+            .expect("prepare actual Liter body without dispatch");
+        let body: serde_json::Value = serde_json::from_slice(&actual).expect("decode Liter body");
+        assert_eq!(preflight["model"], "custom/model-a");
+        assert_eq!(body["model"], "model-a");
+        let error = driver.prepared_final_wire(&req, &prepared)
+            .expect_err("actual prepared alias must match the captured profile");
+        assert!(error.to_string().contains("does not preserve the prepared wire controls"));
+        assert!(driver.profiled_wire_receipt(&req).is_err());
+    }
+
+    #[test]
+    fn settings_only_profile_preserves_prepared_alias_controls_and_schema() {
+        let (driver, req) = settings_only_profile_request("vendor/model-a");
+        assert!(req.budget_contract.is_none());
+        let prepared = build_chat_request(
+            driver.model(),
+            driver.parallel_tool_calls,
+            driver.budget_endpoint_fingerprint.as_deref(),
+            driver.endpoint_profile.as_ref(),
+            driver.generic_chat_adapter,
+            &req,
+        )
+        .expect("prepare settings-only profile");
+        let (actual, count) = driver.prepared_final_wire(&req, &prepared)
+            .expect("preserved actual Liter body must pass without a budget contract");
+        let body: serde_json::Value = serde_json::from_slice(&actual).expect("decode Liter body");
+        assert!(count.is_none());
+        assert_eq!(body["model"], "vendor/model-a");
+        assert_eq!(body["parallel_tool_calls"], false);
+        assert_eq!(body["tool_choice"]["function"]["name"], "lookup");
+        assert_eq!(body["tools"], serde_json::json!(req.tools));
+        assert_eq!(body["response_format"], req.extra_params.as_ref().unwrap()["response_format"]);
+        let receipt = driver.profiled_wire_receipt(&req).expect("preserved profile receipt");
+        assert_eq!(receipt.serialized_bytes, actual.len());
+        assert!(receipt.counted_tokens.is_none());
+
+        for (field, value) in [
+            ("parallel_tool_calls", serde_json::json!(true)),
+            ("response_format", serde_json::json!({"type":"json_object"})),
+            ("unapproved_control", serde_json::json!(true)),
+        ] {
+            let mut changed = body.clone();
+            changed[field] = value;
+            let serialized = serde_json::to_vec(&changed).expect("serialize changed prepared body");
+            let error = validate_dispatched_budget(
+                driver.model(), None, driver.endpoint_profile.as_ref(), &req, &prepared, &serialized,
+            )
+            .expect_err("settings-only profile must refuse altered final controls");
+            assert!(error.to_string().contains("does not preserve the prepared wire controls"));
+        }
+    }
+
+    #[test]
+    fn selected_generic_routes_preserve_literal_aliases_and_exact_budget_identity() {
+        use crate::uar::runtime::context::budget::RequestBudgetContract;
+
+        let base_url = "http://127.0.0.1:1/v1";
+        for (provider, alias, host_protocol) in [
+            ("openai", "gpt-4o-mini", None),
+            ("siliconflow-cn", "Pro/deepseek-ai/DeepSeek-V3", None),
+            ("siliconflow-cn", "deepseek-ai/DeepSeek-V3", None),
+            ("groq", "groq/compound", None),
+            ("openrouter", "openrouter/auto", None),
+            ("openrouter", "anthropic/claude-haiku-4.5", None),
+            (
+                "anthropic",
+                "anthropic/claude-haiku-4.5",
+                Some("openai_compatible"),
+            ),
+            (
+                "bedrock",
+                "bedrock/anthropic.claude-v2",
+                Some("openai_compatible"),
+            ),
+            ("gateway", "custom/route", None),
+            ("gateway", "uar-settings-profile/route", None),
+        ] {
+            let config = liter_llm::ClientConfigBuilder::new("test-key")
+                .base_url(base_url)
+                .build();
+            let destination = format!("{provider}/{alias}");
+            let driver = LiterLlmDriver::from_selected_route(
+                config,
+                alias.to_owned(),
+                host_protocol.unwrap_or(provider),
+                destination.clone(),
+                alias.to_owned(),
+                None,
+            )
+            .expect("construct selected generic endpoint");
+            let mut request = request(None);
+            request.output_token_cap = Some(128);
+            let mut contract = RequestBudgetContract::synthetic_exact(base_url);
+            contract.destination_model.clone_from(&destination);
+            request.budget_contract = Some(contract);
+
+            let prepared = driver.build_chat_request(&request).unwrap();
+            let (wire, count) = driver.prepared_final_wire(&request, &prepared).unwrap();
+            let body: serde_json::Value = serde_json::from_slice(&wire).unwrap();
+            let bound = driver.prepared_final_wire_budget(&request).unwrap();
+            assert_eq!(driver.model(), destination);
+            assert_eq!(body["model"], alias);
+            assert_eq!(body["max_completion_tokens"], 128);
+            assert_eq!(bound.output_tokens, 128);
+            assert_eq!(bound.input_tokens, count.unwrap().tokens);
+
+            request.budget_contract = None;
+            request.extra_params = Some(serde_json::json!({"model": "different-route"}));
+            let prepared = driver.build_chat_request(&request).unwrap();
+            let error = driver.prepared_final_wire(&request, &prepared).unwrap_err();
+            assert!(error.to_string().contains("does not preserve the selected wire model"));
+        }
+    }
+
+    #[test]
+    fn selected_anthropic_protocol_retains_the_messages_adapter() {
+        let config = liter_llm::ClientConfigBuilder::new("test-key")
+            .base_url("http://127.0.0.1:1/v1")
+            .build();
+        let driver = LiterLlmDriver::from_selected_route(
+            config,
+            "claude-haiku-4.5".into(),
+            "anthropic",
+            "host-provider/claude-haiku-4.5".into(),
+            "claude-haiku-4.5".into(),
+            None,
+        )
+        .expect("construct selected Anthropic endpoint");
+        assert_eq!(driver.model(), "host-provider/claude-haiku-4.5");
+        assert!(!driver.supports_admitted_inline_images());
+
+        let mut request = request(None);
+        request.output_token_cap = Some(128);
+        let prepared = driver.build_chat_request(&request).unwrap();
+        let (wire, _) = driver.prepared_final_wire(&request, &prepared).unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&wire).unwrap();
+        assert_eq!(body["model"], "claude-haiku-4.5");
+        assert_eq!(body["max_tokens"], 128);
+        assert!(body.get("stream_options").is_none());
+    }
+
+    #[test]
+    fn prepared_final_wire_budget_uses_liter_bytes_and_refuses_image_liability() {
+        use crate::uar::runtime::context::budget::{
+            RequestBudgetContract, SYNTHETIC_EXACT_MODEL,
+        };
+        use crate::uar::runtime::context::token_service::TokenService;
+
+        let base_url = "http://127.0.0.1:1/v1";
+        let config = liter_llm::ClientConfigBuilder::new("test-key")
+            .base_url(base_url)
+            .build();
+        let driver = LiterLlmDriver::new(
+            config,
+            SYNTHETIC_EXACT_MODEL.to_string(),
+            Some(true),
+        )
+        .expect("construct synthetic exact driver");
+        let mut request = request(None);
+        request.output_token_cap = Some(128);
+        request.budget_contract = Some(RequestBudgetContract::synthetic_exact(base_url));
+
+        let prepared = build_chat_request(
+            driver.model(),
+            driver.parallel_tool_calls,
+            driver.budget_endpoint_fingerprint.as_deref(),
+            driver.endpoint_profile.as_ref(),
+            driver.generic_chat_adapter,
+            &request,
+        )
+        .expect("prepare synthetic exact request");
+        let actual = driver
+            .client
+            .chat_stream_request_body(&prepared.request)
+            .expect("prepare Liter stream body");
+        let body: serde_json::Value = serde_json::from_slice(&actual).expect("decode Liter body");
+        let expected = TokenService::count_serialized(
+            request
+                .budget_contract
+                .as_ref()
+                .expect("exact contract")
+                .counting,
+            &actual,
+        )
+        .expect("count Liter body");
+        let bound = driver
+            .prepared_final_wire_budget(&request)
+            .expect("bound prepared Liter body");
+        assert_eq!(body["model"], "uar-exact-cl100k-json-v1");
+        assert_eq!(body["max_completion_tokens"], 128);
+        assert_eq!(bound.input_tokens, expected.tokens);
+        assert_eq!(bound.output_tokens, 128);
+
+        request.messages = vec![serde_json::json!({
+            "role":"user",
+            "content":[{
+                "type":"image_url",
+                "image_url":{"url":"data:image/png;base64,iVBORw0KGgo="}
+            }]
+        })];
+        let error = driver
+            .prepared_final_wire_budget(&request)
+            .expect_err("JSON counting must not certify finite image accounting");
+        assert!(
+            error
+                .to_string()
+                .contains("does not prove a finite image accounting bound")
         );
     }
 
@@ -1302,11 +1834,14 @@ mod prompt_caching_tests {
         .expect("driver must return after the upstream stream is established")
         .expect("create normalized stream");
 
-        let first_event = tokio::time::timeout(std::time::Duration::from_secs(1), stream.next())
-            .await
-            .expect("first upstream chunk must be forwarded without full-response buffering")
-            .expect("normalized event")
-            .expect("successful normalized event");
+        let first_event = tokio::time::timeout(std::time::Duration::from_secs(1), async {
+            assert_final_wire_budget_receipt(stream.next().await, "openai/test");
+            stream.next().await
+        })
+        .await
+        .expect("first upstream chunk must be forwarded without full-response buffering")
+        .expect("normalized event")
+        .expect("successful normalized event");
         assert!(
             matches!(first_event, NormalizedEvent::MessageDelta { ref text } if text == "hello"),
             "unexpected first normalized event: {first_event:?}"
@@ -1386,11 +1921,14 @@ mod prompt_caching_tests {
             .await
             .expect("create normalized stream");
 
-        let error = tokio::time::timeout(std::time::Duration::from_secs(1), stream.next())
-            .await
-            .expect("invalid provider chunk must produce an event")
-            .expect("normalized event")
-            .expect_err("invalid provider chunks must remain typed stream errors");
+        let error = tokio::time::timeout(std::time::Duration::from_secs(1), async {
+            assert_final_wire_budget_receipt(stream.next().await, &driver.model);
+            stream.next().await
+        })
+        .await
+        .expect("invalid provider chunk must produce an event")
+        .expect("normalized event")
+        .expect_err("invalid provider chunks must remain typed stream errors");
         let provider_error = ProviderError::from_anyhow(&error)
             .expect("liter stream failures must preserve provider error metadata");
         assert_eq!(provider_error.kind, crate::llm::ProviderErrorKind::Stream);

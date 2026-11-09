@@ -43,7 +43,7 @@ use universal_agent_runtime::uar::domain::policy::{
 };
 use universal_agent_runtime::uar::domain::skills::Skill;
 use universal_agent_runtime::uar::rag::embeddings::{
-    EmbeddingBackend, UnavailableEmbeddingBackend,
+    EmbeddingBackend, UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend,
 };
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::matching::VectorMatcher;
@@ -323,7 +323,10 @@ async fn peer_connection_is_reused_until_the_skill_configuration_hash_changes() 
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             Arc::clone(&registry),
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await
@@ -442,7 +445,10 @@ async fn cached_skill_catalog_stays_lazy_until_the_first_tool_call() {
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             registry,
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await
@@ -520,7 +526,7 @@ async fn cached_skill_catalog_stays_lazy_until_the_first_tool_call() {
     );
 
     let result = cached
-        .call_tool("peer-uar__uar_list_agents", serde_json::json!({}))
+        .call_tool("peer-uar__uar_list_agents", serde_json::json!({}), None)
         .await
         .expect("first projected peer call reconnects and succeeds");
     assert!(!result.is_null());
@@ -816,7 +822,10 @@ async fn global_authority_and_peer_delegation_keep_connection_recipes_host_local
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             registry,
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await
@@ -981,7 +990,10 @@ async fn refresh_is_single_flight_and_a_cancelled_leader_is_retried() {
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             registry,
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await
@@ -1141,7 +1153,10 @@ async fn lifecycle_events_and_status_metric_follow_binding_transitions_in_order(
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             registry,
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await
@@ -1394,6 +1409,7 @@ async fn real_stdio_server_covers_lazy_reconnect_cancel_and_shutdown() {
         .call_tool(
             "stdio-peer__echo",
             serde_json::json!({"text": "peer-roundtrip"}),
+            None,
         )
         .await
         .expect("lazy stdio call reconnects and succeeds");

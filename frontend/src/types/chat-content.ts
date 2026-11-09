@@ -49,7 +49,11 @@ export interface RichMessage {
   /** UAR-rich view projection. Old rows derive this at the PGlite boundary. */
   chunks?: Chunk[];
   createdAt: Date;
-  status?: "in_progress" | "complete" | "failed";
+  createdAtKnown?: boolean;
+  historyPosition?: number;
+  status?: "in_progress" | "complete" | "failed" | "cancelled" | "interrupted";
+  runId?: string;
+  clientTurnId?: string;
   agentId?: string;
   model?: string;
   usage?: MessageUsage;

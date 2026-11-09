@@ -1083,7 +1083,7 @@ mod tests {
     async fn make_test_db() -> Surreal<surrealdb::engine::any::Any> {
         let path = std::env::temp_dir().join(format!("migration-test-{}", Uuid::new_v4()));
         std::fs::create_dir_all(&path).expect("create temp dir");
-        let db = connect(format!("rocksdb://{}", path.display()))
+        let db = connect(format!("surrealkv://{}", path.display()))
             .await
             .expect("connect embedded surrealdb");
         db.use_ns("test").use_db("test").await.expect("use ns/db");

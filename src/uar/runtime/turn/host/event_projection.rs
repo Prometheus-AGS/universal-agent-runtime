@@ -39,9 +39,10 @@ impl AdmissionProjection {
         self.reduced_failure_only = true;
     }
 
-    /// A reduced binding failure has no admitted presentation to observe.
+    /// Presentation observations require a completed admission corpus. Reduced
+    /// binding failures carry only diagnostics, even when a scrubber is present.
     pub(crate) fn suppresses_presentation(&self) -> bool {
-        self.reduced_failure_only
+        self.capture.is_none() || self.reduced_failure_only
     }
 
     pub fn project_or_stage(&mut self, mut event: NormalizedEvent) -> Option<NormalizedEvent> {
@@ -113,6 +114,75 @@ impl AdmissionProjection {
     }
 }
 
+#[cfg(test)]
+mod admission_tests {
+    use super::*;
+
+    #[test]
+    fn early_admission_refusal_keeps_content_and_presentations_private() {
+        let mut projection = AdmissionProjection::default();
+        assert!(projection.suppresses_presentation());
+        assert!(projection.project_or_stage(NormalizedEvent::ChatDelta {
+            run_id: "refused".into(),
+            text_delta: "unadmitted content".into(),
+        }).is_none());
+        let event = projection.project_or_stage(NormalizedEvent::Error {
+            run_id: "refused".into(),
+            code: "budget_admission_failed".into(),
+            message: "private accounting detail".into(),
+        }).expect("public terminal admission error");
+        assert_eq!(event, NormalizedEvent::Error {
+            run_id: "refused".into(),
+            code: "budget_admission_failed".into(),
+            message: "Run admission failed before protected content publication".into(),
+        });
+        assert!(projection.suppresses_presentation());
+        assert!(projection.project_or_stage(NormalizedEvent::RunDone {
+            run_id: "refused".into(),
+        }).is_some());
+        assert!(projection.suppresses_presentation());
+        assert_eq!(projection.complete(RunSecretScrubber::default()), Err("ADMISSION_FAILED"));
+        assert!(projection.suppresses_presentation());
+    }
+
+    #[test]
+    fn completed_admission_restores_content_and_presentation_publication() {
+        let mut projection = AdmissionProjection::default();
+        let event = NormalizedEvent::ChatDelta {
+            run_id: "admitted".into(),
+            text_delta: "admitted content".into(),
+        };
+        assert!(projection.project_or_stage(event.clone()).is_none());
+        assert!(projection.suppresses_presentation());
+        let staged = projection.complete(RunSecretScrubber::default()).unwrap();
+        assert_eq!(staged, vec![event.clone()]);
+        assert!(!projection.suppresses_presentation());
+        assert_eq!(projection.project_or_stage(event.clone()), Some(event));
+        assert!(projection.project_or_stage(NormalizedEvent::RunDone {
+            run_id: "admitted".into(),
+        }).is_some());
+        assert!(!projection.suppresses_presentation());
+    }
+
+    #[test]
+    fn reduced_failure_capture_does_not_admit_content_or_presentations() {
+        let mut projection = AdmissionProjection::default();
+        projection.begin_reduced_failure(RunSecretScrubber::default());
+        assert!(projection.suppresses_presentation());
+        assert!(projection.project_or_stage(NormalizedEvent::ChatDelta {
+            run_id: "reduced".into(),
+            text_delta: "unadmitted content".into(),
+        }).is_none());
+        let event = NormalizedEvent::Error {
+            run_id: "reduced".into(),
+            code: "orchestrator_start_failed".into(),
+            message: "Run binding refused during client_construction; diagnostic reference fixture".into(),
+        };
+        assert_eq!(projection.project_or_stage(event.clone()), Some(event));
+        assert!(projection.suppresses_presentation());
+    }
+}
+
 impl RunSecretScrubber {
     /// Admission guard for immutable executable snapshots: no silent rewrite
     /// of the artifact whose revision and policy authorize execution.
@@ -161,6 +231,56 @@ impl RunSecretScrubber {
                 call.function.arguments = self.project_json_text(&call.function.arguments);
             }
         }
+    }
+
+    /// Project canonical protected history without turning validated inline
+    /// images into generic secret-redaction placeholders. Image URLs remain
+    /// eligible only when they still satisfy the strict ingress syntax rule.
+    pub(crate) fn project_canonical_message(
+        &self,
+        message: &mut crate::llm::Message,
+    ) -> anyhow::Result<()> {
+        use crate::llm::{ContentPart, MessageContent};
+
+        match &mut message.content {
+            MessageContent::Text { content } => *content = self.scrub(content),
+            MessageContent::Parts { content } => {
+                for part in content {
+                    match part {
+                        ContentPart::Text { text } => *text = self.scrub(text),
+                        ContentPart::ImageUrl { image_url } => {
+                            // The ordinary typed ingress has already validated
+                            // supported inline images. Preserve those bytes for
+                            // canonical history. Legacy image transports retain
+                            // the prior generic projection rather than gaining
+                            // a new global rejection path here.
+                            if crate::llm::inline_image::inline_image_metadata(image_url).is_err() {
+                                image_url.url = self.scrub(&image_url.url);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if let Some(calls) = &mut message.tool_calls {
+            for call in calls {
+                call.function.arguments = self.project_json_text(&call.function.arguments);
+            }
+        }
+        Ok(())
+    }
+
+    /// JSON canonical-history adapter for provider and graph checkpoint seams.
+    /// It accepts only serialized [`crate::llm::Message`] values, so arbitrary
+    /// JSON cannot use the inline-image preservation path.
+    pub(crate) fn project_canonical_message_json(
+        &self,
+        message: &mut serde_json::Value,
+    ) -> anyhow::Result<()> {
+        let mut typed = serde_json::from_value::<crate::llm::Message>(std::mem::take(message))?;
+        self.project_canonical_message(&mut typed)?;
+        *message = serde_json::to_value(typed)?;
+        Ok(())
     }
 
     pub fn project_fragments(&self, fragments: &mut [crate::uar::runtime::prompt::PromptFragment]) {

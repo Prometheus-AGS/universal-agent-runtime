@@ -23,7 +23,7 @@ use universal_agent_runtime::uar::defaults::default_agent;
 use universal_agent_runtime::uar::domain::events::NormalizedEvent as RunEvent;
 use universal_agent_runtime::uar::domain::skills::Skill;
 use universal_agent_runtime::uar::rag::embeddings::{
-    EmbeddingBackend, UnavailableEmbeddingBackend,
+    EmbeddingBackend, UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend,
 };
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::matching::VectorMatcher;
@@ -50,7 +50,10 @@ async fn test_manager(driver: Arc<MockLlmDriver>) -> Arc<RunManager> {
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             Arc::new(RwLock::new(SkillRegistry::default())),
-            Arc::new(VectorMatcher::new(embedding_backend, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embedding_backend)),
+                0.75,
+            )),
             None,
         )
         .await

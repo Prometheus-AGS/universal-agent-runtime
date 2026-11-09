@@ -1,10 +1,50 @@
 {
   "$schema": "./product-support-matrix.schema.json",
   "version": "1.0.0",
+  "product_version": "1.4.0-rc.3",
+  "version_semantics": "version is the matrix contract revision; product_version follows Cargo.toml; SDK/package/schema versions remain independent",
+  "claim_reviewed_at": "2026-11-02",
+  "current_candidate_status": "source-authored; all #462–475 verification CLOSED; no current-tree, installed-image or capability certification",
+  "version_inventory": [
+    {"path": "Cargo.toml", "format": "toml", "version": "1.4.0-rc.3", "role": "runtime-product"},
+    {"path": "package.json", "format": "json", "version": "1.0.0", "role": "private-workspace-tooling"},
+    {"path": "frontend/package.json", "format": "json", "version": "1.0.0", "role": "independent-frontend-package"},
+    {"path": "website/package.json", "format": "json", "version": "0.0.0", "role": "private-documentation-package"},
+    {"path": "src-tauri/tauri.conf.json", "format": "json", "version": "0.1.0", "role": "independent-desktop-shell"},
+    {"path": "sdks/rust/Cargo.toml", "format": "toml", "version": "1.0.0", "role": "independent-rust-sdk"},
+    {"path": "sdks/python/pyproject.toml", "format": "toml", "version": "1.0.0", "role": "independent-python-sdk"},
+    {"path": "sdks/typescript/package.json", "format": "json", "version": "1.0.0", "role": "independent-typescript-sdk"}
+  ],
+  "dependency_policy": "../versions.toml; dependency pins and source commits are authoritative, not release prose",
+  "catalog_counts": {"classification": "metadata-only", "source": "../vendor/git/liter-llm/crates/liter-llm/schemas/catalog.json", "provider_collection": "providers", "numeric_total": null, "meaning": "Derive the count from the pinned provider map when reporting it; no fixed prose total or certification count is asserted"},
+  "runtime_measurement": {"comparison_scope": "NONE", "current_capacity_and_reliability": "unverified", "rig_comparison": "not-selected; no equivalent workload/profile or authorized spend; no version or superiority claim", "contract": "operations/runtime-measurement-scope.md", "telemetry": "operations/telemetry-ownership.md", "ownership": "host-owned global subscriber/recorder is preserved; unavailable scrape is explicit; enabled exporter does not prove delivery or hard flush"},
+  "final_checklist": "releases/v1.4.0-final.md",
+  "execution_recovery": {
+    "contract_revision": "2026-11-02",
+    "canonical_table": "product-support-matrix.md#execution-and-recovery-guarantees",
+    "current_candidate_qualification": "unverified",
+    "effect_guarantee": "no global exactly-once external effects; replay is observation only; unknown effects retain original identity and liability",
+    "upgrade_policy": "Compatibility is scoped to recorded artifacts. The embedded SurrealKV 3.3.0-to-4.0.0 migration, incompatible-state refusal and recovery evidence is described in operations/embedded-surrealdb-4-upgrade.md#qualification-scope. Final release qualification remains pending.",
+    "interfaces": [
+      {"id": "ordinary-chat-without-stable-turn-id", "admission": "legacy request; HTTP acknowledgement is not a durable intent receipt", "recovery": "no automatic redispatch or arbitrary response replay guarantee", "history": "owner-qualified durable session projection where available; bounded provenance can be unavailable/truncated", "effects": "reconnect never grants tool execution or settles usage", "current_evidence": "unverified"},
+      {"id": "native-chat-stable-turn-id", "admission": "durable owner/session/client_turn_id/message_id semantic reservation before dispatch", "recovery": "read-only exact original-run receipt; missing/admission_unconfirmed/unsupported stays explicit; no uncertain repost", "history": "canonical typed session content and bounded run evidence; legacy identity/provenance explicitly unavailable", "effects": "same intent binds same run; new intentional turn requires new ID; no arbitrary external-effect exactly-once promise", "contract": "operations/chat-turn-recovery.md", "current_evidence": "source-authored; unverified"},
+      {"id": "native-run-event-replay", "admission": "owner-qualified run metadata and configured retention, not reusable session ID alone", "recovery": "replay retained events in original sequence; gaps/expired cursors refuse or disclose availability; replay never resumes work", "history": "bounded process buffer with durable fallback only where store/retention permits", "effects": "effect/admission outcomes remain separate; unknown never silently re-executes", "current_evidence": "unverified"},
+      {"id": "ag-ui", "admission": "owned agent/thread/wire-run binding and predecessor checks on capable store", "recovery": "same binding reattaches/projected replay; replay is not new dispatch; incompatible/missing state refuses", "history": "profile event IDs/sequence/cursors remain bounded; no unlimited retention promise", "effects": "approvals remain current host decisions; historical cards grant none", "current_evidence": "unverified independent pinned-peer conformance"},
+      {"id": "a2ui-logical-action", "admission": "updated clients persist interaction_id; exact owner/thread/generation/component/action/digest receipt reserves original continuation before dispatch", "recovery": "same logical intent reconciles original continuation; changed payload conflicts; uncertain creator never redispatches", "history": "64 prior runs/48 surfaces bounded; expired/truncated/unavailable authority refuses action", "effects": "legacy requests without identity are retry_protected:false; no cross-process publication or external-effect exactly-once claim", "contract": "operations/a2ui-interaction-recovery.md", "current_evidence": "source-authored; unverified"},
+      {"id": "a2a", "admission": "owner/task binding on supported durable store; Agent Card capability gates remain authoritative", "recovery": "exact task read/reconnect only for advertised transport; no transport implies every extension or automatic effect replay", "history": "bounded task/event projection and explicit stream gaps; old epochs never grant execution", "effects": "cancel request is not confirmed cleanup or provider usage settlement", "current_evidence": "unverified independent pinned-client conformance"},
+      {"id": "mcp-client-tools", "admission": "run-owned tool resource plus current descriptor/schema/owner/governance/approval checks", "recovery": "canonical receipt and approved protected continuation only; reconnect is not a retry grant", "history": "tool/elicitation receipts retained under explicit owner policy; no implicit session durability for all MCP transports", "effects": "unknown outcomes require exact original receipt/evidence; server feature parity not inferred from client tools", "current_evidence": "unverified independent pinned-server conformance"},
+      {"id": "protected-checkpoint-approval", "storage": "Surreal only; PostgreSQL unsupported", "admission": "atomic protected checkpoint/claim and readback plus current policy/resource/owner admission", "recovery": "single-use continuation; trusted exclusion required for abrupt replacement; old/missing fences refuse", "history": "protected retention is distinct from public event/session retention", "effects": "unknown predecessor/admission/effects block takeover; no fabricated approval", "current_evidence": "source-defined; current artifact and upgrade pair unverified"},
+      {"id": "full-harness", "storage": "all stores", "admission": "process-owned observation only", "durability": "process_ephemeral", "recovery": "unsupported_after_restart", "steer_supported": false, "history": "bounded process/runtime-epoch cursor; native durable history does not upgrade harness", "effects": "expired/old-epoch controls cannot authorize effects", "current_evidence": "explicit ephemeral contract; current-image refusal unverified"},
+      {"id": "teams", "storage": "Surreal only; PostgreSQL unsupported", "admission": "catalog-owned attempt/root/fence/reservation and exact member/binding revisions", "recovery": "settled outcomes immutable; uncertain effects not redispatched; read-only correlation and trusted evidence/manual procedure", "history": "original attempt/artifact/control receipts, current owner and fence", "effects": "provider call reconciliation does not release team capacity; automaticTeamProjection:false; unknown team reservation remains", "contract": "operations/team-control-reconciliation.md", "current_evidence": "historical C54 scoped only; new controls/correlation unverified"},
+      {"id": "memory", "storage": "independent service-owned Surreal store on both primary persistence lanes", "admission": "complete verified owner plus deletion/TTL and explicit configured cosine cutoff; absent cutoff refuses automatic injection", "recovery": "memory tool lifecycle and automatic injection are separate; selected_prepared is not final provider submission", "history": "record/version provenance, not run continuation or general history recovery", "effects": "no kernel writes, ambient team memory or lexical fallback; tool policy unchanged", "contract": "operations/memory-injection-provenance.md", "current_evidence": "historical C39 tool lifecycle and separate earlier mounted synthetic final-input controls; real-model recall unverified"}
+    ]
+  },
+  "verified_at_semantics": "Historical inventory date, not fresh verification of the current source or container",
+  "qualification": {"selected_lane": "linux/amd64 container APIs behind a trusted host/gateway", "status": "unverified", "default_persistence": "Embedded SurrealDB 4.0.0; owned SurrealKV volume", "secondary_persistence": "PostgreSQL18/pgvector restricted by runtime capability document; no parity or checkpoint-resume claim", "memory": "independent service-owned store", "current_source_evidence": "Gate 156 three-profile Rust baseline and Gates 154, 155 and 157 selected installed acceptance on the pre-bump Linux amd64 candidate a9533ff6. The SurrealDB 4.0 child and earlier mounted gates retain their recorded artifact scopes. Full RC3 and final release qualification remain pending.", "pending": "Full #465 release evidence, selected remaining F06 functional profiles and E04 genuine-provider scope; earlier mounted #463/#464 transport and dispatch evidence is artifact-bound", "excluded_lanes": ["arm64", "windows", "mobile", "native archives", "browser/native WASM-AOT certification", "every-provider quality"], "vision_evidence": "Earlier controlled mounted image transport and refusal evidence; genuine-model understanding NOT_EXERCISED", "recovery_contract": "product-support-matrix.md#execution-and-recovery-guarantees"},
   "verified_at": "2026-07-14",
   "features": [
     { "id": "minimal", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features minimal" },
-    { "id": "server-full", "status": "stable", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "cargo check --lib --features server-full plus full BDD and release-artifact certification" },
+    { "id": "server-full", "status": "preview", "default": false, "platforms": ["linux", "macos"], "conflicts": [], "gate": "Exact selected Linux amd64 artifact build and bounded applicable local API qualification under#476/#465; compile alone is insufficient" },
     { "id": "desktop-full", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features desktop-full" },
     { "id": "embedded-mobile", "status": "experimental", "default": false, "platforms": ["android", "ios"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features embedded-mobile" },
     { "id": "host-persistence", "status": "internal", "default": false, "platforms": ["linux", "macos", "windows", "android", "ios"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features host-persistence" },
@@ -16,20 +56,25 @@
     { "id": "response-quality", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features response-quality" },
     { "id": "admin-ui", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features admin-ui" },
     { "id": "local-models", "status": "stable", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features local-models" },
+    { "id": "tract-embeddings", "status": "internal", "default": false, "platforms": ["macos"], "conflicts": [], "gate": "Intel macOS sidecar packaging selects the CPU-only tract backend for local embeddings" },
     { "id": "candle-embeddings", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features server-full,candle-embeddings" },
     { "id": "document-intelligence", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features document-intelligence" },
     { "id": "api-docs", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features api-docs" },
     { "id": "cedar-governance", "status": "stable", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features cedar-governance" },
+    { "id": "afc-c06-gate", "status": "development-only", "default": false, "platforms": [], "conflicts": [], "gate": "cargo test --locked --features afc-c06-gate --test agent_fabric_c06_gate" },
+    { "id": "afc-c07-gate", "status": "development-only", "default": false, "platforms": [], "conflicts": [], "gate": "cargo test --locked --features afc-c07-gate --test agent_fabric_c07_gate" },
     { "id": "telemetry", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features telemetry" },
     { "id": "sentry", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features server-full,sentry" },
     { "id": "a2a-transport", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --lib --features a2a-transport" },
     { "id": "wasm-runtime", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features wasm-runtime" },
     { "id": "tauri", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --features tauri" },
-    { "id": "vault", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features server-full,vault" }
+    { "id": "vault", "status": "preview", "default": false, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo check --locked --no-default-features --features server-full,vault" },
+    { "id": "test-probes", "status": "development-only", "default": false, "platforms": [], "conflicts": [], "gate": "cargo test --locked --features test-probes --test sidecar_launch_security" },
+    { "id": "bauar-native-admission-gate", "status": "development-only", "default": false, "platforms": [], "conflicts": [], "gate": "Separate full-feature acceptance artifact for native admission" }
   ],
   "bundles": [
     { "id": "minimal", "status": "stable", "license": "MIT", "features": ["surreal-backend"], "gate": "cargo test --lib --features minimal" },
-    { "id": "server-full", "status": "stable", "distribution": true, "license": "MIT", "features": ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"], "gate": "cargo check --lib --features server-full plus full BDD and release-artifact certification" },
+    { "id": "server-full", "status": "preview", "distribution": true, "license": "MIT", "features": ["minimal", "a2a-transport", "local-models", "cedar-governance", "response-quality", "document-intelligence", "telemetry", "api-docs", "admin-ui", "wasm-runtime"], "gate": "Exact selected Linux amd64 artifact build and bounded applicable local API qualification under#476/#465; compile alone is insufficient" },
     { "id": "desktop-full", "status": "preview", "license": "MIT", "features": ["server-full", "tauri"], "gate": "cargo check --lib --features desktop-full" },
     { "id": "embedded-mobile", "status": "experimental", "license": "MIT", "features": ["host-persistence"], "gate": "cargo check --locked --no-default-features --features embedded-mobile" },
     { "id": "server-postgres", "status": "preview", "license": "MIT", "features": ["postgres-backend"], "gate": "cargo test --features postgres-backend" },
@@ -41,25 +86,25 @@
     { "id": "sdk-typescript", "path": "sdks/typescript", "license": "MIT" }
   ],
   "providers": [
-    { "id": "openai-compatible", "tier": 1, "capabilities": ["chat", "stream", "tools", "vision", "structured"], "gate": "tests/bdd + provider route real-server E2E", "verified_at": "2026-07-11" },
-    { "id": "anthropic", "tier": 1, "capabilities": ["chat", "stream", "tools", "vision"], "gate": "anthropic streaming/cache unit suite", "verified_at": "2026-07-11" },
-    { "id": "catalog-native", "tier": 2, "capabilities": ["chat", "stream"], "gate": "registry resolution and provider health tests", "verified_at": "2026-07-11" },
-    { "id": "catalog-only", "tier": 3, "capabilities": [], "gate": "catalog schema only; no execution promise", "verified_at": "2026-07-11" },
-    { "id": "fastembed-local", "tier": 1, "capabilities": ["embedding"], "gate": "ranked retrieval integration and grounded BDD", "verified_at": "2026-07-10" },
-    { "id": "candle-local", "tier": 2, "capabilities": ["embedding"], "gate": "cargo check --lib --features server-full,candle-embeddings", "verified_at": "2026-07-14" },
-    { "id": "openai-embeddings", "tier": 1, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14" },
-    { "id": "voyage-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14" },
-    { "id": "cohere-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14" }
+    { "id": "openai-compatible", "tier": 1, "capabilities": ["chat", "stream", "tools", "structured"], "gate": "tests/bdd + provider route real-server E2E", "verified_at": "2026-07-11", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified", "unqualified_capabilities": ["vision"], "vision_scope": "Earlier mounted controlled OpenAI-compatible inline PNG/JPEG transport; direct Anthropic conversion remains separately scoped. Genuine model vision remains unqualified." },
+    { "id": "anthropic", "tier": 1, "capabilities": ["chat", "stream", "tools"], "gate": "anthropic streaming/cache unit suite", "verified_at": "2026-07-11", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified", "unqualified_capabilities": ["vision"], "vision_scope": "Earlier mounted controlled OpenAI-compatible inline PNG/JPEG transport; direct Anthropic conversion remains separately scoped. Genuine model vision remains unqualified." },
+    { "id": "catalog-native", "tier": 2, "capabilities": ["chat", "stream"], "gate": "registry resolution and provider health tests", "verified_at": "2026-07-11", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" },
+    { "id": "catalog-only", "tier": 3, "capabilities": [], "gate": "catalog schema only; no execution promise", "verified_at": "2026-07-11", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" },
+    { "id": "fastembed-local", "tier": 1, "capabilities": ["embedding"], "gate": "ranked retrieval integration and grounded BDD", "verified_at": "2026-07-10", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" },
+    { "id": "candle-local", "tier": 2, "capabilities": ["embedding"], "gate": "cargo check --lib --features server-full,candle-embeddings", "verified_at": "2026-07-14", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" },
+    { "id": "openai-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14", "current_candidate_evidence": "Request-shape/key-resolution tests are adapter evidence, not mounted nonempty embedding qualification; #470 remains" },
+    { "id": "voyage-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" },
+    { "id": "cohere-embeddings", "tier": 2, "capabilities": ["embedding"], "gate": "unit tests for request shape and API key resolution", "verified_at": "2026-07-14", "current_candidate_evidence": "Historical or declared adapter evidence only; selected Linux amd64 artifact unverified" }
   ],
   "persistence": [
     { "deployment": "web-default", "authority": "embedded-surrealdb", "client_cache": "pglite", "sync": "server events reconcile graph; PGlite persists local threads/messages", "conflict": "server entity version wins; local unsent chat remains client-owned", "status": "stable", "gate": "cargo test --lib + frontend graph/store tests" },
-    { "deployment": "server-postgres", "authority": "postgresql-pgvector", "client_cache": "pglite", "sync": "server events reconcile graph", "conflict": "database transaction/version wins", "status": "preview", "gate": "cargo test --features postgres-backend" },
+    { "deployment": "server-postgres", "authority": "postgresql-pgvector", "client_cache": "pglite", "sync": "server events reconcile graph", "conflict": "database transaction/version wins", "status": "preview", "gate": "cargo test --features postgres-backend", "limitations": "No durable agent instances/teams/followups/schedules/observers/checkpoint resume; runtime capability_unsupported refusal; independent memory service" },
     { "deployment": "desktop", "authority": "embedded-surrealdb", "client_cache": "pglite-webview", "sync": "local loopback event stream", "conflict": "runtime authority; client drafts remain local", "status": "preview", "gate": "desktop bundle certification pending" }
   ],
   "routing": [
-    { "level": "catalog", "status": "stable", "meaning": "filter declared model capabilities", "gate": "catalog/router unit tests" },
-    { "level": "availability", "status": "stable", "meaning": "exclude disabled or cooldown providers", "gate": "health and targeted routing tests" },
-    { "level": "policy", "status": "stable", "meaning": "apply preferred provider, cost and capability constraints", "gate": "targeted eval routing suite" },
+    { "level": "catalog", "status": "stable", "meaning": "filter declared model metadata; no execution or capability certification", "gate": "catalog/router unit tests" },
+    { "level": "availability", "status": "preview", "meaning": "exclude disabled or cooldown providers", "gate": "health and targeted routing tests", "current_candidate_evidence": "Actual constrained dispatch source-authored under#464; NOT_EXERCISED on selected container; advisory query is not a run" },
+    { "level": "policy", "status": "preview", "meaning": "apply preferred provider, cost and capability constraints", "gate": "targeted eval routing suite", "current_candidate_evidence": "Actual constrained dispatch source-authored under#464; NOT_EXERCISED on selected container; advisory query is not a run" },
     { "level": "adaptive", "status": "experimental", "meaning": "learn from runtime quality/latency history", "gate": "no GA gate; not a release promise" }
   ],
   "tools": [
@@ -68,12 +113,13 @@
     { "mode": "wasm", "status": "preview", "default_policy": "disabled unless wasm-runtime enabled", "controls": ["WASI capability boundary", "Cedar", "approval"], "gate": "cargo check --features wasm-runtime" }
   ],
   "platforms": [
-    { "id": "web", "status": "stable", "sandbox": "server process; browser renders declarative artifacts", "gate": "frontend unit/build/browser/BDD suites" },
-    { "id": "desktop", "status": "preview", "sandbox": "Tauri shell with supervised local runtime", "gate": "platform artifact gate pending" },
-    { "id": "mobile", "status": "experimental", "sandbox": "undeclared", "gate": "none" },
-    { "id": "native-wasm", "status": "preview", "sandbox": "Wasmtime/WASI", "gate": "cargo check --features wasm-runtime" },
-    { "id": "browser-wasm", "status": "unsupported", "sandbox": "no browser WASM executor shipped", "gate": "none" },
-    { "id": "windows-native-archive", "status": "experimental", "sandbox": "native process; archive certification deferred", "gate": "non-blocking release workflow job until promoted" }
+    { "id": "web", "status": "stable", "sandbox": "server process; browser renders declarative artifacts", "gate": "frontend unit/build/browser/BDD suites", "current_candidate_qualification": "API-only promotion does not qualify interactive browser workflows" },
+    { "id": "desktop", "status": "preview", "sandbox": "Tauri shell with supervised local runtime", "gate": "platform artifact gate pending", "current_candidate_qualification": "not-selected" },
+    { "id": "mobile", "status": "experimental", "sandbox": "undeclared", "gate": "none", "current_candidate_qualification": "not-selected" },
+    { "id": "native-wasm", "status": "preview", "sandbox": "Wasmtime/WASI", "gate": "cargo check --features wasm-runtime", "current_candidate_qualification": "not-selected" },
+    { "id": "browser-wasm", "status": "unsupported", "sandbox": "no browser WASM executor shipped", "gate": "none", "current_candidate_qualification": "not-selected" },
+    { "id": "windows-native-archive", "status": "experimental", "sandbox": "native process; archive certification deferred", "gate": "Not selected; actual local installed-archive qualification required before promotion", "current_candidate_qualification": "not-selected" },
+    { "id": "linux-amd64-container-api", "status": "preview", "sandbox": "existing non-root rootDockerfile API image; owned persistent volume", "gate": "Exact image/source/config and bounded mounted API qualification under#465/#476", "current_candidate_qualification": "selected but unverified" }
   ],
   "integrations": [
     { "id": "bossfang", "mode": "supervised-service", "status": "recommended", "contract": "OpenAI-compatible first; A2A and AG-UI for richer semantics", "reason": "isolated faults/security/upgrades; current crate is monolithic", "library_reconsideration": "only after narrow dependency-light kernel extraction and measured IPC bottleneck" },

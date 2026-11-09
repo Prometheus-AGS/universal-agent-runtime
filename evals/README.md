@@ -40,3 +40,10 @@ cargo run --bin universal-agent-runtime -- \
 Commit the resulting baseline deliberately. A missing baseline or unavailable
 real-model prerequisite leaves the corresponding quality claim unverified.
 GitHub Actions are deployment-only and do not run these suites.
+
+The separate [packaged-runtime measurement source](../docs/operations/runtime-measurement-scope.md)
+uses the existing Cucumber facility for owner-selected synthetic request-path
+capacity evidence. It has no default workload/concurrency/SLO and refuses an
+unselected manifest before HTTP. Helper eval scores and historical hot-path
+benchmarks are not installed-runtime latency, reliability or model-quality
+results. Its source is unexecuted pending the whole-phase gate.

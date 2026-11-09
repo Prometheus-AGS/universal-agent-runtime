@@ -1,0 +1,240 @@
+{
+  "namespace": "__CAPABILITY_NAMESPACE__",
+  "identity": {
+    "platform": "linux/amd64",
+    "sourceCommit": "__SOURCE_COMMIT_40_HEX__",
+    "imageDigest": "sha256:__LOCAL_IMAGE_ID_64_HEX__",
+    "configDigest": "__CONFIG_DIGEST_64_HEX__",
+    "contractDigest": "__RECOMPUTED_ADOPTED_CONTRACT_DIGEST_64_HEX__"
+  },
+  "failover": {
+    "enabled": true,
+    "error_threshold": 3,
+    "cooldown_secs": 60,
+    "strategy": "priority",
+    "fallback_models": [
+      {
+        "model": "__CAPABILITY_NAMESPACE__-outside/outside",
+        "base_url": "http://127.0.0.1:4612/v1"
+      }
+    ]
+  },
+  "peers": [
+    {
+      "id": "capable",
+      "url": "http://127.0.0.1:4601/",
+      "wireBaseUrl": "http://127.0.0.1:4601/v1"
+    },
+    {
+      "id": "text_only",
+      "url": "http://127.0.0.1:4602/",
+      "wireBaseUrl": "http://127.0.0.1:4602/v1"
+    },
+    {
+      "id": "no_tools",
+      "url": "http://127.0.0.1:4603/",
+      "wireBaseUrl": "http://127.0.0.1:4603/v1"
+    },
+    {
+      "id": "no_structured",
+      "url": "http://127.0.0.1:4604/",
+      "wireBaseUrl": "http://127.0.0.1:4604/v1"
+    },
+    {
+      "id": "tiny",
+      "url": "http://127.0.0.1:4605/",
+      "wireBaseUrl": "http://127.0.0.1:4605/v1"
+    },
+    {
+      "id": "disabled",
+      "url": "http://127.0.0.1:4606/",
+      "wireBaseUrl": "http://127.0.0.1:4606/v1"
+    },
+    {
+      "id": "cooldown",
+      "url": "http://127.0.0.1:4607/",
+      "wireBaseUrl": "http://127.0.0.1:4607/v1"
+    },
+    {
+      "id": "failure_primary",
+      "url": "http://127.0.0.1:4608/",
+      "wireBaseUrl": "http://127.0.0.1:4608/v1"
+    },
+    {
+      "id": "fallback",
+      "url": "http://127.0.0.1:4609/",
+      "wireBaseUrl": "http://127.0.0.1:4609/v1"
+    },
+    {
+      "id": "failure_exact",
+      "url": "http://127.0.0.1:4610/",
+      "wireBaseUrl": "http://127.0.0.1:4610/v1"
+    },
+    {
+      "id": "failure_scope",
+      "url": "http://127.0.0.1:4611/",
+      "wireBaseUrl": "http://127.0.0.1:4611/v1"
+    },
+    {
+      "id": "outside",
+      "url": "http://127.0.0.1:4612/",
+      "wireBaseUrl": "http://127.0.0.1:4612/v1"
+    }
+  ],
+  "models": {
+    "capable": {
+      "destination": "__CAPABILITY_NAMESPACE__-capable/capable",
+      "peer": "capable",
+      "wireModel": "capable",
+      "provider_enabled": true,
+      "enabled": true,
+      "supports_vision": true,
+      "supports_tools": true,
+      "supports_structured_output": true,
+      "context_window": 32768,
+      "max_output_tokens": 256
+    },
+    "text_only": {
+      "destination": "__CAPABILITY_NAMESPACE__-text_only/text_only",
+      "peer": "text_only",
+      "wireModel": "text_only",
+      "provider_enabled": true,
+      "enabled": true,
+      "supports_vision": false,
+      "supports_tools": true,
+      "supports_structured_output": true,
+      "context_window": 32768,
+      "max_output_tokens": 256
+    },
+    "no_tools": {
+      "destination": "__CAPABILITY_NAMESPACE__-no_tools/no_tools",
+      "peer": "no_tools",
+      "wireModel": "no_tools",
+      "provider_enabled": true,
+      "enabled": true,
+      "supports_vision": true,
+      "supports_tools": false,
+      "supports_structured_output": true,
+      "context_window": 32768,
+      "max_output_tokens": 256
+    },
+    "no_structured": {
+      "destination": "__CAPABILITY_NAMESPACE__-no_structured/no_structured",
+      "peer": "no_structured",
+      "wireModel": "no_structured",
+      "provider_enabled": true,
+      "enabled": true,
+      "supports_vision": true,
+      "supports_tools": true,
+      "supports_structured_output": false,
+      "context_window": 32768,
+      "max_output_tokens": 256
+    },
+    "tiny": {
+      "destination": "__CAPABILITY_NAMESPACE__-tiny/tiny",
+      "peer": "tiny",
+      "wireModel": "tiny",
+      "provider_enabled": true,
+      "enabled": true,
+      "supports_vision": true,
+      "supports_tools": true,
+      "supports_structured_output": true,
+      "context_window": 128,
+      "max_output_tokens": 32
+    },
+    "disabled": {
+      "destination": "__CAPABILITY_NAMESPACE__-disabled/disabled",
+      "peer": "disabled",
+      "wireModel": "disabled",
+      "provider_enabled": false,
+      "enabled": true,
+      "supports_vision": true,
+      "supports_tools": true,
+      "supports_structured_output": true,
+      "context_window": 32768,
+      "max_output_tokens": 256
+    },
+    "cooldown": {
+      "destination": "__CAPABILITY_NAMESPACE__-cooldown/cooldown",
+      "peer": "cooldown",
+      "wireModel": "cooldown",
+      "provider_enabled": true,
+      "enabled": true,
+      "supports_vision": true,
+      "supports_tools": true,
+      "supports_structured_output": true,
+      "context_window": 32768,
+      "max_output_tokens": 256
+    },
+    "failure_primary": {
+      "destination": "__CAPABILITY_NAMESPACE__-failure_primary/failure_primary",
+      "peer": "failure_primary",
+      "wireModel": "failure_primary",
+      "provider_enabled": true,
+      "enabled": true,
+      "supports_vision": true,
+      "supports_tools": true,
+      "supports_structured_output": true,
+      "context_window": 32768,
+      "max_output_tokens": 256
+    },
+    "fallback": {
+      "destination": "__CAPABILITY_NAMESPACE__-fallback/fallback",
+      "peer": "fallback",
+      "wireModel": "fallback",
+      "provider_enabled": true,
+      "enabled": true,
+      "supports_vision": true,
+      "supports_tools": true,
+      "supports_structured_output": true,
+      "context_window": 8192,
+      "max_output_tokens": 32,
+      "wireSettings": {
+        "max_completion_tokens": 32
+      }
+    },
+    "failure_exact": {
+      "destination": "__CAPABILITY_NAMESPACE__-failure_exact/failure_exact",
+      "peer": "failure_exact",
+      "wireModel": "failure_exact",
+      "provider_enabled": true,
+      "enabled": true,
+      "supports_vision": true,
+      "supports_tools": true,
+      "supports_structured_output": true,
+      "context_window": 32768,
+      "max_output_tokens": 256
+    },
+    "failure_scope": {
+      "destination": "__CAPABILITY_NAMESPACE__-failure_scope/failure_scope",
+      "peer": "failure_scope",
+      "wireModel": "failure_scope",
+      "provider_enabled": true,
+      "enabled": true,
+      "supports_vision": true,
+      "supports_tools": true,
+      "supports_structured_output": true,
+      "context_window": 32768,
+      "max_output_tokens": 256
+    },
+    "outside": {
+      "destination": "__CAPABILITY_NAMESPACE__-outside/outside",
+      "peer": "outside",
+      "wireModel": "outside",
+      "provider_enabled": true,
+      "enabled": true,
+      "supports_vision": true,
+      "supports_tools": true,
+      "supports_structured_output": true,
+      "context_window": 32768,
+      "max_output_tokens": 256
+    }
+  },
+  "llm": {
+    "max_retries": 0
+  },
+  "resilience": {
+    "retries_enabled": false,
+    "retry_max_attempts": 1
+  }
+}

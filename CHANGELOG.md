@@ -4,7 +4,22 @@ All notable changes to Universal Agent Runtime are documented here. UAR follows
 Semantic Versioning for Stable HTTP, event, configuration, and artifact
 contracts identified in the product support matrix.
 
-## 1.4.0-rc.2 — unreleased (release candidate; Mac validated)
+## 1.4.0-rc.3 — Linux amd64 pilot candidate
+
+- Embedded persistence moves to SurrealDB 4.0 with a separate-destination migration, an immutable source snapshot and an explicit rollback procedure.
+- Public image requests retain content and order through compatible dispatch. Verified inherited routes may use authorized fallbacks that fit their final wire budgets. Explicit targets retain their original scope.
+- Native turn history and A2UI action receipts retain original intent across lost responses. Standalone MCP and team cancellation preserve unresolved effects and accounting liabilities.
+- Mounted embeddings expose per-counter usage availability. Anthropic Messages projects reported usage on streaming terminals. The document image ships pinned English OCR data and returns terminal rejection for invalid inputs.
+- Automatic memory injection requires a configured similarity cutoff. Telemetry preserves host-owned global state and separates observed accounting from unavailable evidence.
+- The selected synthetic baseline and team receipts remain tied to their recorded artifacts. The [RC3 user guide](docs/releases/v1.4.0-rc.3.md) documents setup, feature checks, recovery and outstanding final qualification.
+
+## 1.4.0-rc.2 — release candidate (historical Mac receipts only)
+
+Current #462–475 source integration and the selected Linux amd64 container APIs
+remain unverified. The [canonical support/recovery contract](docs/product-support-matrix.md)
+and [finite final checklist](docs/releases/v1.4.0-final.md) distinguish source
+changes from actual installed acceptance. Historical rc.1/rc.2 receipts retain
+their original artifact/configuration and do not certify this whole-set tree.
 
 - Host integration: `security.registered_hosts` (default empty) lists the
   client ids of registered hosts, identified by a verified bearer's `act.sub`
@@ -65,11 +80,12 @@ contracts identified in the product support matrix.
   the desktop app and container images are not yet validated for this release.
   See [the release candidate note](docs/releases/v1.4.0-rc.1.md).
 
-## 1.3.0 — unreleased (verification pending)
+## 1.3.0 — historical release line (integration evidence remains source-bound)
 
-- Upgrade vendored Parking Lot to exact source
-  `4b747350c6883497813bed33623a9937ad7a5894` (manifest 0.3.0), preserving its
-  workspace crates and UAR's pinned toolchain. Addresses #426.
+- The retained [Parking Lot integration note](docs/releases/v1.3.0-parking-lot.md)
+  records the later approved 0.4.0 source target and earlier 0.3.0 source history.
+  Current dependency source is governed by `versions.toml`; neither upstream
+  publication nor this historical note proves current UAR integration acceptance.
 - Enforce bounded FIFO ingestion admission with one slot per document and
   locally queued descriptors separate from the durable accepted backlog.
   Source bytes load after admission; scope-owned execution retains capacity

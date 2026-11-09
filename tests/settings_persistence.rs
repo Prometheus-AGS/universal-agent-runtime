@@ -39,10 +39,11 @@ use universal_agent_runtime::{
         PersistenceConfig, ResilienceConfig, SecurityConfig, ServerConfig, VisionConfig,
     },
     uar::{
+        api::effective_settings::{HostToolFacts, HostToolFactsSource},
         persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
         realtime::{EntityTopic, LiveEvent, RealtimeBus, RealtimePublishError},
         settings::{
-            manager::SettingsManager,
+            manager::{SettingsManager, setting_revision},
             schema::{SettingSource, Settings, SettingsType},
         },
     },
@@ -79,6 +80,15 @@ impl RealtimeBus for GovernanceRealtimeProbe {
         );
         self.events.lock().expect("events lock").push(event);
         Ok(())
+    }
+}
+
+struct EmptyHostToolInventory;
+
+#[async_trait::async_trait]
+impl HostToolFactsSource for EmptyHostToolInventory {
+    async fn host_tool_facts(&self) -> Result<HostToolFacts> {
+        Ok(HostToolFacts::classify(0, &[], &[], false))
     }
 }
 
@@ -164,11 +174,13 @@ fn minimal_config() -> AppConfig {
             local_loopback_owner: false,
         },
         a2a: Default::default(),
+        service_instance: Default::default(),
         resilience: ResilienceConfig {
             rate_limit_enabled: false,
             timeout_disabled: false,
             requests_per_second: 5.0,
             burst_size: 10.0,
+            admission_timeout_ms: 8_000,
             request_timeout_ms: 30_000,
             stream_start_timeout_ms: 15_000,
             stream_idle_timeout_ms: 30_000,
@@ -192,6 +204,7 @@ fn minimal_config() -> AppConfig {
             external_cache_enabled: false,
             surreal_user: None,
             surreal_pass: None,
+            surreal_auth_level: None,
             surreal_ns: None,
             surreal_db: None,
         },
@@ -842,13 +855,14 @@ async fn prompt_caching_admin_namespace_has_no_generic_read_bypass() -> Result<(
     use tower::ServiceExt;
     use universal_agent_runtime::uar::api::settings::{SettingsApiState, build_router};
 
+    const ADMIN_KEY: &str = "test-admin-key";
     let (mgr, _dir) = make_manager().await;
     mgr.initialize(&minimal_config()).await?;
     let app = build_router().with_state(Arc::new(SettingsApiState {
         settings_manager: Some(mgr),
         governance_status: None,
         settings_mutation_auth_required: true,
-        settings_admin_key: Some("test-admin-key".to_string().into()),
+        settings_admin_key: Some(ADMIN_KEY.to_owned().into()),
         embedding_backend: None,
         embedding_base_config: None,
         embedding_failover: None,
@@ -858,7 +872,12 @@ async fn prompt_caching_admin_namespace_has_no_generic_read_bypass() -> Result<(
 
     let list_response = app
         .clone()
-        .oneshot(Request::builder().uri("/").body(Body::empty())?)
+        .oneshot(
+            Request::builder()
+                .uri("/")
+                .header("x-uar-admin-key", ADMIN_KEY)
+                .body(Body::empty())?,
+        )
         .await?;
     assert_eq!(list_response.status(), axum::http::StatusCode::OK);
     let list_body = axum::body::to_bytes(list_response.into_body(), usize::MAX).await?;
@@ -878,6 +897,7 @@ async fn prompt_caching_admin_namespace_has_no_generic_read_bypass() -> Result<(
         .oneshot(
             Request::builder()
                 .uri("/prompt_caching.enabled")
+                .header("x-uar-admin-key", ADMIN_KEY)
                 .body(Body::empty())?,
         )
         .await?;
@@ -1135,7 +1155,7 @@ async fn mgr_provider_upsert_load_and_hydrate_registry() -> Result<()> {
         models: vec![],
         enabled: true,
     };
-    mgr.upsert_provider_config(&pc).await?;
+    mgr.upsert_provider_config(&pc, true).await?;
 
     let loaded = mgr.load_provider_configs_from_db().await?;
     assert!(
@@ -1404,6 +1424,14 @@ async fn governance_api_returns_per_key_results_and_authoritative_status_token()
         .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
         .await?;
     mutation.finalize_preference(&plan)?;
+    let mut revisions = HashMap::new();
+    for field in ["enabled", "policy_reload_enabled"] {
+        let current = manager
+            .get_with_meta(&format!("governance.{field}"))
+            .await
+            .expect("governance setting is initialized");
+        revisions.insert(field, setting_revision(&current.setting));
+    }
     let app = build_router().with_state(Arc::new(SettingsApiState {
         settings_manager: Some(manager),
         governance_status: Some(status),
@@ -1413,7 +1441,7 @@ async fn governance_api_returns_per_key_results_and_authoritative_status_token()
         embedding_base_config: None,
         embedding_failover: None,
         registered_hosts: Vec::new(),
-        host_tools: None,
+        host_tools: Some(Arc::new(EmptyHostToolInventory)),
     }));
 
     let response = app
@@ -1424,7 +1452,11 @@ async fn governance_api_returns_per_key_results_and_authoritative_status_token()
                 .uri("/governance")
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    r#"{"data":{"enabled":true,"policy_reload_enabled":false}}"#,
+                    json!({
+                        "data": {"enabled": true, "policy_reload_enabled": false},
+                        "expected_revisions": revisions,
+                    })
+                    .to_string(),
                 ))?,
         )
         .await?;
@@ -1586,7 +1618,7 @@ async fn governance_status_api_reports_mutation_unavailable_as_fail_closed() -> 
         embedding_base_config: None,
         embedding_failover: None,
         registered_hosts: Vec::new(),
-        host_tools: None,
+        host_tools: Some(Arc::new(EmptyHostToolInventory)),
     }));
 
     let response = app

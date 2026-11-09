@@ -1,0 +1,12 @@
+# Recovered implementation ledger
+
+- [x] **T1** Align the 4.0 SDK, types, engine, feature and artifact dependency closure. Reconcile the Rust toolchain, locally patched dependencies and the effective embedded defaults. Record a bounded disposition of documented 4.0 query, search, storage, SDK and resource changes against the shipping lane. For each applicable improvement record adopt or defer, rationale, and any required spec delta and owning task before the implementation ledger is frozen. Cover fresh initialization and owner-scoped persistence in SDB-1.
+- [x] **T2** Select and implement the explicit offline migration on a separate destination. Preserve default refusal of unconverted 3.3 stores and preserve the original. Record the exact supported-source manifest, refused-copy integrity check and backup requirements. Depends on T1. Owns SDB-2.
+- [x] **T3** Preserve owner scoping, typed data, transaction protections and contractual query/index behavior. Cover each claimed source data class with the parity dataset and test failed transaction atomicity through a real UAR path. Depends on T1 and shares the fixture with T2. Owns SDB-3.
+- [x] **T4** Integrate native shutdown when its semantics satisfy UAR ownership, admission, drain and failure handling. Preserve existing protection for uncovered behavior. Cover reachable clones, subscriptions and storage workers before replacing their protection. Adapt real lifecycle fixtures and installed reopen observations. Depends on T1. Owns SDB-4.
+- [x] **T5** Implement and document the interrupted-upgrade recovery procedure and fixtures, including separate restore storage, write freeze and recorded recovery point and write disposition. Cover interrupted migration and a separate post-baseline accepted-write branch that refuses rollback until disposition. Depends on T2 and T3. Owns SDB-5.
+- [x] **T6** After T1–T5 and every planned implementation item in the entire governing active phase are complete, reconcile the waypoint and ledger and record the exact whole-phase inventory and proposed serial gate. Run the operator-approved local qualification batch and retain exact receipts. Depends on explicit gate approval.
+
+Task model assignments are recorded in the isolated child plan under the same T1–T6 identifiers.
+
+Recovery status: T1–T5 reflect recovered implementation, not qualification. T6 is EVIDENCE and remains open. The phase-scoped operator grant authorizes local repair and serial qualification without per-edit approval; original scenario oracles and exclusions remain binding.

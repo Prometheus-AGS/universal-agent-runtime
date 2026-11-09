@@ -19,14 +19,59 @@ pub struct ContextBuildResult {
     pub block: String,
     /// The ranked memory records that fit within the token budget.
     pub hits: Vec<Memory>,
+    /// Content-free selection receipt; preparation is not provider submission.
+    pub provenance: MemoryContextProvenance,
+}
+
+/// Host-observed selection status, independent of memory-tool recall.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MemoryContextStatus {
+    Disabled,
+    OptOut,
+    NoMatch,
+    BoundedOut,
+    Unavailable,
+    Refused,
+    SelectedPrepared,
+}
+
+/// No memory body, owner credential or storage endpoint belongs in this receipt.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct MemoryContextProvenance {
+    pub status: MemoryContextStatus,
+    pub reason_code: String,
+    pub retrieval_method: String,
+    pub memory_ids: Vec<String>,
+}
+
+impl MemoryContextProvenance {
+    pub fn excluded(status: MemoryContextStatus, reason_code: &str) -> Self {
+        Self {
+            status,
+            reason_code: reason_code.into(),
+            retrieval_method: "owner_scoped_three_lane_hybrid".into(),
+            memory_ids: Vec::new(),
+        }
+    }
+}
+
+impl ContextBuildResult {
+    fn excluded(status: MemoryContextStatus, reason_code: &str) -> Self {
+        Self {
+            block: String::new(),
+            hits: Vec::new(),
+            provenance: MemoryContextProvenance::excluded(status, reason_code),
+        }
+    }
 }
 
 /// Assembles a formatted memory context block for injection into a system prompt,
 /// returning both the block and the raw memory hits.
 ///
-/// Performs a hybrid search waterfall: Session → User → Agent → Global.
-/// Results are re-ranked by a weighted score of importance, recency, and
-/// vector relevance. The block is truncated to fit within the model's token budget
+/// Performs owner-scoped hybrid retrieval, then applies the configured inclusive
+/// cosine cutoff using the same retained embedding engine. Hybrid order survives
+/// eligibility filtering. The block is bounded by the model's token budget
 /// (or `max_tokens` from config if the model is not in the profile registry).
 ///
 /// Returns an empty block and empty hits if no relevant memories are found.
@@ -39,11 +84,32 @@ pub async fn build_context_with_hits(
     model_id: &str,
 ) -> ContextBuildResult {
     if !service.config().inject_context {
-        return ContextBuildResult {
-            block: String::new(),
-            hits: vec![],
-        };
+        return ContextBuildResult::excluded(
+            MemoryContextStatus::Disabled,
+            "memory_injection_disabled",
+        );
     }
+    let Some(minimum) = service.config().injection_min_similarity else {
+        return ContextBuildResult::excluded(
+            MemoryContextStatus::Refused,
+            "memory_relevance_not_configured",
+        );
+    };
+    if !minimum.is_finite() || !(-1.0..=1.0).contains(&minimum) {
+        return ContextBuildResult::excluded(
+            MemoryContextStatus::Refused,
+            "memory_relevance_invalid",
+        );
+    }
+    let owner = match service.for_context(user_ctx) {
+        Ok(owner) => owner,
+        Err(_) => {
+            return ContextBuildResult::excluded(
+                MemoryContextStatus::Refused,
+                "memory_owner_unavailable",
+            );
+        }
+    };
 
     let max_tokens = service.config().max_context_tokens;
 
@@ -53,30 +119,41 @@ pub async fn build_context_with_hits(
     let ten_pct = (profile.context_window / 10) as u32;
     let effective_max = max_tokens.min(ten_pct);
 
-    // Gather memories — hybrid search over (session, user, agent) then global.
-    let limit = 20_usize; // retrieve wider set, then rank and cap by tokens
-    let memories = match service
-        .hybrid_search(
-            query, user_ctx, agent_id, session_id, limit, None, // use config default weights
-            None,
-        )
+    // Session filters must not hide applicable owner-level records saved without
+    // a conversation. Each bounded lane still derives the complete host owner.
+    let memories = match owner
+        .injection_candidates(query, agent_id, session_id)
         .await
     {
         Ok(m) => m,
-        Err(e) => {
-            tracing::warn!(error = %e, "context_builder: hybrid_search failed, using empty context");
-            return ContextBuildResult {
-                block: String::new(),
-                hits: vec![],
-            };
+        Err(_) => {
+            return ContextBuildResult::excluded(
+                MemoryContextStatus::Unavailable,
+                "memory_retrieval_unavailable",
+            );
         }
     };
 
     if memories.is_empty() {
-        return ContextBuildResult {
-            block: String::new(),
-            hits: vec![],
-        };
+        return ContextBuildResult::excluded(
+            MemoryContextStatus::NoMatch,
+            "memory_no_retained_scope_match",
+        );
+    }
+    let memories = match owner.injection_eligible(query, memories, minimum).await {
+        Ok(memories) => memories,
+        Err(_) => {
+            return ContextBuildResult::excluded(
+                MemoryContextStatus::Unavailable,
+                "memory_relevance_unavailable",
+            );
+        }
+    };
+    if memories.is_empty() {
+        return ContextBuildResult::excluded(
+            MemoryContextStatus::NoMatch,
+            "memory_below_similarity_or_removed",
+        );
     }
 
     // Rank and format memories up to the token budget; a record that does not fit
@@ -85,14 +162,14 @@ pub async fn build_context_with_hits(
     let mut lines: Vec<String> = Vec::with_capacity(memories.len());
     let mut hits: Vec<Memory> = Vec::new();
 
-    for mem in rank_memories(memories) {
+    for mem in memories {
         let token_estimate = mem.token_count.unwrap_or_else(|| {
             // rough estimate: 1 token ≈ 4 chars
             #[allow(clippy::cast_possible_truncation)]
             ((mem.content.len() as u32) / 4).max(1)
         });
 
-        if total_tokens + token_estimate > effective_max {
+        if token_estimate > effective_max.saturating_sub(total_tokens) {
             continue;
         }
 
@@ -100,15 +177,18 @@ pub async fn build_context_with_hits(
 
         let scope_label = format!("{:?}", mem.scope).to_lowercase();
         let type_label = format!("{:?}", mem.memory_type).to_lowercase();
-        lines.push(serde_json::json!({ "scope": scope_label, "type": type_label, "content": mem.content }).to_string());
+        lines.push(
+            serde_json::json!({ "scope": scope_label, "type": type_label, "content": mem.content })
+                .to_string(),
+        );
         hits.push(mem);
     }
 
     if lines.is_empty() {
-        return ContextBuildResult {
-            block: String::new(),
-            hits: vec![],
-        };
+        return ContextBuildResult::excluded(
+            MemoryContextStatus::BoundedOut,
+            "memory_context_budget_excluded",
+        );
     }
 
     let block = format!(
@@ -117,7 +197,35 @@ pub async fn build_context_with_hits(
         lines.join("\n")
     );
 
-    ContextBuildResult { block, hits }
+    let memory_ids = match hits
+        .iter()
+        .map(|memory| {
+            memory
+                .id
+                .as_ref()
+                .ok_or_else(|| anyhow::anyhow!("Memory identity unavailable"))
+                .and_then(super::owned::record_id)
+        })
+        .collect::<anyhow::Result<Vec<_>>>()
+    {
+        Ok(ids) => ids,
+        Err(_) => {
+            return ContextBuildResult::excluded(
+                MemoryContextStatus::Refused,
+                "memory_identity_unavailable",
+            );
+        }
+    };
+    ContextBuildResult {
+        block,
+        hits,
+        provenance: MemoryContextProvenance {
+            status: MemoryContextStatus::SelectedPrepared,
+            reason_code: "memory_context_prepared".into(),
+            retrieval_method: "owner_scoped_three_lane_hybrid_cosine_eligible".into(),
+            memory_ids,
+        },
+    }
 }
 
 /// Assembles a formatted memory context block for injection into a system prompt.
@@ -137,51 +245,33 @@ pub async fn build_context(
         .block
 }
 
-/// Re-rank memories by a composite score of importance, recency, and access frequency.
-/// The vector/BM25 score is baked in from the storage layer; we apply a lightweight
-/// re-ranking on top.
-fn rank_memories(mut memories: Vec<Memory>) -> Vec<Memory> {
-    let now = chrono::Utc::now();
-
-    memories.sort_by(|a, b| {
-        let score_a = composite_score(a, &now);
-        let score_b = composite_score(b, &now);
-        score_b
-            .partial_cmp(&score_a)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
-
-    memories
-}
-
-fn composite_score(mem: &Memory, now: &chrono::DateTime<chrono::Utc>) -> f32 {
-    // Recency: decay over 30 days
-    let age_days = {
-        let updated: chrono::DateTime<chrono::Utc> = mem.updated_at.clone().into();
-        (now.signed_duration_since(updated).num_seconds().max(0) as f32) / 86_400.0
-    };
-    let recency = 1.0_f32 / (1.0 + age_days / 30.0);
-
-    // Importance 0.0–1.0 from storage.
-    let importance = mem.importance.clamp(0.0, 1.0);
-
-    // Access frequency boost (log-scaled).
-    let access_boost = ((mem.access_count + 1) as f32).ln() / 10.0;
-
-    // Weighted composite.
-    importance * 0.4 + recency * 0.35 + access_boost * 0.25
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn empty_memories_returns_empty_string() {
-        // composite_score doesn't panic on zero access_count either.
-        let now = chrono::Utc::now();
-        let mem = surreal_memory::Memory::new("test", None, None, None, vec![]);
-        let score = composite_score(&mem, &now);
-        assert!(score >= 0.0);
+    fn refused_receipt_contains_no_memory_content() {
+        let result = ContextBuildResult::excluded(
+            MemoryContextStatus::Refused,
+            "memory_relevance_not_configured",
+        );
+        assert!(result.block.is_empty());
+        assert!(result.hits.is_empty());
+        assert!(result.provenance.memory_ids.is_empty());
+        assert_eq!(result.provenance.status, MemoryContextStatus::Refused);
+    }
+
+    #[test]
+    fn injection_cutoff_requires_explicit_finite_configuration() {
+        let mut config = crate::config::MemoryConfig::default();
+        assert_eq!(config.injection_min_similarity, None);
+        for cutoff in [-1.0, 0.0, 1.0] {
+            config.injection_min_similarity = Some(cutoff);
+            assert!(config.validate_injection().is_ok());
+        }
+        for cutoff in [-1.01, 1.01, f32::NAN, f32::INFINITY] {
+            config.injection_min_similarity = Some(cutoff);
+            assert!(config.validate_injection().is_err());
+        }
     }
 }

@@ -17,7 +17,7 @@ import {
 } from "@/features/a2ui/a2ui-rendering-limits";
 import { A2uiSurfaceRenderer } from "@/features/a2ui/a2ui-surface-renderer";
 import { JsonSource } from "@/features/chat/ui/chunks/chunk-surface";
-import { useA2uiActionStatus, useA2uiActionContinuation, useA2uiActionIntent } from "@/platform/entities";
+import { useA2uiActionStatus, useA2uiActionContinuation, useA2uiActionIntent, useA2uiSurfaceAuthority, useA2uiActionRecovery } from "@/platform/entities";
 import { useTheme } from "@/hooks/use-theme";
 import { useToolApprovalActions } from "@/hooks/use-tool-approval";
 
@@ -200,6 +200,7 @@ export const A2uiInputBlock: FC<A2uiInputBlockProps> = ({
 
 interface A2uiDisplayBlockProps {
   runId?: string;
+  surfaceGenerations?: Record<string, unknown>;
   artifactType: string;
   title: string;
   content: string;
@@ -294,37 +295,47 @@ function processA2uiDisplayContent(content: string) {
 
 type StandardSurfaceModel = ReturnType<typeof processA2uiDisplayContent>["surfaces"][number];
 
-function StandardActionSurface({ runId, surface, theme, resetKey }: {
-  runId: string; surface: StandardSurfaceModel; theme: "light" | "dark" | "high-contrast"; resetKey: string;
+function StandardActionSurface({ runId, surface, generation, theme, resetKey }: {
+  runId: string; surface: StandardSurfaceModel; generation?: string; theme: "light" | "dark" | "high-contrast"; resetKey: string;
 }) {
   const status = useA2uiActionStatus(runId, surface.id);
   const continuation = useA2uiActionContinuation(runId, surface.id);
   const submit = useA2uiActionIntent();
+  const authority = useA2uiSurfaceAuthority(runId);
+  const recover = useA2uiActionRecovery();
+  const matches = authority?.surfaces.filter((row) => row.surface_id === surface.id) ?? [];
+  const actionable = Boolean(generation) && authority?.status === "complete" && authority.authoritative
+    && matches.length === 1 && matches[0].source_run_id === runId && matches[0].surface_generation === generation;
   const [localMessage, setLocalMessage] = useState<string | null>(null);
   const submitting = useRef(false);
   const busy = (status === "pending" || status === "responding") && !localMessage;
-  const consumed = status !== undefined && status !== "rejected";
+  const consumed = status !== undefined && status !== "rejected" && status !== "completed";
   const uncertain = localMessage === "Action outcome is unconfirmed. Do not submit again.";
   const guard = useRef({ consumed, uncertain });
   useEffect(() => { guard.current = { consumed, uncertain }; }, [consumed, uncertain]);
   useEffect(() => {
     let current = true;
     const subscription = surface.onAction.subscribe(async (action) => {
-      if (!current || !runId || submitting.current || guard.current.consumed || guard.current.uncertain || action.surfaceId !== surface.id) return;
+      if (!current || !runId || !actionable || submitting.current || guard.current.consumed || guard.current.uncertain || action.surfaceId !== surface.id) return;
       submitting.current = true;
       setLocalMessage(null);
       try {
         // Snapshot before the first await; later typing cannot mutate the sent action.
-        await submit(runId, { ...action, context: structuredClone(action.context),
+        await submit(runId, { ...action, surface_generation: generation, context: structuredClone(action.context),
           a2uiClientDataModel: { [surface.id]: structuredClone(surface.dataModel.get("/")) } });
       } catch (error) {
         if (current) setLocalMessage(error instanceof Error ? error.message : "Action outcome is unconfirmed. Do not submit again.");
       } finally { submitting.current = false; }
     });
     return () => { current = false; subscription.unsubscribe(); };
-  }, [runId, surface, submit]);
-  const message = !runId ? "Actions unavailable: this surface is not linked to a run."
-    : localMessage ?? (status === "pending" ? "Sending action…"
+  }, [runId, surface, generation, submit, actionable]);
+  const authorityMessage = !runId ? "Actions unavailable: this surface is not linked to a run."
+    : !generation ? "This surface has no publication identity. Request a fresh surface before acting."
+    : !actionable ? authority?.status === "complete" && authority.authoritative
+      ? "This surface has changed. Request a fresh surface before acting."
+      : authority?.recovery_hint || "Checking surface history…"
+    : null;
+  const actionMessage = localMessage ?? (status === "pending" ? "Sending action…"
     : status === "responding" ? "Agent is responding…"
     : status === "completed" ? "Response complete"
     : status === "rejected" ? "Action was rejected. Try again."
@@ -333,10 +344,14 @@ function StandardActionSurface({ runId, surface, theme, resetKey }: {
   const failed = status === "rejected" || status === "uncertain" || status === "interrupted" || Boolean(localMessage);
   return (
     <div>
-      <fieldset disabled={!runId || consumed || uncertain} aria-busy={busy} className="min-w-0 p-0">
+      <fieldset disabled={!runId || !actionable || consumed || uncertain} aria-busy={busy} className="min-w-0 p-0">
         <UarSurface surface={surface} theme={theme} resetKey={resetKey} />
       </fieldset>
-      {message ? <p className="mt-2 text-sm text-fg-sub" role={failed ? "alert" : "status"}>{message}</p> : null}
+      {actionMessage ? <p className="mt-2 text-sm text-fg-sub" role={failed ? "alert" : "status"}>{actionMessage}</p> : null}
+      {authorityMessage ? <p className="mt-2 text-sm text-fg-sub" role="status">{authorityMessage}</p> : null}
+      {(!actionable || status === "uncertain" || status === "interrupted") && runId ? (
+        <button type="button" className="mt-2 text-sm underline" onClick={() => { setLocalMessage(null); recover(runId, surface.id); }}>Recover action status</button>
+      ) : null}
       {status === "interrupted" && continuation ? (
         <p className="mt-1 break-all font-mono text-xs text-fg-faint" data-continuation-run-id={continuation}>{continuation}</p>
       ) : null}
@@ -346,6 +361,7 @@ function StandardActionSurface({ runId, surface, theme, resetKey }: {
 
 export const A2uiDisplayBlock: FC<A2uiDisplayBlockProps> = ({
   runId,
+  surfaceGenerations,
   artifactType,
   title,
   content,
@@ -397,9 +413,10 @@ export const A2uiDisplayBlock: FC<A2uiDisplayBlockProps> = ({
         <div className="space-y-3">
           {rendered.surfaces.map((surface) => (
             <StandardActionSurface
-              key={`${runId ?? "unbound"}:${surface.id}`}
+              key={`${runId ?? "unbound"}:${surface.id}:${String(surfaceGenerations?.[surface.id] ?? "unidentified")}`}
               runId={runId ?? ""}
               surface={surface}
+              generation={typeof surfaceGenerations?.[surface.id] === "string" ? String(surfaceGenerations[surface.id]) : undefined}
               theme={theme}
               resetKey={`${surface.id}:${content.length}`}
             />

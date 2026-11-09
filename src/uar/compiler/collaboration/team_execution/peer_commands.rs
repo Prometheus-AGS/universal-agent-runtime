@@ -12,6 +12,22 @@ use serde_json::{Value, json};
 use uuid::Uuid;
 
 impl CollaborationCatalogService {
+    /// Current role/edge eligibility, not a grant to bypass execution policy.
+    pub async fn eligible_team_controls(
+        &self,
+        expected: &TeamExecutionAttempt,
+    ) -> Result<Vec<String>, CollaborationError> {
+        let state = self.load_state().await?;
+        self.require_execution_owner(&state, false)?;
+        current_actor(&state, expected)?;
+        let (roster, _, _) = authorized_roster(&state, expected)?;
+        roster
+            .into_iter()
+            .find(|member| member.member_id == expected.member_id)
+            .map(|member| member.safe_capabilities)
+            .ok_or_else(|| denied("TEAM_SCOPE_DENIED"))
+    }
+
     pub async fn team_roster(
         &self,
         expected: &TeamExecutionAttempt,

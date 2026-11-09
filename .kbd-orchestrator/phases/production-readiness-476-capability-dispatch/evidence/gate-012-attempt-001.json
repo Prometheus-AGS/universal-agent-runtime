@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-01",
+  "gate": "012 A-C",
+  "status": "STOPPED_GATE_B_COMPILE_FAILURE",
+  "sourceInventory": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/implementation-inventory-012.json",
+  "sourceState": "Uncommitted resolved rc.2 merge plus E6/E7/E8; staged by approved git add -A. Failed normal commit created no commit.",
+  "firstParentKnown": "33e765bb5d29a44e97d2813ad6d0be8bf3e2479d",
+  "pendingMergeParentKnown": "af37c2f834f7b34f511ecc93f408e80205c94229",
+  "gateA": "PASS_SOURCE_ONLY; two serial native fallback reports, no compilation certification",
+  "preflights": {
+    "lsof": "exit1/no output at three approved lock paths, no holders observed",
+    "gitStatus": "exit0; planned merged source/historical receipts/owned phase artifacts; no ignored private target config selected",
+    "recursiveSubmodules": "exit0; recorded pins including Liter0d74c566"
+  },
+  "executedCommitCommand": "env PATH=\"/usr/local/bin:$PATH\" CARGO_BUILD_BUILD_DIR=/Users/gqadonis/.claude/worktrees/production-readiness-476/target/build CARGO_CACHE_RUSTC_INFO=0 RUSTC_WRAPPER= CARGO_TERM_COLOR=never git commit -m \"fix(runtime): integrate rc2 and preserve destination budgets\"",
+  "commitExitCode": 1,
+  "hookResults": {
+    "github-actions-policy": "PASS 3.48 seconds; deployment-only policy",
+    "frontend-lint": "SKIPPED no matching staged files",
+    "frontend-typecheck": "SKIPPED no matching staged files",
+    "rust-test-baseline": "FAIL 185.37 seconds; first minimal --lib --no-run returned101",
+    "commitlint": "NOT_RUN"
+  },
+  "failedCommand": "CARGO_TERM_COLOR=never cargo test --locked --no-default-features --features minimal --lib --no-run",
+  "diagnostics": {
+    "file": "src/llm/liter_driver.rs:246",
+    "cause": "Missing closing > for Option<CountedTokens> in prepared_final_wire return type before tuple-closing parenthesis",
+    "reported": [
+      "comparison operators cannot be chained",
+      "expected !, (, +, comma, ::, <, or >; found )",
+      "E0747 constant provided when type expected"
+    ],
+    "compilerSuggestedType": "anyhow::Result<(Vec<u8>, Option<crate::uar::runtime::context::token_service::CountedTokens>)>"
+  },
+  "rawLog": "target/production-readiness-476/gate-012-commit-001.log",
+  "rawLogSha256": "09ce98ed091c2d3678112fa049f031846d0f7548336f8bce0acf32333163cb46",
+  "trackedTranscript": ".kbd-orchestrator/phases/production-readiness-476-capability-dispatch/evidence/gate-012-commit-attempt-001.txt",
+  "notRun": [
+    "server-full profile hook",
+    "server-full,postgres-backend profile hook",
+    "normal commit completion",
+    "clean --acceptance baseline guard",
+    "all Gate C commands",
+    "Docker and installed-container qualification"
+  ],
+  "productEditsDuringGate": [],
+  "gates": "CLOSED_OPERATOR_LOCK",
+  "next": "Operator-directed narrow syntax repair and renewed inventory; present failed/remaining exact gates before rerun. No repair, retry or broader suite started."
+}

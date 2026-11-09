@@ -101,6 +101,16 @@ pub enum NormalizedEvent {
         operation: String,
     },
 
+    /// The final driver request retained the selected memory fragment and a
+    /// provider response was observed. Contains no retrieved fact bodies.
+    #[serde(rename = "memory.context.submitted")]
+    MemoryContextSubmitted {
+        memory_ids: Vec<String>,
+        retrieval_method: String,
+        request_content_sha256: String,
+        model: String,
+    },
+
     /// A skill or skill-like provider capability was activated.
     ///
     /// UAR proper owns real skill routing/execution. This lower-level event is
@@ -218,6 +228,10 @@ pub enum NormalizedEvent {
         /// Tokens served from the provider's prompt cache (OpenAI: `cached_tokens`; Anthropic: `cache_read_input_tokens`).
         #[serde(default, skip_serializing_if = "Option::is_none")]
         cached_tokens: Option<u32>,
+        /// Explicit uncached input reported by a provider such as Anthropic.
+        /// Absence does not imply that unknown cache counts are zero.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        uncached_input_tokens: Option<u32>,
         /// Prompt tokens written into the provider's cache, already included in
         /// `prompt_tokens` (Anthropic: `cache_creation_input_tokens`).
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -292,6 +306,7 @@ pub fn event_name(evt: &NormalizedEvent) -> &'static str {
         NormalizedEvent::ReasoningDelta { .. } => "reasoning.delta",
         NormalizedEvent::CitationAdded { .. } => "citation.added",
         NormalizedEvent::MemoryUpdate { .. } => "memory.update",
+        NormalizedEvent::MemoryContextSubmitted { .. } => "memory.context.submitted",
         NormalizedEvent::SkillActivation { .. } => "skill.activation",
         NormalizedEvent::Custom { .. } => "custom",
         NormalizedEvent::ToolCallDelta { .. } => "tool_call.delta",
@@ -369,6 +384,21 @@ pub fn agui_sse_event(evt: &NormalizedEvent, request_id: &str) -> String {
                 "key": key,
                 "value": value,
                 "operation": operation
+            }),
+        ),
+        NormalizedEvent::MemoryContextSubmitted {
+            memory_ids,
+            retrieval_method,
+            request_content_sha256,
+            model,
+        } => (
+            "agui.memory.context",
+            serde_json::json!({
+                "kind":"memory", "phase":"context", "request_id":request_id,
+                "status":"submitted", "reason_code":"memory_content_submitted", "count":memory_ids.len(),
+                "provenance":{"memory_ids":memory_ids,"retrieval_method":retrieval_method,
+                    "request_content_sha256":request_content_sha256,"model":model,
+                    "evidence_basis":"final_driver_request_and_provider_response"}
             }),
         ),
         NormalizedEvent::SkillActivation { name, status } => (
@@ -460,6 +490,7 @@ pub fn agui_sse_event(evt: &NormalizedEvent, request_id: &str) -> String {
             total_tokens,
             cached_tokens,
             cache_creation_tokens,
+            uncached_input_tokens,
         } => (
             "agui.usage",
             serde_json::json!({
@@ -469,7 +500,8 @@ pub fn agui_sse_event(evt: &NormalizedEvent, request_id: &str) -> String {
                 "completion_tokens": completion_tokens,
                 "total_tokens": total_tokens,
                 "cached_tokens": cached_tokens,
-                "cache_creation_tokens": cache_creation_tokens
+                "cache_creation_tokens": cache_creation_tokens,
+                "uncached_input_tokens": uncached_input_tokens
             }),
         ),
         NormalizedEvent::SandboxOutput { stream, data } => (

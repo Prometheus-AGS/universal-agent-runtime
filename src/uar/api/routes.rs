@@ -39,6 +39,10 @@ impl axum::extract::FromRef<Arc<RunApiState>> for RunManagerState {
 pub fn build_router() -> Router<Arc<RunApiState>> {
     Router::new()
         .route("/runs", get(list_runs).post(create_run))
+        .route(
+            "/chat-turns/{client_turn_id}",
+            get(super::chat_turns::lookup),
+        )
         .route("/runs/{id}", get(read_run))
         .route("/runs/{id}/stream", get(stream_run))
         .route("/runs/{id}/events", get(super::run_events::snapshot))
@@ -516,7 +520,10 @@ async fn create_run(
     .map(Json)
 }
 
-pub(crate) async fn admit_run(
+// Keep the concrete admission future's construction out of the full-harness
+// handler's poll frame. It shares the caller's cancellation and drop behavior.
+#[inline(never)]
+pub(crate) fn admit_run(
     state: Arc<RunApiState>,
     user: UserContext,
     headers: HeaderMap,
@@ -525,6 +532,47 @@ pub(crate) async fn admit_run(
     reserved_run_id: Option<String>,
     delegated_host_context: Option<Arc<super::full_harness::host_context::DelegatedHostContext>>,
     credential_capture: Option<AuthenticatedCredentialCapture>,
+) -> futures::future::BoxFuture<'static, Result<CreateRunResponse, RunApiError>> {
+    Box::pin(admit_run_inner(
+        state,
+        user,
+        headers,
+        host_authenticated,
+        req,
+        reserved_run_id,
+        delegated_host_context,
+        credential_capture,
+        None,
+    ))
+}
+
+/// Capture the resolved native artifact in the immutable wire reservation before dispatch.
+pub(crate) async fn admit_agui_run(
+    state: Arc<RunApiState>,
+    user: UserContext,
+    headers: HeaderMap,
+    host_authenticated: bool,
+    req: CreateRunRequest,
+    row: &mut crate::uar::persistence::agui_runs::AguiRunBinding,
+    previous: Option<&crate::uar::persistence::agui_runs::AguiRunBinding>,
+    credential_capture: Option<AuthenticatedCredentialCapture>,
+) -> Result<CreateRunResponse, RunApiError> {
+    let run_id = row.native_run_id.clone();
+    admit_run_inner(state, user, headers, host_authenticated, req, Some(run_id),
+        None, credential_capture, Some((row, previous))).await
+}
+
+async fn admit_run_inner(
+    state: Arc<RunApiState>,
+    user: UserContext,
+    headers: HeaderMap,
+    host_authenticated: bool,
+    req: CreateRunRequest,
+    reserved_run_id: Option<String>,
+    delegated_host_context: Option<Arc<super::full_harness::host_context::DelegatedHostContext>>,
+    credential_capture: Option<AuthenticatedCredentialCapture>,
+    agui_reservation: Option<(&mut crate::uar::persistence::agui_runs::AguiRunBinding,
+        Option<&crate::uar::persistence::agui_runs::AguiRunBinding>)>,
 ) -> Result<CreateRunResponse, RunApiError> {
     let CreateRunRequest {
         response_format,
@@ -548,7 +596,9 @@ pub(crate) async fn admit_run(
     } = req;
     if let Some(format) = &response_format {
         format.validate().map_err(|error| RunApiError {
-            status: StatusCode::BAD_REQUEST, code: "invalid_response_format", message: error.to_string(),
+            status: StatusCode::BAD_REQUEST,
+            code: "invalid_response_format",
+            message: error.to_string(),
         })?;
     }
     let admitted_service_binding = if let Some(expectation) = service_placement.as_ref() {
@@ -763,6 +813,27 @@ pub(crate) async fn admit_run(
         history,
     )
     .await?;
+    if let Some((row, previous)) = agui_reservation {
+        let owner = user.session_owner_key().map_err(|_| principal_invalid())?;
+        if row.owner != owner || request.session_id.as_deref() != Some(row.session_id.as_str())
+            || reserved_run_id.as_deref() != Some(row.native_run_id.as_str())
+        {
+            return Err(RunApiError { status: StatusCode::CONFLICT, code: "run_correlation_conflict",
+                message: "AG-UI reservation does not match prepared admission".into() });
+        }
+        row.native_agent_id = Some(request.artifact.id.clone());
+        let store = state.manager.persistence.as_deref().ok_or_else(|| RunApiError {
+            status: StatusCode::SERVICE_UNAVAILABLE, code: "agui_binding_unavailable",
+            message: "AG-UI durable reservation is unavailable".into(),
+        })?;
+        match store.create_agui_run(row, previous).await {
+            Ok(true) => {}
+            Ok(false) => return Err(RunApiError { status: StatusCode::CONFLICT,
+                code: "thread_run_conflict", message: "AG-UI thread reservation conflicts".into() }),
+            Err(_) => return Err(RunApiError { status: StatusCode::SERVICE_UNAVAILABLE,
+                code: "agui_binding_unavailable", message: "AG-UI reservation outcome is uncertain".into() }),
+        }
+    }
     let run_id = if bound_selector {
         if let Some(run_id) = reserved_run_id {
             state

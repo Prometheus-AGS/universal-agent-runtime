@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
-import { markdownEngineGraphPlugin } from "./build/markdown-engine-graph-plugin";
+import { markdownEngineGraphPlugin } from "./build/markdown-engine-graph-plugin.js";
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), markdownEngineGraphPlugin()],
@@ -22,6 +22,7 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             {
+              debugName: "uar-vendors",
               name(moduleId) {
                 if (/node_modules\/(react|react-dom|react-router-dom)\//.test(moduleId)) {
                   return "vendor-react";
@@ -57,7 +58,7 @@ export default defineConfig({
       // and denies (403) requests for assets like @electric-sql/pglite's
       // .wasm files that live one level up. Explicitly allow the repo
       // root (one level above this package).
-      allow: [path.resolve(__dirname, "..")],
+      allow: [path.resolve(import.meta.dirname, "..")],
     },
     proxy: {
       "/api": {
@@ -80,7 +81,7 @@ export default defineConfig({
     // install can produce invalid-hook-call failures in development/tests.
     dedupe: ["react", "react-dom", "use-sync-external-store", "zustand"],
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
 });

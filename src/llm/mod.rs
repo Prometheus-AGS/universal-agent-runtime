@@ -23,6 +23,7 @@ pub mod capability_registry;
 pub mod catalog;
 pub mod external_driver;
 pub mod health;
+pub(crate) mod inline_image;
 pub(crate) mod inline_reasoning;
 pub mod liter_driver;
 pub mod mock_driver;
@@ -229,13 +230,46 @@ impl ContentPart {
 }
 
 /// Image URL configuration for multimodal content.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ImageUrl {
     /// Image URL (can be HTTP URL or base64 data URL).
     pub url: String,
     /// Detail level for image processing: "auto", "low", or "high".
     #[serde(skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
+}
+
+impl std::fmt::Debug for ImageUrl {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use sha2::{Digest as _, Sha256};
+
+        let url_kind = if self.url.starts_with("data:image/png;base64,") {
+            "inline_png_data_url"
+        } else if self.url.starts_with("data:image/jpeg;base64,") {
+            "inline_jpeg_data_url"
+        } else if self.url.starts_with("data:") {
+            "other_data_url"
+        } else {
+            "non_inline_url"
+        };
+        let detail = match self.detail.as_deref() {
+            Some("auto") => "auto",
+            Some("low") => "low",
+            Some("high") => "high",
+            Some(_) => "unsupported",
+            None => "none",
+        };
+        let digest = Sha256::digest(self.url.as_bytes())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        formatter.debug_struct("ImageUrl")
+            .field("url_kind", &url_kind)
+            .field("url_bytes", &self.url.len())
+            .field("url_sha256", &digest)
+            .field("detail", &detail)
+            .finish()
+    }
 }
 
 /// Role of a message author.
@@ -387,6 +421,18 @@ impl LlmRequest {
     }
 }
 
+/// Proven reservation evidence from a driver's already prepared final request.
+///
+/// This is available only from a captured driver that can serialize the same
+/// endpoint-bound representation it will dispatch. It does not certify provider
+/// image-token capacity or infer a capability from a model name.
+#[doc(hidden)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PreparedFinalWireBudget {
+    pub(crate) input_tokens: u64,
+    pub(crate) output_tokens: u64,
+}
+
 /// Trait for LLM streaming drivers.
 ///
 /// Implementations of this trait provide streaming access to LLM responses,
@@ -402,6 +448,29 @@ pub trait LlmDriver: Send + Sync {
     /// still share the original driver for its original model unchanged.
     fn with_bound_model(&self, _model: &str) -> anyhow::Result<std::sync::Arc<dyn LlmDriver>> {
         anyhow::bail!("This model driver cannot rebind an inherited client");
+    }
+
+    /// Whether this captured driver binding uses the ordinary generic chat
+    /// adapter that preserves admitted inline-image parts on its wire format.
+    ///
+    /// This is a construction fact, not a provider or model-name capability
+    /// declaration. Native adapters retain their own established paths.
+    fn supports_admitted_inline_images(&self) -> bool {
+        false
+    }
+
+    /// Return a final-wire input bound for a request carrying a proven budget
+    /// contract. Drivers without captured final-wire preparation must refuse;
+    /// a generic request serializer is not equivalent evidence.
+    fn prepared_final_wire_budget(
+        &self,
+        request: &LlmRequest,
+    ) -> anyhow::Result<PreparedFinalWireBudget> {
+        anyhow::ensure!(
+            request.budget_contract.is_some(),
+            "prepared final-wire budget requires a request budget contract"
+        );
+        anyhow::bail!("LLM driver has no supported final-wire budget contract")
     }
 
     /// Stream a response from the LLM.

@@ -1,9 +1,9 @@
 //! Real full-harness router/executor cursor contract with a controlled HTTP model.
-//! Authentication identity is supplied by this fixture; this is not an auth gate.
+//! The production loopback host supplies identity without client credentials.
 use axum::{
     Extension, Json, Router,
     body::{Body, to_bytes},
-    http::{Request, StatusCode},
+    http::{HeaderMap, Request, StatusCode, header::AUTHORIZATION},
     response::{IntoResponse, Response},
     routing::post,
 };
@@ -19,7 +19,12 @@ use std::{
 use tokio::sync::RwLock;
 use tower::ServiceExt;
 use universal_agent_runtime::{
-    config::{LlmConfig, RunsConfig, ServiceInstanceConfig},
+    config::{Cli, LlmConfig, RunsConfig, ServiceInstanceConfig},
+    config_manager::ConfigManager,
+    llm::{
+        ProviderRegistry,
+        registry::{ModelConfig, ProtocolSetting, ProviderConfig},
+    },
     mcp::registry::McpRegistry,
     session::SessionStore,
     uar::{
@@ -30,21 +35,117 @@ use universal_agent_runtime::{
         compiler::collaboration::CollaborationCatalogService,
         defaults::default_agent,
         domain::events::NormalizedEvent,
-        rag::embeddings::UnavailableEmbeddingBackend,
+        rag::embeddings::{UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend},
         runtime::{manager::RunManager, matching::VectorMatcher, skills::SkillRegistry},
-        security::claims::{UserClaims, UserContext},
+        security::{claims::UserContext, middleware::LOCAL_LOOPBACK_SUBJECT},
         service_instance::ServiceInstanceAuthority,
     },
 };
 
+#[expect(dead_code, reason = "shared identity adapter also supports external fixture profiles")]
+#[path = "support/external_identity_host.rs"]
+mod external_identity_host;
+
 const WAIT: Duration = Duration::from_secs(45);
 const PROFILE: &str = "contiguous_cursor_frames_v1";
+
+async fn cursor_owner() -> UserContext {
+    use clap::Parser as _;
+
+    static OWNER: tokio::sync::OnceCell<UserContext> = tokio::sync::OnceCell::const_new();
+    OWNER
+        .get_or_init(|| async {
+            let root = tempfile::tempdir().expect("owned cursor identity profile");
+            let config_path = root.path().join("config.yaml");
+            let mcp_path = root.path().join("mcp.json");
+            let ingest_path = root.path().join("ingest");
+            let ingest_yaml = serde_json::to_string(ingest_path.to_str().unwrap()).unwrap();
+            let models_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src/uar/runtime/matching/models");
+            let models_yaml = serde_json::to_string(models_dir).unwrap();
+            let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            let grpc = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+            listener.set_nonblocking(true).unwrap();
+            grpc.set_nonblocking(true).unwrap();
+            let address = listener.local_addr().unwrap();
+            let grpc_port = grpc.local_addr().unwrap().port();
+            let surreal_url =
+                format!("surrealkv://{}", root.path().join("identity.db").display());
+            let persistence = if cfg!(feature = "in-memory-backend") {
+                "  provider: memory\n".to_owned()
+            } else {
+                let database_yaml = serde_json::to_string(&surreal_url).unwrap();
+                format!("  provider: surreal\n  database_url: {database_yaml}\n")
+            };
+            std::fs::write(
+                &config_path,
+                format!(
+                    "skill_source_roots: []\n\
+                     security:\n  deployment_profile: trusted_local\n  jwt_required: false\n  local_loopback_owner: true\n  settings_mutation_auth_required: false\n\
+                     server:\n  host: 127.0.0.1\n  port: {}\n  grpc_port: {grpc_port}\n  ingest_directory: {ingest_yaml}\n  mcp_shared_transports_enabled: false\n\
+                     persistence:\n{persistence}\
+                     memory:\n  enabled: false\n\
+                     models:\n  models_dir: {models_yaml}\n\
+                     llm:\n  embedding:\n    backend: fastembed\n    models_dir: {models_yaml}\n",
+                    address.port(),
+                ),
+            )
+            .unwrap();
+            std::fs::write(&mcp_path, r#"{"mcpServers":{}}"#).unwrap();
+            let cli = Cli::try_parse_from([
+                "cursor-identity-host",
+                "--config",
+                config_path.to_str().unwrap(),
+            ])
+            .unwrap();
+            let config = ConfigManager::load_without_watcher(cli).await.unwrap();
+            let resolved = config.current();
+            let security = &resolved.security;
+            assert!(
+                security.local_loopback_owner
+                    && !security.jwt_required
+                    && !security.settings_mutation_auth_required
+                    && !security.is_remote()
+            );
+            assert_eq!(resolved.server.ingest_directory, ingest_path);
+            assert!(!resolved.server.mcp_shared_transports_enabled);
+            if cfg!(feature = "in-memory-backend") {
+                assert_eq!(resolved.persistence.provider, "memory");
+            } else {
+                assert_eq!(resolved.persistence.provider, "surreal");
+                assert_eq!(resolved.persistence.database_url, surreal_url);
+            }
+            assert!(!resolved.memory.enabled);
+            assert!(!resolved.persistence.external_cache_enabled);
+            assert!(resolved.llm.model.is_empty() && resolved.providers.is_empty());
+            assert_eq!(resolved.models.models_dir, models_dir);
+            assert_eq!(resolved.llm.embedding.backend, "fastembed");
+            assert_eq!(resolved.llm.embedding.models_dir, models_dir);
+            assert!(resolved.llm.embedding.failover.is_none());
+            external_identity_host::capture_user(
+                config,
+                listener,
+                grpc,
+                Some(mcp_path),
+                external_identity_host::loopback_url(&format!("http://{address}")),
+                "cursor-workspace",
+                LOCAL_LOOPBACK_SUBJECT,
+            )
+            .await
+        })
+        .await
+        .clone()
+}
 
 /// The actual Liter HTTP driver consumes these provider-shaped SSE deltas.
 async fn model(
     Extension(calls): Extension<Arc<AtomicUsize>>,
+    headers: HeaderMap,
     Json(request): Json<Value>,
 ) -> Response {
+    assert!(
+        !headers.contains_key(AUTHORIZATION),
+        "cursor model peer is credential-free"
+    );
     calls.fetch_add(1, Ordering::SeqCst);
     let input = request["messages"]
         .as_array()
@@ -100,28 +201,61 @@ impl Fixture {
             .await
             .unwrap();
         });
+        let llm_config = LlmConfig {
+            model: "openai/gpt-4o-mini".to_owned(),
+            base_url: Some(base.clone()),
+            api_key: Some(String::new()),
+            host_supplied_connection: true,
+            ..LlmConfig::default()
+        };
+        let providers = Arc::new(ProviderRegistry::new());
+        providers.set_llm_defaults(&llm_config).await;
+        providers
+            .register(ProviderConfig {
+                id: "openai".into(),
+                display_name: "Cursor fixture".into(),
+                base_url: base,
+                api_key: llm_config.api_key.clone(),
+                protocol: ProtocolSetting::Chat,
+                default_model: Some("gpt-4o-mini".into()),
+                models: vec![ModelConfig {
+                    id: "gpt-4o-mini".into(),
+                    pricing_identity: None,
+                    execution_profile: None,
+                    display_name: None,
+                    context_window: Some(128_000),
+                    supports_vision: false,
+                    supports_tools: true,
+                    supports_reasoning: false,
+                    supports_structured_output: false,
+                    supports_streaming: true,
+                    max_output_tokens: None,
+                    enabled: true,
+                }],
+                enabled: true,
+            })
+            .await
+            .expect("register the fixture's controlled provider");
+        providers.set_default("openai").await.unwrap();
         let manager = Arc::new(
             RunManager::new(
-                LlmConfig {
-                    model: "openai/gpt-4o-mini".to_owned(),
-                    base_url: Some(base),
-                    api_key: Some("cursor-fixture-provider".to_owned()),
-                    host_supplied_connection: true,
-                    ..LlmConfig::default()
-                },
+                llm_config,
                 Arc::new(McpRegistry::new_empty()),
                 SessionStore::new(),
                 Arc::new(RwLock::new(SkillRegistry::default())),
                 Arc::new(VectorMatcher::new(
-                    Arc::new(UnavailableEmbeddingBackend::new(
-                        384,
-                        "cursor fixture does not use embeddings",
-                    )),
+                    Arc::new(SwappableEmbeddingBackend::new(Arc::new(
+                        UnavailableEmbeddingBackend::new(
+                            384,
+                            "cursor fixture does not use embeddings",
+                        ),
+                    ))),
                     0.75,
                 )),
                 None,
             )
-            .await,
+            .await
+            .with_provider_registry(providers),
         );
         let runs = Arc::new(RunApiState {
             manager: manager.clone(),
@@ -146,20 +280,7 @@ impl Fixture {
                 ),
             ))),
         });
-        let user = UserContext {
-            user_id: "cursor-owner".to_owned(),
-            tenant_id: None,
-            authority: None,
-            host_authority: None,
-            claims: UserClaims {
-                sub: "cursor-owner".to_owned(),
-                name: None,
-                roles: None,
-                tenant_id: None,
-                uar_instance_id: None,
-                exp: usize::MAX,
-            },
-        };
+        let user = cursor_owner().await;
         let app = Router::new()
             .nest(
                 "/api/uar/full-harness/v1",
@@ -215,7 +336,7 @@ impl Fixture {
     }
 
     async fn settled(&self, run: &str) {
-        tokio::time::timeout(WAIT, async {
+        let result = tokio::time::timeout(WAIT, async {
             loop {
                 if self
                     .manager
@@ -238,8 +359,12 @@ impl Fixture {
                 tokio::time::sleep(Duration::from_millis(10)).await;
             }
         })
-        .await
-        .expect("real model/executor terminal deadline");
+        .await;
+        if let Err(error) = result {
+            let status = self.manager.get_run(run).await.map(|run| run.status);
+            let model_calls = self.model_calls.load(Ordering::SeqCst);
+            panic!("real model/executor terminal deadline: {error}; status={status:?}; model_calls={model_calls}");
+        }
     }
 }
 
@@ -390,7 +515,7 @@ async fn filtered_runtime_steps_keep_original_cursors_and_reconnect_without_gaps
     for id in &runtime_ids {
         let frame = full.iter().find(|frame| frame.id == *id).unwrap();
         assert_eq!(frame.name, "uar.cursor");
-        assert_eq!(frame.payload, json!({"request_id":run}));
+        assert_eq!(frame.payload, json!({"request_id":run,"root_run_id":run}));
     }
     let cursor = runtime_ids[0];
     let resumed = stream(fixture.request(path, None, Some(cursor)).await).await;

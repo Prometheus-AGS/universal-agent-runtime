@@ -29,15 +29,15 @@
 //! synchronous and builds the runtime by hand.
 
 use std::io::Write as _;
-#[path = "uar-sidecar/inherited_input.rs"]
-mod inherited_input;
 #[path = "uar-sidecar/control.rs"]
 mod control;
+#[path = "uar-sidecar/inherited_input.rs"]
+mod inherited_input;
 
 use clap::Parser as _;
 use dotenvy::dotenv;
-use secrecy::zeroize::Zeroize as _;
 use futures::FutureExt as _;
+use secrecy::zeroize::Zeroize as _;
 use universal_agent_runtime::config::{Cli, LogFormat};
 use universal_agent_runtime::config_manager::ConfigManager;
 use universal_agent_runtime::server;
@@ -97,7 +97,10 @@ fn forced_session_mixing_env(launch_bound: bool) -> &'static [(&'static str, &'s
     if launch_bound {
         &[("UAR_SKILL_EVOLUTION__ENABLED", "false")]
     } else {
-        &[("UAR_SKILL_EVOLUTION__ENABLED", "false"), ("UAR_MEMORY__ENABLED", "false")]
+        &[
+            ("UAR_SKILL_EVOLUTION__ENABLED", "false"),
+            ("UAR_MEMORY__ENABLED", "false"),
+        ]
     }
 }
 
@@ -112,8 +115,12 @@ fn forced_session_mixing_env(launch_bound: bool) -> &'static [(&'static str, &'s
 ///
 /// Returns [`InvalidLaunchToken`] on end-of-file, a read error, or a line that
 /// is not exactly a launch token.
-fn read_launch_token(input: &mut inherited_input::Input) -> Result<SidecarLaunchToken, InvalidLaunchToken> {
-    let mut line = input.read_token_line(MAX_TOKEN_LINE_BYTES).map_err(|_| InvalidLaunchToken)?;
+fn read_launch_token(
+    input: &mut inherited_input::Input,
+) -> Result<SidecarLaunchToken, InvalidLaunchToken> {
+    let mut line = input
+        .read_token_line(MAX_TOKEN_LINE_BYTES)
+        .map_err(|_| InvalidLaunchToken)?;
     let token = SidecarLaunchToken::from_line(&line);
     line.zeroize();
     token
@@ -207,16 +214,17 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
         .is_none()
         && std::env::var_os("UAR_SESSIONS__MAX_RETAINED").is_none();
     // Fail closed before any socket is bound; never echo the rejected value.
-    let bound_principal =
-        match bound_principal_from_env(std::env::var_os(BOUND_PRINCIPAL_ENV).as_deref()) {
-            Ok(principal) => principal,
-            Err(_) => {
-                eprintln!(
-                    "UAR sidecar refused to start: {BOUND_PRINCIPAL_ENV} is not a valid host principal"
-                );
-                return Err(LaunchRefusal(INVALID_BOUND_PRINCIPAL_EXIT_STATUS).into());
-            }
-        };
+    let bound_principal = match bound_principal_from_env(
+        std::env::var_os(BOUND_PRINCIPAL_ENV).as_deref(),
+    ) {
+        Ok(principal) => principal,
+        Err(_) => {
+            eprintln!(
+                "UAR sidecar refused to start: {BOUND_PRINCIPAL_ENV} is not a valid host principal"
+            );
+            return Err(LaunchRefusal(INVALID_BOUND_PRINCIPAL_EXIT_STATUS).into());
+        }
+    };
 
     // Force loopback-only binding and JSON logs before config is loaded so the
     // config layer picks them up via env-var overrides.
@@ -302,11 +310,18 @@ fn main() -> std::process::ExitCode {
         Ok(bootstrap) => bootstrap,
         Err(error) => {
             eprintln!("Failed to prepare UAR sidecar: {error:#}");
-            return std::process::ExitCode::from(error.downcast_ref::<LaunchRefusal>().map_or(1, |error| error.0));
+            return std::process::ExitCode::from(
+                error
+                    .downcast_ref::<LaunchRefusal>()
+                    .map_or(1, |error| error.0),
+            );
         }
     };
     let runtime = match tokio::runtime::Builder::new_multi_thread()
-        .thread_stack_size(8 * 1024 * 1024).enable_all().build() {
+        .thread_stack_size(8 * 1024 * 1024)
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("Failed to create UAR sidecar async runtime: {error}");
@@ -323,32 +338,43 @@ fn main() -> std::process::ExitCode {
 }
 
 async fn run_sidecar(bootstrap: SidecarBootstrap) -> anyhow::Result<()> {
-    let SidecarBootstrap { cli, token, bound_principal, listener, input } = bootstrap;
+    let SidecarBootstrap {
+        cli,
+        token,
+        bound_principal,
+        listener,
+        input,
+    } = bootstrap;
     let input = input.into_async()?;
-    let otel_provider = match std::panic::catch_unwind(|| uar::telemetry::init(&LogFormat::Json, "info")) {
-        Ok(Ok(provider)) => provider,
-        outcome => {
-            // The OS input worker is already acquired. Even telemetry startup
-            // failure must acknowledge its cancellation before returning.
-            let close = input.close().await;
-            let initial = match outcome {
-                Ok(Err(error)) => error.to_string(),
-                Err(_) => "sidecar telemetry initialization panicked".to_owned(),
-                Ok(Ok(_)) => unreachable!(),
-            };
-            return Err(match close {
-                Ok(()) => anyhow::anyhow!(initial),
-                Err(error) => anyhow::anyhow!("{initial}; input cleanup failed: {error}"),
-            });
-        }
-    };
+    let otel_provider =
+        match std::panic::catch_unwind(|| uar::telemetry::init(&LogFormat::Json, "info")) {
+            Ok(Ok(provider)) => provider,
+            outcome => {
+                // The OS input worker is already acquired. Even telemetry startup
+                // failure must acknowledge its cancellation before returning.
+                let close = input.close().await;
+                let initial = match outcome {
+                    Ok(Err(error)) => error.to_string(),
+                    Err(_) => "sidecar telemetry initialization panicked".to_owned(),
+                    Ok(Ok(_)) => unreachable!(),
+                };
+                return Err(match close {
+                    Ok(()) => anyhow::anyhow!(initial),
+                    Err(error) => anyhow::anyhow!("{initial}; input cleanup failed: {error}"),
+                });
+            }
+        };
     let process_shutdown = tokio_util::sync::CancellationToken::new();
     let reader_stop = tokio_util::sync::CancellationToken::new();
     let host_control = server::ServerLifecycleControl::default();
     // Register the sole input owner before config/server initialization can await.
     // Parent EOF therefore requests cancellation during startup as well as serving.
-    let reader = tokio::spawn(control::serve(input, host_control.clone(),
-        process_shutdown.clone(), reader_stop.clone()));
+    let reader = tokio::spawn(control::serve(
+        input,
+        host_control.clone(),
+        process_shutdown.clone(),
+        reader_stop.clone(),
+    ));
 
     let result = std::panic::AssertUnwindSafe(async {
         uar::telemetry::metrics::init();
@@ -359,8 +385,15 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) -> anyhow::Result<()> {
             result = ConfigManager::load(cli) => result?,
         };
         let (ready_tx, mut ready_rx) = tokio::sync::oneshot::channel();
-        let server = server::start_server_sidecar_with_control(config_manager, listener,
-            token, bound_principal, ready_tx, Some(process_shutdown.clone()), host_control);
+        let server = server::start_server_sidecar_with_control(
+            config_manager,
+            listener,
+            token,
+            bound_principal,
+            ready_tx,
+            Some(process_shutdown.clone()),
+            host_control,
+        );
         tokio::pin!(server);
         let ready = tokio::select! {
             result = server.as_mut() => {
@@ -389,19 +422,32 @@ async fn run_sidecar(bootstrap: SidecarBootstrap) -> anyhow::Result<()> {
         if let Err(error) = announce {
             process_shutdown.cancel();
             let cleanup = server.await;
-            if let Err(cleanup) = cleanup { tracing::error!(error = %cleanup, "sidecar cleanup failed after output error"); }
+            if let Err(cleanup) = cleanup {
+                tracing::error!(error = %cleanup, "sidecar cleanup failed after output error");
+            }
             return Err(error.into());
         }
         server.await
-    }).catch_unwind().await;
+    })
+    .catch_unwind()
+    .await;
 
     reader_stop.cancel();
     let reader_result = reader.await;
-    let telemetry_result = otel_provider.as_ref().map(|provider| provider.shutdown()).transpose();
+    let telemetry_result = otel_provider
+        .as_ref()
+        .map(uar::telemetry::shutdown)
+        .transpose();
     // Cleanup obligations settle before propagating the original failure/panic.
-    if let Err(error) = &reader_result { tracing::error!(error = %error, "sidecar control task failed"); }
-    if let Ok(Err(error)) = &reader_result { tracing::error!(error = %error, "sidecar control cleanup failed"); }
-    if let Err(error) = &telemetry_result { tracing::error!(error = %error, "sidecar telemetry shutdown failed"); }
+    if let Err(error) = &reader_result {
+        tracing::error!(error = %error, "sidecar control task failed");
+    }
+    if let Ok(Err(error)) = &reader_result {
+        tracing::error!(error = %error, "sidecar control cleanup failed");
+    }
+    if let Err(error) = &telemetry_result {
+        tracing::error!(error = %error, "sidecar telemetry shutdown failed");
+    }
     result.map_err(|_| anyhow::anyhow!("sidecar startup or runtime panicked"))??;
     reader_result??;
     telemetry_result?;

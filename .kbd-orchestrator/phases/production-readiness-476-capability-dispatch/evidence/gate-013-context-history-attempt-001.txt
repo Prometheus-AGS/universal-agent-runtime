@@ -1,0 +1,60 @@
+   Compiling universal-agent-runtime v1.4.0-rc.2 (/Users/gqadonis/.claude/worktrees/production-readiness-476)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7m 22s
+     Running tests/context_history_integrity.rs (target/build/debug/deps/context_history_integrity-954c84185d48a56d)
+
+running 33 tests
+test baseline_display_truncation_discards_protected_middle_bytes ... ignored, frozen-source diagnostic; task 2.1 introduces canonical pre-format receipts
+test baseline_sliding_window_drops_the_protected_tool_group ... ignored, frozen-source diagnostic; task 2.2 replaces destructive group dropping
+test graph_llm_node_refuses_unhosted_provider_dispatch ... ok
+test misplaced_tool_result_blocks_without_mutating_history ... ok
+test orphaned_tool_result_blocks_without_mutating_history ... ok
+test missing_tool_result_blocks_without_mutating_history ... ok
+test pure_budget_planner_returns_fit_compression_overflow_invalid_and_unsupported ... ok
+test sliding_window_keeps_system_message_pinned_at_index_zero ... ok
+test empty_text_parallel_assistant_persists_and_restores_between_repeated_turns ... ok
+test verified_terminal_failure_can_be_recorded_explicitly ... ok
+test checkpoint_resume_restores_state_and_messages_or_errors ... ok
+test direct_orchestrator_blocks_invalid_history_before_provider_dispatch ... ok
+test final_request_capture_decodes_empty_text_assistant_tool_turn ... ok
+test orchestrator_preserves_budget_contract_on_primary_and_failover_preparation ... ok
+test identical_repeated_user_messages_survive_keep_first_last ... ok
+test host_marked_summarization_never_exposes_protected_bodies ... ok
+test exact_budget_contract_dispatches_intact_protected_wire_body ... ok
+test failed_cancelled_empty_and_over_budget_summaries_retain_originals ... ok
+test failed_summary_returns_explicit_overflow_when_originals_do_not_fit ... ok
+test oversized_summary_chunk_is_rejected_before_provider_dispatch ... ok
+test budget_contracts_fail_closed_on_endpoint_schema_and_unsupported_driver_boundaries ... ok
+test protected_overflow_and_approximate_count_block_before_dispatch ... ok
+test empty_text_multimodal_assistant_returns_overflow_instead_of_being_dropped ... ok
+test reduction_returns_overflow_instead_of_dropping_a_tool_group ... ok
+test parallel_group_and_repeated_turns_survive_in_original_order ... ok
+test token_service_is_model_keyed_with_cl100k_fallback ... ok
+test token_truncation_uses_the_model_tokenizer_and_enforces_the_limit ... ok
+test canonical_receipt_preserves_value_and_raw_bytes_before_display_formatting ... ok
+test oversized_tool_output_is_truncated_middle_out_with_warning_header ... ok
+test canonical_receipt_over_limit_is_explicitly_incomplete_without_partial_bytes ... ok
+test run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch ... FAILED
+test iterative_tool_loop_dispatches_a_typed_terminal_error_result ... ok
+test checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mutating_history ... FAILED
+
+failures:
+
+---- run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch stdout ----
+
+thread 'run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch' (75526551) panicked at tests/context_history_integrity.rs:842:10:
+pending assistant call is persisted
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mutating_history stdout ----
+
+thread 'checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mutating_history' (75526528) panicked at tests/context_history_integrity.rs:2256:98:
+called `Result::unwrap()` on an `Err` value: Elapsed(())
+
+
+failures:
+    checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mutating_history
+    run_manager_persists_pending_tool_calls_and_blocks_resume_dispatch
+
+test result: FAILED. 29 passed; 2 failed; 2 ignored; 0 measured; 0 filtered out; finished in 43.55s
+
+error: test failed, to rerun pass `--test context_history_integrity`

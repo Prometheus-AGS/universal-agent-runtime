@@ -7,6 +7,8 @@ Feature: An AG-UI app shows the agent's A2UI surface and the user's clicks reach
     Then the client renders the surface with the requested heading and a Confirm button
     When the user enters a note and presses Confirm
     Then the agent answers in a new run on the same conversation and its answer contains that note
+    And a lost-response retry with a fresh wire id reuses the original admitted click
+    And reusing that interaction identity with changed semantic input is refused
     When the user enters a different note and presses Confirm again
     Then the agent answers again and its answer contains the second note
     When a fresh client attaches to the conversation's latest run

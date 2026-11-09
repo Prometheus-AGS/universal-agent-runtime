@@ -54,6 +54,15 @@ Never deploy a floating `latest` tag as the production identity. The committed
 SurrealDB Compose file names `v1.0.0`, but the operator must still verify that
 the tag exists and resolve it to a reviewed digest before deployment.
 
+## RC3 API pilot
+
+The selected pilot is a Linux amd64 container behind a trusted host or gateway.
+It uses embedded SurrealDB 4.0.0 on an owned SurrealKV volume by default. Keep
+its API private to the gateway, use a fresh volume for evaluation, and bind every
+functional result to its image digest and effective configuration. The existing
+remote Compose and cluster templates have separate deployment boundaries. See
+[the RC3 user guide](./release-candidate.md).
+
 ## Docker Compose
 
 `docker-compose.prod.yaml` defines UAR, remote SurrealDB, and Redis with

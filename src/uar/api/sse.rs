@@ -142,7 +142,10 @@ pub(crate) fn build_agui_replay_snapshot(
         }
         match &event.event {
             NormalizedEvent::StatePatch { patch, .. } if state_synchronized => {
-                state_synchronized = apply_state_patch(&mut state, patch);
+                state_synchronized = apply_state_patch(
+                    &mut state,
+                    &super::adapters::sanitize_memory_context_patch(patch),
+                );
             }
             NormalizedEvent::ChatDelta { text_delta, .. } => assistant_text.push_str(text_delta),
             _ => {}
@@ -524,8 +527,13 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
             }
         }
         NormalizedEvent::AgentSelected {
-            run_id, source_agent_id, selected_agent_id, selected_agent_name,
-            selected_thread_id, selection_method, roster_revision,
+            run_id,
+            source_agent_id,
+            selected_agent_id,
+            selected_agent_name,
+            selected_thread_id,
+            selection_method,
+            roster_revision,
         } => Some((
             "agui.agent.selected",
             serde_json::json!({
@@ -750,6 +758,9 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
             input_tokens,
             output_tokens,
             total_tokens,
+            cache_read_input_tokens,
+            cache_creation_input_tokens,
+            uncached_input_tokens,
             cost_usd_estimate,
             model,
         } => Some((
@@ -757,15 +768,47 @@ pub fn to_agui_event(event: &NormalizedEvent) -> Option<(&'static str, serde_jso
             serde_json::json!({
                 "kind": "done",
                 "request_id": run_id,
-                "usage": {
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "total_tokens": total_tokens,
-                    "cost_usd_estimate": cost_usd_estimate,
-                    "model": model
+                "usage": crate::uar::domain::events::RunUsage {
+                    input_tokens: *input_tokens,
+                    output_tokens: *output_tokens,
+                    total_tokens: *total_tokens,
+                    cache_read_input_tokens: *cache_read_input_tokens,
+                    cache_creation_input_tokens: *cache_creation_input_tokens,
+                    uncached_input_tokens: *uncached_input_tokens,
+                    cost_usd_estimate: *cost_usd_estimate,
+                    model: model.clone(),
                 }
             }),
         )),
+        NormalizedEvent::StatePatch { run_id, patch }
+            if patch.iter().any(|operation| {
+                operation.path == "/memory_context"
+                    || operation.path.starts_with("/memory_context/")
+            }) =>
+        {
+            let sanitized = super::adapters::sanitize_memory_context_patch(patch);
+            let value = super::adapters::memory_context_value(
+                sanitized
+                    .iter()
+                    .rev()
+                    .find(|operation| operation.path == "/memory_context")
+                    .and_then(|operation| operation.value.as_ref()),
+            );
+            let mut provenance = serde_json::json!({"retrieval_method":value["retrieval_method"], "memory_ids":value["memory_ids"]});
+            for key in ["evidence_basis", "request_content_sha256", "model"] {
+                if let Some(field) = value.get(key) {
+                    provenance[key] = field.clone();
+                }
+            }
+            Some((
+                "agui.memory.context",
+                serde_json::json!({
+                    "kind":"memory", "phase":"context", "request_id":run_id,
+                    "status":value["status"], "reason_code":value["reason_code"],
+                    "count":value["memory_ids"].as_array().map_or(0, Vec::len), "provenance":provenance
+                }),
+            ))
+        }
         NormalizedEvent::StatePatch { run_id, patch } => Some((
             "agui.state.patch",
             serde_json::json!({
@@ -938,20 +981,31 @@ pub fn to_runtime_entity_event(
                 ),
                 _ => (None, None, None, None),
             };
-            Some((
-                "runtime.run",
-                serde_json::json!({
-                    "type": "run_finished",
-                    "id": run_id,
-                    "run_id": run_id,
-                    "status": "completed",
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "total_tokens": total_tokens,
-                    "cost_usd_estimate": cost_usd_estimate,
-                    "updated_at": chrono::Utc::now().to_rfc3339()
-                }),
-            ))
+            let mut payload = serde_json::json!({
+                "type": "run_finished", "id": run_id, "run_id": run_id,
+                "status": "completed", "input_tokens": input_tokens,
+                "output_tokens": output_tokens, "total_tokens": total_tokens,
+                "cost_usd_estimate": cost_usd_estimate,
+                "updated_at": chrono::Utc::now().to_rfc3339()
+            });
+            if let NormalizedEvent::RunDoneWithUsage {
+                cache_read_input_tokens,
+                cache_creation_input_tokens,
+                uncached_input_tokens,
+                ..
+            } = event
+            {
+                if let Some(count) = uncached_input_tokens {
+                    payload["uncached_input_tokens"] = (*count).into();
+                }
+                if let Some(count) = cache_read_input_tokens {
+                    payload["cache_read_input_tokens"] = (*count).into();
+                }
+                if let Some(count) = cache_creation_input_tokens {
+                    payload["cache_creation_input_tokens"] = (*count).into();
+                }
+            }
+            Some(("runtime.run", payload))
         }
         NormalizedEvent::Error {
             run_id,
@@ -1200,6 +1254,9 @@ mod tests {
             input_tokens: Some(120),
             output_tokens: Some(45),
             total_tokens: Some(165),
+            cache_read_input_tokens: None,
+            cache_creation_input_tokens: None,
+            uncached_input_tokens: None,
             cost_usd_estimate: None,
             model: Some("qwen3.7-max".to_string()),
         };
@@ -1210,6 +1267,77 @@ mod tests {
         assert_eq!(payload["usage"]["output_tokens"], 45);
         assert_eq!(payload["usage"]["total_tokens"], 165);
         assert_eq!(payload["usage"]["model"], "qwen3.7-max");
+    }
+
+    #[test]
+    fn terminal_projections_preserve_independently_proven_uncached_input() {
+        let event = NormalizedEvent::RunDoneWithUsage {
+            run_id: "owned-mixed-cache".into(),
+            input_tokens: Some(56),
+            output_tokens: Some(18),
+            total_tokens: Some(74),
+            uncached_input_tokens: Some(18),
+            cache_read_input_tokens: None,
+            cache_creation_input_tokens: Some(21),
+            cost_usd_estimate: None,
+            model: None,
+        };
+        let (_, agui) = to_agui_event(&event).expect("terminal event");
+        assert_eq!(agui["usage"]["input_tokens"], 56);
+        assert_eq!(agui["usage"]["uncached_input_tokens"], 18);
+        assert!(agui["usage"].get("cache_read_input_tokens").is_none());
+        assert_eq!(agui["usage"]["cache_creation_input_tokens"], 21);
+        let (_, runtime) = to_runtime_entity_event(&event).expect("runtime terminal event");
+        assert_eq!(runtime["input_tokens"], 56);
+        assert_eq!(runtime["uncached_input_tokens"], 18);
+        assert!(runtime.get("cache_read_input_tokens").is_none());
+    }
+
+    #[test]
+    fn memory_context_status_is_explicit_content_free_and_never_inferred_from_hits() {
+        let event = NormalizedEvent::StatePatch {
+            run_id: "owned-run".into(),
+            patch: vec![StatePatchOp {
+                op: "add".into(),
+                path: "/memory_context".into(),
+                value: Some(serde_json::json!({
+                    "status":"selected_prepared", "reason_code":"memory_context_prepared",
+                    "retrieval_method":"owner_scoped_hybrid_cosine_eligible", "memory_ids":["owned-memory"],
+                    "query":"private-query-sentinel", "facts":"private-fact-sentinel"
+                })),
+            }],
+        };
+        let (name, payload) = to_agui_event(&event).expect("memory context projection");
+        assert_eq!(name, "agui.memory.context");
+        assert_eq!(payload["status"], "selected_prepared");
+        assert_eq!(payload["count"], 1);
+        assert!(payload.get("injected").is_none());
+        assert!(!payload.to_string().contains("private-"));
+        let (_, spec) = to_agui_spec_event(&event).expect("state delta");
+        assert_eq!(spec["delta"][0]["value"]["status"], "selected_prepared");
+        assert!(!spec.to_string().contains("private-"));
+    }
+
+    #[test]
+    fn memory_submitted_requires_typed_final_request_proof() {
+        let patch = |value| NormalizedEvent::StatePatch {
+            run_id: "owned-run".into(),
+            patch: vec![StatePatchOp {
+                op: "add".into(),
+                path: "/memory_context".into(),
+                value: Some(value),
+            }],
+        };
+        let mut value = serde_json::json!({"status":"submitted", "reason_code":"memory_context_submitted",
+            "retrieval_method":"owner_scoped_hybrid_cosine_eligible", "memory_ids":["owned-memory"]});
+        let (_, missing) = to_agui_event(&patch(value.clone())).expect("invalid proof projection");
+        assert_eq!(missing["status"], "unavailable");
+        value["evidence_basis"] = "final_driver_request_and_provider_response".into();
+        value["request_content_sha256"] = "a".repeat(64).into();
+        value["model"] = "owned/model".into();
+        let (_, proven) = to_agui_event(&patch(value)).expect("typed proof projection");
+        assert_eq!(proven["status"], "submitted");
+        assert_eq!(proven["provenance"]["model"], "owned/model");
     }
 
     #[test]
@@ -1330,6 +1458,87 @@ mod tests {
             assert_eq!(enriched["eventId"], format!("7:{index}"));
             assert!(enriched["sequence"].as_u64().is_some());
         }
+    }
+
+    #[test]
+    fn native_agui_cancellation_retains_available_usage_without_success_or_fabricated_counts() {
+        use crate::uar::domain::events::RunUsage;
+
+        for usage in [
+            None,
+            Some(RunUsage {
+                input_tokens: None,
+                output_tokens: Some(3),
+                total_tokens: None,
+                cost_usd_estimate: Some(0.02),
+                cache_read_input_tokens: Some(2),
+                ..RunUsage::default()
+            }),
+            Some(RunUsage {
+                input_tokens: Some(0),
+                output_tokens: Some(3),
+                total_tokens: Some(3),
+                cost_usd_estimate: Some(0.02),
+                ..RunUsage::default()
+            }),
+        ] {
+            let events = [
+                (8, NormalizedEvent::PresentationDiagnostic {
+                    run_id: "run-1".into(), code: "session_persist_failed".into(),
+                    message: "Conversation terminal could not be saved".into(),
+                }),
+                (9, NormalizedEvent::Cancelled { run_id: "run-1".into(), usage: usage.clone() }),
+            ];
+            let mut projector = AguiSpecProjector::default();
+            let mut frames = Vec::new();
+            for (cursor, event) in events {
+                for frame in projector.project(&event) {
+                    frames.push((frame.event_name, enrich_agui_spec_payload(
+                        frame.event_name, frame.payload, &cursor.to_string(), frame.ordinal,
+                    )));
+                }
+            }
+            assert_eq!(frames.len(), 2);
+            assert_eq!(frames[0].0, "CUSTOM");
+            assert_eq!(frames[0].1["name"], "uar.presentation.diagnostic");
+            assert_eq!(frames[0].1["runId"], "run-1");
+            assert_eq!(frames[0].1["value"], serde_json::json!({
+                "code": "session_persist_failed", "message": "Conversation terminal could not be saved",
+            }));
+            assert_eq!(frames[0].1["eventId"], "8:0");
+            assert_eq!(frames[0].1["sequence"], 128);
+            assert_eq!(frames.iter().filter(|(name, _)| *name == "RUN_ERROR").count(), 1);
+            assert!(frames.iter().all(|(name, _)| *name != "RUN_FINISHED"));
+            assert_eq!(frames[1].0, "RUN_ERROR");
+            let payload = &frames[1].1;
+            assert_eq!(payload["eventId"], "9:0");
+            assert_eq!(payload["sequence"], 144);
+            assert_eq!(payload["profile"], "uar.agui/1");
+            assert_eq!(payload["runId"], "run-1");
+            assert_eq!(payload["code"], "CANCELLED");
+            assert!(payload["eventId"].as_str().is_some());
+            assert!(payload["sequence"].as_u64().is_some());
+            match usage {
+                Some(usage) => {
+                    assert_eq!(payload["result"]["usage"]["inputTokens"], serde_json::json!(usage.input_tokens));
+                    assert_eq!(payload["result"]["usage"]["outputTokens"], serde_json::json!(usage.output_tokens));
+                    assert_eq!(payload["result"]["usage"]["totalTokens"], serde_json::json!(usage.total_tokens));
+                    assert_eq!(payload["result"]["usage"]["costUsdEstimate"], serde_json::json!(usage.cost_usd_estimate));
+                    if let Some(count) = usage.cache_read_input_tokens {
+                        assert_eq!(payload["result"]["usage"]["cacheReadInputTokens"], count);
+                    } else {
+                        assert!(payload["result"]["usage"].get("cacheReadInputTokens").is_none());
+                    }
+                }
+                None => assert!(payload.get("result").is_none()),
+            }
+        }
+        let success = AguiSpecProjector::default().project(&NormalizedEvent::RunDone { run_id: "run-1".into() });
+        assert_eq!(success.last().expect("success terminal").event_name, "RUN_FINISHED");
+        let failure = AguiSpecProjector::default().project(&NormalizedEvent::Error {
+            run_id: "run-1".into(), code: "PROVIDER_ERROR".into(), message: "failed".into(),
+        });
+        assert_eq!(failure.last().expect("error terminal").payload["code"], "PROVIDER_ERROR");
     }
 
     #[test]

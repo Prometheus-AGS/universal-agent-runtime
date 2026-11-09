@@ -108,6 +108,7 @@ fn local_provider() -> ProviderConfig {
         default_model: Some("b4-test-model".to_string()),
         models: vec![ModelConfig {
             pricing_identity: None,
+            execution_profile: None,
             id: "b4-test-model".to_string(),
             display_name: Some("B4 test model".to_string()),
             context_window: Some(8_192),

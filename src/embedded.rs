@@ -520,7 +520,7 @@ impl EmbeddedRuntimeBuilder {
             .clone()
             .expect("validated provider has a default model");
         let mut llm_config = self.llm_config.unwrap_or_default();
-        llm_config.model = format!("{}/{}", provider.id, default_model);
+        llm_config.set_qualified_model(&provider.id, &default_model);
         llm_config.api_key = provider.api_key.clone();
         llm_config.base_url = (!provider.base_url.is_empty()).then(|| provider.base_url.clone());
 

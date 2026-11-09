@@ -1,0 +1,18 @@
+{
+  "phase": "production-readiness-476-baseline",
+  "last_updated_by": "codex",
+  "status": "COMPLETED_WITH_RECORDED_UNRELATED_FAILURES",
+  "changes": {
+    "restore-exact-tree-rust-baseline": {
+      "status": "DONE",
+      "tasks_total": 13,
+      "tasks_done": 13,
+      "next_task_pending": null,
+      "blockers": []
+    }
+  },
+  "implementation_total": 12,
+  "implementation_completed": 12,
+  "verification_status": "SCOPED_EXIT_PASS",
+  "tested_source": "5aa36a40ac0661ad358f50db8a066b5f5a1c4263"
+}

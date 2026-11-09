@@ -874,20 +874,130 @@ async fn cors_layer_omits_allow_origin_for_default_and_unlisted_origins() {
 
 #[test]
 fn provider_anthropic_usage_preserves_reported_cache_fields_exactly() {
-    let usage = provider_anthropic_usage(41, 7, Some(29), Some(13));
+    // Normalized input includes both cache portions; Messages exposes uncached input.
+    let usage = provider_anthropic_usage(83, 7, Some(29), Some(13), None);
     assert_eq!(usage.input_tokens, 41);
     assert_eq!(usage.output_tokens, 7);
-    assert_eq!(usage.cache_creation_input_tokens, 13);
-    assert_eq!(usage.cache_read_input_tokens, 29);
+    assert_eq!(usage.cache_creation_input_tokens, Some(13));
+    assert_eq!(usage.cache_read_input_tokens, Some(29));
 }
 
 #[test]
-fn absent_provider_usage_never_fabricates_cache_activity() {
+fn native_turn_intent_retains_rich_input_and_conflicts_on_changed_dispatch_fields() {
+    let original = json!({
+        "client_turn_id":"synthetic-turn", "user_message_id":"synthetic-user",
+        "session_id":"synthetic-session", "model":"fixture/model",
+        "messages":[{"role":"user","content":[
+            {"type":"text","text":"synthetic rich turn"},
+            {"type":"image_url","image_url":{"url":"data:image/png;base64,c3ludGhldGlj"}}
+        ]}],
+        "attachments":[{"id":"synthetic-file","filename":"note.txt","content_type":"text/plain",
+            "url":"/synthetic-file","text_content":"original fact"}],
+        "memory_enabled":false, "max_completion_tokens":128, "stream":true, "stream_mode":"agui_spec"
+    });
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "x-uar-workspace-id",
+        HeaderValue::from_static("synthetic-workspace"),
+    );
+    let request: ChatCompletionRequest = serde_json::from_value(original.clone()).unwrap();
+    let intent = native_chat_semantic_payload(&request, &headers);
+    assert_eq!(
+        intent["messages"][0]["content"][1]["image_url"]["url"],
+        original["messages"][0]["content"][1]["image_url"]["url"]
+    );
+    for changed in [
+        json!({"max_completion_tokens":64}),
+        json!({"memory_enabled":true}),
+        json!({"agent_id":"other-agent"}),
+        json!({"prompt_caching_enabled":true}),
+        json!({"messages":[{"role":"user","content":"changed"}]}),
+        json!({"attachments":[{"id":"synthetic-file","filename":"note.txt","content_type":"text/plain",
+            "url":"/synthetic-file","text_content":"changed fact"}]}),
+    ] {
+        let mut updated = original.clone();
+        updated
+            .as_object_mut()
+            .unwrap()
+            .extend(changed.as_object().unwrap().clone());
+        let updated: ChatCompletionRequest = serde_json::from_value(updated).unwrap();
+        assert_ne!(native_chat_semantic_payload(&updated, &headers), intent);
+    }
+    let mut changed_workspace = headers;
+    changed_workspace.insert(
+        "x-uar-workspace-id",
+        HeaderValue::from_static("other-workspace"),
+    );
+    assert_ne!(
+        native_chat_semantic_payload(&request, &changed_workspace),
+        intent
+    );
+}
+
+#[test]
+fn absent_provider_usage_never_fabricates_cache_activity_or_measured_estimates() {
     let usage = finalized_anthropic_usage(None, 9);
     assert_eq!(usage.input_tokens, 0);
-    assert_eq!(usage.output_tokens, 9);
-    assert_eq!(usage.cache_creation_input_tokens, 0);
-    assert_eq!(usage.cache_read_input_tokens, 0);
+    assert_eq!(usage.output_tokens, 0);
+    assert_eq!(usage.cache_creation_input_tokens, None);
+    assert_eq!(usage.cache_read_input_tokens, None);
+    assert_eq!(usage.availability()["input_tokens"]["available"], false);
+    assert_eq!(usage.availability()["output_tokens"]["available"], false);
+}
+
+#[test]
+fn messages_usage_keeps_known_zero_distinct_from_unavailable_and_invalid_breakdowns() {
+    let zero = AnthropicUsage::from_reported(Some(0), Some(0), Some(0), None, None);
+    assert_eq!(zero.availability()["input_tokens"]["available"], true);
+    assert_eq!(zero.cache_read_input_tokens, Some(0));
+    assert_eq!(zero.cache_creation_input_tokens, None);
+    let invalid = AnthropicUsage::from_reported(Some(2), Some(5), Some(3), Some(2), None);
+    assert_eq!(invalid.input_tokens, 0);
+    assert_eq!(invalid.availability()["input_tokens"]["available"], false);
+    assert_eq!(invalid.availability()["output_tokens"]["available"], true);
+    assert_eq!(invalid.cache_read_input_tokens, None);
+}
+
+#[tokio::test]
+async fn malformed_messages_image_cannot_disappear_behind_valid_text() {
+    for image in [
+        json!({"type":"image"}),
+        json!({"type":"image","source":{"type":"base64","media_type":"image/png"}}),
+        json!({"type":"image","source":{"type":"url","url":"http://127.0.0.1:9/private-image-sentinel"}}),
+        json!({"type":"document","text":"private-image-sentinel"}),
+    ] {
+        let req: AnthropicMessagesRequest =
+            serde_json::from_value(json!({"messages":[{"role":"user","content":[
+                {"type":"text","text":"ordinary text"},image
+            ]}]}))
+            .expect("typed Messages fixture");
+        match validate_anthropic_content(&req).await {
+            Ok(()) => panic!("image must refuse before conversion"),
+            Err(response) => assert_eq!(response.status(), StatusCode::BAD_REQUEST),
+        }
+    }
+}
+
+#[tokio::test]
+async fn valid_messages_inline_image_conversion_preserves_mixed_order() {
+    use base64::Engine as _;
+    let encoded = base64::engine::general_purpose::STANDARD.encode(include_bytes!(
+        "../../scripts/behaviors/fixtures/capability-dispatch/synthetic.png"
+    ));
+    let req: AnthropicMessagesRequest =
+        serde_json::from_value(json!({"messages":[{"role":"user","content":[
+            {"type":"text","text":"before"},
+            {"type":"image","source":{"type":"base64","media_type":"image/png","data":encoded}},
+            {"type":"text","text":"after"}
+        ]}]}))
+        .expect("typed Messages fixture");
+    if validate_anthropic_content(&req).await.is_err() {
+        panic!("retained inline PNG must remain supported by conversion");
+    }
+    let messages = convert_anthropic_messages_to_openai(&req);
+    assert_eq!(messages[0]["content"][0]["text"], "before");
+    assert_eq!(messages[0]["content"][1]["type"], "image_url");
+    assert_eq!(messages[0]["content"][2]["text"], "after");
 }
 
 #[test]
@@ -937,4 +1047,58 @@ fn provider_catalog_status_prefers_configured_over_missing_credential() {
 
     assert_eq!(status, "configured");
     assert!(detail.contains("configured"));
+}
+
+
+#[test]
+fn messages_uses_explicit_native_uncached_sum_when_aggregate_cache_is_incomplete() {
+    // Native calls: uncached7 + uncached11; one omitted cache read. Raw input
+    // remains56, but subtracting only known aggregate cache would be false.
+    let usage = AnthropicUsage::from_reported(Some(56), Some(18), None, Some(21), Some(18));
+    assert_eq!(usage.input_tokens, 18);
+    assert_eq!(usage.output_tokens, 18);
+    assert_eq!(usage.availability()["input_tokens"]["available"], true);
+    assert_eq!(usage.cache_read_input_tokens, None);
+    assert_eq!(usage.cache_creation_input_tokens, Some(21));
+    let missing_creation = AnthropicUsage::from_reported(Some(57), Some(18), Some(20), None, Some(18));
+    assert_eq!(missing_creation.input_tokens, 18);
+    assert_eq!(missing_creation.cache_read_input_tokens, Some(20));
+    assert_eq!(missing_creation.cache_creation_input_tokens, None);
+}
+
+#[test]
+fn messages_cannot_reconstruct_uncached_input_from_an_unknown_cache_split() {
+    let usage = AnthropicUsage::from_reported(Some(19), Some(10), None, None, None);
+    assert_eq!(usage.input_tokens, 0);
+    assert_eq!(usage.availability()["input_tokens"], json!({"available":false,"source":"unavailable"}));
+    assert_eq!(usage.output_tokens, 10);
+    assert_eq!(usage.availability()["output_tokens"]["available"], true);
+    assert_eq!(usage.cache_read_input_tokens, None);
+    assert_eq!(usage.cache_creation_input_tokens, None);
+}
+
+#[test]
+fn messages_preserves_native_uncached_only_and_complete_split_controls() {
+    let native = provider_anthropic_usage(7, 5, None, None, Some(7));
+    assert_eq!(native.input_tokens, 7);
+    assert_eq!(native.availability()["input_tokens"]["source"], "provider_reported");
+    let complete = AnthropicUsage::from_reported(Some(59), Some(18), Some(20), Some(21), None);
+    assert_eq!(complete.input_tokens, 18);
+    assert_eq!(complete.output_tokens, 18);
+    assert_eq!(complete.cache_read_input_tokens, Some(20));
+    assert_eq!(complete.cache_creation_input_tokens, Some(21));
+    let absent = AnthropicUsage::from_reported(None, None, None, None, None);
+    assert_eq!(absent.input_tokens, 0);
+    assert_eq!(absent.output_tokens, 0);
+    assert_eq!(absent.availability()["input_tokens"]["available"], false);
+    assert_eq!(absent.availability()["output_tokens"]["available"], false);
+}
+
+#[test]
+fn contradictory_uncached_evidence_does_not_certify_a_cache_breakdown() {
+    let usage = AnthropicUsage::from_reported(Some(19), Some(10), Some(3), Some(2), Some(19));
+    assert_eq!(usage.availability()["input_tokens"]["available"], false);
+    assert_eq!(usage.cache_read_input_tokens, None);
+    assert_eq!(usage.cache_creation_input_tokens, None);
+    assert_eq!(usage.output_tokens, 10);
 }

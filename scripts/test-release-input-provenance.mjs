@@ -3,12 +3,13 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { afterEach, beforeEach, test } from "node:test";
 
 const cli = resolve(import.meta.dirname, "generate-release-input-provenance.mjs");
+const candidateCli = resolve(import.meta.dirname, "behaviors/support/candidate-artifact-inventory.mjs");
 let scratch;
 let root;
 let output;
@@ -37,6 +38,17 @@ const addSubmodule = (source, path) => {
   git(root, "-c", "protocol.file.allow=always", "submodule", "add", "--quiet", source, path);
 };
 const invoke = () => spawnSync(process.execPath, [cli, output, root], { encoding: "utf8" });
+const invokeCandidate = () => {
+  const directory = realpathSync(scratch);
+  const receipt = join(directory, "candidate-inventory.json");
+  const limits = join(directory, "limits.json");
+  writeFileSync(limits, JSON.stringify({
+    maxFileBytes: 1_000_000, maxTotalBytes: 10_000_000, maxEntries: 1000,
+    gitOutputBytes: 1_000_000, gitTimeoutMs: 10_000,
+  }));
+  const result = spawnSync(process.execPath, [candidateCli, realpathSync(root), receipt, limits], { encoding: "utf8" });
+  return { result, receipt };
+};
 const reject = (pattern) => {
   const result = invoke();
   assert.equal(result.status, 1, result.stderr);
@@ -166,4 +178,41 @@ test("rejects a missing compiled schema input", () => {
 test("rejects dirty source inputs", () => {
   write(root, "catalog/provider_catalog.json", '{"dirty":true}\n');
   reject(/checkout must be clean/);
+});
+
+test("candidate inventory binds a tracked link chain to its canonical file", () => {
+  symlinkSync("docs/example.schema.json", join(root, "schema-alias"));
+  symlinkSync("schema-alias", join(root, "schema-link"));
+  commit(root);
+  const { result, receipt } = invokeCandidate();
+  assert.equal(result.status, 0, result.stderr);
+  const inventory = JSON.parse(readFileSync(receipt, "utf8"));
+  const link = inventory.identity.files.find((entry) => entry.path === "schema-link");
+  assert.equal(link.target, "schema-alias");
+  assert.equal(link.resolution, "resolved");
+  assert.equal(link.canonical_target, "docs/example.schema.json");
+});
+
+test("candidate inventory refuses a new dangling link without a receipt", () => {
+  symlinkSync("docs/absent.md", join(root, "unknown-link"));
+  commit(root);
+  const { result, receipt } = invokeCandidate();
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /Dangling symlink outside a reviewed pinned checkout/);
+  assert.equal(existsSync(receipt), false);
+});
+
+test("candidate inventory refuses an ignored intermediate link outside the checkout", () => {
+  write(root, ".gitignore", "ignored/\n");
+  mkdirSync(join(scratch, "external"));
+  symlinkSync(join(root, "docs/example.schema.json"), join(scratch, "external", "input"));
+  mkdirSync(join(root, "ignored"));
+  symlinkSync(join(scratch, "external"), join(root, "ignored", "escape"));
+  symlinkSync("ignored/escape/input", join(root, "tracked-link"));
+  assert.equal(realpathSync(join(root, "tracked-link")), realpathSync(join(root, "docs/example.schema.json")));
+  commit(root);
+  const { result, receipt } = invokeCandidate();
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /Symlink target passes through a non-directory or symlink/);
+  assert.equal(existsSync(receipt), false);
 });

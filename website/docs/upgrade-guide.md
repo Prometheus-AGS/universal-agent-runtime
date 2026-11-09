@@ -65,6 +65,20 @@ Keep the persistence provider and location stable unless the release supplies a
 tested migration. Never start an older binary against data changed by a newer
 engine unless the release explicitly declares backward readability.
 
+## Upgrade embedded SurrealKV for RC3
+
+Treat embedded SurrealDB 3.3.0 to 4.0.0 as a storage-engine change. Freeze
+writes, stop every store owner, and retain the verified original snapshot. Use
+the matching migration runner to convert a separate destination. Ordinary
+startup does not opt into conversion. Inventory all enabled embedded stores,
+including a distinct memory path. Check read-back, owner isolation, representative
+writes and clean reopen before cutover. Roll back into a separate restore from
+the verified 3.3 snapshot, and account for accepted writes on the candidate first.
+
+Follow the [embedded upgrade runbook](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/v1.4.0-rc.3/docs/operations/embedded-surrealdb-4-upgrade.md)
+for eligibility and command details. Start with a fresh volume for a first
+[RC3 pilot](./release-candidate.md).
+
 ## Apply the upgrade
 
 For containers, replace the image with the verified digest and use the

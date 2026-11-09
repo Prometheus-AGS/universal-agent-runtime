@@ -1,6 +1,10 @@
 //! Dot07 uses the actual binary and independent API/readback child processes.
 
 #[path = "fresh_process_resume_process.rs"]
+#[expect(
+    dead_code,
+    reason = "Approval recovery reuses process helpers but supplies its own qualifier and readback scenarios"
+)]
 mod resume;
 
 use axum::{
@@ -1223,13 +1227,16 @@ async fn deadline_profiles(root: &Path) {
         join(&mut process, &directory).await;
         eprintln!("dot07 profile={profile} case=atomic-deadline status=passed");
     }
-    let directory = root.join("memory-atomic-deadline");
-    private_dir(&directory);
-    let store =
-        universal_agent_runtime::uar::persistence::providers::memory::InMemoryProvider::new();
-    let decisions = stale_deadline_intents(&store).await;
-    private_write(&directory.join("acceptance.json"), &serde_json::to_vec_pretty(&json!({"schemaVersion":1,"profile":"memory",
-        "case":"atomic-deadline","decisions":decisions,"effects":0,"verified":true,"genuineInference":false})).unwrap());
+    #[cfg(feature = "in-memory-backend")]
+    {
+        let directory = root.join("memory-atomic-deadline");
+        private_dir(&directory);
+        let store =
+            universal_agent_runtime::uar::persistence::providers::memory::InMemoryProvider::new();
+        let decisions = stale_deadline_intents(&store).await;
+        private_write(&directory.join("acceptance.json"), &serde_json::to_vec_pretty(&json!({"schemaVersion":1,"profile":"memory",
+            "case":"atomic-deadline","decisions":decisions,"effects":0,"verified":true,"genuineInference":false})).unwrap());
+    }
 }
 
 async fn unsupported(root: &Path, profile: &str) {
@@ -1279,6 +1286,10 @@ async fn unsupported(root: &Path, profile: &str) {
 }
 
 pub async fn qualify() {
+    assert!(
+        cfg!(feature = "in-memory-backend"),
+        "Dot07 atomic-deadline control requires the explicit in-memory-backend feature"
+    );
     assert!(
         cfg!(feature = "postgres-backend"),
         "Dot07 gate includes the explicit unsupported Postgres contract"

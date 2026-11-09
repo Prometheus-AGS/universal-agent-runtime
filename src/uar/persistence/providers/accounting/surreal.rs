@@ -1,7 +1,10 @@
 use super::SurrealDbProvider;
+use crate::uar::persistence::DurableStoreEligibility;
 use crate::uar::persistence::accounting::{self, AccountingCall, AccountingError, AccountingScope, CallAdmission, CallUsage, ScopeIdentity, ScopeLimits, ScopeUpdate};
 use anyhow::Result;
 use serde::Serialize;
+use std::collections::HashMap;
+use surrealdb::types::QueryError;
 
 pub(super) async fn initialize(db: &surrealdb::Surreal<surrealdb::engine::any::Any>) -> Result<()> {
     db.query(include_str!("../../../../../migrations/surrealdb/durable_accounting.surql")).await?.check()?;
@@ -10,6 +13,12 @@ pub(super) async fn initialize(db: &surrealdb::Surreal<surrealdb::engine::any::A
 fn durable(store: &SurrealDbProvider) -> Result<()> {
     if !store.durable_instances { return Err(AccountingError::Unsupported.into()); }
     Ok(())
+}
+async fn lock_accounting_write(store: &SurrealDbProvider) -> Option<tokio::sync::MutexGuard<'_, ()>> {
+    match &store.accounting_write_guard {
+        Some(guard) => Some(guard.lock().await),
+        None => None,
+    }
 }
 async fn read<T: serde::de::DeserializeOwned>(store: &SurrealDbProvider, table: &str, key: String) -> Result<Option<T>> {
     durable(store)?;
@@ -49,7 +58,9 @@ fn scope_changes(before: &[AccountingScope], after: &[AccountingScope]) -> Resul
     before.iter().zip(after).map(|(before,after)| Ok(Change { key: before.identity.key(), before: serde_json::to_string(before)?, after: serde_json::to_string(after)? })).collect()
 }
 fn checked(mut response: surrealdb::IndexedResults) -> Result<()> {
-    let errors = response.take_errors();
+    checked_errors(response.take_errors())
+}
+fn checked_errors(errors: HashMap<usize, surrealdb::Error>) -> Result<()> {
     if errors.values().any(|e| e.to_string().contains("accounting_revision_conflict")) { return Err(AccountingError::Conflict.into()); }
     // A failed transaction replaces earlier successful statement results with
     // NotExecuted. Prefer its actual failure over those rollback placeholders.
@@ -60,9 +71,32 @@ fn checked(mut response: surrealdb::IndexedResults) -> Result<()> {
 }
 pub(super) async fn admit(store: &SurrealDbProvider, admission: &CallAdmission) -> Result<AccountingCall> {
     durable(store)?; admission.validate()?;
+    let _write_guard = lock_accounting_write(store).await;
+    let mut retries_remaining = match store.durable_store_eligibility {
+        DurableStoreEligibility::LocalDurable if store.catalog_storage_backend() == "surrealkv" => 2,
+        _ => 0,
+    };
+    loop {
+        if let Some(call) = try_admit(store, admission, retries_remaining > 0).await? {
+            return Ok(call);
+        }
+        retries_remaining -= 1;
+        tracing::debug!(
+            retries_remaining,
+            "Retrying pre-dispatch accounting admission after transaction conflict"
+        );
+    }
+}
+
+// None means a confirmed abort when the caller has another attempt available.
+async fn try_admit(
+    store: &SurrealDbProvider,
+    admission: &CallAdmission,
+    retry_conflict: bool,
+) -> Result<Option<AccountingCall>> {
     if let Some(existing) = read::<AccountingCall>(store,"accounting_calls",admission.identity.key()).await? {
         if existing.admission != *admission { return Err(AccountingError::IdentityConflict.into()); }
-        return Ok(existing);
+        return Ok(Some(existing));
     }
     let source = match &admission.source_reservation {
         Some(id) => {
@@ -76,7 +110,7 @@ pub(super) async fn admit(store: &SurrealDbProvider, admission: &CallAdmission) 
     let mut after = before.clone();
     for scope in &mut after { accounting::reserve(scope,admission)?; }
     let call = AccountingCall::new(admission.clone());
-    checked(store.db.query("BEGIN TRANSACTION;
+    let mut response = store.db.query("BEGIN TRANSACTION;
         IF $has_source {
             LET $funding = (UPDATE type::record('accounting_calls',$source_key) SET data=$source_data WHERE data=$source_data RETURN AFTER);
             IF array::len($funding) != 1 { THROW 'accounting_revision_conflict'; };
@@ -92,11 +126,27 @@ pub(super) async fn admit(store: &SurrealDbProvider, admission: &CallAdmission) 
         .bind(("data",serde_json::to_string(&call)?))
         .bind(("has_source",source.is_some()))
         .bind(("source_key",source.as_ref().map(|call| call.admission.identity.key()).unwrap_or_default()))
-        .bind(("source_data",source.as_ref().map(serde_json::to_string).transpose()?.unwrap_or_default())).await?)?;
-    Ok(call)
+        .bind(("source_data",source.as_ref().map(serde_json::to_string).transpose()?.unwrap_or_default())).await?;
+    let errors = response.take_errors();
+    // Only the complete typed abort response permits another transaction.
+    // Query failures and indeterminate commits never take this path.
+    if retry_conflict {
+        let mut substantive_errors = errors
+            .values()
+            .filter(|error| error.query_details() != Some(&QueryError::NotExecuted));
+        if substantive_errors.next().is_some_and(|error| {
+            error.query_details() == Some(&QueryError::TransactionConflict)
+        }) && substantive_errors.next().is_none()
+        {
+            return Ok(None);
+        }
+    }
+    checked_errors(errors)?;
+    Ok(Some(call))
 }
 pub(super) async fn usage(store: &SurrealDbProvider, usage: &CallUsage) -> Result<AccountingCall> {
     durable(store)?;
+    let _write_guard = lock_accounting_write(store).await;
     let before_call: AccountingCall = read(store,"accounting_calls",usage.identity.key()).await?.ok_or(AccountingError::Missing)?;
     let after_call = accounting::observe(&before_call,usage)?;
     if before_call == after_call { return Ok(after_call); }

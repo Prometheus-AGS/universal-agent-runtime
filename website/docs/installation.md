@@ -38,6 +38,14 @@ A `v1.0.0` tag, a Compose image string, or package version metadata is not by
 itself publication status. Confirm the asset exists, verify its manifest and
 digest, and pin that immutable digest or verified archive.
 
+## Install the RC3 pilot image
+
+For a controlled Linux amd64 API pilot, use
+`ghcr.io/prometheus-ags/universal-agent-runtime:v1.4.0-rc.3`. Verify its digest
+and use a fresh owned SurrealKV volume behind the trusted gateway. Follow the
+[RC3 setup and functional checks](./release-candidate.md#install-and-check-the-candidate)
+for the exact image and intended deployment boundary.
+
 ## Source prerequisites
 
 The checkout pins the Rust channel and targets in `rust-toolchain.toml` and pins

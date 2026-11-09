@@ -277,6 +277,15 @@ pub enum NormalizedEvent {
         input_tokens: Option<u32>,
         output_tokens: Option<u32>,
         total_tokens: Option<u32>,
+        /// Complete uncached input, when supported by every submitted call.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        uncached_input_tokens: Option<u32>,
+        /// Reported cache-read portion of aggregate input; absent is unavailable.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        cache_read_input_tokens: Option<u32>,
+        /// Reported cache-creation portion of aggregate input; absent is unavailable.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        cache_creation_input_tokens: Option<u32>,
         /// Estimated cost in USD based on model pricing.
         cost_usd_estimate: Option<f64>,
         /// Model used for this run.
@@ -291,6 +300,15 @@ pub struct RunUsage {
     pub input_tokens: Option<u32>,
     pub output_tokens: Option<u32>,
     pub total_tokens: Option<u32>,
+    /// Complete uncached input, when supported by every submitted call.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uncached_input_tokens: Option<u32>,
+    /// Reported cache-read portion of aggregate input; absent is unavailable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cache_read_input_tokens: Option<u32>,
+    /// Reported cache-creation portion of aggregate input; absent is unavailable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cache_creation_input_tokens: Option<u32>,
     /// Estimated cost in USD based on model pricing.
     pub cost_usd_estimate: Option<f64>,
     /// Model used for this run.

@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { dirname, isAbsolute, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber';
 import { assertOwnedEndpoint } from '../support/restart-owned-uar.mjs';
+import { loadCandidateArtifactInputs } from '../support/candidate-artifact-binding.mjs';
 import { prepareEmbeddingHost, restoreEmbeddingHost } from '../../manual-host/embedding-config.mjs';
 
 setDefaultTimeout(900_000);
@@ -57,7 +58,11 @@ async function indexedDocument(world) {
 Given('a disposable knowledge base indexed with the original embedding model', async function () {
   this.started = performance.now();
   this.id = randomUUID();
-  this.record = resolve(`.prometheus/verification/embedding-same-dimension/${this.id}.json`);
+  const installedBinding = process.env.UAR_CANDIDATE_ARTIFACT_BINDING;
+  if (installedBinding) assert.ok(isAbsolute(installedBinding));
+  this.record = installedBinding
+    ? resolve(dirname(installedBinding), 'regeneration-receipts', `${this.id}.json`)
+    : resolve(`.prometheus/verification/embedding-same-dimension/${this.id}.json`);
   this.evidence = { scenario: 'C48-EMBEDDING-SAME-DIMENSION-01', platform: process.platform,
     authentication_supplied_by_test: false, previous_scenarios_rerun: false, exchanges: [],
     target, hosting: { embedding_caps_usd: { openai: 10, cohere: 10 }, cohere_used: false, openai_used: true,
@@ -65,7 +70,21 @@ Given('a disposable knowledge base indexed with the original embedding model', a
   this.base = new URL(process.env.UAR_BASE_URL);
   this.workspace = process.env.UAR_WORKSPACE_ID;
   assert.ok(this.workspace);
-  this.evidence.endpoint = await assertOwnedEndpoint(this.base);
+  if (installedBinding) {
+    const binding = await loadCandidateArtifactInputs(installedBinding);
+    assert.equal(binding.config.baseUrl, this.base.href);
+    assert.equal(binding.config.workspace, this.workspace);
+    this.evidence.endpoint = { client_url: this.base.href, workspace: this.workspace };
+    this.evidence.installed = {
+      source_sha: binding.documents.inputProvenance.source_sha,
+      image_id: binding.documents.imageBuild.image_id,
+      config_sha256: binding.config.runtimeConfigDigest,
+      binding_sha256: binding.bindingInputsSha256,
+    };
+    this.evidence.hosting = { fixture: 'externally provisioned loopback embedding peer' };
+  } else {
+    this.evidence.endpoint = await assertOwnedEndpoint(this.base);
+  }
   this.original = await currentSettings(this);
   this.originalValues = this.original.map(row => row.saved);
   this.evidence.original_settings = this.original;
@@ -82,7 +101,7 @@ Given('a disposable knowledge base indexed with the original embedding model', a
   assert.ok(/^[\x00-\x7f]*$/.test(this.documentText + this.query));
   const bytes = Buffer.byteLength(this.documentText + this.query);
   assert.ok(bytes < 1000);
-  this.evidence.hosting.estimated_two_input_cost_ceiling_usd = bytes * 0.02 / 1_000_000;
+  if (!this.evidence.installed) this.evidence.hosting.estimated_two_input_cost_ceiling_usd = bytes * 0.02 / 1_000_000;
   const kb = await request(this, 'POST', root, { name: `Regeneration BDD ${this.id}`,
     description: 'Disposable manual model migration scenario', config: { chunk_strategy: 'fixed', chunk_size: 512,
       retrieval_min_score: 0, retrieval_top_k: 5 } }, 201);
@@ -103,10 +122,12 @@ When('I change the active embedding model to a different model with the same vec
   // Host provisioning only: the owned config blackholes remote embedding. The
   // existing host fixture points it at the real endpoint for this scenario and
   // restores it afterwards; the credential never enters a request or evidence.
-  this.hostState = {};
-  this.evidence.host_provision_restart = {};
-  await prepareEmbeddingHost(this.hostState, this.id, this.evidence.host_provision_restart);
-  this.evidence.host_config = { original_sha256: this.hostState.originalSha, prepared_sha256: this.hostState.preparedSha };
+  if (!this.evidence.installed) {
+    this.hostState = {};
+    this.evidence.host_provision_restart = {};
+    await prepareEmbeddingHost(this.hostState, this.id, this.evidence.host_provision_restart);
+    this.evidence.host_config = { original_sha256: this.hostState.originalSha, prepared_sha256: this.hostState.preparedSha };
+  }
   assert.equal(target.dimension, this.originalSpace.dimension, 'The target must have the same declared width');
   assert.notEqual(target.model, this.originalSpace.model);
   const rows = await currentSettings(this);

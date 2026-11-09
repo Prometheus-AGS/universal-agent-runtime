@@ -3,6 +3,7 @@
 //! the local database in a separate, joined process. No same-handle restart claim.
 #![cfg(all(feature = "server", feature = "surreal-backend", feature = "a2a-transport"))]
 
+#[expect(dead_code, reason = "ingestion reuses only the database fixtures from API key process support")]
 #[path = "support/api_key_process.rs"]
 mod process;
 
@@ -13,7 +14,7 @@ use universal_agent_runtime::uar::{
     api::knowledge::{KnowledgeApiState, build_router},
     domain::knowledge::{DocumentStatus, EmbeddingFingerprint, KbConfig, KnowledgeBase, KnowledgeChunk, KnowledgeDocument},
     persistence::{PersistenceLayer, ingestion_records::{IngestionPublication, IngestionState}, providers::surreal::SurrealDbProvider},
-    rag::embeddings::{EmbeddingBackend, EmbeddingError},
+    rag::embeddings::{EmbeddingBackend, EmbeddingError, swappable::SwappableEmbeddingBackend},
     runtime::matching::VectorMatcher,
     security::{claims::UserContext, middleware::authenticate_bearer_context},
 };
@@ -61,7 +62,7 @@ async fn provider() -> Arc<dyn PersistenceLayer> {
 async fn app(store: Arc<dyn PersistenceLayer>) -> axum::Router {
     build_router().with_state(Arc::new(KnowledgeApiState {
         persistence: store,
-        vector_matcher: Arc::new(VectorMatcher::new(Arc::new(UnusedEmbedding), 0.75)),
+        vector_matcher: Arc::new(VectorMatcher::new(Arc::new(SwappableEmbeddingBackend::new(Arc::new(UnusedEmbedding))), 0.75)),
         ingestion_pool: None,
         realtime_bus: None,
     })).layer(Extension(identity().await))
@@ -168,9 +169,9 @@ async fn child(stage: &str) {
 #[tokio::test]
 async fn durable_ingestion_contract() {
     if let Ok(stage) = std::env::var("UAR_DOT08_CHILD") { child(&stage).await; return; }
-    let mut databases = vec![process::Database::local(), process::Database::shared()];
+    let databases = [process::Database::local(), process::Database::shared()];
     #[cfg(feature = "postgres-backend")]
-    databases.push(process::Database::postgres());
+    let databases = databases.into_iter().chain([process::Database::postgres()]);
     for database in databases {
         let manifest = tempfile::NamedTempFile::new().unwrap();
         let remote_surreal = database.provider == "surreal"

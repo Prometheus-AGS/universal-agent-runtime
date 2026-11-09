@@ -1,20 +1,22 @@
 #[path = "client_tools/surreal.rs"]
 mod client_tools;
 use crate::uar::persistence::knowledge_namespace::KnowledgeNamespace;
-#[path = "supervisor/surreal.rs"]
-mod supervisor_records;
 #[path = "a2a_bindings/surreal.rs"]
 mod a2a_bindings;
-#[path = "agui_runs/surreal.rs"]
-mod agui_runs;
-#[path = "run_history/surreal.rs"]
-mod run_history;
-#[path = "mcp_elicitations/surreal.rs"]
-mod mcp_elicitations;
+#[path = "a2ui_actions/surreal.rs"]
+mod a2ui_actions;
 #[path = "accounting/surreal.rs"]
 mod accounting_records;
 #[path = "accounting_remote_grants/surreal.rs"]
 mod accounting_remote_grants;
+#[path = "agui_runs/surreal.rs"]
+mod agui_runs;
+#[path = "mcp_elicitations/surreal.rs"]
+mod mcp_elicitations;
+#[path = "run_history/surreal.rs"]
+mod run_history;
+#[path = "supervisor/surreal.rs"]
+mod supervisor_records;
 use crate::uar::persistence::accounting;
 #[path = "ingestion_records/surreal.rs"]
 mod ingestion_records;
@@ -26,7 +28,6 @@ pub use host::HostSurrealBackend;
 mod approval_records;
 #[path = "checkpoint_records/surreal.rs"]
 mod checkpoint_records;
-use crate::uar::persistence::approval_decisions::ApprovalRecord;
 use crate::session::Session;
 use crate::uar::a2ui::presentations::{Presentation, PresentationDraft};
 use crate::uar::domain::knowledge::{
@@ -34,12 +35,12 @@ use crate::uar::domain::knowledge::{
 };
 use crate::uar::domain::prompt_caching::UserPromptCachingSettings;
 use crate::uar::domain::skills::{Skill, SkillMatch};
-use crate::uar::persistence::{DurableStoreEligibility, PersistenceLayer};
 use crate::uar::persistence::agent_instances::{AgentInstanceRecord, AgentInstanceStoreError};
 use crate::uar::persistence::agent_threads::{
     self, AgentThreadStoreError, CanonicalReceiptStoreError, CanonicalToolReceipt,
     PersistedAgentThread,
 };
+use crate::uar::persistence::approval_decisions::ApprovalRecord;
 use crate::uar::persistence::channel_observers::{
     ChannelInboxEntry, ChannelObserverStoreError, ChannelProjectionClass, ChannelSubscription,
 };
@@ -48,6 +49,7 @@ use crate::uar::persistence::observers::{
 };
 use crate::uar::persistence::presentations::{self, PresentationStoreError};
 use crate::uar::persistence::tool_admission::ToolAdmissionEvidence;
+use crate::uar::persistence::{DurableStoreEligibility, PersistenceLayer};
 use crate::uar::runtime::thread::{AgentEdge, AgentThread};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
@@ -119,10 +121,18 @@ impl SurrealEndpoint {
                 url: format!("wss://{}", remainder.unwrap_or_default()),
             },
             Some("ws") | Some("wss") => Self::Remote {
-                url: format!("{}://{}", scheme.as_deref().unwrap_or_default(), remainder.unwrap_or_default()),
+                url: format!(
+                    "{}://{}",
+                    scheme.as_deref().unwrap_or_default(),
+                    remainder.unwrap_or_default()
+                ),
             },
             Some(_) => Self::Remote {
-                url: format!("{}://{}", scheme.as_deref().unwrap_or_default(), remainder.unwrap_or_default()),
+                url: format!(
+                    "{}://{}",
+                    scheme.as_deref().unwrap_or_default(),
+                    remainder.unwrap_or_default()
+                ),
             },
             None => match trimmed.to_ascii_lowercase().as_str() {
                 "memory" | "mem" => Self::EmbeddedMemory,
@@ -202,8 +212,7 @@ fn existing_ancestor_identity(path: &Path) -> PathBuf {
         ancestor = parent;
     }
 
-    let mut identity = std::fs::canonicalize(ancestor)
-        .unwrap_or_else(|_| ancestor.to_path_buf());
+    let mut identity = std::fs::canonicalize(ancestor).unwrap_or_else(|_| ancestor.to_path_buf());
     for component in suffix.iter().rev() {
         identity.push(component);
     }
@@ -254,6 +263,8 @@ pub struct SurrealDbProvider {
     catalog_storage_backend: &'static str,
     remote_requires_durability_attestation: bool,
     session_changes: tokio::sync::watch::Sender<u64>,
+    // Owned SurrealKV admission and usage writes share mutable scope rows.
+    accounting_write_guard: Option<tokio::sync::Mutex<()>>,
 }
 
 impl SurrealDbProvider {
@@ -377,15 +388,13 @@ impl SurrealDbProvider {
             let result = match initialized {
                 Ok(Ok(())) => Ok(Self::from_initialized_owned_client(db, endpoint)),
                 Ok(Err(error)) => Err(shutdown_failed_owned_client(&db, error).await),
-                Err(_) => Err(
-                    shutdown_failed_owned_client(
-                        &db,
-                        anyhow::anyhow!(
-                            "SurrealDB provider initialization panicked after acquiring its client"
-                        ),
-                    )
-                    .await,
-                ),
+                Err(_) => Err(shutdown_failed_owned_client(
+                    &db,
+                    anyhow::anyhow!(
+                        "SurrealDB provider initialization panicked after acquiring its client"
+                    ),
+                )
+                .await),
             };
 
             // `send` returns the provider when the constructor waiter was
@@ -423,8 +432,8 @@ impl SurrealDbProvider {
         // attests it before the shared C06/C07/C08 SQL stores become eligible.
         let local_durable = matches!(endpoint, SurrealEndpoint::EmbeddedFile { .. });
         let remote = endpoint.is_remote();
-        let attested = std::env::var("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED")
-            .is_ok_and(|value| value == "1");
+        let attested =
+            std::env::var("UAR_REMOTE_SURREAL_DURABILITY_ATTESTED").is_ok_and(|value| value == "1");
         let durable_store_eligibility = if local_durable {
             DurableStoreEligibility::LocalDurable
         } else if remote && attested {
@@ -459,6 +468,7 @@ impl SurrealDbProvider {
             catalog_storage_backend,
             remote_requires_durability_attestation: remote && !attested,
             session_changes,
+            accounting_write_guard: local_durable.then(|| tokio::sync::Mutex::new(())),
         }
     }
 
@@ -477,7 +487,9 @@ impl SurrealDbProvider {
     pub fn subscribe_transport_state(
         &self,
     ) -> Result<tokio::sync::watch::Receiver<surrealdb::TransportState>> {
-        self.db.subscribe_transport_state().map_err(anyhow::Error::from)
+        self.db
+            .subscribe_transport_state()
+            .map_err(anyhow::Error::from)
     }
 
     /// The normalized endpoint selected for this provider.
@@ -920,77 +932,369 @@ impl SurrealDbProvider {
 
 #[async_trait]
 impl PersistenceLayer for SurrealDbProvider {
-    fn supports_durable_tool_receipts(&self) -> bool { self.durable_instances }
-    fn supports_durable_client_tools(&self) -> bool { self.durable_instances }
-    async fn create_client_tool_continuation(&self, row: &crate::uar::persistence::client_tools::ClientToolContinuation) -> Result<bool> { client_tools::create(self,row).await }
-    async fn load_client_tool_continuation(&self, owner: &str, tenant: Option<&str>, agent: &str, batch: &str) -> Result<Option<crate::uar::persistence::client_tools::ClientToolContinuation>> { client_tools::load(self,owner,tenant,agent,batch).await }
-    async fn load_client_tool_continuation_for_run(&self, owner: &str, tenant: Option<&str>, agent: &str, run: &str) -> Result<Option<crate::uar::persistence::client_tools::ClientToolContinuation>> { client_tools::load_for_run(self,owner,tenant,agent,run).await }
-    async fn load_client_tool_continuation_for_session(&self, owner: &str, tenant: Option<&str>, session: &str, batch: &str) -> Result<Option<crate::uar::persistence::client_tools::ClientToolContinuation>> { client_tools::load_for_session(self,owner,tenant,session,batch).await }
-    async fn compare_and_swap_client_tool_continuation(&self, before: &crate::uar::persistence::client_tools::ClientToolContinuation, after: &crate::uar::persistence::client_tools::ClientToolContinuation) -> Result<bool> { client_tools::transition(self,before,after).await }
-    fn supports_durable_mcp_elicitations(&self) -> bool { self.durable_instances }
-    async fn create_mcp_elicitation(&self, row: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord) -> Result<()> { mcp_elicitations::create(self,row).await }
-    async fn list_mcp_elicitations(&self, owner: &str, run: &str) -> Result<Vec<crate::uar::persistence::mcp_elicitations::McpElicitationRecord>> { mcp_elicitations::list(self,owner,run).await }
-    async fn compare_and_swap_mcp_elicitation(&self, before: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord, after: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord) -> Result<bool> { mcp_elicitations::transition(self,before,after).await }
-    fn supports_durable_agui_runs(&self) -> bool { self.durable_instances }
-    async fn create_agui_run(&self, row: &crate::uar::persistence::agui_runs::AguiRunBinding, previous: Option<&crate::uar::persistence::agui_runs::AguiRunBinding>) -> Result<bool> { agui_runs::create(self,row,previous).await }
-    async fn load_agui_run(&self, owner: &str, agent: &str, thread: &str, run: &str) -> Result<Option<crate::uar::persistence::agui_runs::AguiRunBinding>> { agui_runs::load(self,owner,agent,thread,run).await }
-    async fn list_agui_runs(&self, owner: &str, agent: &str, thread: &str) -> Result<Vec<crate::uar::persistence::agui_runs::AguiRunBinding>> { agui_runs::list(self,owner,agent,thread).await }
-    async fn compare_and_swap_agui_run(&self, before: &crate::uar::persistence::agui_runs::AguiRunBinding, after: &crate::uar::persistence::agui_runs::AguiRunBinding) -> Result<bool> { agui_runs::transition(self,before,after).await }
-    fn supports_durable_run_history(&self) -> bool { self.durable_instances }
-    async fn upsert_run_history_record(&self, record: &crate::uar::persistence::run_history::RunHistoryRecord) -> Result<()> { run_history::upsert_record(self,record).await }
-    async fn load_run_history_record(&self, run_id: &str) -> Result<Option<crate::uar::persistence::run_history::RunHistoryRecord>> { run_history::load_record(self,run_id).await }
-    async fn append_run_history_event(&self, event: &crate::uar::persistence::run_history::RunHistoryEvent) -> Result<()> { run_history::append_event(self,event).await }
-    async fn load_run_history_events(&self, run_id: &str) -> Result<Vec<crate::uar::persistence::run_history::RunHistoryEvent>> { run_history::load_events(self,run_id).await }
-    async fn bind_accounting_delegation(&self, link: &accounting::AccountingDelegation) -> Result<()> { accounting_records::bind_delegation(self,link).await }
-    async fn get_accounting_delegation(&self, digest: &str) -> Result<Option<accounting::AccountingCall>> { accounting_records::delegation(self,digest).await }
+    fn supports_durable_tool_receipts(&self) -> bool {
+        self.durable_instances
+    }
+    fn supports_durable_client_tools(&self) -> bool {
+        self.durable_instances
+    }
+    async fn create_client_tool_continuation(
+        &self,
+        row: &crate::uar::persistence::client_tools::ClientToolContinuation,
+    ) -> Result<bool> {
+        client_tools::create(self, row).await
+    }
+    async fn load_client_tool_continuation(
+        &self,
+        owner: &str,
+        tenant: Option<&str>,
+        agent: &str,
+        batch: &str,
+    ) -> Result<Option<crate::uar::persistence::client_tools::ClientToolContinuation>> {
+        client_tools::load(self, owner, tenant, agent, batch).await
+    }
+    async fn load_client_tool_continuation_for_run(
+        &self,
+        owner: &str,
+        tenant: Option<&str>,
+        agent: &str,
+        run: &str,
+    ) -> Result<Option<crate::uar::persistence::client_tools::ClientToolContinuation>> {
+        client_tools::load_for_run(self, owner, tenant, agent, run).await
+    }
+    async fn load_client_tool_continuation_for_session(
+        &self,
+        owner: &str,
+        tenant: Option<&str>,
+        session: &str,
+        batch: &str,
+    ) -> Result<Option<crate::uar::persistence::client_tools::ClientToolContinuation>> {
+        client_tools::load_for_session(self, owner, tenant, session, batch).await
+    }
+    async fn compare_and_swap_client_tool_continuation(
+        &self,
+        before: &crate::uar::persistence::client_tools::ClientToolContinuation,
+        after: &crate::uar::persistence::client_tools::ClientToolContinuation,
+    ) -> Result<bool> {
+        client_tools::transition(self, before, after).await
+    }
+    fn supports_durable_mcp_elicitations(&self) -> bool {
+        self.durable_instances
+    }
+    async fn create_mcp_elicitation(
+        &self,
+        row: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord,
+    ) -> Result<()> {
+        mcp_elicitations::create(self, row).await
+    }
+    async fn list_mcp_elicitations(
+        &self,
+        owner: &str,
+        run: &str,
+    ) -> Result<Vec<crate::uar::persistence::mcp_elicitations::McpElicitationRecord>> {
+        mcp_elicitations::list(self, owner, run).await
+    }
+    async fn compare_and_swap_mcp_elicitation(
+        &self,
+        before: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord,
+        after: &crate::uar::persistence::mcp_elicitations::McpElicitationRecord,
+    ) -> Result<bool> {
+        mcp_elicitations::transition(self, before, after).await
+    }
+    fn supports_durable_a2ui_actions(&self) -> bool {
+        self.durable_instances
+    }
+    async fn create_a2ui_action(
+        &self,
+        row: &crate::uar::persistence::a2ui_actions::A2uiActionReceipt,
+    ) -> Result<bool> {
+        a2ui_actions::create(self, row).await
+    }
+    async fn load_a2ui_action(
+        &self,
+        owner: &str,
+        agent: &str,
+        thread: &str,
+        interaction: &str,
+    ) -> Result<Option<crate::uar::persistence::a2ui_actions::A2uiActionReceipt>> {
+        a2ui_actions::load(self, owner, agent, thread, interaction).await
+    }
+    fn supports_durable_agui_runs(&self) -> bool {
+        self.durable_instances
+    }
+    async fn create_agui_run(
+        &self,
+        row: &crate::uar::persistence::agui_runs::AguiRunBinding,
+        previous: Option<&crate::uar::persistence::agui_runs::AguiRunBinding>,
+    ) -> Result<bool> {
+        agui_runs::create(self, row, previous).await
+    }
+    async fn load_agui_run(
+        &self,
+        owner: &str,
+        agent: &str,
+        thread: &str,
+        run: &str,
+    ) -> Result<Option<crate::uar::persistence::agui_runs::AguiRunBinding>> {
+        agui_runs::load(self, owner, agent, thread, run).await
+    }
+    async fn list_agui_runs(
+        &self,
+        owner: &str,
+        agent: &str,
+        thread: &str,
+    ) -> Result<Vec<crate::uar::persistence::agui_runs::AguiRunBinding>> {
+        agui_runs::list(self, owner, agent, thread).await
+    }
+    async fn compare_and_swap_agui_run(
+        &self,
+        before: &crate::uar::persistence::agui_runs::AguiRunBinding,
+        after: &crate::uar::persistence::agui_runs::AguiRunBinding,
+    ) -> Result<bool> {
+        agui_runs::transition(self, before, after).await
+    }
+    fn supports_durable_run_history(&self) -> bool {
+        self.durable_instances
+    }
+    async fn upsert_run_history_record(
+        &self,
+        record: &crate::uar::persistence::run_history::RunHistoryRecord,
+    ) -> Result<()> {
+        run_history::upsert_record(self, record).await
+    }
+    async fn list_conversation_run_history(
+        &self,
+        owner: &str,
+        conversation: &str,
+    ) -> Result<Vec<crate::uar::persistence::run_history::RunHistoryRecord>> {
+        anyhow::ensure!(self.durable_instances, "durable_run_history_unsupported");
+        // Legacy records lack conversation_id. Retain them as bounded candidates
+        // rather than silently claiming they contain no later surface mutation.
+        let mut response = self.db.query("SELECT VALUE data FROM durable_run_records WHERE owner_key=$owner AND (conversation_id=$conversation OR conversation_id=NONE) LIMIT 65")
+            .bind(("owner",owner.to_owned())).bind(("conversation",conversation.to_owned())).await?.check()?;
+        let rows: Vec<String> = response.take(0)?;
+        rows.iter()
+            .map(|data| {
+                let record: crate::uar::persistence::run_history::RunHistoryRecord =
+                    serde_json::from_str(data)?;
+                anyhow::ensure!(
+                    record.owner_key.as_deref() == Some(owner),
+                    "conversation_history_owner_conflict"
+                );
+                Ok(record)
+            })
+            .collect()
+    }
+    async fn load_run_history_record(
+        &self,
+        run_id: &str,
+    ) -> Result<Option<crate::uar::persistence::run_history::RunHistoryRecord>> {
+        run_history::load_record(self, run_id).await
+    }
+    async fn append_run_history_event(
+        &self,
+        event: &crate::uar::persistence::run_history::RunHistoryEvent,
+    ) -> Result<()> {
+        run_history::append_event(self, event).await
+    }
+    async fn load_run_history_events(
+        &self,
+        run_id: &str,
+    ) -> Result<Vec<crate::uar::persistence::run_history::RunHistoryEvent>> {
+        run_history::load_events(self, run_id).await
+    }
+    async fn bind_accounting_delegation(
+        &self,
+        link: &accounting::AccountingDelegation,
+    ) -> Result<()> {
+        accounting_records::bind_delegation(self, link).await
+    }
+    async fn get_accounting_delegation(
+        &self,
+        digest: &str,
+    ) -> Result<Option<accounting::AccountingCall>> {
+        accounting_records::delegation(self, digest).await
+    }
 
-    async fn reconcile_a2a_cancellation(&self, owner: &str, user: &str, agent: &str, task: &str) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> { a2a_bindings::reconcile_cancellation(self,owner,user,agent,task).await }
-    fn supports_durable_a2a_bindings(&self) -> bool { self.durable_instances }
-    async fn create_a2a_binding(&self, record: &crate::uar::api::a2a::durable::A2aBinding) -> Result<bool> { a2a_bindings::create(self, record).await }
-    async fn load_a2a_binding(&self, owner: &str, agent: &str, task: &str) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> { a2a_bindings::load(self, owner, agent, task).await }
-    async fn compare_and_swap_a2a_binding(&self, before: &crate::uar::api::a2a::durable::A2aBinding, after: &crate::uar::api::a2a::durable::A2aBinding) -> Result<bool> { a2a_bindings::transition(self, before, after).await }
-    async fn list_a2a_bindings(&self, owner: &str, agent: &str) -> Result<Vec<crate::uar::api::a2a::durable::A2aBinding>> { a2a_bindings::list(self, owner, agent).await }
+    async fn reconcile_a2a_cancellation(
+        &self,
+        owner: &str,
+        user: &str,
+        agent: &str,
+        task: &str,
+    ) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> {
+        a2a_bindings::reconcile_cancellation(self, owner, user, agent, task).await
+    }
+    fn supports_durable_a2a_bindings(&self) -> bool {
+        self.durable_instances
+    }
+    async fn create_a2a_binding(
+        &self,
+        record: &crate::uar::api::a2a::durable::A2aBinding,
+    ) -> Result<bool> {
+        a2a_bindings::create(self, record).await
+    }
+    async fn load_a2a_binding(
+        &self,
+        owner: &str,
+        agent: &str,
+        task: &str,
+    ) -> Result<Option<crate::uar::api::a2a::durable::A2aBinding>> {
+        a2a_bindings::load(self, owner, agent, task).await
+    }
+    async fn compare_and_swap_a2a_binding(
+        &self,
+        before: &crate::uar::api::a2a::durable::A2aBinding,
+        after: &crate::uar::api::a2a::durable::A2aBinding,
+    ) -> Result<bool> {
+        a2a_bindings::transition(self, before, after).await
+    }
+    async fn list_a2a_bindings(
+        &self,
+        owner: &str,
+        agent: &str,
+    ) -> Result<Vec<crate::uar::api::a2a::durable::A2aBinding>> {
+        a2a_bindings::list(self, owner, agent).await
+    }
 
-    fn supports_durable_accounting(&self) -> bool { self.durable_instances }
+    fn supports_durable_accounting(&self) -> bool {
+        self.durable_instances
+    }
     fn durable_store_eligibility(&self) -> DurableStoreEligibility {
         self.durable_store_eligibility
     }
-    async fn admit_remote_grant(&self, owner: &str, accounting_id: &str,
+    async fn admit_remote_grant(
+        &self,
+        owner: &str,
+        accounting_id: &str,
         grant: &crate::uar::api::a2a::contract::UarUsageGrant,
-        activity: accounting::RemoteGrantActivity) -> Result<accounting::RemoteGrantState> {
+        activity: accounting::RemoteGrantActivity,
+    ) -> Result<accounting::RemoteGrantState> {
         accounting_remote_grants::admit(self, owner, accounting_id, grant, activity).await
     }
-    async fn ensure_accounting_scope(&self, id: &accounting::ScopeIdentity, limits: &accounting::ScopeLimits) -> Result<accounting::AccountingScope> { accounting_records::ensure(self,id,limits).await }
-    async fn get_accounting_scope(&self, id: &accounting::ScopeIdentity) -> Result<Option<accounting::AccountingScope>> { accounting_records::scope(self,id).await }
-    async fn update_accounting_scope(&self, change: &accounting::ScopeUpdate) -> Result<accounting::AccountingScope> { accounting_records::update(self,change).await }
-    async fn admit_accounting_call(&self, admission: &accounting::CallAdmission) -> Result<accounting::AccountingCall> { accounting_records::admit(self,admission).await }
-    async fn record_accounting_usage(&self, usage: &accounting::CallUsage) -> Result<accounting::AccountingCall> { accounting_records::usage(self,usage).await }
-    async fn list_accounting_calls(&self, owner: &str, run: &str) -> Result<Vec<accounting::AccountingCall>> { accounting_records::list(self,owner,run).await }
+    async fn ensure_accounting_scope(
+        &self,
+        id: &accounting::ScopeIdentity,
+        limits: &accounting::ScopeLimits,
+    ) -> Result<accounting::AccountingScope> {
+        accounting_records::ensure(self, id, limits).await
+    }
+    async fn get_accounting_scope(
+        &self,
+        id: &accounting::ScopeIdentity,
+    ) -> Result<Option<accounting::AccountingScope>> {
+        accounting_records::scope(self, id).await
+    }
+    async fn update_accounting_scope(
+        &self,
+        change: &accounting::ScopeUpdate,
+    ) -> Result<accounting::AccountingScope> {
+        accounting_records::update(self, change).await
+    }
+    async fn admit_accounting_call(
+        &self,
+        admission: &accounting::CallAdmission,
+    ) -> Result<accounting::AccountingCall> {
+        accounting_records::admit(self, admission).await
+    }
+    async fn record_accounting_usage(
+        &self,
+        usage: &accounting::CallUsage,
+    ) -> Result<accounting::AccountingCall> {
+        accounting_records::usage(self, usage).await
+    }
+    async fn list_accounting_calls(
+        &self,
+        owner: &str,
+        run: &str,
+    ) -> Result<Vec<accounting::AccountingCall>> {
+        accounting_records::list(self, owner, run).await
+    }
 
-    fn supports_durable_ingestion(&self) -> bool { self.durable_instances }
-    async fn accept_ingestion(&self, document: &KnowledgeDocument, source: &[u8]) -> Result<IngestionJob> { ingestion_records::accept(self, document, source).await }
-    async fn discover_ingestion(&self, limit: usize) -> Result<Vec<IngestionJob>> { ingestion_records::discover(self, limit).await }
-    async fn next_ingestion_due_at(&self) -> Result<Option<i64>> { ingestion_records::next_due_at(self).await }
-    async fn get_ingestion_job(&self, owner: &str, document: &str) -> Result<Option<IngestionJob>> { ingestion_records::get(self, owner, document).await }
-    async fn get_ingestion_source(&self, job: &IngestionJob) -> Result<Option<Vec<u8>>> { ingestion_records::source(self, job).await }
-    async fn transition_ingestion(&self, before: &IngestionJob, after: &IngestionJob) -> Result<bool> { ingestion_records::transition(self, before, after).await }
-    async fn publish_ingestion(&self, job: &IngestionJob, publication: &IngestionPublication) -> Result<()> { ingestion_records::publish(self, job, publication).await }
-    async fn reconcile_ingestion(&self) -> Result<()> { ingestion_records::reconcile(self).await }
-    async fn begin_knowledge_regeneration(&self, owner: &str, kb: &str,
-        target: &crate::uar::domain::knowledge::EmbeddingFingerprint)
-        -> Result<crate::uar::domain::knowledge::KnowledgeRegeneration> {
+    fn supports_durable_ingestion(&self) -> bool {
+        self.durable_instances
+    }
+    async fn accept_ingestion(
+        &self,
+        document: &KnowledgeDocument,
+        source: &[u8],
+    ) -> Result<IngestionJob> {
+        ingestion_records::accept(self, document, source).await
+    }
+    async fn discover_ingestion(&self, limit: usize) -> Result<Vec<IngestionJob>> {
+        ingestion_records::discover(self, limit).await
+    }
+    async fn next_ingestion_due_at(&self) -> Result<Option<i64>> {
+        ingestion_records::next_due_at(self).await
+    }
+    async fn get_ingestion_job(&self, owner: &str, document: &str) -> Result<Option<IngestionJob>> {
+        ingestion_records::get(self, owner, document).await
+    }
+    async fn get_ingestion_source(&self, job: &IngestionJob) -> Result<Option<Vec<u8>>> {
+        ingestion_records::source(self, job).await
+    }
+    async fn transition_ingestion(
+        &self,
+        before: &IngestionJob,
+        after: &IngestionJob,
+    ) -> Result<bool> {
+        ingestion_records::transition(self, before, after).await
+    }
+    async fn publish_ingestion(
+        &self,
+        job: &IngestionJob,
+        publication: &IngestionPublication,
+    ) -> Result<()> {
+        ingestion_records::publish(self, job, publication).await
+    }
+    async fn reconcile_ingestion(&self) -> Result<()> {
+        ingestion_records::reconcile(self).await
+    }
+    async fn begin_knowledge_regeneration(
+        &self,
+        owner: &str,
+        kb: &str,
+        target: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<crate::uar::domain::knowledge::KnowledgeRegeneration> {
         ingestion_records::begin_regeneration(self, owner, kb, target).await
     }
-    async fn search_knowledge_scoped_in_space(&self, owner: &str, ids: &[&str], query: &[f32],
-        limit: usize, min_score: f32, space: &crate::uar::domain::knowledge::EmbeddingFingerprint)
-        -> Result<Vec<KnowledgeMatch>> {
-        ingestion_records::search_in_space(self, owner, Some(ids), query, limit, min_score, Some(space)).await
+    async fn search_knowledge_scoped_in_space(
+        &self,
+        owner: &str,
+        ids: &[&str],
+        query: &[f32],
+        limit: usize,
+        min_score: f32,
+        space: &crate::uar::domain::knowledge::EmbeddingFingerprint,
+    ) -> Result<Vec<KnowledgeMatch>> {
+        ingestion_records::search_in_space(
+            self,
+            owner,
+            Some(ids),
+            query,
+            limit,
+            min_score,
+            Some(space),
+        )
+        .await
     }
 
-    fn supports_durable_approvals(&self) -> bool { self.durable_instances }
-    async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> { approval_records::create(self, record).await }
-    async fn transition_approval_record(&self, before: &ApprovalRecord, after: &ApprovalRecord) -> Result<bool> { approval_records::transition(self, before, after).await }
-    async fn list_approval_records(&self, owner: &str, run: &str) -> Result<Vec<ApprovalRecord>> { approval_records::list(self, owner, run).await }
+    fn supports_durable_approvals(&self) -> bool {
+        self.durable_instances
+    }
+    async fn create_approval_record(&self, record: &ApprovalRecord) -> Result<()> {
+        approval_records::create(self, record).await
+    }
+    async fn transition_approval_record(
+        &self,
+        before: &ApprovalRecord,
+        after: &ApprovalRecord,
+    ) -> Result<bool> {
+        approval_records::transition(self, before, after).await
+    }
+    async fn list_approval_records(&self, owner: &str, run: &str) -> Result<Vec<ApprovalRecord>> {
+        approval_records::list(self, owner, run).await
+    }
 
     fn channel_observer_unavailable_reason(&self) -> &'static str {
         if self.remote_requires_durability_attestation {
@@ -1011,56 +1315,112 @@ impl PersistenceLayer for SurrealDbProvider {
         if !self.durable_instances {
             return Err(ChannelObserverStoreError::Unsupported.into());
         }
-        let key = agent_instance_key(&record.owner_id, &record.workspace_id, &record.subscription_id);
-        self.db.query("CREATE type::record('channel_observer_subscriptions', $key) CONTENT $payload")
+        let key = agent_instance_key(
+            &record.owner_id,
+            &record.workspace_id,
+            &record.subscription_id,
+        );
+        self.db
+            .query("CREATE type::record('channel_observer_subscriptions', $key) CONTENT $payload")
             .bind(("key", key))
-            .bind(("payload", serde_json::json!({
-                "owner_id": record.owner_id,
-                "workspace_id": record.workspace_id,
-                "subscription_id": record.subscription_id,
-                "revision": record.revision as i64,
-                "data": serde_json::to_string(record)?,
-            })))
-            .await?.check()?;
+            .bind((
+                "payload",
+                serde_json::json!({
+                    "owner_id": record.owner_id,
+                    "workspace_id": record.workspace_id,
+                    "subscription_id": record.subscription_id,
+                    "revision": record.revision as i64,
+                    "data": serde_json::to_string(record)?,
+                }),
+            ))
+            .await?
+            .check()?;
         Ok(record.clone())
     }
 
-    async fn load_channel_subscription(&self, owner: &str, workspace: &str, id: &str) -> Result<Option<ChannelSubscription>> {
-        if !self.durable_instances { return Err(ChannelObserverStoreError::Unsupported.into()); }
+    async fn load_channel_subscription(
+        &self,
+        owner: &str,
+        workspace: &str,
+        id: &str,
+    ) -> Result<Option<ChannelSubscription>> {
+        if !self.durable_instances {
+            return Err(ChannelObserverStoreError::Unsupported.into());
+        }
         let key = agent_instance_key(owner, workspace, id);
-        let mut response = self.db.query("SELECT VALUE data FROM type::record('channel_observer_subscriptions', $key)")
-            .bind(("key", key)).await?.check()?;
+        let mut response = self
+            .db
+            .query("SELECT VALUE data FROM type::record('channel_observer_subscriptions', $key)")
+            .bind(("key", key))
+            .await?
+            .check()?;
         let rows: Vec<String> = response.take(0)?;
-        let record = rows.into_iter().next().map(|data| serde_json::from_str::<ChannelSubscription>(&data)).transpose()?;
-        if record.as_ref().is_some_and(|value| value.owner_id != owner || value.workspace_id != workspace || value.subscription_id != id) {
+        let record = rows
+            .into_iter()
+            .next()
+            .map(|data| serde_json::from_str::<ChannelSubscription>(&data))
+            .transpose()?;
+        if record.as_ref().is_some_and(|value| {
+            value.owner_id != owner
+                || value.workspace_id != workspace
+                || value.subscription_id != id
+        }) {
             return Err(ChannelObserverStoreError::ScopeMismatch.into());
         }
         Ok(record)
     }
 
-    async fn list_channel_subscriptions(&self, owner: &str, workspace: &str) -> Result<Vec<ChannelSubscription>> {
-        if !self.durable_instances { return Err(ChannelObserverStoreError::Unsupported.into()); }
+    async fn list_channel_subscriptions(
+        &self,
+        owner: &str,
+        workspace: &str,
+    ) -> Result<Vec<ChannelSubscription>> {
+        if !self.durable_instances {
+            return Err(ChannelObserverStoreError::Unsupported.into());
+        }
         let mut response = self.db.query("SELECT VALUE data FROM channel_observer_subscriptions WHERE owner_id = $owner AND workspace_id = $workspace")
             .bind(("owner", owner.to_owned())).bind(("workspace", workspace.to_owned())).await?.check()?;
         let rows: Vec<String> = response.take(0)?;
-        let mut records = rows.into_iter().map(|data| serde_json::from_str::<ChannelSubscription>(&data).map_err(Into::into)).collect::<Result<Vec<_>>>()?;
-        if records.iter().any(|value| value.owner_id != owner || value.workspace_id != workspace) {
+        let mut records = rows
+            .into_iter()
+            .map(|data| serde_json::from_str::<ChannelSubscription>(&data).map_err(Into::into))
+            .collect::<Result<Vec<_>>>()?;
+        if records
+            .iter()
+            .any(|value| value.owner_id != owner || value.workspace_id != workspace)
+        {
             return Err(ChannelObserverStoreError::ScopeMismatch.into());
         }
         records.sort_by(|left, right| left.subscription_id.cmp(&right.subscription_id));
         Ok(records)
     }
 
-    async fn compare_and_swap_channel_subscription(&self, before: &ChannelSubscription, after: &ChannelSubscription) -> Result<bool> {
-        if !self.durable_instances { return Err(ChannelObserverStoreError::Unsupported.into()); }
-        if before.owner_id != after.owner_id || before.workspace_id != after.workspace_id
-            || before.subscription_id != after.subscription_id || before.profile != after.profile
-            || before.observer_instance_id != after.observer_instance_id || before.source != after.source
-            || before.grant_issuer != after.grant_issuer || before.grant_id != after.grant_id
-            || before.created_at != after.created_at || after.revision != before.revision + 1 {
+    async fn compare_and_swap_channel_subscription(
+        &self,
+        before: &ChannelSubscription,
+        after: &ChannelSubscription,
+    ) -> Result<bool> {
+        if !self.durable_instances {
+            return Err(ChannelObserverStoreError::Unsupported.into());
+        }
+        if before.owner_id != after.owner_id
+            || before.workspace_id != after.workspace_id
+            || before.subscription_id != after.subscription_id
+            || before.profile != after.profile
+            || before.observer_instance_id != after.observer_instance_id
+            || before.source != after.source
+            || before.grant_issuer != after.grant_issuer
+            || before.grant_id != after.grant_id
+            || before.created_at != after.created_at
+            || after.revision != before.revision + 1
+        {
             return Err(ChannelObserverStoreError::ScopeMismatch.into());
         }
-        let key = agent_instance_key(&before.owner_id, &before.workspace_id, &before.subscription_id);
+        let key = agent_instance_key(
+            &before.owner_id,
+            &before.workspace_id,
+            &before.subscription_id,
+        );
         let mut response = self.db.query("UPDATE type::record('channel_observer_subscriptions', $key) CONTENT $payload WHERE owner_id = $owner AND workspace_id = $workspace AND revision = $revision AND data = $old_data RETURN AFTER")
             .bind(("key", key)).bind(("owner", before.owner_id.clone())).bind(("workspace", before.workspace_id.clone()))
             .bind(("revision", before.revision as i64)).bind(("old_data", serde_json::to_string(before)?))
@@ -1070,73 +1430,153 @@ impl PersistenceLayer for SurrealDbProvider {
         Ok(rows.len() == 1)
     }
 
-    async fn create_channel_inbox_entry(&self, record: &ChannelInboxEntry) -> Result<ChannelInboxEntry> {
-        if !self.durable_instances { return Err(ChannelObserverStoreError::Unsupported.into()); }
-        let key = agent_instance_key(&record.owner_id, &record.workspace_id, &format!("{}:{}", record.subscription_id, record.delivery_id));
+    async fn create_channel_inbox_entry(
+        &self,
+        record: &ChannelInboxEntry,
+    ) -> Result<ChannelInboxEntry> {
+        if !self.durable_instances {
+            return Err(ChannelObserverStoreError::Unsupported.into());
+        }
+        let key = agent_instance_key(
+            &record.owner_id,
+            &record.workspace_id,
+            &format!("{}:{}", record.subscription_id, record.delivery_id),
+        );
         let response = self.db.query("BEGIN TRANSACTION; LET $old = (SELECT * FROM type::record('channel_observer_inbox', $key))[0]; IF $old != NONE { THROW 'uar_channel_delivery_exists'; }; CREATE type::record('channel_observer_inbox', $key) CONTENT $payload; COMMIT TRANSACTION;")
             .bind(("key", key))
             .bind(("payload", serde_json::json!({"owner_id": record.owner_id, "workspace_id": record.workspace_id, "subscription_id": record.subscription_id, "delivery_id": record.delivery_id, "data": serde_json::to_string(record)?})))
             .await?;
         let mut response = response;
         let errors = response.take_errors();
-        if errors.values().any(|error| error.to_string().contains("uar_channel_delivery_exists")) {
-            let existing = self.load_channel_inbox_entry(&record.owner_id, &record.workspace_id, &record.subscription_id, &record.delivery_id).await?;
+        if errors
+            .values()
+            .any(|error| error.to_string().contains("uar_channel_delivery_exists"))
+        {
+            let existing = self
+                .load_channel_inbox_entry(
+                    &record.owner_id,
+                    &record.workspace_id,
+                    &record.subscription_id,
+                    &record.delivery_id,
+                )
+                .await?;
             return existing.ok_or_else(|| ChannelObserverStoreError::Conflict.into());
         }
-        if let Some((_, error)) = errors.into_iter().next() { return Err(error.into()); }
+        if let Some((_, error)) = errors.into_iter().next() {
+            return Err(error.into());
+        }
         Ok(record.clone())
     }
 
-    async fn load_channel_inbox_entry(&self, owner: &str, workspace: &str, subscription: &str, delivery: &str) -> Result<Option<ChannelInboxEntry>> {
-        if !self.durable_instances { return Err(ChannelObserverStoreError::Unsupported.into()); }
+    async fn load_channel_inbox_entry(
+        &self,
+        owner: &str,
+        workspace: &str,
+        subscription: &str,
+        delivery: &str,
+    ) -> Result<Option<ChannelInboxEntry>> {
+        if !self.durable_instances {
+            return Err(ChannelObserverStoreError::Unsupported.into());
+        }
         let key = agent_instance_key(owner, workspace, &format!("{subscription}:{delivery}"));
-        let mut response = self.db.query("SELECT VALUE data FROM type::record('channel_observer_inbox', $key)")
-            .bind(("key", key)).await?.check()?;
+        let mut response = self
+            .db
+            .query("SELECT VALUE data FROM type::record('channel_observer_inbox', $key)")
+            .bind(("key", key))
+            .await?
+            .check()?;
         let rows: Vec<String> = response.take(0)?;
-        let record = rows.into_iter().next().map(|data| serde_json::from_str::<ChannelInboxEntry>(&data)).transpose()?;
-        if record.as_ref().is_some_and(|value| value.owner_id != owner || value.workspace_id != workspace || value.subscription_id != subscription || value.delivery_id != delivery) {
+        let record = rows
+            .into_iter()
+            .next()
+            .map(|data| serde_json::from_str::<ChannelInboxEntry>(&data))
+            .transpose()?;
+        if record.as_ref().is_some_and(|value| {
+            value.owner_id != owner
+                || value.workspace_id != workspace
+                || value.subscription_id != subscription
+                || value.delivery_id != delivery
+        }) {
             return Err(ChannelObserverStoreError::ScopeMismatch.into());
         }
         Ok(record)
     }
 
-    async fn list_channel_inbox_entries(&self, owner: &str, workspace: &str, subscription: &str) -> Result<Vec<ChannelInboxEntry>> {
-        if !self.durable_instances { return Err(ChannelObserverStoreError::Unsupported.into()); }
+    async fn list_channel_inbox_entries(
+        &self,
+        owner: &str,
+        workspace: &str,
+        subscription: &str,
+    ) -> Result<Vec<ChannelInboxEntry>> {
+        if !self.durable_instances {
+            return Err(ChannelObserverStoreError::Unsupported.into());
+        }
         let mut response = self.db.query("SELECT VALUE data FROM channel_observer_inbox WHERE owner_id = $owner AND workspace_id = $workspace AND subscription_id = $subscription")
             .bind(("owner", owner.to_owned())).bind(("workspace", workspace.to_owned()))
             .bind(("subscription", subscription.to_owned())).await?.check()?;
         let rows: Vec<String> = response.take(0)?;
-        let mut records = rows.into_iter().map(|data| serde_json::from_str::<ChannelInboxEntry>(&data).map_err(Into::into)).collect::<Result<Vec<_>>>()?;
-        if records.iter().any(|record| record.owner_id != owner || record.workspace_id != workspace || record.subscription_id != subscription) {
+        let mut records = rows
+            .into_iter()
+            .map(|data| serde_json::from_str::<ChannelInboxEntry>(&data).map_err(Into::into))
+            .collect::<Result<Vec<_>>>()?;
+        if records.iter().any(|record| {
+            record.owner_id != owner
+                || record.workspace_id != workspace
+                || record.subscription_id != subscription
+        }) {
             return Err(ChannelObserverStoreError::ScopeMismatch.into());
         }
-        records.sort_by(|left, right| left.admitted_at.cmp(&right.admitted_at).then_with(|| left.delivery_id.cmp(&right.delivery_id)));
+        records.sort_by(|left, right| {
+            left.admitted_at
+                .cmp(&right.admitted_at)
+                .then_with(|| left.delivery_id.cmp(&right.delivery_id))
+        });
         Ok(records)
     }
 
-    async fn compare_and_swap_channel_inbox_entry(&self, before: &ChannelInboxEntry, after: &ChannelInboxEntry) -> Result<bool> {
-        if !self.durable_instances { return Err(ChannelObserverStoreError::Unsupported.into()); }
-        if before.owner_id != after.owner_id || before.workspace_id != after.workspace_id
-            || before.subscription_id != after.subscription_id || before.delivery_id != after.delivery_id
-            || before.occurrence_id != after.occurrence_id || before.native_message_id != after.native_message_id
-            || before.source_tenant_id != after.source_tenant_id || before.subscriber_cursor_id != after.subscriber_cursor_id
-            || before.route_id != after.route_id || before.route_revision != after.route_revision
-            || before.binding_revision != after.binding_revision || before.policy_revision != after.policy_revision
-            || before.original_actor != after.original_actor || before.original_principal != after.original_principal
-            || before.payload_sha256 != after.payload_sha256 || before.admitted_at != after.admitted_at
+    async fn compare_and_swap_channel_inbox_entry(
+        &self,
+        before: &ChannelInboxEntry,
+        after: &ChannelInboxEntry,
+    ) -> Result<bool> {
+        if !self.durable_instances {
+            return Err(ChannelObserverStoreError::Unsupported.into());
+        }
+        if before.owner_id != after.owner_id
+            || before.workspace_id != after.workspace_id
+            || before.subscription_id != after.subscription_id
+            || before.delivery_id != after.delivery_id
+            || before.occurrence_id != after.occurrence_id
+            || before.native_message_id != after.native_message_id
+            || before.source_tenant_id != after.source_tenant_id
+            || before.subscriber_cursor_id != after.subscriber_cursor_id
+            || before.route_id != after.route_id
+            || before.route_revision != after.route_revision
+            || before.binding_revision != after.binding_revision
+            || before.policy_revision != after.policy_revision
+            || before.original_actor != after.original_actor
+            || before.original_principal != after.original_principal
+            || before.payload_sha256 != after.payload_sha256
+            || before.admitted_at != after.admitted_at
             || before.classification != after.classification
             || (before.text_projection.is_some() && before.text_projection != after.text_projection)
-            || (after.classification == ChannelProjectionClass::MetadataOnly && after.text_projection.is_some())
+            || (after.classification == ChannelProjectionClass::MetadataOnly
+                && after.text_projection.is_some())
             || after.text_projection.as_ref().is_some_and(|text| {
                 Sha256::digest(text.as_bytes())
                     .iter()
                     .map(|byte| format!("{byte:02x}"))
                     .collect::<String>()
                     != after.payload_sha256
-            }) {
+            })
+        {
             return Err(ChannelObserverStoreError::ScopeMismatch.into());
         }
-        let key = agent_instance_key(&before.owner_id, &before.workspace_id, &format!("{}:{}", before.subscription_id, before.delivery_id));
+        let key = agent_instance_key(
+            &before.owner_id,
+            &before.workspace_id,
+            &format!("{}:{}", before.subscription_id, before.delivery_id),
+        );
         let mut response = self.db.query("UPDATE type::record('channel_observer_inbox', $key) CONTENT $payload WHERE owner_id = $owner AND workspace_id = $workspace AND data = $old_data RETURN AFTER")
             .bind(("key", key)).bind(("owner", before.owner_id.clone())).bind(("workspace", before.workspace_id.clone()))
             .bind(("old_data", serde_json::to_string(before)?))
@@ -2070,8 +2510,14 @@ impl PersistenceLayer for SurrealDbProvider {
         let failures = response.take_errors();
         // A cancelled transaction can place NotExecuted before the deliberate
         // refusal. Never let duplicate-evidence readback mask a closed epoch.
-        if failures.values().any(|error| error.to_string().contains("supervisor_epoch_closed")) {
-            return Err(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::ExecutorClosed.into());
+        if failures
+            .values()
+            .any(|error| error.to_string().contains("supervisor_epoch_closed"))
+        {
+            return Err(
+                crate::uar::persistence::checkpoint_resume::CheckpointResumeError::ExecutorClosed
+                    .into(),
+            );
         }
         match failures.is_empty() {
             true => Ok(evidence.clone()),
@@ -2119,23 +2565,34 @@ impl PersistenceLayer for SurrealDbProvider {
         &self,
         idle_timeout: chrono::Duration,
     ) -> Result<Option<chrono::DateTime<chrono::Utc>>> {
-        if idle_timeout < chrono::Duration::zero() { return Ok(None); }
-        let mut response = self.db.query("SELECT VALUE last_activity FROM sessions").await?;
+        if idle_timeout < chrono::Duration::zero() {
+            return Ok(None);
+        }
+        let mut response = self
+            .db
+            .query("SELECT VALUE last_activity FROM sessions")
+            .await?;
         let values: Vec<surrealdb::types::Value> = response.take(0)?;
         let now = chrono::Utc::now();
-        Ok(values.into_iter().filter_map(|value| {
-            let json = surreal_to_json(value).ok()?;
-            let text = json.as_str()?;
-            let activity = chrono::DateTime::parse_from_rfc3339(text).ok()?.with_timezone(&chrono::Utc);
-            let deadline = activity + idle_timeout;
-            (deadline > now).then_some(deadline)
-        }).min())
+        Ok(values
+            .into_iter()
+            .filter_map(|value| {
+                let json = surreal_to_json(value).ok()?;
+                let text = json.as_str()?;
+                let activity = chrono::DateTime::parse_from_rfc3339(text)
+                    .ok()?
+                    .with_timezone(&chrono::Utc);
+                let deadline = activity + idle_timeout;
+                (deadline > now).then_some(deadline)
+            })
+            .min())
     }
 
     async fn save_session(&self, session: &Session) -> Result<()> {
         let key = crate::uar::persistence::session_storage_key(session.owner_id(), session.id());
         let payload = tenant_record_payload(session, session.id())?;
-        let _: Option<surrealdb::types::Value> = self.db.upsert(("sessions", key)).content(payload).await?;
+        let _: Option<surrealdb::types::Value> =
+            self.db.upsert(("sessions", key)).content(payload).await?;
         self.session_changes.send_modify(|generation| {
             *generation = generation.saturating_add(1);
         });
@@ -2146,11 +2603,18 @@ impl PersistenceLayer for SurrealDbProvider {
         let key = crate::uar::persistence::session_storage_key(owner_id, id);
         if let Some(value) = self.fetch_one("sessions", &key).await? {
             let session: Session = from_db_value(restore_tenant_record_id(value))?;
-            anyhow::ensure!(session.owner_id() == owner_id && session.id() == id, "Session partition mismatch");
+            anyhow::ensure!(
+                session.owner_id() == owner_id && session.id() == id,
+                "Session partition mismatch"
+            );
             return Ok(Some(session));
         }
-        if owner_id != crate::session::ANONYMOUS_SESSION_OWNER { return Ok(None); }
-        let Some(legacy) = self.fetch_one("sessions", id).await? else { return Ok(None); };
+        if owner_id != crate::session::ANONYMOUS_SESSION_OWNER {
+            return Ok(None);
+        }
+        let Some(legacy) = self.fetch_one("sessions", id).await? else {
+            return Ok(None);
+        };
         let session: Session = from_db_value(legacy)?;
         if session.owner_id() != crate::session::ANONYMOUS_SESSION_OWNER || session.id() != id {
             return Ok(None);
@@ -2178,16 +2642,22 @@ impl PersistenceLayer for SurrealDbProvider {
     }
 
     async fn delete_session(&self, owner_id: &str, id: &str) -> Result<bool> {
-        if self.load_session(owner_id, id).await?.is_none() { return Ok(false); }
+        if self.load_session(owner_id, id).await?.is_none() {
+            return Ok(false);
+        }
         let key = crate::uar::persistence::session_storage_key(owner_id, id);
         let _: Option<surrealdb::types::Value> = self.db.delete(("sessions", key)).await?;
         // Accounting and tool evidence have independent host lifecycles. A
         // session identifier alone cannot authorize their deletion.
         if owner_id == crate::session::ANONYMOUS_SESSION_OWNER {
-            self.delete_tenant_record("conversation_policies", owner_id, id).await?;
+            self.delete_tenant_record("conversation_policies", owner_id, id)
+                .await?;
         } else {
             let key = crate::uar::persistence::tenant_storage_key(owner_id, id);
-            let _: Option<surrealdb::types::Value> = self.db.delete(("principal_conversation_policies", key)).await?;
+            let _: Option<surrealdb::types::Value> = self
+                .db
+                .delete(("principal_conversation_policies", key))
+                .await?;
         }
         self.session_changes.send_modify(|generation| {
             *generation = generation.saturating_add(1);
@@ -2217,13 +2687,10 @@ impl PersistenceLayer for SurrealDbProvider {
             let Some(owner_id) = json.get("owner_id").and_then(|v| v.as_str()) else {
                 continue;
             };
-            let Some(last_activity_str) =
-                json.get("last_activity").and_then(|v| v.as_str())
-            else {
+            let Some(last_activity_str) = json.get("last_activity").and_then(|v| v.as_str()) else {
                 continue;
             };
-            let Ok(last_activity) = chrono::DateTime::parse_from_rfc3339(last_activity_str)
-            else {
+            let Ok(last_activity) = chrono::DateTime::parse_from_rfc3339(last_activity_str) else {
                 continue;
             };
             if last_activity < cutoff {
@@ -2235,11 +2702,7 @@ impl PersistenceLayer for SurrealDbProvider {
                     .get("logical_id")
                     .and_then(|v| v.as_str())
                     .map(str::to_string)
-                    .or_else(|| {
-                        json.get("id")
-                            .and_then(|v| v.as_str())
-                            .map(str::to_string)
-                    });
+                    .or_else(|| json.get("id").and_then(|v| v.as_str()).map(str::to_string));
                 if let Some(session_id) = session_id {
                     expired.push((owner_id.to_string(), session_id));
                 }
@@ -2282,7 +2745,11 @@ impl PersistenceLayer for SurrealDbProvider {
             return Ok(None);
         };
         let record: crate::uar::domain::policy::ConversationPolicyRecord = from_db_value(legacy)?;
-        if record.owner_id != crate::session::ANONYMOUS_SESSION_OWNER || record.conversation_id != conversation_id { return Ok(None); }
+        if record.owner_id != crate::session::ANONYMOUS_SESSION_OWNER
+            || record.conversation_id != conversation_id
+        {
+            return Ok(None);
+        }
         self.save_conversation_policy(&record).await?;
         let _: Option<surrealdb::types::Value> = self
             .db
@@ -2442,11 +2909,8 @@ impl PersistenceLayer for SurrealDbProvider {
             "enabled": enabled,
             "scoped_config": scoped_config,
         }))?;
-        let updated: Option<surrealdb::types::Value> = self
-            .db
-            .update(("skills", skill_id))
-            .merge(fields)
-            .await?;
+        let updated: Option<surrealdb::types::Value> =
+            self.db.update(("skills", skill_id)).merge(fields).await?;
         Ok(updated.is_some())
     }
 
@@ -2525,7 +2989,14 @@ impl PersistenceLayer for SurrealDbProvider {
         {
             anyhow::bail!("knowledge document is not accessible to chunk owner");
         }
-        ingestion_records::save_member(self, "knowledge_chunks", &chunk.owner_id, &chunk.kb_id, &chunk.id.to_string(), chunk)
+        ingestion_records::save_member(
+            self,
+            "knowledge_chunks",
+            &chunk.owner_id,
+            &chunk.kb_id,
+            &chunk.id.to_string(),
+            chunk,
+        )
         .await
     }
 
@@ -2536,7 +3007,8 @@ impl PersistenceLayer for SurrealDbProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
-        ingestion_records::search_in_space(self, owner_id, None, query_vec, limit, min_score, None).await
+        ingestion_records::search_in_space(self, owner_id, None, query_vec, limit, min_score, None)
+            .await
     }
 
     // Agent Persistence
@@ -2616,12 +3088,21 @@ impl PersistenceLayer for SurrealDbProvider {
     // A host using PersistenceLayer alone has not attached MemoryService.
     // Report this capability honestly instead of acknowledging a lost write.
     async fn save_memory(&self, _memory: &crate::uar::domain::memory::Memory) -> Result<()> {
-        anyhow::bail!("memory_service_required: attach the runtime MemoryService before saving memory")
+        anyhow::bail!(
+            "memory_service_required: attach the runtime MemoryService before saving memory"
+        )
     }
 
-    async fn search_memory(&self, _agent_id: Option<&str>, _query_vec: &[f32],
-        _limit: usize, _min_score: f32) -> Result<Vec<crate::uar::domain::memory::MemoryMatch>> {
-        anyhow::bail!("memory_service_required: attach the runtime MemoryService before searching memory")
+    async fn search_memory(
+        &self,
+        _agent_id: Option<&str>,
+        _query_vec: &[f32],
+        _limit: usize,
+        _min_score: f32,
+    ) -> Result<Vec<crate::uar::domain::memory::MemoryMatch>> {
+        anyhow::bail!(
+            "memory_service_required: attach the runtime MemoryService before searching memory"
+        )
     }
 
     // =========================================================================
@@ -2692,7 +3173,16 @@ impl PersistenceLayer for SurrealDbProvider {
         limit: usize,
         min_score: f32,
     ) -> Result<Vec<KnowledgeMatch>> {
-        ingestion_records::search_in_space(self, owner_id, Some(kb_ids), query_vec, limit, min_score, None).await
+        ingestion_records::search_in_space(
+            self,
+            owner_id,
+            Some(kb_ids),
+            query_vec,
+            limit,
+            min_score,
+            None,
+        )
+        .await
     }
 
     // =========================================================================
@@ -2707,8 +3197,15 @@ impl PersistenceLayer for SurrealDbProvider {
         {
             anyhow::bail!("knowledge base is not accessible to document owner");
         }
-        ingestion_records::save_member(self, "knowledge_documents", &doc.owner_id, &doc.kb_id, &doc.id, doc)
-            .await
+        ingestion_records::save_member(
+            self,
+            "knowledge_documents",
+            &doc.owner_id,
+            &doc.kb_id,
+            &doc.id,
+            doc,
+        )
+        .await
     }
 
     async fn get_document(&self, owner_id: &str, id: &str) -> Result<Option<KnowledgeDocument>> {
@@ -2866,18 +3363,19 @@ impl PersistenceLayer for SurrealDbProvider {
     }
 
     async fn upsert_setting(&self, setting: &crate::uar::settings::schema::Settings) -> Result<()> {
-        // Validate data against the leaf property schema extracted from the parent type.
-        // Setting keys are dotted: `server.port` → type key `server`, property key `port`.
-        // We validate `data` against `type.schema.properties.port` (leaf schema), not
-        // the root type schema (which is type:object) — leaf values are primitives.
-        let type_key = setting.key.split('.').next().unwrap_or("unknown");
-        let leaf_key = setting.key.splitn(2, '.').nth(1).unwrap_or(&setting.key);
+        // The built-in skill-matching engine owns a dotted namespace.
+        // Keep other dotted leaves on their original schemas, even when
+        // a settings extension registers a longer prefix.
+        let (type_key, leaf_key) = if setting.key == "skills.matching.engine" {
+            ("skills.matching", "engine")
+        } else {
+            (
+                setting.key.split('.').next().unwrap_or("unknown"),
+                setting.key.splitn(2, '.').nth(1).unwrap_or(&setting.key),
+            )
+        };
         if let Some(st) = self.get_settings_type(type_key).await? {
-            // Try to resolve the leaf-level property schema from the type's schema.
-            // Setting keys are dotted: `server.port` → leaf key `port`.
-            // We validate only if a matching property schema exists; otherwise skip.
-            // This avoids false failures when types use a namespace-level schema without
-            // a 1:1 property-per-setting mapping (e.g. knowledge_bases.named_keys).
+            // Free-form leaves need not have a corresponding property schema.
             if let Some(leaf_schema) = st
                 .schema
                 .get("properties")
@@ -3082,27 +3580,70 @@ impl PersistenceLayer for SurrealDbProvider {
     // Checkpoint Persistence
     // =========================================================================
 
-    async fn register_supervisor_domain(&self, registration: &crate::uar::runtime::supervisor::SupervisorRegistration) -> Result<()> { supervisor_records::register(self,registration).await }
-    async fn load_supervisor_domain(&self, epoch: &str) -> Result<Option<crate::uar::runtime::supervisor::SupervisorRegistration>> { supervisor_records::load_domain(self,epoch).await }
-    async fn create_supervisor_challenge(&self, challenge: &crate::uar::runtime::supervisor::SupervisorChallenge) -> Result<()> { supervisor_records::create_challenge(self,challenge).await }
-    async fn load_supervisor_challenge(&self, id: &str) -> Result<Option<crate::uar::runtime::supervisor::SupervisorChallenge>> { supervisor_records::load_challenge(self,id).await }
-    async fn commit_supervisor_checkpoint_exclusion(&self, proof: &crate::uar::runtime::supervisor::VerifiedSupervisorExclusion) -> Result<()> { supervisor_records::checkpoint_exclusion(self,proof).await }
+    async fn register_supervisor_domain(
+        &self,
+        registration: &crate::uar::runtime::supervisor::SupervisorRegistration,
+    ) -> Result<()> {
+        supervisor_records::register(self, registration).await
+    }
+    async fn load_supervisor_domain(
+        &self,
+        epoch: &str,
+    ) -> Result<Option<crate::uar::runtime::supervisor::SupervisorRegistration>> {
+        supervisor_records::load_domain(self, epoch).await
+    }
+    async fn create_supervisor_challenge(
+        &self,
+        challenge: &crate::uar::runtime::supervisor::SupervisorChallenge,
+    ) -> Result<()> {
+        supervisor_records::create_challenge(self, challenge).await
+    }
+    async fn load_supervisor_challenge(
+        &self,
+        id: &str,
+    ) -> Result<Option<crate::uar::runtime::supervisor::SupervisorChallenge>> {
+        supervisor_records::load_challenge(self, id).await
+    }
+    async fn commit_supervisor_checkpoint_exclusion(
+        &self,
+        proof: &crate::uar::runtime::supervisor::VerifiedSupervisorExclusion,
+    ) -> Result<()> {
+        supervisor_records::checkpoint_exclusion(self, proof).await
+    }
 
-    fn supports_durable_checkpoint_resume(&self) -> bool { self.durable_instances }
+    fn supports_durable_checkpoint_resume(&self) -> bool {
+        self.durable_instances
+    }
 
-    async fn save_resumable_checkpoint(&self, envelope: &crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope) -> Result<()> {
+    async fn save_resumable_checkpoint(
+        &self,
+        envelope: &crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope,
+    ) -> Result<()> {
         checkpoint_records::save(self, envelope).await
     }
 
-    async fn load_checkpoint_resume(&self, owner: &str, run: &str, checkpoint: &str) -> Result<Option<crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope>> {
+    async fn load_checkpoint_resume(
+        &self,
+        owner: &str,
+        run: &str,
+        checkpoint: &str,
+    ) -> Result<Option<crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope>> {
         checkpoint_records::load(self, owner, run, checkpoint).await
     }
 
-    async fn list_checkpoint_resumes(&self, owner: &str, run: &str) -> Result<Vec<crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope>> {
+    async fn list_checkpoint_resumes(
+        &self,
+        owner: &str,
+        run: &str,
+    ) -> Result<Vec<crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope>> {
         checkpoint_records::list(self, owner, run).await
     }
 
-    async fn claim_checkpoint_resume(&self, envelope: &crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope, claim: &crate::uar::persistence::checkpoint_resume::CheckpointContinuationClaim) -> Result<crate::uar::persistence::checkpoint_resume::CheckpointClaimOutcome> {
+    async fn claim_checkpoint_resume(
+        &self,
+        envelope: &crate::uar::persistence::checkpoint_resume::CheckpointResumeEnvelope,
+        claim: &crate::uar::persistence::checkpoint_resume::CheckpointContinuationClaim,
+    ) -> Result<crate::uar::persistence::checkpoint_resume::CheckpointClaimOutcome> {
         checkpoint_records::claim(self, envelope, claim).await
     }
 
@@ -3114,7 +3655,12 @@ impl PersistenceLayer for SurrealDbProvider {
         &self,
         checkpoint: &crate::uar::runtime::checkpoint::Checkpoint,
     ) -> Result<()> {
-        if !self.durable_instances { return Err(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()); }
+        if !self.durable_instances {
+            return Err(
+                crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported
+                    .into(),
+            );
+        }
         checkpoint.validate_integrity()?;
         let mut payload = to_db_value(checkpoint)?;
         // Store a redundant `_cp_id` field so list queries can recover the id
@@ -3138,7 +3684,12 @@ impl PersistenceLayer for SurrealDbProvider {
         &self,
         id: &str,
     ) -> Result<Option<crate::uar::runtime::checkpoint::Checkpoint>> {
-        if !self.durable_instances { return Err(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()); }
+        if !self.durable_instances {
+            return Err(
+                crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported
+                    .into(),
+            );
+        }
         let raw = self.fetch_one("checkpoints", id).await?;
         match raw {
             None => Ok(None),
@@ -3160,7 +3711,12 @@ impl PersistenceLayer for SurrealDbProvider {
         &self,
         run_id: &str,
     ) -> Result<Vec<crate::uar::runtime::checkpoint::Checkpoint>> {
-        if !self.durable_instances { return Err(crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported.into()); }
+        if !self.durable_instances {
+            return Err(
+                crate::uar::persistence::checkpoint_resume::CheckpointResumeError::Unsupported
+                    .into(),
+            );
+        }
         let run_id_owned = run_id.to_string();
         let mut res = self
             .db
@@ -3434,10 +3990,17 @@ fn surreal_value_to_settings_type(
 // Older key-addressed rows lack logical IDs. Preserve a deterministic identity
 // across reads, while new writes retain their actual UUID and foreign key.
 fn settings_uuid(value: Option<&serde_json::Value>, namespace: &str, key: &str) -> uuid::Uuid {
-    if let Some(id) = value.and_then(serde_json::Value::as_str).and_then(|id| uuid::Uuid::parse_str(id).ok()) { return id; }
+    if let Some(id) = value
+        .and_then(serde_json::Value::as_str)
+        .and_then(|id| uuid::Uuid::parse_str(id).ok())
+    {
+        return id;
+    }
     let digest = Sha256::digest(format!("uar-settings:{namespace}:{key}").as_bytes());
-    let mut bytes = [0u8; 16]; bytes.copy_from_slice(&digest[..16]);
-    bytes[6] = (bytes[6] & 0x0f) | 0x80; bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    let mut bytes = [0u8; 16];
+    bytes.copy_from_slice(&digest[..16]);
+    bytes[6] = (bytes[6] & 0x0f) | 0x80;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
     uuid::Uuid::from_bytes(bytes)
 }
 
@@ -3475,7 +4038,13 @@ fn surreal_value_to_setting(
 
     Ok(crate::uar::settings::schema::Settings {
         id: settings_uuid(obj.get("logical_id"), "setting", &key),
-        settings_type_id: settings_uuid(obj.get("settings_type_id"), "type", obj.get("settings_type_key").and_then(V::as_str).unwrap_or_else(|| key.split('.').next().unwrap_or(""))),
+        settings_type_id: settings_uuid(
+            obj.get("settings_type_id"),
+            "type",
+            obj.get("settings_type_key")
+                .and_then(V::as_str)
+                .unwrap_or_else(|| key.split('.').next().unwrap_or("")),
+        ),
         name,
         key,
         data,
@@ -3658,7 +4227,10 @@ mod tests {
         let now = chrono::Utc::now().to_rfc3339();
         let chunk_id = uuid::Uuid::new_v4();
 
-        for owner in ["v1:k:issuer:i:7:fixture:local:s:5:alice", "v1:k:issuer:i:7:fixture:local:s:3:bob"] {
+        for owner in [
+            "v1:k:issuer:i:7:fixture:local:s:5:alice",
+            "v1:k:issuer:i:7:fixture:local:s:3:bob",
+        ] {
             let kb = KnowledgeBase {
                 id: "shared-kb-id".into(),
                 owner_id: owner.into(),
@@ -3699,7 +4271,10 @@ mod tests {
             provider.save_chunk(&chunk).await.expect("save chunk");
         }
 
-        for owner in ["v1:k:issuer:i:7:fixture:local:s:5:alice", "v1:k:issuer:i:7:fixture:local:s:3:bob"] {
+        for owner in [
+            "v1:k:issuer:i:7:fixture:local:s:5:alice",
+            "v1:k:issuer:i:7:fixture:local:s:3:bob",
+        ] {
             let kb = provider
                 .get_knowledge_base(owner, "shared-kb-id")
                 .await
@@ -3891,4 +4466,3 @@ mod tests {
         }
     }
 }
-

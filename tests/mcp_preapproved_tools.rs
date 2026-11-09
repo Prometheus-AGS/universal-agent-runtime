@@ -26,7 +26,7 @@ use universal_agent_runtime::{
     uar::{
         defaults,
         domain::{events::NormalizedEvent as RunEvent, policy::ToolApprovalPolicy},
-        rag::embeddings::{EmbeddingBackend, UnavailableEmbeddingBackend},
+        rag::embeddings::{EmbeddingBackend, UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend},
         runtime::{
             manager::{RunManager, StreamEvent},
             matching::VectorMatcher,
@@ -186,7 +186,10 @@ async fn start_run(
             Arc::new(registry),
             SessionStore::new(),
             Arc::new(RwLock::new(SkillRegistry::new(None, None))),
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await

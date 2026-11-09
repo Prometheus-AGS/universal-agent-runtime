@@ -1,0 +1,7 @@
+# Plain-component and native-cache refusal fixtures
+
+These are source inputs and expected oracles, not executed receipts. `cases.json` records provenance and finite cases. `reference.wasm` is copied unchanged from the existing pinned skill pack reference component; its expected hash comes from the pack's `substrate/exec-tier-w/versions.toml`, not from an untrusted cache manifest. The Rust/WIT source remains in that pack rather than being forked here.
+
+The module tests in `src/uar/runtime/skills/wasm_runtime.rs` consume these files. The reference has an isolated empty kv-store; its four marker booleans should be false. `malformed.wasm` is plain text that must fail source compilation. `untrusted.cwasm` is deliberately invalid native input: all native-cache inputs must be refused before deserialization, including a file that claims a compatible version in adjacent user-controlled JSON. The renamed-native case authors ELF-like bytes under a `.wasm` filename and requires the safe compiler to refuse them.
+
+No stale serialized artifact was generated, no Wasmtime/Cargo/build ran, and no native cache was deserialized while authoring these fixtures. Refusal of all `.cwasm` inputs is the current policy; no successful AOT compatibility or governed tool-policy acceptance is claimed. Existing compiled fixture provenance, actual component execution, and denied governed effects are distinct evidence obligations.

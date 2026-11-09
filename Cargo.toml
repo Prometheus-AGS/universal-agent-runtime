@@ -5,12 +5,10 @@ exclude = [
   ".claude/worktrees",
   "vendor/crates/esaxx-rs",
   "vendor/patches/gemm-common-0.19.0",
-  "vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0",
-  "vendor/patches/surrealdb-lifecycle/surrealdb-engine-api-3.3.0",
-  "vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-3.3.0",
-  "vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0",
-  "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-3.3.0",
-  "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-rocksdb-3.3.0",
+  "vendor/patches/surrealdb-lifecycle/surrealdb-4.0.0",
+  "vendor/patches/surrealdb-lifecycle/surrealdb-core-4.0.0",
+  "vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-4.0.0",
+  "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-4.0.0",
   "vendor/git/prometheus-parking-lot-rs",
   "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-core",
   "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-runtime-tokio",
@@ -38,14 +36,12 @@ gemm-common = { path = "vendor/patches/gemm-common-0.19.0" }
 # /MD. The local source copy applies upstream PR #19's one-line runtime fix so
 # the production sidecar links against one MSVC runtime.
 esaxx-rs = { path = "vendor/crates/esaxx-rs" }
-# The pinned SDK has no awaited datastore-close contract. These source patches
-# retain the 3.3.0 base and expose host-owned admission and completion evidence.
-surrealdb = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-3.3.0" }
-surrealdb-engine-api = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-engine-api-3.3.0" }
-surrealdb-engine-local = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-3.3.0" }
-surrealdb-core = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-core-3.3.0" }
-surrealdb-kvs-surrealkv = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-3.3.0" }
-surrealdb-kvs-rocksdb = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-rocksdb-3.3.0" }
+# The 4.0.0 overlays preserve host-owned admission, explicit remote recovery,
+# worker settlement and durability failure reporting across the SDK boundary.
+surrealdb = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-4.0.0" }
+surrealdb-core = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-core-4.0.0" }
+surrealdb-engine-local = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-4.0.0" }
+surrealdb-kvs-surrealkv = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-4.0.0" }
 
 [workspace.dependencies]
 jsonwebtoken = { version = "=11.1.0", default-features = false, features = ["rust_crypto"] }
@@ -59,7 +55,7 @@ libc = "=0.2.191"
 
 [package]
 name = "universal-agent-runtime"
-version = "1.4.0-rc.2"
+version = "1.4.0-rc.3"
 edition = "2024"
 license = "MIT"
 
@@ -561,10 +557,9 @@ schemars = "1"
 arc-swap = "1.9"
 # Optional HashiCorp Vault KV-v2 source, gated behind the `vault` feature.
 vaultrs = { version = "0.8", optional = true }
-## Pinned to =3.3.0 (exact) so UAR, librefang, surreal-memory, and the deployed
-## SurrealDB server remain on the same verified release baseline. The curated
-## surreal-memory manifest carries the matching exact SDK and schema-type pins.
-surrealdb = { version = "=3.3.0", optional = true, features = ["kv-surrealkv"] }
+## Align the embedded SDK and the curated surreal-memory schema types.
+## Preserve the parse API previously supplied by the SDK's default features.
+surrealdb = { version = "=4.0.0", optional = true, features = ["kv-surrealkv", "parse"] }
 jsonschema = { version = "0.49.4", default-features = false }
 governor = { version = "0.10.4", features = ["std", "jitter", "quanta"] }
 nonzero_ext = "0.3.0"
@@ -643,6 +638,11 @@ utoipa-swagger-ui = { version = "10", optional = true, features = ["axum", "vend
 
 # Leptos SSR (minimal templating)
 
+
+[[example]]
+name = "production_mcp_peer"
+path = "examples/production_mcp_peer.rs"
+required-features = ["server"]
 
 # Lints (M-STATIC-VERIFICATION)
 [lints.rust]

@@ -123,6 +123,9 @@ When('I ask the agent to render its calculator', async ({ page, scenario: s }) =
   assert.equal(artifacts.length, 1, 'Require genuine published A2UI artifact');
   assert.equal(artifacts[0].value.metadata?.sourceTool, 'a2ui_render');
   assert.equal(artifacts[0].value.metadata?.publication_status, 'published');
+  s.publishedGenerations = artifacts[0].value.metadata?.surface_generations;
+  assert.equal(typeof s.publishedGenerations?.['parcel-calculator'], 'string', 'Native publication must carry its own generation');
+  assert.ok(s.publishedGenerations['parcel-calculator']);
   s.evidence.source_run_id = s.initial.runId;
 });
 
@@ -150,6 +153,10 @@ When('I enter a fresh number and press the rendered calculate button', async ({ 
   assert.equal(body.name, 'calculate_parcel');
   assert.equal(body.a2uiClientDataModel?.[body.surfaceId]?.parcel, String(s.number));
   assert.equal(ack.status, 'continued');
+  assert.ok(body.interaction_id && body.surface_generation, "The browser must persist a protected logical intent");
+  assert.equal(body.surface_generation, s.publishedGenerations[body.surfaceId], "Click must retain the displayed publication generation");
+  assert.equal(ack.interaction_id, body.interaction_id);
+  assert.equal(ack.retry_protected, true);
   assert.equal(ack.run_id, s.initial.runId);
   assert.ok(ack.continuation_run_id && ack.continuation_run_id !== ack.run_id);
   s.continuation = await stream(s, await continuation());
@@ -172,4 +179,89 @@ Then('the agent answers using that browser input and its saved instructions', as
   s.evidence.continuation_run_id = s.continuation.runId;
   s.evidence.result = 'VERIFIED';
   await page.screenshot({ path: resolve(process.env.UAR_BROWSER_EVIDENCE_DIR, 'continued-answer.png'), fullPage: true });
+});
+
+When('the calculator action is admitted but its browser response is lost', async ({ page, scenario: s }) => {
+  s.number = randomInt(100, 900);
+  s.actionPosts = [];
+  page.on('request', request => {
+    if (request.method() === 'POST' && /\/api\/uar\/runs\/[^/]+\/a2ui\/actions$/.test(new URL(request.url()).pathname)) s.actionPosts.push(request.postDataJSON());
+  });
+  let complete;
+  const admission = new Promise((resolve, reject) => { complete = { resolve, reject }; });
+  await page.route(/\/api\/uar\/runs\/[^/]+\/a2ui\/actions$/, async route => {
+    try {
+      s.lostAction = route.request().postDataJSON();
+      assert.ok(s.lostAction.interaction_id && s.lostAction.surface_generation);
+      assert.equal(s.lostAction.surface_generation, s.publishedGenerations[s.lostAction.surfaceId]);
+      const response = await route.fetch();
+      assert.equal(response.status(), 202);
+      s.lostAck = await response.json();
+      assert.equal(s.lostAck.interaction_id, s.lostAction.interaction_id);
+      assert.equal(s.lostAck.retry_protected, true);
+      await route.abort('failed');
+      complete.resolve();
+    } catch (error) { complete.reject(error); }
+  }, { times: 1 });
+  await s.surface.getByRole('textbox', { name: 'Parcel number', exact: true }).fill(String(s.number));
+  await s.surface.getByRole('button', { name: 'Calculate parcel', exact: true }).click();
+  await admission;
+  await expect(page.getByText('Action outcome is unconfirmed. Do not submit again.', { exact: true })).toBeVisible();
+  s.evidence.lost_action = { request: s.lostAction, acknowledgment: s.lostAck };
+});
+Then('recovering that action reads its original receipt without another action POST', async ({ page, scenario: s }) => {
+  const recovered = observeResponse(page, r => r.request().method() === 'GET'
+    && new URL(r.url()).pathname === `/api/uar/runs/${s.initial.runId}/a2ui/actions/${s.lostAction.interaction_id}`);
+  await page.getByRole('button', { name: 'Recover action status', exact: true }).click();
+  const response = await recovered();
+  assert.equal(response.status(), 202);
+  const receipt = await response.json();
+  assert.equal(receipt.interaction_id, s.lostAction.interaction_id);
+  assert.equal(receipt.continuation_run_id, s.lostAck.continuation_run_id);
+  assert.equal(receipt.retry_protected, true);
+  await expect(page.getByText('Response complete', { exact: true })).toBeVisible({ timeout: 180_000 });
+  assert.equal(s.actionPosts.length, 1, 'Recovery must never create another logical effect');
+  s.evidence.recovered_action = { receipt, action_posts: s.actionPosts.length };
+});
+
+
+When('the same source publishes a newer calculator while the original control remains displayed', async ({ page, scenario: s }) => {
+  s.actionPosts = [];
+  page.on('request', request => {
+    if (request.method() === 'POST' && /\/api\/uar\/runs\/[^/]+\/a2ui\/actions$/.test(new URL(request.url()).pathname)) s.actionPosts.push(request.postDataJSON());
+  });
+  const original = await api(s, 'GET', `/api/uar/runs/${s.initial.runId}/a2ui/surface-authority`);
+  assert.equal(original.authoritative, true);
+  assert.equal(original.status, 'complete');
+  const g1 = original.surfaces.find(row => row.surface_id === 'parcel-calculator');
+  assert.equal(g1?.surface_generation, s.publishedGenerations['parcel-calculator']);
+  // Genuine publication through the mounted source-owned route, without faking
+  // browser authority. IDs/action stay identical; only the data publication changes.
+  const publication = await api(s, 'POST', `/api/uar/runs/${s.initial.runId}/a2ui/messages`, {
+    messages: [{ version: 'v0.9.1', updateDataModel: { surfaceId: 'parcel-calculator', path: '/', value: { parcel: 'new-publication' } } }],
+  }, 202);
+  assert.equal(publication.status, 'published');
+  const latest = await api(s, 'GET', `/api/uar/runs/${s.initial.runId}/a2ui/surface-authority`);
+  assert.equal(latest.authoritative, true);
+  assert.equal(latest.status, 'complete');
+  const g2 = latest.surfaces.find(row => row.surface_id === 'parcel-calculator');
+  assert.equal(g2?.source_run_id, s.initial.runId);
+  assert.ok(g2?.surface_generation && g2.surface_generation !== g1.surface_generation, 'An update must advance the publication generation');
+  s.evidence.stale_publication = { original: g1, latest: g2, publication };
+  await expect(s.surface.getByRole('textbox', { name: 'Parcel number', exact: true })).toHaveValue('');
+  await expect(s.surface.getByRole('button', { name: 'Calculate parcel', exact: true })).toBeEnabled();
+});
+
+Then('pressing the original calculator refuses the stale generation without an action POST', async ({ page, scenario: s }) => {
+  const authority = observeResponse(page, response => response.request().method() === 'GET'
+    && new URL(response.url()).pathname === `/api/uar/runs/${s.initial.runId}/a2ui/surface-authority`);
+  await s.surface.getByRole('button', { name: 'Calculate parcel', exact: true }).click();
+  const latest = await (await authority()).json();
+  assert.equal(latest.surfaces.find(row => row.surface_id === 'parcel-calculator')?.surface_generation,
+    s.evidence.stale_publication.latest.surface_generation);
+  await expect(s.surface.getByText('This surface has changed. Request a fresh surface before acting.', { exact: true })).toBeVisible();
+  await expect(s.surface.getByRole('button', { name: 'Calculate parcel', exact: true })).toBeDisabled();
+  assert.equal(s.actionPosts.length, 0, 'Old control/context must never be relabeled and POSTed as the new generation');
+  s.evidence.stale_publication.action_posts = s.actionPosts.length;
+  await page.screenshot({ path: resolve(process.env.UAR_BROWSER_EVIDENCE_DIR, 'stale-publication-refused.png'), fullPage: true });
 });

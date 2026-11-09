@@ -1,4 +1,6 @@
-use crate::uar::rag::embeddings::{EmbeddingBackend, EmbeddingConfig, EmbeddingError};
+use crate::uar::rag::embeddings::{
+    EmbeddingBackend, EmbeddingBatch, EmbeddingConfig, EmbeddingError, EmbeddingTokenUsage,
+};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -57,8 +59,15 @@ impl EmbeddingBackend for CohereEmbeddingBackend {
     }
 
     async fn embed(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+        Ok(self.embed_with_usage(texts).await?.vectors)
+    }
+
+    async fn embed_with_usage(&self, texts: &[&str]) -> Result<EmbeddingBatch, EmbeddingError> {
         if texts.is_empty() {
-            return Ok(vec![]);
+            return Ok(EmbeddingBatch {
+                vectors: Vec::new(),
+                usage: EmbeddingTokenUsage::default(),
+            });
         }
 
         let body = CohereRequest {
@@ -75,25 +84,55 @@ impl EmbeddingBackend for CohereEmbeddingBackend {
             .json(&body)
             .send()
             .await
-            .map_err(|e| EmbeddingError::RequestFailed(format!("HTTP request failed: {e}")))?;
+            .map_err(|_| {
+                EmbeddingError::RequestFailed("Embedding provider transport failed".into())
+            })?;
 
         let status = resp.status();
         if !status.is_success() {
-            let text = resp
-                .text()
-                .await
-                .unwrap_or_else(|_| "<unreadable>".to_string());
             return Err(EmbeddingError::RequestFailed(format!(
-                "Cohere returned {status}: {text}"
+                "Embedding provider returned HTTP {}",
+                status.as_u16()
             )));
         }
 
-        let resp: CohereResponse = resp
-            .json()
-            .await
-            .map_err(|e| EmbeddingError::RequestFailed(format!("failed to parse response: {e}")))?;
+        let resp: CohereResponse = resp.json().await.map_err(|_| {
+            EmbeddingError::RequestFailed(
+                "Embedding provider returned invalid JSON or fields".into(),
+            )
+        })?;
 
-        Ok(resp.embeddings.float.unwrap_or_default())
+        let vectors = resp.embeddings.float.ok_or_else(|| {
+            EmbeddingError::RequestFailed("Embedding provider omitted float vectors".into())
+        })?;
+        if vectors.len() != texts.len() {
+            return Err(EmbeddingError::RequestFailed(
+                "Embedding provider returned an incomplete batch".into(),
+            ));
+        }
+        for vector in &vectors {
+            if vector.len() != self.vector_dimension {
+                return Err(EmbeddingError::DimensionMismatch {
+                    expected: self.vector_dimension,
+                    actual: vector.len(),
+                });
+            }
+            if vector.iter().any(|value| !value.is_finite()) {
+                return Err(EmbeddingError::RequestFailed(
+                    "Embedding provider returned a non-finite vector".into(),
+                ));
+            }
+        }
+        Ok(EmbeddingBatch {
+            vectors,
+            usage: EmbeddingTokenUsage {
+                billed_input_tokens: resp
+                    .meta
+                    .and_then(|meta| meta.billed_units)
+                    .and_then(|units| units.input_tokens),
+                ..EmbeddingTokenUsage::default()
+            },
+        })
     }
 }
 
@@ -110,6 +149,18 @@ struct CohereRequest {
 #[derive(Deserialize)]
 struct CohereResponse {
     embeddings: CohereEmbeddings,
+    #[serde(default)]
+    meta: Option<CohereMeta>,
+}
+
+#[derive(Deserialize)]
+struct CohereMeta {
+    billed_units: Option<CohereBilledUnits>,
+}
+
+#[derive(Deserialize)]
+struct CohereBilledUnits {
+    input_tokens: Option<u64>,
 }
 
 #[derive(Deserialize)]

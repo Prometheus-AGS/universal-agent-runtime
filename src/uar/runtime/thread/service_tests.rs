@@ -2,9 +2,11 @@
 
 use super::*;
 use crate::config::{A2aConfig, A2aPeerConfig, LlmConfig, SecurityConfig};
+use crate::llm::registry::{ModelConfig, ModelPricingIdentity, ProtocolSetting, ProviderConfig};
 use crate::llm::{
     DestinationRequestPreparation, DestinationRequestPreparations, EndpointRequestProfile,
-    EndpointRequestTransform, ExternalDriverStream, LlmDriver, LlmRequest,
+    EndpointRequestTransform, ExternalDriverStream, LiterLlmDriver, LlmDriver, LlmRequest,
+    PreparedFinalWireBudget, ProviderRegistry,
 };
 use crate::uar::persistence::accounting::{
     AccountingCall, AccountingScope, AccountingState, ScopeIdentity,
@@ -21,7 +23,7 @@ use crate::uar::runtime::prompt::{
 use crate::uar::runtime::thread::actor_host::{ActorRootBinding, ActorThreadSession};
 use crate::uar::runtime::{
     actor::messages::ActorOwner, manager::RunManager, matching::VectorMatcher,
-    skills::SkillRegistry,
+    skills::service::{SkillMatchingAlgorithm, SkillMatchingConfig, SkillMatchingEngine, SkillService},
 };
 use axum::response::IntoResponse;
 use futures::FutureExt;
@@ -29,6 +31,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 const MODEL: &str = "openai/gpt-4o-mini";
+const FIXTURE_CONTEXT_TOKENS: u32 = 960;
 const WAIT: Duration = Duration::from_secs(10);
 
 async fn bounded<T>(operation: &str, future: impl std::future::Future<Output = T>) -> T {
@@ -37,14 +40,38 @@ async fn bounded<T>(operation: &str, future: impl std::future::Future<Output = T
         .unwrap_or_else(|_| panic!("{operation} exceeded the fixture deadline"))
 }
 
-#[derive(Default)]
 struct HoldingDriver {
+    // The stream remains deliberately held for thread-lifecycle assertions.
+    // This captured Liter binding is used only to prepare the same final wire
+    // representation that durable accounting reserves before that hold begins.
+    prepared: LiterLlmDriver,
     ready: tokio::sync::Notify,
     request: std::sync::Mutex<Option<LlmRequest>>,
 }
 
+impl HoldingDriver {
+    fn new(config: &LlmConfig) -> anyhow::Result<Self> {
+        Ok(Self {
+            prepared: LiterLlmDriver::new(
+                crate::config::build_client_config(config),
+                config.model.clone(),
+                config.parallel_tool_calls,
+            )?,
+            ready: tokio::sync::Notify::new(),
+            request: std::sync::Mutex::new(None),
+        })
+    }
+}
+
 #[async_trait::async_trait]
 impl LlmDriver for HoldingDriver {
+    fn prepared_final_wire_budget(
+        &self,
+        request: &LlmRequest,
+    ) -> anyhow::Result<PreparedFinalWireBudget> {
+        self.prepared.prepared_final_wire_budget(request)
+    }
+
     async fn stream(&self, request: LlmRequest) -> anyhow::Result<ExternalDriverStream> {
         assert!(
             self.request.lock().unwrap().replace(request).is_none(),
@@ -229,7 +256,7 @@ fn preparation(endpoint: &str) -> Arc<DestinationRequestPreparations> {
             destination_model: MODEL.into(),
             destination_endpoint_fingerprint: fingerprint,
             limits: DestinationLimits {
-                context_tokens: 960,
+                context_tokens: i64::from(FIXTURE_CONTEXT_TOKENS),
                 independent_input_tokens: Some(928),
                 host_input_tokens: None,
                 output_tokens: 32,
@@ -458,22 +485,61 @@ impl Harness {
         );
         resources.provider = Some(provider.clone());
         let persistence: Arc<dyn PersistenceLayer> = provider.clone();
-        let driver = Arc::new(HoldingDriver::default());
+        let llm_config = LlmConfig {
+            model: MODEL.into(),
+            resolved_provider_id: Some("openai".into()),
+            base_url: Some(endpoint.clone()),
+            api_key: Some(String::new()),
+            ..LlmConfig::default()
+        };
+        let driver = Arc::new(HoldingDriver::new(&llm_config)?);
         let preparations = preparation(&endpoint);
+        let skill_service = Arc::new(SkillService::new(Some(persistence.clone()), None));
+        skill_service
+            .set_matching_config(SkillMatchingConfig {
+                engine: SkillMatchingEngine::Service,
+                algorithm: SkillMatchingAlgorithm::Keyword,
+                ..SkillMatchingConfig::default()
+            })
+            .await;
+        let (provider_id, model_id) = MODEL.split_once('/').expect("qualified fixture model");
+        let providers = Arc::new(ProviderRegistry::new());
+        providers
+            .register(ProviderConfig {
+                id: provider_id.into(),
+                display_name: "Remote admission fixture".into(),
+                base_url: endpoint.clone(),
+                api_key: llm_config.api_key.clone(),
+                protocol: ProtocolSetting::Chat,
+                default_model: Some(model_id.into()),
+                models: vec![ModelConfig {
+                    id: model_id.into(),
+                    pricing_identity: Some(ModelPricingIdentity {
+                        provider_id: provider_id.into(),
+                        model_id: model_id.into(),
+                    }),
+                    execution_profile: None,
+                    display_name: None,
+                    context_window: Some(FIXTURE_CONTEXT_TOKENS),
+                    supports_vision: false,
+                    supports_tools: true,
+                    supports_reasoning: false,
+                    supports_structured_output: false,
+                    supports_streaming: true,
+                    max_output_tokens: None,
+                    enabled: true,
+                }],
+                enabled: true,
+            })
+            .await?;
         let manager = Arc::new(
             bounded(
                 "manager setup",
                 RunManager::new(
-                    LlmConfig {
-                        model: MODEL.into(),
-                        resolved_provider_id: Some("openai".into()),
-                        base_url: Some(endpoint.clone()),
-                        api_key: Some(String::new()),
-                        ..LlmConfig::default()
-                    },
+                    llm_config,
                     Arc::new(crate::mcp::registry::McpRegistry::new_empty()),
                     crate::session::SessionStore::new(),
-                    Arc::new(tokio::sync::RwLock::new(SkillRegistry::default())),
+                    Arc::clone(skill_service.registry()),
                     Arc::new(VectorMatcher::new(
                         Arc::new(
                             crate::uar::rag::embeddings::swappable::SwappableEmbeddingBackend::new(
@@ -491,6 +557,8 @@ impl Harness {
                 ),
             )
             .await
+            .with_skill_service(skill_service)
+            .with_provider_registry(providers)
             .with_llm_driver(driver.clone())
             .with_destination_preparations(preparations)
             .with_a2a_config(&A2aConfig {
@@ -505,6 +573,8 @@ impl Harness {
         );
         resources.manager = Some(manager.clone());
         let mut artifact = crate::uar::defaults::default_agent();
+        artifact.policy.provider.default.provider = provider_id.into();
+        artifact.policy.provider.default.model = model_id.into();
         artifact.policy.tools.allow = vec!["spawn_agent".into()];
         artifact.extensions.insert(
             "budgets".into(),
@@ -571,8 +641,11 @@ impl Harness {
             .unwrap()
             .clone()
             .expect("actual admitted request");
-        let (input, output) =
-            crate::llm::liter_driver::request_budget_bound(MODEL, &request).unwrap();
+        let prepared = driver
+            .prepared_final_wire_budget(&request)
+            .expect("captured Liter final-wire reservation");
+        let input = prepared.input_tokens;
+        let output = prepared.output_tokens;
         assert_eq!(output, 32);
         let reserved_tokens = input.checked_add(output).unwrap();
         assert!(input > 0 && reserved_tokens <= 960 && reserved_tokens < 1000);

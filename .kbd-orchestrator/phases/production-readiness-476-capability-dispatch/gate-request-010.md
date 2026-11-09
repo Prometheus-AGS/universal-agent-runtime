@@ -1,0 +1,15 @@
+# Gate request after inventory009
+
+Current phase: production-readiness-476-capability-dispatch, Execute.
+
+Implementation inventory009 records 15/15 complete, no remaining implementation items, no active source writers, and all three writer handoffs. Base commit33e765bb5d29a44e97d2813ad6d0be8bf3e2479d; working-source manifest SHA256 8a94479566fa7fe7ff2a31d07d587ec7978f7b4a1ed7692d5c8fba1ac198a244; E repair diff SHA256 c818506cb1dbdd592b01f756f2c4c0d4b5d13e4066ecc8afe3f3a29c8ae5cd85. This is unverified working source, not a clean committed acceptance candidate. Current metadata correction does not change product source.
+
+The operator-provided AGENTS.md verification lock overrides earlier execution/plan/waypoint statements that standing bounded-phase authorization automatically permits review or gates. Those earlier statements are superseded here. Gate CLOSED, including review-driven verification. No verification ran during this reconciliation. Source inspection showed no holders for target/debug/.cargo-artifact-lock, target/debug/.cargo-lock or target/build/debug/.cargo-build-lock (lsof exit1/no output); this observation is not a future lock lease.
+
+Requested next action: two fresh-context artifact-only source reviews, code-reviewer/artifact-critic and rust-reviewer, of target/production-readiness-476/context-repair-review/artifact.patch against requirements.txt and necessary baseline source/pins. Reviewers receive no producer conversation, handoffs, memory or preferred verdict. Each may read source and write only its assigned report under .agent-team/uar-core/reviews/production-readiness-context-repair/. No tests, checks, formatting, builds, compiler/import probes, API/container calls or git diff --check. If the specialized role requires execution, record unavailable; do not substitute its broader commands. Label same-family limitation.
+
+No shell verification command is proposed for this first review step. Subsequent named commands will require their own explicit authorization under the supplied lock after the review disposition and renewed inventory. In particular, review approval does not authorize Cargo, local commit hooks, Docker or mounted acceptance. Any implementation edit closes the gate again.
+
+Remaining verification: bounded repair review; clean committed three-profile #462 baseline and required16regressions; affected context integration and named reservation/thread/router cases; prepared fixture integrity probes; matrix/OpenSpec validators; actual Linux amd64 image retry and mounted public HTTP cases. None is represented as passed by source inspection. Prior33e passes and Docker EOF failure remain historical.
+
+Uncomfortable limit: runtime equality, edited-source compilation/warning cleanliness, container behavior and recovery remain unverified. The selected first lane is Linux amd64 container APIs behind a trusted host/gateway; direct remote multi-user exposure is excluded. No candidate service or peer has been started, and other chat work remains untouched.

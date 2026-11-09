@@ -41,7 +41,7 @@ corresponding `UAR_MEMORY__ENABLED` environment setting), then configure:
 - a memory database path or external SurrealDB endpoint;
 - an embedding provider and model supported by the memory service;
 - whether post-turn auto-capture is enabled;
-- whether pre-call context injection is enabled and its token budget;
+- whether pre-call context injection is enabled, its token budget and its minimum similarity;
 - whether the memory MCP HTTP surface is enabled and its path.
 
 Restart after changing memory startup configuration. Do not assume a generic
@@ -57,9 +57,12 @@ must not use the same locked directory as the runtime persistence store.
 ## Capture and context injection
 
 When effective run policy enables memory and `inject_context` is active, UAR
-searches relevant scoped records before the model call, assembles a bounded
-memory block, injects it into selected model context, and emits a memory-recall
-event for the returned hits.
+searches owner-scoped records before the model call. Set a finite
+`memory.injection_min_similarity` between `-1` and `1`. An absent cutoff refuses
+automatic selection with `memory_relevance_not_configured`. Selection prepares a
+bounded context block. Inspect the final provider input to prove submission,
+since a later policy or budget check can exclude it. See
+[RC3 memory verification](../release-candidate.md#index-documents-embed-data-and-use-memory).
 
 When `auto_capture` is active, UAR examines the completed user/assistant turn
 after the stream reaches a terminal run event. Newly captured records are

@@ -2,9 +2,36 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://prometheus-ags.dev/schemas/uar/product-support-matrix.schema.json",
   "type": "object",
-  "required": ["version", "verified_at", "features", "bundles", "providers", "persistence", "routing", "tools", "platforms", "integrations"],
+  "required": ["version", "product_version", "version_inventory", "execution_recovery", "verified_at", "features", "bundles", "providers", "persistence", "routing", "tools", "platforms", "integrations"],
   "properties": {
     "version": { "type": "string" },
+    "product_version": { "type": "string" },
+    "version_inventory": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "required": ["path", "format", "version", "role"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "format": {"enum": ["json", "toml"]},
+          "version": {"type": "string", "minLength": 1},
+          "role": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": false
+      }
+    },
+    "execution_recovery": {
+      "type": "object", "required": ["contract_revision", "canonical_table", "current_candidate_qualification", "interfaces"],
+      "properties": {
+        "contract_revision": {"type": "string", "format": "date"},
+        "canonical_table": {"type": "string"},
+        "current_candidate_qualification": {"type": "string"},
+        "interfaces": {
+          "type": "array", "minItems": 1,
+          "items": {"type": "object", "required": ["id", "admission", "recovery", "history", "effects", "current_evidence"]}
+        }
+      },
+      "additionalProperties": true
+    },
     "verified_at": { "type": "string", "format": "date" },
     "features": { "type": "array", "minItems": 1 },
     "bundles": { "type": "array", "minItems": 1 },

@@ -12,7 +12,7 @@ use universal_agent_runtime::session::SessionStore;
 use universal_agent_runtime::uar::defaults::default_agent;
 use universal_agent_runtime::uar::domain::events::{MemoryItem, NormalizedEvent as RunEvent};
 use universal_agent_runtime::uar::rag::embeddings::{
-    EmbeddingBackend, UnavailableEmbeddingBackend,
+    EmbeddingBackend, UnavailableEmbeddingBackend, swappable::SwappableEmbeddingBackend,
 };
 use universal_agent_runtime::uar::runtime::manager::RunManager;
 use universal_agent_runtime::uar::runtime::matching::VectorMatcher;
@@ -33,7 +33,10 @@ async fn shadow_manager(driver: Arc<MockLlmDriver>) -> Arc<RunManager> {
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
             Arc::new(RwLock::new(SkillRegistry::default())),
-            Arc::new(VectorMatcher::new(embeddings, 0.75)),
+            Arc::new(VectorMatcher::new(
+                Arc::new(SwappableEmbeddingBackend::new(embeddings)),
+                0.75,
+            )),
             None,
         )
         .await
