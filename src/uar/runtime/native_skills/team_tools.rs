@@ -6,7 +6,10 @@ use crate::uar::{
     tools::descriptor::{ApprovalClass, Exposure, ToolEffect, ToolSource},
 };
 use serde_json::{Value, json};
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashSet,
+    sync::{Arc, Mutex},
+};
 
 /// Peer controls materialized only for a qualified, bound team attempt.
 pub(crate) const TEAM_TOOL_NAMES: [&str; 4] =
@@ -188,8 +191,8 @@ impl NativeSkill for TeamTool {
 pub(crate) async fn register(
     registry: &NativeSkillRegistry,
     binding: TeamToolBinding,
-    allowed: &std::collections::HashSet<String>,
-) -> anyhow::Result<()> {
+    allowed: &HashSet<String>,
+) -> anyhow::Result<HashSet<&'static str>> {
     // The same current authority powers roster capabilities and native tool
     // availability. Selection and governance can narrow this set further.
     let eligible = binding
@@ -197,6 +200,7 @@ pub(crate) async fn register(
         .eligible_team_controls(&binding.attempt)
         .await
         .map_err(safe_error)?;
+    let mut registered = HashSet::new();
     for name in TEAM_TOOL_NAMES {
         if !allowed.contains(name) || !eligible.iter().any(|candidate| candidate == name) {
             continue;
@@ -208,8 +212,9 @@ pub(crate) async fn register(
                 pending: Mutex::new(None),
             })
             .await?;
+        registered.insert(name);
     }
-    Ok(())
+    Ok(registered)
 }
 
 fn control_result(

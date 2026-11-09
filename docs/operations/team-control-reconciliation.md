@@ -16,6 +16,9 @@ execution policy and governance can narrow it further. `team_send` and
 `team_delegate` require approval. `team_wait` is available to the qualified
 coordinator and yields only after an accepted durable wait. Every execution
 rechecks current owner, exact attempt session, revisions and authorization.
+Actor attachment carries only the registered attempt-bound controls in its
+executable policy. Withholding a team control does not prevent the task from
+running, and unrelated selected tools still require executable bindings.
 
 Only exact catalog refusals `TEAM_REVISION_CONFLICT`, `TEAM_WAIT_CYCLE` and
 `TEAM_PENDING_LIMIT` return a recoverable control result:

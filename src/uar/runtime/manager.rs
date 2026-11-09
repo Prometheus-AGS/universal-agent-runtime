@@ -6341,6 +6341,7 @@ impl RunManager {
                     .map(|resolved| (resolved.skill.id.clone(), resolved.skill.config.clone())),
             );
         }
+        let mut registered_team_tools = HashSet::new();
         let register_turn_tools = async {
             if effective_policy.tools.mode != SelectionMode::None {
                 if let Some(binding) = &collaboration_binding {
@@ -6369,16 +6370,17 @@ impl RunManager {
                                 }
                             }
                         }
-                        crate::uar::runtime::native_skills::team_tools::register(
-                            &native_skills,
-                            crate::uar::runtime::native_skills::team_tools::TeamToolBinding {
-                                catalog: Arc::clone(&binding.service),
-                                attempt: attempt.clone(),
-                                yielded: Arc::clone(&binding.team_yield),
-                            },
-                            &offered_team_tools,
-                        )
-                        .await?;
+                        registered_team_tools =
+                            crate::uar::runtime::native_skills::team_tools::register(
+                                &native_skills,
+                                crate::uar::runtime::native_skills::team_tools::TeamToolBinding {
+                                    catalog: Arc::clone(&binding.service),
+                                    attempt: attempt.clone(),
+                                    yielded: Arc::clone(&binding.team_yield),
+                                },
+                                &offered_team_tools,
+                            )
+                            .await?;
                     }
                 }
                 if let Some(bindings) = &inherited {
@@ -7428,6 +7430,27 @@ impl RunManager {
         // Capture before adding root-local handlers: retaining those handlers
         // here would form service -> kernel -> registry -> service ownership.
         let captured_native = Arc::new(native_skills.filtered(None).await);
+        let mut delegation_policy = effective_policy.clone();
+        if is_team_attempt && actor_root.is_some() {
+            // An unavailable attempt-bound control was deliberately not
+            // registered. It cannot become an executable root authority.
+            let captured_names = captured_native.names().await;
+            let tools = &mut delegation_policy.tools;
+            let selected_count = tools.ids.len();
+            tools.ids.retain(|name| {
+                !crate::uar::runtime::native_skills::team_tools::TEAM_TOOL_NAMES
+                    .contains(&name.as_str())
+                    || (registered_team_tools.contains(name.as_str())
+                        && captured_names.contains(name))
+            });
+            if tools.ids.len() != selected_count {
+                tools.mode = if tools.ids.is_empty() {
+                    SelectionMode::None
+                } else {
+                    SelectionMode::Selected
+                };
+            }
+        }
         let delegation_lifetime = crate::uar::runtime::turn::bindings::RunDelegationLifetime(
             verified_owner.clone().filter(|_| !child_run).map(|owner| {
                 Arc::new(crate::uar::runtime::turn::bindings::RunDelegationBindings {
@@ -7436,7 +7459,7 @@ impl RunManager {
                     instance_binding: instance_binding.clone(),
                     owner,
                     run_id: run_id.clone(),
-                    policy: effective_policy.clone(),
+                    policy: delegation_policy,
                     presentations: Arc::clone(&presentation_snapshot),
                     artifact: artifact.clone(),
                     thread_controls: actor_root.is_some(),
