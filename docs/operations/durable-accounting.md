@@ -59,6 +59,12 @@ current balances and generations. Unresolved contention, stale generations and
 unknown commit outcomes refuse dispatch. There is no lease timeout that returns
 uncertain liability. No global history document is rewritten by a call.
 
+An owned embedded SurrealKV provider serializes call admission and usage writes
+from the first accounting read through the transaction result and any settlement
+readback. This avoids conflicts between calls updating shared scope rows through
+that provider. Provider I/O happens outside the guard. The transaction still
+checks its preconditions, and uncertain usage stays pending.
+
 Scope capacity is settled usage plus outstanding reserved liability. Current
 persisted scope limits are authoritative; startup creates missing scopes from
 configured limits but never overwrites a persisted generation. Policy edits use

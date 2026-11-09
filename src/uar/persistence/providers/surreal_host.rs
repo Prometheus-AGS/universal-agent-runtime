@@ -28,6 +28,7 @@ impl SurrealDbProvider {
             catalog_storage_backend: match backend { HostSurrealBackend::RocksDb => "rocksdb", HostSurrealBackend::SurrealKv => "surrealkv" },
             remote_requires_durability_attestation: false,
             session_changes: tokio::sync::watch::channel(0_u64).0,
+            accounting_write_guard: None,
         })
     }
 }

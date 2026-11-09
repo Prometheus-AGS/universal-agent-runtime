@@ -263,6 +263,8 @@ pub struct SurrealDbProvider {
     catalog_storage_backend: &'static str,
     remote_requires_durability_attestation: bool,
     session_changes: tokio::sync::watch::Sender<u64>,
+    // Owned SurrealKV admission and usage writes share mutable scope rows.
+    accounting_write_guard: Option<tokio::sync::Mutex<()>>,
 }
 
 impl SurrealDbProvider {
@@ -466,6 +468,7 @@ impl SurrealDbProvider {
             catalog_storage_backend,
             remote_requires_durability_attestation: remote && !attested,
             session_changes,
+            accounting_write_guard: local_durable.then(|| tokio::sync::Mutex::new(())),
         }
     }
 

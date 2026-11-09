@@ -20,3 +20,8 @@ Team control advertisement SHALL reflect usable authoritativepolicy and typed re
 - **WHEN** embedded SurrealKV confirms that a pre-dispatch admission transaction aborted with a typed transaction conflict
 - **THEN** the host can retry admission within a finite bound using the same call identity and reservation, with fresh scope and funding reads and the original generation checks
 - **AND** an unknown commit outcome, stale generation or exhausted retry bound prevents dispatch, and previously submitted work and settlement stay outside the retry
+
+#### Scenario: Concurrent calls share accounting scopes on owned embedded SurrealKV
+- **WHEN** concurrent calls admit or record usage through the same owned embedded SurrealKV provider
+- **THEN** the provider serializes those accounting writes from their first read through the transaction result and any settlement readback
+- **AND** provider I/O stays outside the guard, durable compare-and-swap checks still apply, and uncertain usage remains pending

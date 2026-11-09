@@ -14,6 +14,12 @@ fn durable(store: &SurrealDbProvider) -> Result<()> {
     if !store.durable_instances { return Err(AccountingError::Unsupported.into()); }
     Ok(())
 }
+async fn lock_accounting_write(store: &SurrealDbProvider) -> Option<tokio::sync::MutexGuard<'_, ()>> {
+    match &store.accounting_write_guard {
+        Some(guard) => Some(guard.lock().await),
+        None => None,
+    }
+}
 async fn read<T: serde::de::DeserializeOwned>(store: &SurrealDbProvider, table: &str, key: String) -> Result<Option<T>> {
     durable(store)?;
     let mut rows = store.db.query("SELECT VALUE data FROM type::record($table,$key)")
@@ -65,6 +71,7 @@ fn checked_errors(errors: HashMap<usize, surrealdb::Error>) -> Result<()> {
 }
 pub(super) async fn admit(store: &SurrealDbProvider, admission: &CallAdmission) -> Result<AccountingCall> {
     durable(store)?; admission.validate()?;
+    let _write_guard = lock_accounting_write(store).await;
     let mut retries_remaining = match store.durable_store_eligibility {
         DurableStoreEligibility::LocalDurable if store.catalog_storage_backend() == "surrealkv" => 2,
         _ => 0,
@@ -139,6 +146,7 @@ async fn try_admit(
 }
 pub(super) async fn usage(store: &SurrealDbProvider, usage: &CallUsage) -> Result<AccountingCall> {
     durable(store)?;
+    let _write_guard = lock_accounting_write(store).await;
     let before_call: AccountingCall = read(store,"accounting_calls",usage.identity.key()).await?.ok_or(AccountingError::Missing)?;
     let after_call = accounting::observe(&before_call,usage)?;
     if before_call == after_call { return Ok(after_call); }
