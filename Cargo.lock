@@ -11680,7 +11680,7 @@ dependencies = [
  "phf 0.13.1",
  "rust_decimal",
  "surrealdb-types",
- "sysinfo",
+ "sysinfo 0.37.2",
  "thiserror 2.0.21",
  "tokio",
  "unicase",
@@ -11756,7 +11756,7 @@ dependencies = [
  "surrealdb-strand",
  "surrealdb-syn",
  "surrealdb-types",
- "sysinfo",
+ "sysinfo 0.37.2",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
@@ -12438,6 +12438,20 @@ dependencies = [
  "objc2-core-foundation",
  "objc2-io-kit",
  "windows 0.61.3",
+]
+
+[[package]]
+name = "sysinfo"
+version = "0.40.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e8a3edbe0394ce115f3917a00349dd242be09eb5a091ed509eaf67b55cfb8a8"
+dependencies = [
+ "libc",
+ "memchr",
+ "ntapi",
+ "objc2-core-foundation",
+ "objc2-io-kit",
+ "windows 0.62.2",
 ]
 
 [[package]]
@@ -14000,7 +14014,7 @@ dependencies = [
  "surreal-memory",
  "surrealdb",
  "sycophancy-core",
- "sysinfo",
+ "sysinfo 0.40.1",
  "tempfile",
  "text-splitter",
  "thiserror 2.0.21",
