@@ -49,3 +49,4 @@ The PostgreSQL store SHALL store skill embeddings of any dimension with their em
 - **WHEN** the store is PostgreSQL
 - **THEN** the matrix reports channel observers, durable observers, durable agent instances and checkpoint resume as unsupported
 - **AND** a follow-up request is refused with `capability_unsupported`.
+- **AND** owner list requests to `/api/uar/agent-instances/v1` and `/api/uar/observers/v1` return HTTP 503 with `capability_unsupported`.

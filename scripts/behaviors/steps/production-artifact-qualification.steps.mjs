@@ -748,7 +748,7 @@ Then('PostgreSQL capabilities and all selected unsupported APIs agree', async fu
   const capabilities = await request(this, 'GET', '/api/uar/persistence/capabilities');
   assert.equal(capabilities.persistence.backend, 'postgres');
   for (const key of ['supports_channel_observers', 'supports_durable_observers', 'supports_durable_agent_instances', 'supports_durable_checkpoint_resume']) assert.equal(capabilities.persistence.capabilities[key], false);
-  for (const path of ['/api/uar/followups', '/api/uar/schedules', '/api/uar/agent-instances/v1/', '/api/uar/observers/v1/', '/api/uar/channel-observers/v1/subscriptions']) {
+  for (const path of ['/api/uar/followups', '/api/uar/schedules', '/api/uar/agent-instances/v1', '/api/uar/observers/v1', '/api/uar/channel-observers/v1/subscriptions']) {
     const refused = await request(this, 'GET', path, undefined, [503]);
     assert.equal(refused.error?.code ?? refused.code, 'capability_unsupported');
   }
