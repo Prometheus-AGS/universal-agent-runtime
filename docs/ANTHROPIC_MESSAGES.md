@@ -67,7 +67,9 @@ then `message_stop`.
   output. Known `cache_read_input_tokens` and `cache_creation_input_tokens` are
   separate input portions. Shared runtime/OpenAI input counts include those
   portions, so adding Messages uncached input plus its known cache portions
-  matches the aggregate input. The projection never charges a call again.
+  matches the aggregate input. When the run reports usage, the successful Chat
+  stop chunk carries the nonstreaming Chat `usage` object before `[DONE]`.
+  The projection never charges a call again.
 - Unavailable input/output retain numeric zero for compatibility, accompanied
   by sibling `uar_usage.input_tokens` and `uar_usage.output_tokens` objects with
   `available:false, source:"unavailable"`. Provider-reported zero has

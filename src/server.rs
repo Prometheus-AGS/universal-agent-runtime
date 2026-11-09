@@ -6684,6 +6684,14 @@ struct OpenAiChunk {
 }
 
 #[derive(Debug, Serialize)]
+struct OpenAiTerminalChunk {
+    #[serde(flatten)]
+    chunk: OpenAiChunk,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    usage: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize)]
 struct OpenAiChunkChoice {
     index: usize,
     delta: OpenAiDelta,
@@ -8663,8 +8671,8 @@ pub(crate) async fn api_chat_completion(
                                 emit_chat_frame!(Event::default().data(json), source_event_id, frame_ordinal);
                             }
                         }
-                        uar::domain::events::NormalizedEvent::RunDone { .. }
-                        | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. } => {
+                        done @ (uar::domain::events::NormalizedEvent::RunDone { .. }
+                        | uar::domain::events::NormalizedEvent::RunDoneWithUsage { .. }) => {
                             // --- Memory: lifecycle-owned post-stream capture ---
                             if req_memory_enabled {
                                 if let Some(ref svc) = stream_memory_service {
@@ -8830,7 +8838,12 @@ pub(crate) async fn api_chat_completion(
                                         finish_reason: Some("stop"),
                                     }],
                                 };
-                                let json = serde_json::to_string(&final_chunk)
+                                // Keep usage on the existing stop frame so replay ordinals stay stable.
+                                let terminal = OpenAiTerminalChunk {
+                                    chunk: final_chunk,
+                                    usage: uar::api::openai::usage::from_run_done(&done),
+                                };
+                                let json = serde_json::to_string(&terminal)
                                     .unwrap_or_else(|_| "{}".to_string());
                                 emit_chat_frame!(Event::default().data(json), source_event_id, frame_ordinal);
                                 emit_chat_frame!(Event::default().data("[DONE]"), source_event_id, frame_ordinal);

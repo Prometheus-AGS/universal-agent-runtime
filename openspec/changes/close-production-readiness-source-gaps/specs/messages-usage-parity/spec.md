@@ -3,6 +3,11 @@
 ### Requirement: Preserve shared Messages accounting
 Messages streaming/nonstreaming SHALL project applicable shared input/output/cache counters without charging again, and unsupported counters SHALL be explicitly unavailable. Cancellation/retry SHALL preserve owner/result/effect safeguards.
 
+#### Scenario: The same completed run usage reaches the Chat stream
+- **WHEN** the OpenAI-shaped chat stream reaches a successful stop with reported run usage
+- **THEN** the existing stop chunk carries the same usage object as nonstreaming chat, with unchanged frame order and cursor ordinals
+- **AND** a successful stop with unavailable usage omits the usage object, and neither projection charges again
+
 #### Scenario: A controlled provider reports nonzero cached usage then interruption
 - **WHEN** A controlled provider reports nonzero cached usage then interruption
 - **THEN** Projection and ledger retain known counts and truthful terminal outcome, with no duplicate charge or expanded tool authority
