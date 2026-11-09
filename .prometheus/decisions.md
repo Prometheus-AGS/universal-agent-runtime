@@ -2757,3 +2757,6 @@ time of recording (verification lock CLOSED).
 
 
 2026-11-01 — #476 rc.2 integration: operator requested incorporating the committed rc.2 branch before continuing. Integrated exact af37c2f834f7b34f511ecc93f408e80205c94229 with standard --no-commit merge, preserving readiness destination authority plus rc.2 estimated fallback fitting, owner migration and JWT boundaries. Source snapshot a3b5b6f8e6b6222cfaa9ad419c4ca8e5df083bd7 retained for recovery; it contains only this worktree work. Other checkout/branch/services unchanged. Commit is deliberately pending because ordinary hooks run prohibited gates; do not bypass hooks or claim merged ancestry until approved commit succeeds. Historical macOS receipts do not qualify this tree/Linux artifact.
+### 2026-11-03 — Issue #386 media scope and recovery
+
+The operator selected UAR plus a mock peer and explicit scoped session approval. The host attests user confirmation and worker identity. The grant binds an exact action/modality/capability tuple to an immutable scope. An effect claim commits an unknown receipt before handoff. Retrying an unknown attempt can duplicate an effect, so recovery must reconcile the original attempt using peer evidence.

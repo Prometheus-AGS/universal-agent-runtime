@@ -60,6 +60,11 @@ Release/support/version/recovery/measurement source SHALL use one selected-lane 
 - **THEN** the owner-scoped admission evidence retains the same invocation as outcome unknown
 - **AND** qualification correlates the model call and durable invocation through their approved admission, verifies cancellation of the original SDK request separately, and retains any unresolved-effect shutdown refusal
 
+#### Scenario: A release branch incorporates dependency changes from main
+- **WHEN** a release branch is reconciled with main after dependency changes
+- **THEN** the committed lockfile resolves the merged manifests with the selected dependency pins intact
+- **AND** the affected local gates consume that lockfile in locked mode before the reconciled source is promoted
+
 #### Scenario: Publish the RC3 Linux amd64 pilot from a locally verified image
 - **WHEN** the RC3 source and image are published for the selected pilot
 - **THEN** the product version, exact embedded Rust SDK pin and repository tag identify the same source

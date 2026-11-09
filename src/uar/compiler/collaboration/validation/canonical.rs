@@ -25,7 +25,7 @@ pub(in crate::uar::compiler::collaboration) fn canonical_digest(
     Ok(digest(&canonical_json(&without_digest)?))
 }
 
-pub(super) fn digest(bytes: &[u8]) -> String {
+pub(in crate::uar::compiler::collaboration) fn digest(bytes: &[u8]) -> String {
     let mut encoded = String::from("sha256:");
     for byte in Sha256::digest(bytes) {
         write!(&mut encoded, "{byte:02x}").expect("writing to String cannot fail");
