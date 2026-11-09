@@ -27,7 +27,7 @@ Readiness reflects the coded checks, not every external model, tool, queue, or d
 
 In `server-full`, `GET /metrics` returns Prometheus text exposition. The runtime records:
 
-- HTTP request totals and duration by method, path, and status;
+- HTTP request totals and duration by method, route template, and status;
 - LLM call duration, estimated cost, and input/output token counts by provider/model;
 - provider health and prompt-cache read/write tokens;
 - tool results, active sessions, sandbox activity and errors, and MCP server status;
@@ -35,7 +35,12 @@ In `server-full`, `GET /metrics` returns Prometheus text exposition. The runtime
 
 Provider/model signals describe external-call latency, health, usage, and estimates. UAR-owned signals describe its HTTP handling, routing, tools, sessions, sandboxes, policies, and other instrumented runtime work. Keep these classes separate when assigning an incident or SLO.
 
-The metrics recorder is process-global. If another component installs that global recorder first, UAR logs a warning and `/metrics` returns an empty scrape rather than panicking. HTTP 200 alone therefore does not prove metric series are present.
+The metrics recorder is process-global. UAR leaves a preinstalled host recorder
+in place. In this configuration `/metrics` returns HTTP 503 with
+`telemetry_scrape_unavailable` and `metrics_status: host_owned`. The host must
+expose its own scrape endpoint if required. Use the
+[RC3 observability checks](../release-candidate.md#read-usage-and-telemetry-correctly)
+to verify ownership and actual exporter delivery separately.
 
 ## Structured logs
 
@@ -51,7 +56,7 @@ An absent collector or failed export does not stop ordinary runtime work. Monito
 
 ## State ownership and durability
 
-Prometheus owns scraped samples after collection. The log platform owns collected records. The OTLP backend owns exported spans. UAR itself exposes or emits these signals but does not provide their durable retention. In-process metric counters reset on restart, and an empty scrape can result from recorder ownership conflict.
+Prometheus owns scraped samples after collection. The log platform owns collected records. The OTLP backend owns exported spans. UAR itself exposes or emits these signals but does not provide their durable retention. In-process metric counters reset on restart. If the host owns the recorder, use its collection path.
 
 ## Audit limits
 

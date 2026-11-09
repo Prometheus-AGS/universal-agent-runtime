@@ -72,6 +72,15 @@ decomposition, per-query retrieval, deduplication, verification annotation,
 result limiting, and a `rag.retrieval.decision` audit record occur before
 context injection.
 
+## RC3 ingestion verification
+
+Use the mounted upload, status and retrieval paths with a fresh fact-bearing
+document. For local English OCR, enable `kreuzberg.ocr_enabled` and use a readable
+scan. The Linux image supplies pinned English data. Require terminal failure
+without an indexed generation for malformed or empty extraction. Rebuild indexes
+when replacing an embedding model, even if vector width matches. See
+[RC3 document and embedding checks](../release-candidate.md#index-documents-embed-data-and-use-memory).
+
 ## Durable authority and live state
 
 Configured persistence is the durable authority for knowledge bases, documents,

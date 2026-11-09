@@ -73,6 +73,11 @@ The MCP health page and API show current connection state. They are operational
 views, not durable availability history or proof that every advertised tool was
 executed.
 
+After cancellation, keep the exact invocation and its known or unknown effect
+disposition. Closing the transport cannot settle an unknown external effect.
+A claimed effect can prevent a clean shutdown until the trusted host has
+authoritative evidence. See [RC3 protocol checks](../release-candidate.md#run-tools-team-tasks-and-protocol-peers).
+
 ## Security and configuration
 
 Treat a remote MCP URL and a stdio command as privileged operator

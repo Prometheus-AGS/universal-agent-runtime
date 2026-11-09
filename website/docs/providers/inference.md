@@ -45,6 +45,15 @@ Failures remain visible: invalid model IDs return `404`; malformed input returns
 `400`; provider initialization, credential, timeout, and upstream failures do
 not become successful completion objects.
 
+## Capability, fallback and usage checks in RC3
+
+Verify the actual chosen route with the provider request and returned run
+evidence. An inherited verified chat model can take an authorized pre-output
+fallback. A fixed target remains constrained. The runtime checks the
+destination’s capabilities and recompiles its budgets before dispatch. Preserve
+reported usage, reported zero, and unavailable usage as distinct results.
+See [RC3 routing and image verification](../release-candidate.md#send-images-and-constrain-model-routing).
+
 ## Packaged UI workflow
 
 1. Open Chat in the packaged `server-full` application.

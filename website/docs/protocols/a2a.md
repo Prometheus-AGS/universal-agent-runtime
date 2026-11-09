@@ -12,8 +12,9 @@ current_authority: /docs/protocols/a2a
 The [canonical A2A recovery row](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/product-support-matrix.md#execution-and-recovery-guarantees)
 governs task identity, bounded replay/cursor gaps, cancellation and unknown
 effects. Source wire-version labels and Agent Card fields do not certify every
-optional feature or transport. Current selected-artifact acceptance against an
-independently pinned client remains unverified; see the [finite final checklist](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/releases/v1.4.0-final.md).
+optional feature or transport. Earlier independent-client results remain tied to
+their original artifacts. Use the [RC3 pilot protocol checks](../release-candidate.md#run-tools-team-tasks-and-protocol-peers)
+and the [finite final checklist](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/main/docs/releases/v1.4.0-final.md).
 
 ## Boundary statement
 

@@ -53,6 +53,12 @@ Because it includes `minimal`, it retains HTTP/SSE and SurrealDB. Its broader
 feature set also means a check against `minimal` alone is not evidence that
 server-full composition, startup, or integrations work.
 
+The RC3 Linux amd64 image builds `server-full,postgres-backend`. Its default
+storage is embedded SurrealDB 4.0.0 on SurrealKV. PostgreSQL 18 has a separate
+capability boundary. Read `/api/uar/persistence/capabilities` on the running
+instance before choosing team or checkpoint workflows. See
+[the RC3 user guide](../release-candidate.md).
+
 ## `embedded-mobile`
 
 `embedded-mobile` is the transport-free library profile for Android, iOS, and

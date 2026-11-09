@@ -76,7 +76,7 @@ Directory listing, archive size, and checksum prove transport integrity, not app
 
 ### Durable agent instances (C06)
 
-The C06 migration adds the `agent_instances` table to the same UAR datastore. Before enabling durable instances, make a cold backup of that complete datastore and record the UAR source revision and `surrealdb =3.3.0` SDK pin with it. After upgrading, prove the backup in an isolated UAR process by reading a known instance and its command receipt through the authenticated instance API. Keep the original backup until that read-back succeeds.
+The C06 migration adds the `agent_instances` table to the same UAR datastore. Before enabling durable instances, make a cold backup of that complete datastore and record the UAR source revision and the artifact’s exact SurrealDB SDK pin with it. After upgrading, prove the backup in an isolated UAR process by reading a known instance and its command receipt through the authenticated instance API. Keep the original backup until that read-back succeeds.
 
 To roll back to a build without C06, stop admission and shut down UAR first. Preserve the C06 datastore and its instance records; the older build has no durable-instance endpoint and must not reinterpret queued instance commands as ordinary runs. Do not resume an uncertain effect or submit its command through the older ordinary-run API. Restore the pre-upgrade backup into a separate location if the older build must run, and retain the C06 datastore for forward recovery. Return to C06 only after reconciling the exact owner, workspace, command, attempt, and any uncertain effect with an authorized operator receipt. A rollback does not undo an external effect that already occurred.
 

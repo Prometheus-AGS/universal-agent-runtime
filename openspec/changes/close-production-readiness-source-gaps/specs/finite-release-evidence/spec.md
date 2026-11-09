@@ -60,6 +60,13 @@ Release/support/version/recovery/measurement source SHALL use one selected-lane 
 - **THEN** the owner-scoped admission evidence retains the same invocation as outcome unknown
 - **AND** qualification correlates the model call and durable invocation through their approved admission, verifies cancellation of the original SDK request separately, and retains any unresolved-effect shutdown refusal
 
+#### Scenario: Publish the RC3 Linux amd64 pilot from a locally verified image
+- **WHEN** the RC3 source and image are published for the selected pilot
+- **THEN** the product version, exact embedded Rust SDK pin and repository tag identify the same source
+- **AND** the versioned registry image identifies the exact locally built and checked Linux amd64 artifact
+- **AND** the version tag does not trigger a second publisher that replaces the image with a separately built multiarchitecture index
+- **AND** the public guide records the pilot scope and the outstanding final qualification separately
+
 ### Requirement: Prepare reproducible packaged-runtime measurements without inventing promises
 Measurement source SHALL require a frozen workload, hardware/profile, concurrency, thresholds, token budgets and exact source/artifact/provider/settings identities before execution. Controlled-provider framework measurements, real-model task quality and comparative results SHALL remain distinct.
 

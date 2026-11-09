@@ -51,6 +51,12 @@ cookie forms are also accepted by the current handler. An omitted id creates a
 new session; an invalid non-UUID session id fails with a client error. Returning
 an id to the next request is what preserves conversation continuity.
 
+For native turn recovery, submit stable `client_turn_id` and `user_message_id`
+with the original session and verify the original receipt through the same
+owner/workspace. For a native no-tools call, omit the `tools` member. Caller-owned
+tools have a separate continuation identity. See
+[RC3 chat and A2UI recovery](../release-candidate.md#recover-chat-turns-and-a2ui-actions).
+
 ## Streaming selection
 
 `stream: false` returns one adapter-shaped response. `stream: true` returns

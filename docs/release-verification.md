@@ -1,8 +1,6 @@
 # Verify release evidence
 
-This is the evidence procedure, not a current artifact receipt. The selected
-Linux amd64 image/whole-set source remains unverified; use the [finite final
-checklist](releases/v1.4.0-final.md) and [canonical recovery table](product-support-matrix.md#execution-and-recovery-guarantees).
+This procedure covers signed release evidence. The [RC3 pilot guide](releases/v1.4.0-rc.3.md) records the locally checked Linux amd64 pilot and the scope of predecessor receipts. The [finite final checklist](releases/v1.4.0-final.md) and [canonical recovery table](product-support-matrix.md#execution-and-recovery-guarantees) govern final qualification.
 
 Release evidence can be produced locally from a clean checkout by
 `scripts/prepare-release-evidence-local.sh`. Its expected output includes

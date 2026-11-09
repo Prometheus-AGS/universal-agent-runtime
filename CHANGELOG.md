@@ -4,6 +4,15 @@ All notable changes to Universal Agent Runtime are documented here. UAR follows
 Semantic Versioning for Stable HTTP, event, configuration, and artifact
 contracts identified in the product support matrix.
 
+## 1.4.0-rc.3 — Linux amd64 pilot candidate
+
+- Embedded persistence moves to SurrealDB 4.0 with a separate-destination migration, an immutable source snapshot and an explicit rollback procedure.
+- Public image requests retain content and order through compatible dispatch. Verified inherited routes may use authorized fallbacks that fit their final wire budgets. Explicit targets retain their original scope.
+- Native turn history and A2UI action receipts retain original intent across lost responses. Standalone MCP and team cancellation preserve unresolved effects and accounting liabilities.
+- Mounted embeddings expose per-counter usage availability. Anthropic Messages projects reported usage on streaming terminals. The document image ships pinned English OCR data and returns terminal rejection for invalid inputs.
+- Automatic memory injection requires a configured similarity cutoff. Telemetry preserves host-owned global state and separates observed accounting from unavailable evidence.
+- The selected synthetic baseline and team receipts remain tied to their recorded artifacts. The [RC3 user guide](docs/releases/v1.4.0-rc.3.md) documents setup, feature checks, recovery and outstanding final qualification.
+
 ## 1.4.0-rc.2 — release candidate (historical Mac receipts only)
 
 Current #462–475 source integration and the selected Linux amd64 container APIs

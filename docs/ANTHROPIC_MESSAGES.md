@@ -4,8 +4,7 @@
 through a UAR agent. It uses the same run manager as `POST /v1/chat/completions`.
 Agent tools, policy, budgets, run history and usage accounting apply to both.
 
-This page describes the behavior as of 1.4.0-rc.2. The design history of the
-native Anthropic driver is in [ANTHROPIC.md](ANTHROPIC.md).
+This page describes the RC3 contract. The [pilot guide](releases/v1.4.0-rc.3.md#streaming-telemetry-and-native-wasm) links the scope of mounted usage and cancellation verification. The design history of the native Anthropic driver is in [ANTHROPIC.md](ANTHROPIC.md).
 
 ## Every request runs an agent
 
