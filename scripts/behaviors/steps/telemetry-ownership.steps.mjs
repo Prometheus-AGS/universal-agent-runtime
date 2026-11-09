@@ -112,7 +112,7 @@ async function ledger(w) {
 }
 function samples(raw, name) {
   return raw.split('\n').filter(line => line.startsWith(`${name}{`)).map(line => {
-    const match = /^([^\s{]+)\{([^}]*)\}\s+([^\s]+)/.exec(line);
+    const match = /^([^\s{]+)\{((?:[^"{}]|"(?:\\.|[^"\\])*")*)\}\s+([^\s]+)/.exec(line);
     assert.ok(match, 'Unsupported Prometheus sample');
     const labels = Object.fromEntries([...match[2].matchAll(/([a-zA-Z_][a-zA-Z0-9_]*)="((?:\\.|[^"\\])*)"/g)]
       .map(([, key, value]) => [key, JSON.parse(`"${value}"`)]));
