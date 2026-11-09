@@ -3363,18 +3363,19 @@ impl PersistenceLayer for SurrealDbProvider {
     }
 
     async fn upsert_setting(&self, setting: &crate::uar::settings::schema::Settings) -> Result<()> {
-        // Validate data against the leaf property schema extracted from the parent type.
-        // Setting keys are dotted: `server.port` → type key `server`, property key `port`.
-        // We validate `data` against `type.schema.properties.port` (leaf schema), not
-        // the root type schema (which is type:object) — leaf values are primitives.
-        let type_key = setting.key.split('.').next().unwrap_or("unknown");
-        let leaf_key = setting.key.splitn(2, '.').nth(1).unwrap_or(&setting.key);
+        // The built-in skill-matching engine owns a dotted namespace.
+        // Keep other dotted leaves on their original schemas, even when
+        // a settings extension registers a longer prefix.
+        let (type_key, leaf_key) = if setting.key == "skills.matching.engine" {
+            ("skills.matching", "engine")
+        } else {
+            (
+                setting.key.split('.').next().unwrap_or("unknown"),
+                setting.key.splitn(2, '.').nth(1).unwrap_or(&setting.key),
+            )
+        };
         if let Some(st) = self.get_settings_type(type_key).await? {
-            // Try to resolve the leaf-level property schema from the type's schema.
-            // Setting keys are dotted: `server.port` → leaf key `port`.
-            // We validate only if a matching property schema exists; otherwise skip.
-            // This avoids false failures when types use a namespace-level schema without
-            // a 1:1 property-per-setting mapping (e.g. knowledge_bases.named_keys).
+            // Free-form leaves need not have a corresponding property schema.
             if let Some(leaf_schema) = st
                 .schema
                 .get("properties")

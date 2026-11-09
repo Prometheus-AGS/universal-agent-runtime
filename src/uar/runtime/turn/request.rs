@@ -165,6 +165,10 @@ pub struct RunExecutionRequest {
     pub skill_attachments: Vec<String>,
     /// Host-selected cwd. This never grants workspace trust or file permissions.
     pub working_directory: Option<std::path::PathBuf>,
+    /// Host-trusted instructions admitted for this run from a registered host.
+    /// Rendered after the artifact's standing instructions. Constructed only by
+    /// an authenticated protocol adapter, never deserialized from a request.
+    pub(crate) host_instructions: Vec<String>,
 }
 
 impl RunExecutionRequest {
@@ -227,6 +231,7 @@ impl RunExecutionRequest {
             service_binding: None,
             skill_attachments: Vec::new(),
             working_directory: None,
+            host_instructions: Vec::new(),
         }
     }
 

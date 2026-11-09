@@ -109,6 +109,10 @@ pub(crate) struct CreateRunRequest {
     pub(crate) history: Option<crate::uar::runtime::turn::host::HostHistoryInput>,
     #[serde(default)]
     pub(crate) skill_attachments: Vec<String>,
+    /// Host-trusted run instructions. Set only by the AG-UI adapter after it
+    /// has verified a registered host; never read from request JSON.
+    #[serde(skip)]
+    pub(crate) host_instructions: Vec<String>,
     #[serde(flatten)]
     pub(crate) presentation_negotiation:
         crate::uar::a2ui::presentation_selection::PresentationNegotiation,
@@ -587,6 +591,7 @@ async fn admit_run_inner(
         reasoning_effort,
         history,
         skill_attachments,
+        host_instructions,
         presentation_negotiation,
     } = req;
     if let Some(format) = &response_format {
@@ -768,6 +773,7 @@ async fn admit_run_inner(
         })?;
     }
     request.skill_attachments = skill_attachments;
+    request.host_instructions = host_instructions;
     request.presentation_negotiation = presentation_negotiation;
     if let Some(context) = delegated_host_context {
         let run_id = reserved_run_id

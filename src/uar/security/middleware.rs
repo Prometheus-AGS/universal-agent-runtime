@@ -266,6 +266,7 @@ fn resolve_user_context(
         api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
         api_key_admin_principals: Vec::new(),
         trusted_host_principals: Vec::new(),
+        registered_hosts: Vec::new(),
         jwt_required,
         jwt_secret: jwt_secret.to_owned().into(),
         jwks_url: None,
@@ -326,6 +327,14 @@ pub async fn auth_middleware(
     }
     if state.config.security.is_remote() && asserted_principal.is_some() {
         return Err(StatusCode::UNAUTHORIZED.into_response());
+    }
+
+    // A server gateway reads the governance status with only the settings
+    // admin key: its client-credentials token is not issued for UAR. Exactly
+    // this GET is admitted without a bearer, and only when an admin key is
+    // required and matches. Any presented credential keeps the normal path.
+    if admin_key_governance_status_read(&state.config.security, &request, host_authenticated.is_some() || asserted_principal.is_some()) {
+        return Ok(next.run(request).await);
     }
 
     let auth_header = request
@@ -398,6 +407,27 @@ pub async fn auth_middleware(
     request.extensions_mut().insert(credential_capture);
     request.extensions_mut().insert(context);
     Ok(next.run(request).await)
+}
+
+/// Path of the governance status read that admits the settings admin key in
+/// place of a bearer.
+pub const GOVERNANCE_STATUS_PATH: &str = "/api/uar/settings/governance/status";
+
+/// True for a credential-less `GET` of [`GOVERNANCE_STATUS_PATH`] carrying the
+/// configured `X-UAR-Admin-Key`. When `settings_mutation_auth_required` is
+/// false there is no admin key to prove, so the route keeps the ordinary
+/// bearer requirement instead of opening to anonymous callers.
+fn admin_key_governance_status_read(config: &SecurityConfig, request: &Request, host_asserted: bool) -> bool {
+    request.method() == axum::http::Method::GET
+        && request.uri().path() == GOVERNANCE_STATUS_PATH
+        && !host_asserted
+        && config.settings_mutation_auth_required
+        && !request.headers().contains_key(header::AUTHORIZATION)
+        && !request.headers().contains_key("x-api-key")
+        && crate::config::secret_value_matches(
+            &config.settings_admin_key,
+            request.headers().get("x-uar-admin-key").and_then(|value| value.to_str().ok()),
+        )
 }
 
 async fn require_current_key_authority(state: &AppState, context: &UserContext) -> Result<(), Response> {
@@ -485,6 +515,7 @@ mod tests {
             api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
             api_key_admin_principals: Vec::new(),
             trusted_host_principals: Vec::new(),
+            registered_hosts: Vec::new(),
             jwt_required: true,
             jwt_secret: "unused-for-jwks".to_owned().into(),
             jwks_url: Some(url),
@@ -507,6 +538,7 @@ mod tests {
             api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
             api_key_admin_principals: Vec::new(),
             trusted_host_principals: Vec::new(),
+            registered_hosts: Vec::new(),
             jwt_required: true,
             jwt_secret: "claim-test-secret".to_owned().into(),
             jwks_url: None,
@@ -1198,5 +1230,143 @@ mod tests {
                 .expect("absent header without host proof must not fail");
             assert!(resolved.is_none(), "a bound marker alone must not create identity");
         }
+    }
+}
+
+/// Fixtures for registered-host tests in this and other API modules. Tokens
+/// are HS256-signed and pass through the production verifier.
+#[cfg(test)]
+pub(crate) mod host_test_support {
+    use super::{SecurityConfig, UserContext, authenticate_bearer_context};
+    use jsonwebtoken::{EncodingKey, Header};
+
+    pub(crate) const ADMIN_KEY: &str = "host-test-admin-key";
+    const SECRET: &[u8] = b"host-test-secret";
+
+    pub(crate) fn config(registered_hosts: &[&str]) -> SecurityConfig {
+        SecurityConfig {
+            provider_credentials: Default::default(),
+            deployment_profile: Default::default(),
+            jwt_algorithm: None,
+            workspace_authorities: Vec::new(),
+            skill_required_roles: Default::default(),
+            api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
+            api_key_admin_principals: Vec::new(),
+            trusted_host_principals: Vec::new(),
+            registered_hosts: registered_hosts.iter().map(|id| (*id).to_owned()).collect(),
+            jwt_required: true,
+            jwt_secret: String::from_utf8(SECRET.to_vec()).expect("utf-8 secret").into(),
+            jwks_url: None,
+            jwt_issuer: None,
+            jwt_audience: None,
+            jwt_validate_nbf: true,
+            settings_mutation_auth_required: true,
+            settings_admin_key: Some(ADMIN_KEY.to_owned().into()),
+            local_loopback_owner: false,
+        }
+    }
+
+    /// A token for `sub`, optionally exchanged by the client `act_sub`.
+    pub(crate) fn token(sub: &str, act_sub: Option<&str>) -> String {
+        let mut claims = serde_json::json!({"sub": sub, "exp": usize::MAX, "roles": ["user"]});
+        if let Some(actor) = act_sub {
+            claims["act"] = serde_json::json!({"sub": actor});
+        }
+        crate::uar::security::jwt::encode(&Header::default(), &claims, &EncodingKey::from_secret(SECRET))
+            .expect("host test token must encode")
+    }
+
+    pub(crate) fn token_with_claims(claims: &serde_json::Value) -> String {
+        crate::uar::security::jwt::encode(&Header::default(), claims, &EncodingKey::from_secret(SECRET))
+            .expect("host test token must encode")
+    }
+
+    /// Verify `token` through the production bearer verifier.
+    pub(crate) async fn context(config: &SecurityConfig, token: &str) -> UserContext {
+        authenticate_bearer_context(config, token).await.expect("host test token must verify")
+    }
+}
+
+#[cfg(test)]
+mod registered_host_tests {
+    use super::host_test_support::{ADMIN_KEY, config, context, token, token_with_claims};
+    use super::{GOVERNANCE_STATUS_PATH, admin_key_governance_status_read, resolve_authenticated_context};
+    use crate::uar::security::claims::is_registered_host;
+    use axum::{body::Body, extract::Request, http::StatusCode};
+
+    fn status_request(admin_key: Option<&str>, bearer: Option<&str>) -> Request {
+        let mut builder = Request::builder().method("GET").uri(GOVERNANCE_STATUS_PATH);
+        if let Some(key) = admin_key { builder = builder.header("x-uar-admin-key", key); }
+        if let Some(token) = bearer { builder = builder.header("authorization", format!("Bearer {token}")); }
+        builder.body(Body::empty()).expect("request")
+    }
+
+    #[tokio::test]
+    async fn act_sub_names_the_host_actor_for_an_exchanged_token() {
+        let config = config(&["desktop-client"]);
+        let user = context(&config, &token("person-1", Some("desktop-client"))).await;
+        assert!(is_registered_host(&config.registered_hosts, Some(&user), false));
+        // The exchanged person is not the host; only the actor counts.
+        let other = crate::uar::security::middleware::host_test_support::config(&["person-1"]);
+        assert!(!is_registered_host(&other.registered_hosts, Some(&user), false));
+    }
+
+    #[tokio::test]
+    async fn sub_names_the_host_actor_without_act() {
+        let config = config(&["gateway-client"]);
+        let user = context(&config, &token("gateway-client", None)).await;
+        assert!(is_registered_host(&config.registered_hosts, Some(&user), false));
+    }
+
+    #[tokio::test]
+    async fn act_without_string_sub_names_no_host_actor() {
+        let config = config(&["person-1"]);
+        let claims = serde_json::json!({"sub":"person-1","exp":usize::MAX,"act":{"client":"x"}});
+        let user = context(&config, &token_with_claims(&claims)).await;
+        assert!(!is_registered_host(&config.registered_hosts, Some(&user), false));
+    }
+
+    #[tokio::test]
+    async fn unregistered_synthetic_and_empty_lists_are_not_hosts() {
+        let config = config(&[]);
+        let user = context(&config, &token("gateway-client", None)).await;
+        assert!(!is_registered_host(&config.registered_hosts, Some(&user), false));
+        assert!(!is_registered_host(&["anonymous".to_owned()], Some(&super::anonymous_context()), false));
+        assert!(!is_registered_host(&["gateway-client".to_owned()], None, false));
+        // An authenticated sidecar launch counts as a registered host.
+        assert!(is_registered_host(&[], None, true));
+    }
+
+    #[test]
+    fn admin_key_alone_reaches_only_the_governance_status_read() {
+        let config = config(&[]);
+        assert!(admin_key_governance_status_read(&config, &status_request(Some(ADMIN_KEY), None), false));
+        assert!(!admin_key_governance_status_read(&config, &status_request(Some("wrong"), None), false));
+        assert!(!admin_key_governance_status_read(&config, &status_request(None, None), false));
+        // A presented bearer keeps the normal verification path.
+        assert!(!admin_key_governance_status_read(&config, &status_request(Some(ADMIN_KEY), Some("x")), false));
+        assert!(!admin_key_governance_status_read(&config, &status_request(Some(ADMIN_KEY), None), true));
+        let other = Request::builder().method("GET").uri("/api/uar/settings/server")
+            .header("x-uar-admin-key", ADMIN_KEY).body(Body::empty()).expect("request");
+        assert!(!admin_key_governance_status_read(&config, &other, false));
+        let post = Request::builder().method("POST").uri(GOVERNANCE_STATUS_PATH)
+            .header("x-uar-admin-key", ADMIN_KEY).body(Body::empty()).expect("request");
+        assert!(!admin_key_governance_status_read(&config, &post, false));
+    }
+
+    #[tokio::test]
+    async fn without_a_configured_admin_key_the_status_read_needs_a_bearer() {
+        let mut config = config(&[]);
+        config.settings_mutation_auth_required = false;
+        config.settings_admin_key = None;
+        assert!(!admin_key_governance_status_read(&config, &status_request(Some(ADMIN_KEY), None), false));
+        // The request then takes the ordinary path, which refuses no bearer.
+        let refused = resolve_authenticated_context(&config, None).await.expect_err("bearer required");
+        assert_eq!(refused, StatusCode::UNAUTHORIZED);
+        // A wrong admin key also falls through to the same refusal.
+        let config = super::host_test_support::config(&[]);
+        assert!(!admin_key_governance_status_read(&config, &status_request(Some("wrong"), None), false));
+        let refused = resolve_authenticated_context(&config, None).await.expect_err("bearer required");
+        assert_eq!(refused, StatusCode::UNAUTHORIZED);
     }
 }

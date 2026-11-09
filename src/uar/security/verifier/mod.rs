@@ -45,6 +45,9 @@ pub(crate) struct Principal {
     api_key_id: Option<String>,
     pub(crate) host_authority: Option<HostAuthority>,
     pub(crate) authority: Option<VerifiedIdentity>,
+    /// Host actor named by the signed token: `act.sub` when `act` is present,
+    /// otherwise `sub`. `None` when `act` is present without a string `sub`.
+    host_actor: Option<String>,
     pub(crate) subject: String,
     pub(crate) tenant_id: Option<TenantId>,
     pub(crate) claims: UserClaims,
@@ -58,6 +61,23 @@ struct VerifiedJwtClaims {
     uar_credential_kind: Option<String>,
     #[serde(default)]
     uar_api_key_id: Option<String>,
+    /// RFC 8693 actor claim. Kept untyped so an unexpected shape cannot reject
+    /// an otherwise valid token; it only fails to name a host actor.
+    #[serde(default)]
+    act: Option<serde_json::Value>,
+}
+
+impl VerifiedJwtClaims {
+    /// The host actor of a signature-verified token. An `act` claim names the
+    /// acting client in `act.sub`; without `act` the subject acts for itself.
+    /// A present `act` that names no string `sub` yields no host actor rather
+    /// than falling back to `sub`.
+    fn host_actor(&self) -> Option<String> {
+        match &self.act {
+            None | Some(serde_json::Value::Null) => Some(self.user.sub.clone()),
+            Some(act) => act.get("sub").and_then(serde_json::Value::as_str).map(str::to_owned),
+        }
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -212,6 +232,7 @@ impl TokenVerifier for SharedSecretVerifier<'_> {
         );
         let token_data = jwt::decode::<VerifiedJwtClaims>(token, &key, &validation)?;
         let credential_kind = CredentialKind::from_verified_marker(token_data.claims.uar_credential_kind.as_deref());
+        let host_actor = token_data.claims.host_actor();
         let claims = token_data.claims.user;
 
         Ok(Principal {
@@ -219,6 +240,7 @@ impl TokenVerifier for SharedSecretVerifier<'_> {
             api_key_id: token_data.claims.uar_api_key_id,
             host_authority: None,
             authority: None,
+            host_actor,
             subject: claims.sub.clone(),
             tenant_id: claims
                 .tenant_id
@@ -331,12 +353,14 @@ impl TokenVerifier for JwksVerifier {
         let token_data =
             jwt::decode::<VerifiedJwtClaims>(token, &key.key, &self.validation(key.algorithm))?;
         let credential_kind = CredentialKind::from_verified_marker(token_data.claims.uar_credential_kind.as_deref());
+        let host_actor = token_data.claims.host_actor();
         let claims = token_data.claims.user;
         Ok(Principal {
             credential_kind,
             api_key_id: token_data.claims.uar_api_key_id,
             host_authority: None,
             authority: None,
+            host_actor,
             subject: claims.sub.clone(),
             tenant_id: claims
                 .tenant_id
@@ -384,7 +408,7 @@ pub(crate) async fn verify_token(
     {
         return Err(VerificationError::MissingRemoteIdentity);
     }
-    principal.authority = Some(VerifiedIdentity::new(config.jwt_issuer.as_deref(), &principal.claims, principal.tenant_id.clone(), principal.credential_kind).with_api_key_id(principal.api_key_id.clone()));
+    principal.authority = Some(VerifiedIdentity::new(config.jwt_issuer.as_deref(), &principal.claims, principal.tenant_id.clone(), principal.credential_kind).with_api_key_id(principal.api_key_id.clone()).with_host_actor(principal.host_actor.clone()));
     principal.host_authority = principal.authority.as_ref().and_then(|identity| HostAuthority::for_service(identity, config));
     Ok(principal)
 }

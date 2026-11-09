@@ -39,10 +39,11 @@ use universal_agent_runtime::{
         PersistenceConfig, ResilienceConfig, SecurityConfig, ServerConfig, VisionConfig,
     },
     uar::{
+        api::effective_settings::{HostToolFacts, HostToolFactsSource},
         persistence::{PersistenceLayer, providers::surreal::SurrealDbProvider},
         realtime::{EntityTopic, LiveEvent, RealtimeBus, RealtimePublishError},
         settings::{
-            manager::SettingsManager,
+            manager::{SettingsManager, setting_revision},
             schema::{SettingSource, Settings, SettingsType},
         },
     },
@@ -79,6 +80,15 @@ impl RealtimeBus for GovernanceRealtimeProbe {
         );
         self.events.lock().expect("events lock").push(event);
         Ok(())
+    }
+}
+
+struct EmptyHostToolInventory;
+
+#[async_trait::async_trait]
+impl HostToolFactsSource for EmptyHostToolInventory {
+    async fn host_tool_facts(&self) -> Result<HostToolFacts> {
+        Ok(HostToolFacts::classify(0, &[], &[], false))
     }
 }
 
@@ -152,6 +162,7 @@ fn minimal_config() -> AppConfig {
             api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
             api_key_admin_principals: Vec::new(),
             trusted_host_principals: Vec::new(),
+            registered_hosts: Vec::new(),
             jwt_required: false,
             jwt_secret: "test-secret".to_string().into(),
             jwks_url: None,
@@ -844,21 +855,29 @@ async fn prompt_caching_admin_namespace_has_no_generic_read_bypass() -> Result<(
     use tower::ServiceExt;
     use universal_agent_runtime::uar::api::settings::{SettingsApiState, build_router};
 
+    const ADMIN_KEY: &str = "test-admin-key";
     let (mgr, _dir) = make_manager().await;
     mgr.initialize(&minimal_config()).await?;
     let app = build_router().with_state(Arc::new(SettingsApiState {
         settings_manager: Some(mgr),
         governance_status: None,
         settings_mutation_auth_required: true,
-        settings_admin_key: Some("test-admin-key".to_string().into()),
+        settings_admin_key: Some(ADMIN_KEY.to_owned().into()),
         embedding_backend: None,
         embedding_base_config: None,
         embedding_failover: None,
+        registered_hosts: Vec::new(),
+        host_tools: None,
     }));
 
     let list_response = app
         .clone()
-        .oneshot(Request::builder().uri("/").body(Body::empty())?)
+        .oneshot(
+            Request::builder()
+                .uri("/")
+                .header("x-uar-admin-key", ADMIN_KEY)
+                .body(Body::empty())?,
+        )
         .await?;
     assert_eq!(list_response.status(), axum::http::StatusCode::OK);
     let list_body = axum::body::to_bytes(list_response.into_body(), usize::MAX).await?;
@@ -878,6 +897,7 @@ async fn prompt_caching_admin_namespace_has_no_generic_read_bypass() -> Result<(
         .oneshot(
             Request::builder()
                 .uri("/prompt_caching.enabled")
+                .header("x-uar-admin-key", ADMIN_KEY)
                 .body(Body::empty())?,
         )
         .await?;
@@ -1404,6 +1424,14 @@ async fn governance_api_returns_per_key_results_and_authoritative_status_token()
         .initialize_with_governance_default(&minimal_config(), plan.target_enabled)
         .await?;
     mutation.finalize_preference(&plan)?;
+    let mut revisions = HashMap::new();
+    for field in ["enabled", "policy_reload_enabled"] {
+        let current = manager
+            .get_with_meta(&format!("governance.{field}"))
+            .await
+            .expect("governance setting is initialized");
+        revisions.insert(field, setting_revision(&current.setting));
+    }
     let app = build_router().with_state(Arc::new(SettingsApiState {
         settings_manager: Some(manager),
         governance_status: Some(status),
@@ -1412,6 +1440,8 @@ async fn governance_api_returns_per_key_results_and_authoritative_status_token()
         embedding_backend: None,
         embedding_base_config: None,
         embedding_failover: None,
+        registered_hosts: Vec::new(),
+        host_tools: Some(Arc::new(EmptyHostToolInventory)),
     }));
 
     let response = app
@@ -1422,7 +1452,11 @@ async fn governance_api_returns_per_key_results_and_authoritative_status_token()
                 .uri("/governance")
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    r#"{"data":{"enabled":true,"policy_reload_enabled":false}}"#,
+                    json!({
+                        "data": {"enabled": true, "policy_reload_enabled": false},
+                        "expected_revisions": revisions,
+                    })
+                    .to_string(),
                 ))?,
         )
         .await?;
@@ -1583,6 +1617,8 @@ async fn governance_status_api_reports_mutation_unavailable_as_fail_closed() -> 
         embedding_backend: None,
         embedding_base_config: None,
         embedding_failover: None,
+        registered_hosts: Vec::new(),
+        host_tools: Some(Arc::new(EmptyHostToolInventory)),
     }));
 
     let response = app

@@ -199,6 +199,7 @@ async fn harness(keys: impl FnOnce() -> Vec<Jwk>) -> Harness {
             api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
             api_key_admin_principals: Vec::new(),
             trusted_host_principals: Vec::new(),
+            registered_hosts: Vec::new(),
             jwt_required: false,
             jwt_secret: "unused-when-jwks-is-configured".to_owned().into(),
             jwks_url: Some(format!("{}/.well-known/jwks.json", jwks.uri())),

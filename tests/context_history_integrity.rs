@@ -2273,9 +2273,23 @@ fn checkpoint_resume_restores_state_and_messages_or_errors() {
     assert!(legacy_error.to_string().contains("legacy-incomplete"));
 }
 
-#[tokio::test]
-async fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mutating_history() {
-    checkpoint_resume_denial_scenario_future().await;
+#[test]
+fn checkpoint_resume_rejects_raw_metadata_and_legacy_admission_without_mutating_history() {
+    // Graph admission runs on this executor's thread. Give it the same
+    // bounded stack as the server's Tokio workers.
+    std::thread::Builder::new()
+        .name("checkpoint-resume-denial".into())
+        .stack_size(8 * 1024 * 1024)
+        .spawn(|| {
+            tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("checkpoint fixture runtime")
+                .block_on(checkpoint_resume_denial_scenario_future());
+        })
+        .expect("checkpoint fixture thread")
+        .join()
+        .expect("checkpoint resume denial scenario");
 }
 
 #[inline(never)]

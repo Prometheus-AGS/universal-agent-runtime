@@ -73,6 +73,7 @@ fn security() -> SecurityConfig {
         api_key_delegable_roles: SecurityConfig::default_api_key_delegable_roles(),
         api_key_admin_principals: Vec::new(),
         trusted_host_principals: Vec::new(),
+        registered_hosts: Vec::new(),
         jwt_required: false,
         jwt_secret: "a2a-thread-test-secret".to_owned().into(),
         jwks_url: None,

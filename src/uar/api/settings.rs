@@ -42,6 +42,12 @@ pub struct SettingsApiState {
     /// the authenticated request.
     pub embedding_failover:
         Option<Arc<crate::uar::rag::embeddings::failover::LocalEmbeddingFailover>>,
+    /// `security.registered_hosts`: client ids whose verified bearer may read
+    /// the governance status without the admin key.
+    pub registered_hosts: Vec<String>,
+    /// Deployment-level host-tool inventory reported in the governance status.
+    pub host_tools:
+        Option<Arc<dyn crate::uar::api::effective_settings::HostToolFactsSource>>,
 }
 
 impl std::fmt::Debug for SettingsApiState {
@@ -69,6 +75,8 @@ impl std::fmt::Debug for SettingsApiState {
                 "embedding_failover",
                 &self.embedding_failover.as_ref().map(|_| "attached"),
             )
+            .field("registered_hosts", &self.registered_hosts)
+            .field("host_tools", &self.host_tools.as_ref().map(|_| "attached"))
             .finish()
     }
 }
@@ -321,11 +329,31 @@ fn mgr_from_state(state: &SettingsApiState) -> Result<&Arc<SettingsManager>, Api
     state.settings_manager.as_ref().ok_or(ApiError::Unavailable)
 }
 
+/// Governance status: the coherent [`GovernanceRuntimeSnapshot`] fields plus
+/// `host_tools` ([`HostToolFacts`]) and `host_instructions`.
+///
+/// Admitted for a matching `X-UAR-Admin-Key` (the outer authentication layer
+/// lets that exact request through without a bearer), or, with no admin key,
+/// for a registered host: a verified bearer whose host actor is listed in
+/// `security.registered_hosts`, or an authenticated sidecar launch. Anyone
+/// else receives the existing 403.
+///
+/// [`GovernanceRuntimeSnapshot`]: crate::uar::governance::runtime_control::GovernanceRuntimeSnapshot
+/// [`HostToolFacts`]: crate::uar::api::effective_settings::HostToolFacts
 async fn get_governance_status(
     State(state): State<Arc<SettingsApiState>>,
     headers: HeaderMap,
-) -> Result<Json<crate::uar::governance::runtime_control::GovernanceRuntimeSnapshot>, ApiError> {
-    require_admin_key(state.as_ref(), &headers)?;
+    user: Option<axum::Extension<crate::uar::security::claims::UserContext>>,
+    sidecar: Option<axum::Extension<crate::uar::security::sidecar_guard::HostAuthenticated>>,
+) -> Result<Json<Value>, ApiError> {
+    let caller_registered = crate::uar::security::claims::is_registered_host(
+        &state.registered_hosts,
+        user.as_ref().map(|axum::Extension(user)| user),
+        sidecar.is_some(),
+    );
+    if !caller_registered {
+        require_admin_key(state.as_ref(), &headers)?;
+    }
     let snapshot = state
         .governance_status
         .as_ref()
@@ -334,7 +362,28 @@ async fn get_governance_status(
     snapshot
         .validate()
         .map_err(|error| ApiError::Internal(error.to_string()))?;
-    Ok(Json(snapshot))
+    let host_tools = state
+        .host_tools
+        .as_ref()
+        .ok_or(ApiError::Unavailable)?
+        .host_tool_facts()
+        .await
+        .map_err(|_| ApiError::Internal("host tool inventory unavailable".to_owned()))?;
+    let mut body = serde_json::to_value(&snapshot)
+        .map_err(|error| ApiError::Internal(error.to_string()))?;
+    let object = body
+        .as_object_mut()
+        .ok_or_else(|| ApiError::Internal("governance snapshot is not an object".to_owned()))?;
+    object.insert("host_tools".to_owned(), json!(host_tools));
+    object.insert(
+        "host_instructions".to_owned(),
+        json!({
+            "supported": true,
+            "registered_hosts_configured": !state.registered_hosts.is_empty(),
+            "caller_registered": caller_registered,
+        }),
+    );
+    Ok(Json(body))
 }
 
 enum ApiError {
@@ -1499,6 +1548,8 @@ mod prompt_caching_authorization_tests {
             embedding_backend: None,
             embedding_base_config: None,
             embedding_failover: None,
+            registered_hosts: Vec::new(),
+            host_tools: None,
         }
     }
 
@@ -1764,5 +1815,105 @@ mod tests {
         // a genuine rotation still replaces the stored value
         let rotated = json!("sentinel-SYNTHETIC-0001-rotated");
         assert_eq!(preserve_sensitive_value(rotated.clone(), &stored, field), rotated);
+    }
+}
+
+#[cfg(test)]
+mod governance_status_tests {
+    use super::*;
+    use crate::uar::api::effective_settings::{HostToolFacts, HostToolFactsSource};
+    use crate::uar::security::middleware::host_test_support::{ADMIN_KEY, config, context, token};
+    use axum::{body::Body, http::Request};
+    use tower::ServiceExt;
+
+    struct FixedFacts(HostToolFacts);
+
+    #[async_trait::async_trait]
+    impl HostToolFactsSource for FixedFacts {
+        async fn host_tool_facts(&self) -> anyhow::Result<HostToolFacts> { Ok(self.0) }
+    }
+
+    fn state(registered_hosts: &[&str]) -> SettingsApiState {
+        let (_, _, status) =
+            crate::uar::governance::runtime_control::governance_runtime_handles("127.0.0.1");
+        SettingsApiState {
+            settings_manager: None,
+            governance_status: Some(status),
+            settings_mutation_auth_required: true,
+            settings_admin_key: Some(ADMIN_KEY.to_owned().into()),
+            embedding_backend: None,
+            embedding_base_config: None,
+            embedding_failover: None,
+            registered_hosts: registered_hosts.iter().map(|id| (*id).to_owned()).collect(),
+            host_tools: Some(Arc::new(FixedFacts(HostToolFacts {
+                global_mcp_servers: 0, native_tools: 0, tool_admission: false,
+            }))),
+        }
+    }
+
+    async fn read(
+        state: SettingsApiState,
+        user: Option<crate::uar::security::claims::UserContext>,
+        admin_key: Option<&str>,
+    ) -> (StatusCode, Value) {
+        let mut router = build_router().with_state(Arc::new(state));
+        if let Some(user) = user { router = router.layer(axum::Extension(user)); }
+        let mut request = Request::builder().uri("/governance/status");
+        if let Some(key) = admin_key { request = request.header("x-uar-admin-key", key); }
+        let response = router.oneshot(request.body(Body::empty()).expect("request")).await.expect("response");
+        let status = response.status();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.expect("body");
+        (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    }
+
+    #[tokio::test]
+    async fn registered_host_bearer_reads_status_without_admin_key() {
+        let security = config(&["desktop-client"]);
+        let user = context(&security, &token("person-1", Some("desktop-client"))).await;
+        let (status, body) = read(state(&["desktop-client"]), Some(user), None).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["host_instructions"],
+            json!({"supported":true,"registered_hosts_configured":true,"caller_registered":true}));
+        assert_eq!(body["host_tools"],
+            json!({"global_mcp_servers":0,"native_tools":0,"tool_admission":false}));
+        assert_eq!(body["phase"], "initializing");
+    }
+
+    #[tokio::test]
+    async fn unregistered_bearer_without_admin_key_is_forbidden() {
+        let security = config(&["desktop-client"]);
+        let user = context(&security, &token("person-1", Some("other-client"))).await;
+        let (status, _) = read(state(&["desktop-client"]), Some(user), None).await;
+        assert_eq!(status, StatusCode::FORBIDDEN);
+    }
+
+    #[tokio::test]
+    async fn admin_key_path_is_unchanged_and_reports_caller_not_registered() {
+        // Admin key with no bearer (admitted by the outer layer) and with an
+        // ordinary bearer both read the status; neither is a registered host.
+        let (status, body) = read(state(&[]), None, Some(ADMIN_KEY)).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["host_instructions"],
+            json!({"supported":true,"registered_hosts_configured":false,"caller_registered":false}));
+        let security = config(&[]);
+        let user = context(&security, &token("person-1", None)).await;
+        let (status, body) = read(state(&["desktop-client"]), Some(user), Some(ADMIN_KEY)).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(body["host_instructions"]["caller_registered"], false);
+        let (status, _) = read(state(&[]), None, Some("wrong-key")).await;
+        assert_eq!(status, StatusCode::FORBIDDEN);
+        let (status, _) = read(state(&[]), None, None).await;
+        assert_eq!(status, StatusCode::FORBIDDEN);
+    }
+
+    #[tokio::test]
+    async fn registration_does_not_open_other_settings_routes() {
+        let security = config(&["desktop-client"]);
+        let user = context(&security, &token("person-1", Some("desktop-client"))).await;
+        let router = build_router().with_state(Arc::new(state(&["desktop-client"])))
+            .layer(axum::Extension(user));
+        let response = router.oneshot(Request::builder().uri("/prompt-caching")
+            .body(Body::empty()).expect("request")).await.expect("response");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
     }
 }
