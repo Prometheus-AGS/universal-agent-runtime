@@ -7233,3 +7233,49 @@ Source: `33221c3a` plus working-tree diff sha256 prefix `035df622c36c98ef` (19 t
 - Gate 7 attempt 3 (`target/rc2-gate/catalog-rerun-3/summary.tsv`): query-agent, skill-lexical-semantic, memory-retention fixture and scenario all passed. skill-lexical-semantic's attempt 2 had called `activate_skill` against its prompt (governance denied it, empty answer): model non-compliance. Observed and recorded as a known limit, not fixed: AG-UI `TOOL_CALL_START` names a tool `tool-Some(<index>)` when its first event is an argument delta (`server.rs:7304`, from `7b3b4699`).
 - Gate 7 COMPLETE on macOS: 85 of 86 catalog configs pass (all 12 first-pass failures fixed or rerun to PASS); `agent.cucumber.mjs` not run (needs a separately provisioned owned UAR). Not covered: gates 5–6 and the 72 first-pass catalog passes ran on `30c7f806…`, before the session race fix; only the 12 reruns ran on the final `999c7e8a…`.
 - OpenSpec: race-fix delta added under conversation-history-integrity; `openspec validate rc2-ownership-budgets` valid (`openspec-validate-003.log`). Release note validation table, CHANGELOG and known limits updated. Nothing committed.
+
+### 2026-11-03 — Issue #386 Execute handoff
+
+Authored UAR media authority, durable effects, a trusted-host API, a deterministic mock peer, local credential-free Cucumber scenarios and OpenSpec artifacts. The canonical KBD registration was rejected because the installed runtime is attached to an older run than the checkout waypoint. The phase handoff is in .kbd-orchestrator/phases/uar-post-lifecycle-verification-readiness/backlog/issue-386-media-authority.md. No verification ran. Gate CLOSED, issue open, fixture and canonical registration pending.
+
+### 2026-11-03 — Issue #386 value verification preparation
+
+Strengthened the existing Cucumber scenarios to retain redacted product and peer observations, prove refused claims did not allocate attempts, bind reconciliation to original evidence, and settle the cancellation race winner before closing the mock room. Mapped the assertions to the approved issue scope in the phase handoff. The waypoint still reports 144/170 implementation items. The KBD registration mismatch and operator lock remain unresolved. No verification command ran. Value acceptance remains NOT_EXERCISED.
+
+### 2026-11-03 — Issue #386 waypoint recovery investigation
+
+Canonical status and the checked-in waypoint still reference different runs. Source inspection found the older local KBD project store and no recoverable journal for the newer waypoint run in the inspected local paths or Git remote refs. The handoff records the missing recovery source. No waypoint rewrite, verification, commit, or push occurred.
+
+### 2026-11-03 — Issue #386 standalone verification started
+
+Operator directed issue-scoped validation and closure outside KBD. No canonical KBD transition is claimed. The focused `server-full` build compiles UAR and both fixture examples. `openspec validate dot-media-action-authority --strict` exited 0 with “Change 'dot-media-action-authority' is valid.” Cucumber dry-run exited 0 and found three scenarios and 19 steps, all skipped. The artifact-only critic found no blocking source defect and identified a peer-count assertion controlled by the driver. The rejection scenario now inspects durable catalog effects, grants and attempts instead. Pending runtime acceptance against the disposable host and the mock peer.
+
+### 2026-11-03 — Issue #386 build candidate correction
+
+Build attempt 01 was interrupted with exit 130 after finding that the local Liter submodule at `31c7e6323` omits `chat_stream_request_body`, which this UAR source uses. Fetched and temporarily selected the parent commit's existing gitlink `0d74c5665` for reproducible validation. Attempt 02 was interrupted with exit 130 after the shared compiler wrapper held multiple jobs waiting. Attempt 03 uses the same locked build command with a command-local empty `RUSTC_WRAPPER`. No dependency pins or global build settings changed. Retained all attempt outputs under `.prometheus/verification/issue-386/`.
+
+### 2026-11-03 — Issue #386 compiler findings
+
+The wrapper-free build attempt 03 exited 101. The pinned SHA-256 digest array does not implement `LowerHex`, so the media service now calls the existing collaboration byte digest helper. Attempt 04 reported seven `missing_debug_implementations` warnings for types whose diagnostics intentionally omit private fields. Each type now carries a narrow expectation with the reason for omitting debug output. Require a warning-free build before running the production HTTP scenarios.
+
+### 2026-11-03 — Issue #386 validation profile selection
+
+Full-profile attempts 04 and 05 both linked, but the local build gate refused their Apple linker warning: `__eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table`. Attempt 05 cleared the seven media Rust warnings. The selected acceptance candidate is the supported default `minimal` server profile, which composes the same media API with the embedded durable SurrealKV catalog. Build attempt 06 retains standard linker and lint behavior. No release-wide result is claimed.
+
+### 2026-11-03 — Issue #386 macOS linker investigation
+
+Attempt 06 linked the default `minimal` profile with the same Apple compact unwind warning. Mach-O inspection showed a roughly 27 MiB `__eh_frame` section. A direct `cargo rustc --bin` linker retry (07) was interrupted with exit 130 when it began rebuilding a different feature graph without the examples. Attempt 08 preserved the normal Cargo target selection and used LLVM LLD for the UAR executable only, with compact unwind enabled. It linked without the size warning but reported native archive objects targeting macOS 27.2 while the executable targets 11.0. Attempt 09 aligns the C/C++ native minimum and Rust build environment at 11.0 for the local acceptance command, without changing project build settings. The BDD run remains pending a clean build.
+
+### 2026-11-03 — Issue #386 disposable fixture startup
+
+Attempt 09 finished the aligned `minimal` build in 8m 45s with zero warnings. The first fixture startup refused its missing settings admin key. The disposable identity supervisor now supplies a generated local key to UAR only. The second startup opened the seeded SurrealKV store, then failed readiness because the startup lifecycle requires local embedding support. Attempt 10 adds the existing `local-models` feature and uses the bundled model assets. Neither startup failure exercised a BDD scenario. The runtime and fixture outputs remain in their original attempt locations.
+
+### 2026-11-03 — Issue #386 standalone acceptance passed
+
+Build attempt 10 linked with an ONNX Runtime deployment target mismatch. Attempt 11 matched the disposable UAR executable's minimum macOS version to the bundled ONNX Runtime archive (13.4), used LLVM LLD with unwind support, and finished with zero warnings. The real HTTP and durable SurrealKV Cucumber run exited 0: 3 scenarios and 19 steps passed in 53.969 seconds. The mock peer showed no redispatch on reconciliation. The snapshot confirmed rejected scope requests created no dispatch attempts and the exercised canary stayed out of durable state and diagnostics. The independent artifact review, strict OpenSpec validation, and staged whitespace check completed. The fixture shut down. The acceptance note in .prometheus/verification/issue-386/acceptance.md records candidate and evidence identities.
+
+An unquoted evidence heredoc invoked shell substitutions and started an unintended build. Stopped that build, replaced the empty draft through a direct edit, and confirmed the accepted binary and Cucumber report hashes still matched. Use a quoted heredoc or a direct file edit for Markdown with backticks.
+
+### 2026-11-03 — Issue #386 standalone closure
+
+Pushed implementation and evidence commit 53cf7c6ac848a66a95c0c7d6810482770bce7b21 to origin/codex/issue-386-media-authority. GitHub returned state closed for issue #386 after adding the commit and acceptance evidence links. The GitHub Actions deployment-only policy validator and commitlint passed with the normal hooks. The first commit attempt was stopped by pnpm's automatic dependency reinstall prompt against the temporary node_modules link. The retry used a command-local pnpm setting to prevent automatic install while retaining both hooks. Restored the preexisting Liter checkout. No canonical KBD transition, main-branch merge, or release certification is recorded.

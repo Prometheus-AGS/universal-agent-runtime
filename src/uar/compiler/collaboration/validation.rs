@@ -21,14 +21,14 @@ use crate::uar::domain::collaboration::{
     SourceIdentity,
 };
 
-use canonical::{digest, parse_unique_json, verify_content_digest};
+use canonical::{parse_unique_json, verify_content_digest};
 use diagnostics::{complete_field_diagnostics, redact_projection_diagnostics};
 use graph::validate_package_graph;
 use projection::{conversion_diagnostics, project_agent};
 use schema::{validate_manifest, validate_portable_document};
 use schema_registry::validate_document;
 
-pub(super) use canonical::{canonical_digest, request_digest};
+pub(super) use canonical::{canonical_digest, digest, request_digest};
 pub(super) use schema::{validate_common_sections, validate_digest, validate_id, validate_semver};
 pub(super) use team_instructions::resolve_team_instructions;
 
