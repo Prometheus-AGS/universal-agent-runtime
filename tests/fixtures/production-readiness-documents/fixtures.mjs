@@ -1,6 +1,6 @@
-// Deterministic document inputs, materialized only by the approved phase-end
-// behavior runner. No extractor/packager/process is invoked by this module.
-import { deflateSync } from 'node:zlib';
+// Deterministic document inputs. cobalt.png freezes the synthetic "FACT 73"
+// lettering in Roboto Bold so the behavior runner needs no installed fonts.
+import { readFileSync } from 'node:fs';
 
 const text = 'The cobalt qualification coefficient is 73. Seal TEAL-7319.';
 const crc32 = bytes => {
@@ -43,36 +43,6 @@ function zip(entries) {
 const types = main => `<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${main}</Types>`;
 const relationship = (type, target) => `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/${type}" Target="${target}"/></Relationships>`;
 
-function png() {
-  const glyphs = {
-    F: ['11111','10000','10000','11110','10000','10000','10000'],
-    A: ['01110','10001','10001','11111','10001','10001','10001'],
-    C: ['01111','10000','10000','10000','10000','10000','01111'],
-    T: ['11111','00100','00100','00100','00100','00100','00100'],
-    '7': ['11111','00001','00010','00100','01000','01000','01000'],
-    '3': ['11110','00001','00001','01110','00001','00001','11110'],
-    ' ': Array(7).fill('00000'),
-  };
-  const scale = 8, margin = 32, width = 7 * 6 * scale + margin * 2, height = 7 * scale + margin * 2;
-  const scan = Buffer.alloc((width + 1) * height, 255);
-  for (let y = 0; y < height; y++) scan[y * (width + 1)] = 0;
-  for (const [index, char] of [...'FACT 73'].entries()) {
-    for (let y = 0; y < 7; y++) for (let x = 0; x < 5; x++) if (glyphs[char][y][x] === '1') {
-      for (let dy = 0; dy < scale; dy++) for (let dx = 0; dx < scale; dx++) {
-        scan[(margin + y * scale + dy) * (width + 1) + 1 + margin + index * 6 * scale + x * scale + dx] = 0;
-      }
-    }
-  }
-  const chunk = (name, data) => {
-    const kind = Buffer.from(name), size = Buffer.alloc(4), checksum = Buffer.alloc(4);
-    size.writeUInt32BE(data.length); checksum.writeUInt32BE(crc32(Buffer.concat([kind, data])));
-    return Buffer.concat([size, kind, data, checksum]);
-  };
-  const header = Buffer.alloc(13);
-  header.writeUInt32BE(width); header.writeUInt32BE(height, 4); header[8] = 8;
-  return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]), chunk('IHDR', header), chunk('IDAT', deflateSync(scan)), chunk('IEND', Buffer.alloc(0))]);
-}
-
 export function documentFixtures() {
   const docx = zip([
     ['[Content_Types].xml', types('<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>')],
@@ -91,6 +61,6 @@ export function documentFixtures() {
     { name: 'cobalt.xlsx', type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', bytes: xlsx, expected: ['73', 'TEAL-7319'] },
     { name: 'cobalt.eml', type: 'message/rfc822', bytes: Buffer.from(`From: fixture@example.invalid\r\nTo: owned@example.invalid\r\nSubject: Cobalt fact\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n${text}\r\n`), expected: ['73', 'TEAL-7319'] },
     { name: 'cobalt.zip', type: 'application/zip', bytes: zip([['cobalt.txt', text]]), expected: ['73', 'TEAL-7319'] },
-    { name: 'cobalt.png', type: 'image/png', bytes: png(), expected: ['73'], requires: 'configured OCR backend' },
+    { name: 'cobalt.png', type: 'image/png', bytes: readFileSync(new URL('./cobalt.png', import.meta.url)), expected: ['73'], requires: 'configured OCR backend' },
   ];
 }

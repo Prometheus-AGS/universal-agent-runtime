@@ -149,9 +149,10 @@ Then('each format retrieves its own fact with document provenance', async functi
     const found = await request(this, 'POST', `${path}/search`, { query: 'What fact does this qualification document contain?', limit: 20, min_score: 0 });
     const own = found.results.filter(row => row.document_id === document.id);
     const content = own.map(row => row.content).join('\n');
+    this.evidence.observations.push({ format: fixture.name, uploaded_document_id: document.id,
+      retrieved_document_id: own[0]?.document_id ?? null, expected: fixture.expected, retrieved: content });
     assert.ok(own.length > 0, `${fixture.name} provenance missing`);
     for (const expected of fixture.expected) assert.ok(content.includes(expected), `${fixture.name} expected fact absent`);
-    this.evidence.observations.push({ format: fixture.name, retrieved_document_id: document.id, expected: fixture.expected, retrieved: content });
   }
 });
 Then('a malformed Office input is refused without a searchable fact', async function () {

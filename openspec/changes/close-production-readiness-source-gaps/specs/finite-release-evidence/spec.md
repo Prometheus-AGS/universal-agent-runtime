@@ -34,6 +34,7 @@ Release/support/version/recovery/measurement source SHALL use one selected-lane 
 
 - **WHEN** local English OCR is enabled in the selected Linux image
 - **THEN** the packaged pinned language data is available to the non-root runtime without a download at extraction time
+- **AND** the mounted qualification retains the actual extracted fact and document provenance from a frozen, legible image fixture
 - **AND** malformed or empty extraction cannot publish an indexed generation, deterministic rejection becomes a terminal failed job, and transient failures keep their existing retry budget
 
 #### Scenario: Installed final-wire accounting is carried in a retained artifact
