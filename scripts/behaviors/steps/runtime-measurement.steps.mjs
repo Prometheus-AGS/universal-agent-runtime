@@ -26,11 +26,12 @@ async function safeJson(w, path, signal) {
 async function sample(w, task, concurrency, repetition, ordinal) {
   const m = w.measurement, requestId = randomUUID(), sessionId = randomUUID();
   const content = `${task.messages[0].content}\nUAR_MEASUREMENT:${m.selection.experimentId}:${task.id}:${requestId}`;
+  // A present tools field selects caller-owned tool admission, even when empty.
   const body = { model: m.model.selector, agent_id: m.model.agentId, session_id: sessionId,
     client_turn_id: requestId, user_message_id: randomUUID(), stream: true, stream_mode: 'openai',
     temperature: m.settings.temperature, memory_enabled: false,
     prompt_caching_enabled: m.settings.promptCachingEnabled, max_completion_tokens: m.tokenBudgets.output,
-    messages: [{ role: 'user', content }], tools: [] };
+    messages: [{ role: 'user', content }] };
   const serialized = JSON.stringify(body);
   const started = performance.now(), deadline = Math.min(w.measurementDeadline - performance.now(), m.limits.requestTimeoutMs);
   const row = { requestId, sessionId, taskId: task.id, concurrency, repetition, ordinal, startUnixMs: Date.now(),

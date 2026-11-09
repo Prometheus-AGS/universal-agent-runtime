@@ -77,6 +77,11 @@ Measurement source SHALL require a frozen workload, hardware/profile, concurrenc
 - **THEN** the existing measurement receipt qualifies the threshold only if all 48 requests complete with zero observed errors
 - **AND** latency, throughput and resource samples remain observations without a latency or capacity promise
 
+#### Scenario: No-tools measurement uses native turn admission
+- **WHEN** the controlled no-tools measurement submits original native turn and user message IDs
+- **THEN** the request omits the caller-owned tools field and retains the original native IDs for read-only reconciliation
+- **AND** the peer observes zero offered tools and the original zero-error and sample-count assertions still apply
+
 #### Scenario: An unchanged retained agent is serialized with a different object-key order
 - **WHEN** an installed reliability scenario re-reads its retained agent before dispatch
 - **THEN** it compares the complete definition in deterministic object-key order while preserving array order
