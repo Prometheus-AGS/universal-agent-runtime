@@ -36,6 +36,17 @@ pub async fn settle_run_cost(
     persistence: Option<&Arc<dyn PersistenceLayer>>,
     sink: &dyn RuntimeEventSink,
 ) -> Option<f64> {
+    let metric_model = inputs.cost_tracking_enabled.then_some(inputs.model);
+    settle_run_cost_with_metric(inputs, metric_model, cost_budget, persistence, sink).await
+}
+
+pub(crate) async fn settle_run_cost_with_metric(
+    inputs: RunCostInputs<'_>,
+    metric_model: Option<&str>,
+    cost_budget: &CostBudgetTracker,
+    persistence: Option<&Arc<dyn PersistenceLayer>>,
+    sink: &dyn RuntimeEventSink,
+) -> Option<f64> {
     // Await inspection before terminal publication. A failed read is unresolved,
     // never evidence that the pending pre-dispatch liability disappeared.
     let owner = cost_budget.accounting_owner(inputs.run_id);
@@ -55,12 +66,13 @@ pub async fn settle_run_cost(
             message: "Execution outcome is independent of accounting; durable usage remains pending reconciliation".into(),
         }).await;
     }
-    if !inputs.cost_tracking_enabled { return None; }
+    if !inputs.cost_tracking_enabled && metric_model.is_none() { return None; }
     let usage = cost_budget.run_usage(inputs.run_id);
     let cost = if usage.usage_reports > 0 && !usage.unpriced_usage { Some(usage.cost_usd) } else { None }?;
-    if let Some((provider,model_id)) = inputs.model.split_once('/') {
+    if let Some((provider,model_id)) = metric_model.and_then(|model| model.split_once('/')) {
         crate::uar::telemetry::metrics::record_llm_cost(provider,model_id,cost);
     }
+    if !inputs.cost_tracking_enabled { return None; }
 
     // Driver wrappers already charged every model call. Surface a `BudgetAlert`
     // for the first scope (in priority order) that crosses its configured

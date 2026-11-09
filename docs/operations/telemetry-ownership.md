@@ -32,6 +32,8 @@ OTLP/log fields retain safe correlation metadata, existing run/request/iteration
 
 Per-call durable accounting remains authoritative. Event replay does not re-execute tools or create a new accounting charge. Metrics are operational observations, not a replacement cost ledger. Terminal run-total cost histograms are not an idempotent billing record; replay/double-terminal behavior must be disclosed and checked using existing accounting call identities, without a speculative second ledger or in-memory deduplication guard.
 
+The operator's `llm.cost_tracking` setting enables terminal cost metrics for saved-agent runs with priced provider-reported usage. The run-total histogram labels the selected provider and full configured model ID. It describes the whole run without allocating cost across fallback destinations. The existing terminal event cost fields retain their per-run behavior.
+
 ## Authored final evidence
 
 `tests/telemetry_ownership.rs` uses separate child processes for fresh/repeated globals, foreign recorder, foreign subscriber, explicit disable, no-collector mode and shutdown/instance recreation. It preserves the host recorder and verifies that UAR macro writes arrive there while UAR's own scrape remains unavailable. Fixtures are authored only. The final combined gate must additionally exercise the mounted HTTP route, bounded labels, sensitive-payload controls, exporter outage and actual run→tool→retry/fallback→recovery/cancel correlation on the selected artifact. No test requires authentication plumbing; external identity provisioning remains outside behavior scripts. No fixture run or host-global mutation occurred while authoring these files.

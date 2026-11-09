@@ -8530,8 +8530,11 @@ impl RunManager {
         // Capture the resolved model id so the final RunDoneWithUsage event can
         // report which model actually answered (moved into the spawned task below).
         let run_model = run_llm_config.model.clone();
-        // Whether to compute per-request cost (captured before run_llm_config moves).
+        // The effective run setting still controls terminal cost events and alerts.
         let cost_tracking_enabled = run_llm_config.cost_tracking;
+        // Saved-agent connection resolution can omit the operator's metric setting.
+        let cost_metric_model = (self.llm_config.cost_tracking || cost_tracking_enabled)
+            .then(|| run_llm_config.qualified_model_name());
 
         let sandbox_lease = match self
             .sandbox_operations
@@ -10443,7 +10446,7 @@ impl RunManager {
             }
             // Settle cost for any run that reported usage, cancelled or not, so a
             // cancelled run's spend reaches the durable ledger and the event stream.
-            let cost_usd_estimate = crate::uar::runtime::run_cost::settle_run_cost(
+            let cost_usd_estimate = crate::uar::runtime::run_cost::settle_run_cost_with_metric(
                 crate::uar::runtime::run_cost::RunCostInputs {
                     run_id: &execute_run_id,
                     session_id: execution_session.id(),
@@ -10454,6 +10457,7 @@ impl RunManager {
                     cache_read_tokens: cache_read_input_tokens.unwrap_or(0),
                     cost_tracking_enabled,
                 },
+                cost_metric_model.as_deref(),
                 &cost_budget_for_run,
                 persistence_for_run.as_ref(),
                 &emitter,
