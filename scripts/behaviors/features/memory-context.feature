@@ -37,7 +37,7 @@ Feature: Independent memory inclusion is proved at the final provider boundary
     When I save a fresh "relevant" memory through the independent memory API
     And I delete that exact independent memory
     And I submit a fresh memory-context turn in mode "success"
-    Then memory-context reports "no_match" with reason "memory_no_match"
+    Then memory-context reports "no_match" with reason "memory_no_retained_scope_match"
     And no saved fact or submitted claim reaches the provider boundary
 
   Scenario: A foreign credential identity cannot supply or read this owner's memory
@@ -45,7 +45,7 @@ Feature: Independent memory inclusion is proved at the final provider boundary
     When I save a fresh "foreign" memory through the independent memory API
     Then the primary identity cannot read the foreign record
     When I submit a fresh memory-context turn in mode "success"
-    Then memory-context reports "no_match" with reason "memory_no_match"
+    Then memory-context reports "no_match" with reason "memory_no_retained_scope_match"
     And no saved fact or submitted claim reaches the provider boundary
 
   Scenario: Final context refusal cannot manufacture a memory submission

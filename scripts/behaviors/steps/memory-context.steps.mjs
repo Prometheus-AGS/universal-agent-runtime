@@ -215,7 +215,7 @@ Then('the host reports the original memory IDs submitted with provider-response 
   const claim = claims[0];
   assert.equal(claim.reason_code, 'memory_content_submitted');
   assert.deepEqual(claim.provenance.memory_ids, [this.memoryId]);
-  assert.equal(claim.provenance.retrieval_method, 'owner_scoped_hybrid_cosine_eligible');
+  assert.equal(claim.provenance.retrieval_method, 'owner_scoped_three_lane_hybrid_cosine_eligible');
   assert.equal(claim.provenance.evidence_basis, 'final_driver_request_and_provider_response');
   assert.match(claim.provenance.request_content_sha256, /^[0-9a-f]{64}$/);
   assert.equal(claim.provenance.model, this.profile.model);
