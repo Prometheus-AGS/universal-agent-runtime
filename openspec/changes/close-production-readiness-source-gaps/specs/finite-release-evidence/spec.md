@@ -83,13 +83,13 @@ Measurement source SHALL require a frozen workload, hardware/profile, concurrenc
 - **AND** any changed field value or ordered element still fails the frozen-definition check
 
 ### Requirement: Keep functional qualification free of authentication plumbing
+Functional qualification SHALL use externally provisioned identity ingress and opaque host-owned configuration. Fixtures SHALL NOT mint, copy or send credentials, substitute synthetic verified identity, or weaken the original runtime/persistence/effect assertions. Dedicated authentication-security regression coverage remains separate.
 
 #### Scenario: Accounting refuses a run before protected content is admitted
 
 - **WHEN** accounting refuses the run before the host completes its captured publication boundary
 - **THEN** only the existing safe error and terminal lifecycle events are published, without generated presentation patches
 - **AND** successful admission still enables the existing content and presentation publication
-Functional qualification SHALL use externally provisioned identity ingress and opaque host-owned configuration. Fixtures SHALL NOT mint, copy or send credentials, substitute synthetic verified identity, or weaken the original runtime/persistence/effect assertions. Dedicated authentication-security regression coverage remains separate.
 
 #### Scenario: A trusted Rust host composes a credential-free fixture handler
 - **WHEN** A trusted host supplies additional routes through the server's host-route entrypoint
