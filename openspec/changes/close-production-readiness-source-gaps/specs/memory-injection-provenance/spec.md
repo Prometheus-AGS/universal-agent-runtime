@@ -12,3 +12,7 @@ Automatic injection SHALL preserve owner/TTL/optout/relevance controls, emit saf
 #### Scenario: Submission digest preserves the exact request bytes
 - **WHEN** a prepared memory selection survives the final provider request projection
 - **THEN** its submission receipt uses SHA-256 over the existing serialized messages and anthropic_system payload, encoded as two lowercase hexadecimal characters per digest byte, and regression assertions compare the complete digest without dropping request, receipt, provenance or privacy conditions
+
+#### Scenario: Partial provider text precedes a stream failure
+- **WHEN** the provider emits partial text and closes before a valid terminal event
+- **THEN** the exact partial text survives reassembly of the original run's deltas and the run ends in error without a successful completion event

@@ -257,9 +257,15 @@ Then('no submitted claim is published and the native run fails', function () {
   assert.ok(this.errors.length > 0);
 });
 Then('partial provider text remains an error outcome rather than completed recall', function () {
-  assert.ok(this.events.some(event => event.name === 'agui.message.delta' && JSON.stringify(event.data).includes('synthetic partial response')));
+  const deltas = this.events.filter(event => event.name === 'agui.message.delta');
+  for (const { data } of deltas) {
+    assert.equal(data.request_id, this.runId);
+    assert.equal(typeof data.delta.text, 'string');
+  }
+  assert.equal(deltas.map(({ data }) => data.delta.text).join(''), 'synthetic partial response');
   assert.equal(this.run.status, 'error');
   assert.ok(this.errors.length > 0);
+  assert.ok(!this.events.some(event => event.name === 'agui.done'));
 });
 
 After(async function ({ result }) {
