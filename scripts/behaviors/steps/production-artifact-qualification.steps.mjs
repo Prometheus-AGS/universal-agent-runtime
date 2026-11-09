@@ -758,8 +758,8 @@ Then('PostgreSQL capabilities and all selected unsupported APIs agree', async fu
   }, [503]);
   assert.equal(team.error?.code, 'capability_unsupported');
   const refused = await request(this, 'POST', `/api/uar/runs/pr476-unsupported-${randomUUID()}/resume`, {}, [503]);
-  assert.equal(refused.error?.code, 'checkpoint_resume_unsupported');
-  this.evidence.observations.push({ postgres_capabilities: capabilities, unsupported_checkpoint_code: refused.error.code, memory_is_separate: capabilities.memory });
+  assert.equal(refused.code, 'checkpoint_resume_unsupported');
+  this.evidence.observations.push({ postgres_capabilities: capabilities, unsupported_checkpoint_code: refused.code, memory_is_separate: capabilities.memory });
 });
 
 Given('the owned PG18 store and second identity endpoint are externally provisioned', async function () {
