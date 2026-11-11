@@ -20,7 +20,7 @@ import { GenericBinder, type ComponentContext } from "@prometheus-ags/a2ui-core/
  * memoize it (see `UarDeferredChild` in `UarSurface.tsx`, the only
  * caller in this package).
  */
-export function useA2uiProps<T>(context: ComponentContext, schema: z.ZodTypeAny): T {
+export function useA2uiProps<T>(context: ComponentContext, schema: z.ZodType): T {
   const binder = useMemo(() => new GenericBinder<T>(context, schema), [context, schema]);
 
   useEffect(() => {

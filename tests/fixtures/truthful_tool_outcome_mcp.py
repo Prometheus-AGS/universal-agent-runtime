@@ -1,10 +1,21 @@
 """Controlled MCP peer. The fsynced trace independently proves the lost-response effect."""
+import fcntl
 import json
 import os
 import sys
 import time
+from pathlib import Path
 
 trace_path = sys.argv[1]
+
+# Publish only a locked record. The OS releases the lock even on a forced exit.
+peer_dir = Path(trace_path).with_suffix(".peers")
+peer_dir.mkdir(exist_ok=True)
+pid = os.getpid()
+pending = peer_dir / f"{pid}.pending"
+peer_lock = os.open(pending, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+fcntl.flock(peer_lock, fcntl.LOCK_EX)
+pending.rename(peer_dir / f"{pid}.pid")
 
 for line in sys.stdin:
     request = json.loads(line)

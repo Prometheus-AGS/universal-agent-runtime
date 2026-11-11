@@ -105,6 +105,10 @@ manifest_release="$(jq -r .release "$manifest")"
 manifest_sha="$(jq -r .source.sha "$manifest")"
 [[ "$manifest_release" == "$candidate" ]] || { echo "manifest release does not match candidate tag" >&2; exit 1; }
 [[ "$manifest_sha" == "$candidate_sha" ]] || { echo "manifest source does not match candidate tag" >&2; exit 1; }
+[[ "$(jq -r .source.repository "$manifest")" == "$repo" ]] || {
+  echo "manifest source repository does not match candidate repository" >&2
+  exit 1
+}
 
 promotion_schema="$(jq -r .schema_version "$promotion")"
 promotion_candidate="$(jq -r .candidate "$promotion")"
@@ -119,7 +123,11 @@ cosign verify \
   --certificate-identity "$signing_identity" \
   --certificate-oidc-issuer "$signing_issuer" \
   "$image_ref@$image_digest"
-for attestation_type in slsaprovenance cyclonedx; do
+provenance_type=slsaprovenance
+if jq -e '.image.index != null' "$manifest" >/dev/null; then
+  provenance_type=slsaprovenance1
+fi
+for attestation_type in "$provenance_type" cyclonedx; do
   cosign verify-attestation --type "$attestation_type" \
     --certificate-identity "$signing_identity" \
     --certificate-oidc-issuer "$signing_issuer" \

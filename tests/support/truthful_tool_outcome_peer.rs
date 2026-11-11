@@ -9,6 +9,8 @@ use serde_json::{Value, json};
 use std::{
     collections::{BTreeMap, HashMap},
     ffi::OsString,
+    fs::{self, File, TryLockError},
+    io::ErrorKind,
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
     time::Duration,
@@ -106,6 +108,34 @@ pub async fn scoped(trace: &Path) -> (McpRegistry, McpRuntimeManager, McpPreflig
         .await
         .unwrap();
     (registry, runtime, preflight)
+}
+
+/// Count only records whose fixture process still owns the kernel lock.
+pub fn live_pids(trace: &Path) -> Vec<u32> {
+    let entries = match fs::read_dir(trace.with_extension("peers")) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == ErrorKind::NotFound => return Vec::new(),
+        Err(error) => panic!("could not read fixture peer records: {error}"),
+    };
+    entries
+        .map(Result::unwrap)
+        .map(|entry| entry.path())
+        .filter(|path| path.extension().is_some_and(|extension| extension == "pid"))
+        .filter_map(|path| {
+            let lock = File::open(&path).expect("open fixture peer lock");
+            match lock.try_lock_shared() {
+                Ok(()) => None,
+                Err(TryLockError::WouldBlock) => {
+                    let pid: u32 = path.file_stem().unwrap().to_str().unwrap().parse().unwrap();
+                    assert!(pid > 1, "invalid fixture peer PID");
+                    Some(pid)
+                }
+                Err(TryLockError::Error(error)) => {
+                    panic!("could not observe fixture peer lock: {error}")
+                }
+            }
+        })
+        .collect()
 }
 
 pub fn effects(trace: &Path) -> Vec<Value> {
@@ -295,6 +325,18 @@ async fn completion(State(seen): State<Arc<Seen>>, Json(body): Json<Value>) -> R
             .expect("actual effect tool was advertised");
         frames.push_str(&chunk(json!({"role":"assistant","tool_calls":[{"index":0,"id":"dot04-call","type":"function","function":{"name":tool,"arguments":json!({"mode":mode}).to_string()}}]}), Value::Null));
         frames.push_str(&chunk(json!({}), json!("tool_calls")));
+    }
+    if body["stream_options"]["include_usage"] == true {
+        // A completed controlled call reports its synthetic provider counters
+        // so the real ledger can settle its reservation before the next call.
+        frames.push_str(&format!(
+            "data: {}\n\n",
+            json!({
+                "id":"dot04-response", "object":"chat.completion.chunk", "created":1,
+                "model":"gpt-4o-mini", "choices":[],
+                "usage":{"prompt_tokens":400,"completion_tokens":16,"total_tokens":416}
+            })
+        ));
     }
     frames.push_str("data: [DONE]\n\n");
     ([("content-type", "text/event-stream")], frames).into_response()

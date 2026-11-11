@@ -4,7 +4,7 @@ import { Catalog, ComponentModel, MessageProcessor, type ComponentApi } from "@p
 import { renderSemanticSurface } from "@prometheus-ags/a2ui-core/semantic-dom";
 import { A2uiLitSurface } from "../src";
 
-const catalog = new Catalog<ComponentApi>("test", [TextApi, ButtonApi, TextFieldApi, CheckBoxApi, ChoicePickerApi, RowApi, ColumnApi, CardApi, DividerApi]);
+const catalog = new Catalog<ComponentApi>("test", "v0.9.1", [TextApi, ButtonApi, TextFieldApi, CheckBoxApi, ChoicePickerApi, RowApi, ColumnApi, CardApi, DividerApi]);
 function surface(components: Record<string, unknown>[], data: Record<string, unknown> = {}) { const processor = new MessageProcessor([catalog]); processor.processMessages([{ version: "v0.9", createSurface: { surfaceId: "s", catalogId: "test" } }, { version: "v0.9", updateComponents: { surfaceId: "s", components } }, { version: "v0.9", updateDataModel: { surfaceId: "s", path: "/", value: data } }]); const model = processor.model.getSurface("s"); if (!model) throw new Error("surface missing"); return model; }
 afterEach(() => document.body.replaceChildren());
 describe("A2uiLitSurface", () => {

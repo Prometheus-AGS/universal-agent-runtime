@@ -1,0 +1,38 @@
+{
+  "name": "@prometheus-ags/a2ui-markdown-it-zod4",
+  "version": "0.2.0-rc.1",
+  "description": "A Markdown renderer using markdown-it and dompurify.",
+  "repository": {
+    "directory": "renderers/markdown/markdown-it",
+    "type": "git",
+    "url": "git+https://github.com/a2ui-project/a2ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/a2ui-project/a2ui/issues"
+  },
+  "keywords": [
+    "a2ui",
+    "markdown",
+    "ai",
+    "agent",
+    "ui",
+    "renderer"
+  ],
+  "license": "Apache-2.0",
+  "author": "Google",
+  "type": "module",
+  "main": "./src/markdown.js",
+  "types": "./src/markdown.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/markdown.d.ts",
+      "default": "./src/markdown.js"
+    }
+  },
+  "dependencies": {
+    "@a2ui/web_core": "workspace:@prometheus-ags/a2ui-web-core-zod4@0.14.0-rc.1",
+    "dompurify": "3.4.17",
+    "markdown-it": "14.3.3"
+  },
+  "private": true
+}

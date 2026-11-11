@@ -1,12 +1,12 @@
 {
   "$schema": "./product-support-matrix.schema.json",
   "version": "1.0.0",
-  "product_version": "1.4.0-rc.3",
+  "product_version": "1.4.0-rc.4",
   "version_semantics": "version is the matrix contract revision; product_version follows Cargo.toml; SDK/package/schema versions remain independent",
   "claim_reviewed_at": "2026-11-02",
-  "current_candidate_status": "source-authored; all #462–475 verification CLOSED; no current-tree, installed-image or capability certification",
+  "current_candidate_status": "RC4 qualification pending; inherited receipts retain their recorded source and artifact identities",
   "version_inventory": [
-    {"path": "Cargo.toml", "format": "toml", "version": "1.4.0-rc.3", "role": "runtime-product"},
+    {"path": "Cargo.toml", "format": "toml", "version": "1.4.0-rc.4", "role": "runtime-product"},
     {"path": "package.json", "format": "json", "version": "1.0.0", "role": "private-workspace-tooling"},
     {"path": "frontend/package.json", "format": "json", "version": "1.0.0", "role": "independent-frontend-package"},
     {"path": "website/package.json", "format": "json", "version": "0.0.0", "role": "private-documentation-package"},
@@ -40,7 +40,7 @@
     ]
   },
   "verified_at_semantics": "Historical inventory date, not fresh verification of the current source or container",
-  "qualification": {"selected_lane": "linux/amd64 container APIs behind a trusted host/gateway", "status": "unverified", "default_persistence": "Embedded SurrealDB 4.0.0; owned SurrealKV volume", "secondary_persistence": "PostgreSQL18/pgvector restricted by runtime capability document; no parity or checkpoint-resume claim", "memory": "independent service-owned store", "current_source_evidence": "Gate 156 three-profile Rust baseline and Gates 154, 155 and 157 selected installed acceptance on the pre-bump Linux amd64 candidate a9533ff6. The SurrealDB 4.0 child and earlier mounted gates retain their recorded artifact scopes. Full RC3 and final release qualification remain pending.", "pending": "Full #465 release evidence, selected remaining F06 functional profiles and E04 genuine-provider scope; earlier mounted #463/#464 transport and dispatch evidence is artifact-bound", "excluded_lanes": ["arm64", "windows", "mobile", "native archives", "browser/native WASM-AOT certification", "every-provider quality"], "vision_evidence": "Earlier controlled mounted image transport and refusal evidence; genuine-model understanding NOT_EXERCISED", "recovery_contract": "product-support-matrix.md#execution-and-recovery-guarantees"},
+  "qualification": {"selected_lane": "linux/amd64 container APIs behind a trusted host/gateway", "status": "unverified", "default_persistence": "Embedded SurrealDB 4.0.0; owned SurrealKV volume", "secondary_persistence": "PostgreSQL18/pgvector restricted by runtime capability document; no parity or checkpoint-resume claim", "memory": "independent service-owned store", "current_source_evidence": "Gate 156 three-profile Rust baseline and Gates 154, 155 and 157 selected installed acceptance on the pre-bump Linux amd64 candidate a9533ff6. The SurrealDB 4.0 child and earlier mounted gates retain their recorded artifact scopes. RC3 F06 receipts cover the published predecessor. RC4 qualification remains pending.", "pending": "Full #465 release evidence, RC4 reruns affected by the candidate changes, and E04 genuine-provider scope; earlier mounted #463/#464 transport and dispatch evidence is artifact-bound", "excluded_lanes": ["arm64", "windows", "mobile", "native archives", "browser/native WASM-AOT certification", "every-provider quality"], "vision_evidence": "Earlier controlled mounted image transport and refusal evidence; genuine-model understanding NOT_EXERCISED", "recovery_contract": "product-support-matrix.md#execution-and-recovery-guarantees"},
   "verified_at": "2026-07-14",
   "features": [
     { "id": "minimal", "status": "stable", "default": true, "platforms": ["linux", "macos", "windows"], "conflicts": [], "gate": "cargo test --lib --features minimal" },

@@ -2760,3 +2760,13 @@ time of recording (verification lock CLOSED).
 ### 2026-11-03 — Issue #386 media scope and recovery
 
 The operator selected UAR plus a mock peer and explicit scoped session approval. The host attests user confirmation and worker identity. The grant binds an exact action/modality/capability tuple to an immutable scope. An effect claim commits an unknown receipt before handoff. Retrying an unknown attempt can duplicate an effect, so recovery must reconcile the original attempt using peer evidence.
+
+2026-11-10 — #465 RC4 starts from merged PR #490 on main (98a798a56e3058edf2b938d2501511ef48a1d9fe). Preserve the published RC3 tag and Linux amd64 image as predecessor evidence. The operator selected the Zod 4 A2UI migration with compatibility qualification after advisory GHSA-mrhx-c7xc-m3w5. A local fork or independently packed client earns evidence for its own bytes. Keep the existing published I19 package identities and receipts separate until an approved successor is qualified. Candidate security audits and the repository-wide open-alert gate remain distinct.
+
+### 2026-11-10 — RC4 A2UI dependency and evidence boundary
+
+The operator selected an A2UI Zod 4 migration and authorized the exact four-pin update in RC4. A peer override alone would preserve Zod 3 parsing and converter assumptions in upstream A2UI. RC4 uses a native Zod 4 core port and preserves the v0.9 catalog and sanitizer needed by the independent PEM client. The published PEM 4.3.0 fixture retains its prior identity. Packed-candidate and registry-backed evidence have separate receipts. Candidate lockfile fixes do not close GitHub default-branch alerts.
+
+2026-11-10 — #465 RC4 exact frontend diagnostic. The operator approved the lazy Mermaid ELK warning at 1,498.98 kB and 465.95 kB gzip for RC4. The four previously approved PGlite diagnostics retain their exact scope. The earlier ELK receipt describes RC3 and remains historical. Other build diagnostics still stop qualification.
+
+2026-11-10 — #465 RC4 registry-backed I19 pins. npm accepted the exact tested Zod 4 core and PEM archives under rc. For the first core publication, npm also assigned latest and rejected the authorized removal with HTTP 403. The operator accepted this specific core tag. PEM's previous latest, alpha and next tags were verified unchanged. The independent fixture now pins the two exact registry versions and retains the verified tarball integrities.

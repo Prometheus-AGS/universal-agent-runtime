@@ -5,9 +5,11 @@ import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 
-const [directory, output = "release-manifest.json"] = process.argv.slice(2);
+import { releaseImagePlatforms } from "./release-image-index.mjs";
+
+const [directory, output = "release-manifest.json", sourceRoot = resolve(import.meta.dirname, "..")] = process.argv.slice(2);
 if (!directory) {
-  console.error("usage: generate-release-manifest.mjs <artifact-directory> [output]");
+  console.error("usage: generate-release-manifest.mjs <artifact-directory> [output] [source-root]");
   process.exit(2);
 }
 
@@ -42,7 +44,9 @@ const localEvidence = (environmentName) => {
   if (!statSync(path).isFile()) throw new Error(`${environmentName} is not a file: ${name}`);
   return { name, sha256: sha256(path), source_sha: process.env.SOURCE_SHA };
 };
-const repositoryRoot = resolve(import.meta.dirname, "..");
+const repositoryRoot = resolve(sourceRoot);
+const imageIndex = "image.index.json";
+const platforms = releaseImagePlatforms(readFileSync(join(directory, imageIndex)), process.env.IMAGE_DIGEST);
 const sourceCommit = execFileSync("git", ["rev-parse", "HEAD"], {
   cwd: repositoryRoot,
   encoding: "utf8",
@@ -72,6 +76,7 @@ function archiveBinary(archiveName) {
   const zip = archiveName.endsWith(".zip");
   const listing = execFileSync(zip ? "unzip" : "tar", zip ? ["-Z1", archivePath] : ["-tzf", archivePath], {
     encoding: "utf8",
+    maxBuffer: 8 * 1024 * 1024,
   });
   const executable = zip ? "universal-agent-runtime.exe" : "universal-agent-runtime";
   const matches = listing
@@ -165,7 +170,8 @@ const manifest = {
   image: {
     reference: process.env.IMAGE_REFERENCE,
     digest: process.env.IMAGE_DIGEST,
-    platforms: ["linux/amd64", "linux/arm64"],
+    platforms,
+    index: imageIndex,
     sboms: ["image.cyclonedx.json", "image.spdx.json"],
     signature: `${process.env.IMAGE_REFERENCE}@${process.env.IMAGE_DIGEST}`,
     provenance: "image.provenance.json",

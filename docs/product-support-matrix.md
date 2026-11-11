@@ -3,7 +3,7 @@
 This is UAR's public release contract. The canonical source data is
 [`product-support-matrix.json`](product-support-matrix.json); its schema is
 [`product-support-matrix.schema.json`](product-support-matrix.schema.json).
-“Cataloged” never means “certified.” Maturity labels and historical gate names do not certify a new source tree or artifact. The matrix contract revision remains `1.0.0`; the Rust product is **1.4.0-rc.3**, and SDK/package/schema versions are independent. `verified_at` retains the historical inventory date; the November 2 source claim update is not verification. The [RC3 pilot guide](releases/v1.4.0-rc.3.md) records completed and open qualification separately. Full #462–475 qualification remains in progress.
+“Cataloged” never means “certified.” Maturity labels and historical gate names do not certify a new source tree or artifact. The matrix contract revision remains `1.0.0`; the Rust product is **1.4.0-rc.4**, and SDK/package/schema versions are independent. `verified_at` retains the historical inventory date; the November 2 source claim update is not verification. The [RC3 pilot guide](releases/v1.4.0-rc.3.md) records completed and open qualification separately. Full #462–475 qualification remains in progress.
 
 The first selected production contract is **Linux amd64 container APIs**, with embedded SurrealDB 4.0.0 on owned SurrealKV volumes by default and a restricted PostgreSQL 18 lane. The [embedded upgrade qualification](operations/embedded-surrealdb-4-upgrade.md#qualification-scope) covers a specific candidate and a pinned 3.3.0 migration baseline. Final release image, configuration, and applicable API and recovery qualification remain pending under #465. Other platforms, native archives, and WASM/AOT execution remain outside this contract. Gate 156 records the three-profile clean-source baseline on `a9533ff6`. The [pilot guide](releases/v1.4.0-rc.3.md#evidence-and-remaining-qualification) identifies the tested predecessor and remaining final obligations.
 
@@ -110,7 +110,7 @@ results and unknown effects remain explicit until authoritative disposition.
 
 ## Version, telemetry and publication evidence
 
-`Cargo.toml` defines the Rust product at `1.4.0-rc.3`; `versions.toml` defines
+`Cargo.toml` defines the Rust product at `1.4.0-rc.4`; `versions.toml` defines
 dependency decisions/pins. The JSON `version_inventory` records actual independent
 packages: private root tooling/frontend/SDKs `1.0.0`, documentation package
 `0.0.0`, desktop shell `0.1.0`. These are not product support or compatibility

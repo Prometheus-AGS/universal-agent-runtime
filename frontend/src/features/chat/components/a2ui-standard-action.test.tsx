@@ -3,11 +3,19 @@ import { describe, expect, test, vi } from "vitest";
 import { A2UI_CATALOG_ID, A2UI_PROFILE, A2UI_VERSION } from "@/platform/a2ui/protocol";
 import { A2uiDisplayBlock } from "./a2ui-artifact-block";
 
+const runId = "native-source";
+const generation = "parcel-publication";
 const intent = vi.hoisted(() => vi.fn<(runId: string, input: unknown) => Promise<void>>(async () => {}));
 vi.mock("@/platform/entities", () => ({
   useA2uiActionStatus: () => undefined,
   useA2uiActionContinuation: () => null,
   useA2uiActionIntent: () => intent,
+  useA2uiSurfaceAuthority: (sourceRunId: string | undefined) => sourceRunId === runId ? {
+    status: "complete",
+    authoritative: true,
+    surfaces: [{ surface_id: "parcel", source_run_id: runId, surface_generation: generation }],
+  } : undefined,
+  useA2uiActionRecovery: () => vi.fn(),
 }));
 const surface = JSON.stringify([
   { version: A2UI_VERSION, createSurface: { surfaceId: "parcel", catalogId: A2UI_CATALOG_ID } },
@@ -24,13 +32,13 @@ describe("actual pinned standard renderer action binding", () => {
   test("edits the real field, detaches its live model on click, and suppresses duplicate pending callbacks", async () => {
     let finish!: () => void;
     intent.mockReset().mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve; }));
-    const view = render(<A2uiDisplayBlock runId="native-source" artifactType="a2ui/surface" title="Parcel" content={surface} profile={A2UI_PROFILE} />);
+    const view = render(<A2uiDisplayBlock runId={runId} surfaceGenerations={{ parcel: generation }} artifactType="a2ui/surface" title="Parcel" content={surface} profile={A2UI_PROFILE} />);
     fireEvent.change(screen.getByRole("textbox", { name: "Parcel number" }), { target: { value: "137" } });
     fireEvent.click(screen.getByRole("button", { name: "Calculate parcel" }));
     fireEvent.click(screen.getByRole("button", { name: "Calculate parcel" }));
     await waitFor(() => expect(intent).toHaveBeenCalledTimes(1));
     expect(intent.mock.calls[0]).toEqual(["native-source", expect.objectContaining({
-      name: "calculate", surfaceId: "parcel", sourceComponentId: "submit",
+      name: "calculate", surfaceId: "parcel", sourceComponentId: "submit", surface_generation: generation,
       a2uiClientDataModel: { parcel: { parcel: "137" } },
     })]);
     fireEvent.change(screen.getByRole("textbox", { name: "Parcel number" }), { target: { value: "999" } });

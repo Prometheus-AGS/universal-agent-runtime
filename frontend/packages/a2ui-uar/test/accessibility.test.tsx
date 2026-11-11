@@ -14,8 +14,8 @@ describe("axe-core certified surfaces", () => {
         { id: "root", component: "Column", children: ["title", "name", "accept", "choice", "action"] },
         { id: "title", component: "Text", variant: "h2", text: "Review request" },
         { id: "name", component: "TextField", label: "Display name", accessibility: { description: "Shown to collaborators" } },
-        { id: "accept", component: "CheckBox", label: "Approve request" },
-        { id: "choice", component: "ChoicePicker", label: "Priority", options: [{ label: "Normal", value: "normal" }, { label: "Urgent", value: "urgent" }] },
+        { id: "accept", component: "CheckBox", label: "Approve request", value: false },
+        { id: "choice", component: "ChoicePicker", label: "Priority", value: [], options: [{ label: "Normal", value: "normal" }, { label: "Urgent", value: "urgent" }] },
         { id: "action", component: "Button", child: "actionText", action: { event: { name: "save", context: {} } } },
         { id: "actionText", component: "Text", text: "Save" },
       ]);

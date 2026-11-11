@@ -43,3 +43,10 @@ name = "json_schema_validator"
 path = "fuzz_targets/json_schema_validator.rs"
 test = false
 doc = false
+
+[patch.crates-io]
+# Independent workspaces do not inherit the runtime lifecycle overlays.
+surrealdb = { path = "../vendor/patches/surrealdb-lifecycle/surrealdb-4.0.0" }
+surrealdb-core = { path = "../vendor/patches/surrealdb-lifecycle/surrealdb-core-4.0.0" }
+surrealdb-engine-local = { path = "../vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-4.0.0" }
+surrealdb-kvs-surrealkv = { path = "../vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-4.0.0" }

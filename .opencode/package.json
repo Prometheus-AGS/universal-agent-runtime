@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "dependencies": {
+    "@opencode-ai/plugin": "1.18.12"
+  },
+  "overrides": {
+    "@opencode-ai/plugin": {
+      "zod": "4.6.6"
+    },
+    "effect": {
+      "toml": "5.0.1"
+    }
+  }
+}

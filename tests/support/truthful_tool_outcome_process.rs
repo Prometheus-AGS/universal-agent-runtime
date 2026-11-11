@@ -226,23 +226,8 @@ impl Node {
         self.request(Method::POST, path, Some(body), status).await
     }
 
-    fn peer_pids(&self) -> Vec<u32> {
-        let output = Command::new("/bin/ps")
-            .args(["-axo", "pid=,args="])
-            .output()
-            .unwrap();
-        assert!(output.status.success());
-        let trace = self.trace.to_str().unwrap();
-        String::from_utf8(output.stdout)
-            .unwrap()
-            .lines()
-            .filter(|line| line.contains("truthful_tool_outcome_mcp.py") && line.contains(trace))
-            .filter_map(|line| line.split_whitespace().next()?.parse().ok())
-            .collect()
-    }
-
     async fn close_peer_before_dispatch(&self) {
-        let pids = self.peer_pids();
+        let pids = peer::live_pids(&self.trace);
         assert!(!pids.is_empty(), "real discovered MCP peer must exist");
         for pid in &pids {
             assert!(
@@ -255,7 +240,10 @@ impl Node {
             );
         }
         let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
-        while self.peer_pids().iter().any(|pid| pids.contains(pid)) {
+        while peer::live_pids(&self.trace)
+            .iter()
+            .any(|pid| pids.contains(pid))
+        {
             assert!(
                 tokio::time::Instant::now() < deadline,
                 "MCP peer did not close"
@@ -381,7 +369,7 @@ impl Drop for Node {
             let _ = self.child.kill();
             let _ = self.child.wait();
         }
-        for pid in self.peer_pids() {
+        for pid in peer::live_pids(&self.trace) {
             let _ = Command::new("/bin/kill")
                 .arg("-TERM")
                 .arg(pid.to_string())
@@ -1607,7 +1595,7 @@ pub async fn scoped_outcome_run(
     );
     node.stop().await;
     let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
-    while !node.peer_pids().is_empty() {
+    while !peer::live_pids(&node.trace).is_empty() {
         assert!(
             tokio::time::Instant::now() < deadline,
             "scoped server MCP children did not exit"

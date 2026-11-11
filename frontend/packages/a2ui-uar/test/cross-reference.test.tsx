@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { MessageProcessor } from "@prometheus-ags/a2ui-core/v0_9";
-import { A2uiSurface as ReferenceA2uiSurface, basicCatalog as referenceBasicCatalog } from "@prometheus-ags/a2ui-react/v0_9";
+import { A2uiSurface as ReferenceA2uiSurface, basicCatalog as referenceBasicCatalog } from "@prometheus-ags/a2ui-react-reference-legacy-zod4/v0_9";
 import { uarBasicCatalog } from "../src/catalog/uar-basic-catalog";
 import { UarSurface } from "../src/react/UarSurface";
 import { buildSurface } from "./helpers";
 
 /**
- * Cross-tests the UAR renderer against `@a2ui/react` (vendored as
- * `@prometheus-ags/a2ui-react`, reference-implementation only — see that
- * package's README) on the *same wire messages*, asserting semantic
+ * Cross-tests the UAR renderer against the official React 0.12 renderer
+ * and its basic catalog, ported together to Zod 4. Both use the *same wire
+ * messages* and share the ported web core. These checks assert semantic
  * equivalence (accessible roles/names/text content) rather than DOM/CSS
  * equality, since the two renderers deliberately use different visual
  * systems (shadcn/ui + react-aria-components here vs. `@a2ui/react`'s own

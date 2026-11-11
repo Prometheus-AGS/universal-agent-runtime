@@ -1,0 +1,1 @@
+{"version":3,"file":"markdown.d.ts","sourceRoot":"","sources":["../../src/markdown.ts"],"names":[],"mappings":"AAkBA,OAAO,KAAK,EACV,gBAAgB,EAChB,uBAAuB,EACvB,2BAA2B,EAC5B,MAAM,gBAAgB,CAAC;AAExB,YAAY,EAAC,gBAAgB,EAAE,uBAAuB,EAAE,2BAA2B,EAAC,CAAC;AAErF;;;;;GAKG;AACH,wBAAsB,cAAc,CAClC,KAAK,EAAE,MAAM,EACb,OAAO,CAAC,EAAE,uBAAuB,GAChC,OAAO,CAAC,MAAM,CAAC,CAGjB"}

@@ -59,6 +59,24 @@ describe("UAR A2UI production profile", () => {
     expect(messages.every((message) => !a2uiMessageSchema.safeParse(message).success)).toBe(true);
   });
 
+  test("rejects oversized component updates before reading individual entries", () => {
+    const components = new Array<unknown>(501);
+    let reads = 0;
+    Object.defineProperty(components, "0", {
+      get() {
+        reads += 1;
+        return { id: "root", component: "Text", text: "Not parsed" };
+      },
+    });
+
+    expect(validateA2uiMessage({
+      version: "v0.9.1",
+      profile: "uar.a2ui/1",
+      updateComponents: { surfaceId: "surface-1", components },
+    }).success).toBe(false);
+    expect(reads).toBe(0);
+  });
+
   test("rejects executable content and duplicate component IDs", () => {
     const update = (components: unknown[]) => ({
       version: "v0.9.1",

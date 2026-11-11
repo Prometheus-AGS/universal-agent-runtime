@@ -20,7 +20,9 @@ adaptations while copying the four changed implementation files byte-for-byte
 from the recorded upstream commit. Its manifest exact-pins `surrealdb`,
 `surrealdb-types`, and `hf-hub` while retaining the empty, disabled `palace`
 compatibility feature because UAR does not ship the upstream workspace's
-`mempalace-core` dependency.
+`mempalace-core` dependency. The local manifest also pins the three Candle crates
+to 0.11.1 so PyTorch weight loading uses ZIP 9.1.3. The upstream commit and
+vendored implementation files are unchanged.
 
 The lifecycle integration advances the memory export by the upstream storage changes at `9e36b1cd8b83a657366eb1e3ef8cd837178336de`, through its parent 3a767608d53481ebc3c9085b8f5b4b82316ad8cb from the prior pin. It introduces opt-in host-managed connection ownership. Existing standalone manifest adaptations are preserved; upstream source is copied byte-for-byte. No upstream push or verification is implied.
 

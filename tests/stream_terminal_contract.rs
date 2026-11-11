@@ -8,6 +8,9 @@ mod peer;
 #[path = "support/external_identity_host.rs"]
 mod external_identity_host;
 
+#[path = "support/f06_graph_admission.rs"]
+mod f06_graph_admission;
+
 use axum::{
     Extension, Router,
     body::{Body, to_bytes},
@@ -24,7 +27,6 @@ use std::{
     },
     time::Duration,
 };
-use tokio::sync::RwLock;
 use tower::ServiceExt;
 use universal_agent_runtime::{
     config::{LlmConfig, ServiceInstanceConfig},
@@ -44,7 +46,6 @@ use universal_agent_runtime::{
             manager::RunManager,
             matching::{VectorMatcher, intent::ClassifierConfig},
             native_skill::{NativeSkill, NativeSkillRegistry},
-            skills::SkillRegistry,
         },
         security::claims::{CredentialPrincipal, UserContext},
         service_instance::ServiceInstanceAuthority,
@@ -309,7 +310,6 @@ impl Endpoint {
             // The owned ephemeral collaborator's URL is nonsecret transport
             // selection; all authentication material stays in the product loader.
             config.base_url = Some(format!("{}/v1", peer.url));
-            config.host_supplied_connection = true;
         } else {
             assert!(
                 config.base_url.is_none(),
@@ -410,8 +410,12 @@ impl Endpoint {
 }
 
 fn config(protocol: peer::Protocol) -> LlmConfig {
-    let config = external_identity_host::llm_config("dot05", false, &format!("{protocol:?}"));
+    let mut config = external_identity_host::llm_config("dot05", false, &format!("{protocol:?}"));
     assert_eq!(config.model, protocol.model());
+    // The trusted fixture supplies the controlled connection. This marker
+    // belongs to the caller and is intentionally absent from serialized config.
+    config.host_supplied_connection = true;
+    assert!(!universal_agent_runtime::config::build_client_config(&config).load_env);
     config
 }
 
@@ -544,12 +548,13 @@ async fn graph(
     let skills = Arc::new(NativeSkillRegistry::new());
     skills.register(Echo(calls.clone())).await.unwrap();
     let llm_config = endpoint.configuration(protocol);
+    let (skill_service, providers) = f06_graph_admission::configure(&store, &llm_config).await;
     let manager = Arc::new(
         RunManager::with_classifier_config(
             llm_config.clone(),
             Arc::new(McpRegistry::new_empty()),
             SessionStore::new(),
-            Arc::new(RwLock::new(SkillRegistry::default())),
+            Arc::clone(skill_service.registry()),
             Arc::new(VectorMatcher::new(
                 Arc::new(SwappableEmbeddingBackend::new(Arc::new(
                     UnavailableEmbeddingBackend::new(384, "stream fixture does not use embeddings"),
@@ -567,6 +572,8 @@ async fn graph(
                 ..Default::default()
             },
         )
+        .with_skill_service(skill_service)
+        .with_provider_registry(providers)
         .with_llm_driver(endpoint.driver(protocol, &llm_config))
         .with_agent_graph(
             AgentGraph::builder("admission")
@@ -686,10 +693,8 @@ async fn graph(
             state.conversation_id.as_deref().expect("real session"),
         )
         .await
-        .unwrap()
-        .expect("graph history persisted");
-    let persisted_messages = session.messages();
-    let history = serde_json::to_string(&persisted_messages).unwrap();
+        .unwrap();
+    let persisted_messages = session.as_ref().map(|session| session.messages());
     let partial_text_exposed = events.iter().any(|event| {
         matches!(&event.event, RunEvent::ChatDelta { text_delta, .. } if !text_delta.is_empty())
     });
@@ -708,6 +713,8 @@ async fn graph(
             "provider_request_count": endpoint.count(),
         })).unwrap(),
     ).unwrap();
+    let persisted_messages = persisted_messages.expect("graph history persisted");
+    let history = serde_json::to_string(&persisted_messages).unwrap();
     if succeeds(case) {
         assert!(done, "graph {protocol:?}/{case}");
     }
