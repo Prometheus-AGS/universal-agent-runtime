@@ -201,6 +201,16 @@ The Linux amd64 release candidate SHALL retain the existing vulnerability gates 
 - **THEN** the plugin resolves the patched Effect version and can execute a declared tool and an Effect plugin hook
 - **AND** Effect rejects injected cookie attributes and retains its TOML parser override
 
+#### Scenario: Solid resolves patched Seroval serialization
+- **WHEN** the Solid entity graph package installs from the frozen root lockfile
+- **THEN** Solid resolves the patched Seroval and its matching plugin release and preserves typed-array and URL serialization
+- **AND** a typed array's own constructor property cannot supply generated source in either ordinary or compact view serialization
+
+#### Scenario: Coverage and Storybook discover files with patched Glob
+- **WHEN** c8 discovers all eligible source files and the Storybook TypeScript docgen plugin discovers component files
+- **THEN** the affected dependency paths resolve a patched Glob in the root and standalone frontend lockfiles
+- **AND** coverage includes unexecuted eligible source while respecting exclusions, and Storybook emits metadata for discovered typed props
+
 #### Scenario: A2UI consumers migrate to a patched Zod 4 boundary
 - **WHEN** the shipped UAR renderer or the independent PEM client processes a valid A2UI surface and dispatches a catalog-defined action
 - **THEN** the renderer, catalog and binder exchange Zod 4 schemas through the same compatible core in that consumer, preserving data-model bindings and action forwarding
