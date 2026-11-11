@@ -23,7 +23,7 @@
 # Go follows the latest stable per go.dev/doc/devel/release.
 ARG RUST_TOOLCHAIN=nightly-2026-07-18
 ARG NODE_MAJOR=24
-ARG PYTHON_VERSION=3.13
+ARG PYTHON_VERSION=3.13.18
 ARG GO_VERSION=1.26.3
 # Keep aligned with both Wasmtime packages resolved in Cargo.lock. Plain
 # components are compiled by the runtime for its own engine/features/host target.
@@ -58,7 +58,7 @@ RUN apt-get update && apt-get -o 'DPkg::Options::=--path-include=/usr/share/man/
         install -y --no-install-recommends \
         ca-certificates curl git build-essential pkg-config \
         libssl-dev cmake unzip xz-utils \
-        software-properties-common gnupg lsb-release \
+        gnupg lsb-release \
         protobuf-compiler libprotobuf-dev \
         # clang + libclang for bindgen (surrealdb-librocksdb-sys FFI bindings).
         clang libclang-dev \
@@ -66,18 +66,41 @@ RUN apt-get update && apt-get -o 'DPkg::Options::=--path-include=/usr/share/man/
         # wat2wasm/wasm2wat/wasm-objdump via wabt). Adding here keeps
         # the cargo install step focused on Rust-source tools only.
         binaryen wabt \
-        # Python build deps for componentize-py / pyo3 native extensions.
-        libffi-dev patchelf \
+        # CPython standard-library modules and native extensions.
+        libbluetooth-dev libbz2-dev libdb-dev libffi-dev libgdbm-dev \
+        libgdbm-compat-dev liblzma-dev libncurses-dev libreadline-dev \
+        libsqlite3-dev tk-dev uuid-dev zlib1g-dev patchelf \
     && rm -rf /var/lib/apt/lists/*
 
-# Python 3.13 from deadsnakes
-RUN add-apt-repository -y ppa:deadsnakes/ppa \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-        python${PYTHON_VERSION} python${PYTHON_VERSION}-dev python${PYTHON_VERSION}-venv \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -sf /usr/bin/python${PYTHON_VERSION} /usr/local/bin/python3 \
-    && ln -sf /usr/bin/python${PYTHON_VERSION} /usr/local/bin/python
+# Noble lacks libmpdec-dev. Build the pinned upstream library before CPython.
+# uv manages the system interpreter's packages. venv still uses bundled ensurepip.
+RUN set -eu; \
+    workdir="$(mktemp -d)"; \
+    mkdir "$workdir/mpdecimal" "$workdir/python"; \
+    cd "$workdir/mpdecimal"; \
+    curl --proto '=https' -fsSLo mpdecimal.tar.gz \
+        https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.1.tar.gz; \
+    echo '96d33abb4bb0070c7be0fed4246cd38416188325f820468214471938545b1ac8  mpdecimal.tar.gz' \
+        | sha256sum -c -; \
+    tar -xzf mpdecimal.tar.gz --strip-components=1; \
+    ./configure --disable-cxx; \
+    make -j "$(nproc)"; \
+    make install; \
+    ldconfig; \
+    cd "$workdir/python"; \
+    curl --proto '=https' -fsSLo python.tar.xz \
+        "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz"; \
+    echo 'abb0102e6d4ae027509bcb82327d9dd85515b44a3ba8ad538cfc5e9847029f68  python.tar.xz' \
+        | sha256sum -c -; \
+    tar -xJf python.tar.xz --strip-components=1; \
+    ./configure --enable-shared --enable-loadable-sqlite-extensions \
+        --with-system-libmpdec --with-ensurepip=no; \
+    make -j "$(nproc)"; \
+    make install; \
+    ldconfig; \
+    ln -s python3 /usr/local/bin/python; \
+    cd /; \
+    rm -rf "$workdir"
 
 # uv (Astral) and Python helpers + componentize-py for Python→Component path.
 # NOTE: `pyo3-build-config` is a RUST crate (crates.io), not a PyPI package —

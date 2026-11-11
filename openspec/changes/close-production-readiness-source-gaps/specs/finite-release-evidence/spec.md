@@ -216,6 +216,11 @@ The Linux amd64 release candidate SHALL retain the existing vulnerability gates 
 - **THEN** dpkg installs the section-one manpages used as xz and compiler alternative targets
 - **AND** the build log is checked with the existing diagnostic policy
 
+#### Scenario: The Linux image builds its Python toolchain from pinned upstream source
+- **WHEN** the Ubuntu toolchain stage fetches the upstream Python 3.13.18 and mpdecimal 4.0.1 source archives
+- **THEN** it verifies both pinned SHA-256 values before extracting and building the archives, and builds Python against the installed mpdecimal library
+- **AND** the installed image's Python aliases resolve to that interpreter and support native extensions, virtual environments and the existing Python component tooling
+
 #### Scenario: RC4 resolves the RustSec fixes before rebuilding
 - **WHEN** the release source applies the patched Rust dependency graph and runs the existing Cargo audit
 - **THEN** the locked graph passes without adding advisory exceptions
