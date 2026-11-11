@@ -22,7 +22,7 @@
 # Rust nightly is dated (matches rust-toolchain.toml at repo root).
 # Go follows the latest stable per go.dev/doc/devel/release.
 ARG RUST_TOOLCHAIN=nightly-2026-07-18
-ARG NODE_MAJOR=24
+ARG NODE_VERSION=24.22.2
 ARG PYTHON_VERSION=3.13.18
 ARG GO_VERSION=1.26.3
 # Keep aligned with both Wasmtime packages resolved in Cargo.lock. Plain
@@ -37,7 +37,7 @@ ARG TINYGO_VERSION=0.34.0
 FROM ubuntu:24.04 AS toolchain
 
 ARG RUST_TOOLCHAIN
-ARG NODE_MAJOR
+ARG NODE_VERSION
 ARG PYTHON_VERSION
 ARG GO_VERSION
 ARG WASMTIME_VERSION
@@ -140,42 +140,47 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
         -o "${binstall_archive}" \
     && printf '%s  %s\n' "${binstall_sha}" "${binstall_archive}" | sha256sum -c - \
     && tar -xzf "${binstall_archive}" -C "${CARGO_HOME}/bin" cargo-binstall \
-    && rm "${binstall_archive}" \
-    && cargo binstall --no-confirm --locked \
-        cargo-component \
-        wasm-tools \
-        wit-bindgen-cli \
-        wasm-bindgen-cli \
-        twiggy \
-    # cargo-wasi 0.1.28 (archived, last release) ships no prebuilt binaries, so
-    # binstall compiles it from source, and its locked rustix no longer
-    # compiles on the pinned nightly. Unlocked, it resolves a current rustix.
-    && cargo binstall --no-confirm cargo-wasi \
-    && rm -rf /usr/local/cargo/registry /usr/local/cargo/git
+    && rm "${binstall_archive}"
+
+COPY scripts/docker/install-wasm-tools.sh /tmp/install-wasm-tools.sh
+RUN sh /tmp/install-wasm-tools.sh "$TARGETARCH" \
+    && rm /tmp/install-wasm-tools.sh \
+    && rm -rf "$CARGO_HOME/registry" "$CARGO_HOME/git"
 
 # Node.js + npm + pnpm + bun + JS/TS Component-Model toolchain.
-# - typescript@6 pins the major version explicitly (apt/pnpm would otherwise
-#   pull whatever the workspace requests).
+# - TypeScript retains its major 6 compiler API.
 # - jco + componentize-js are the bytecodealliance toolchain for
 #   JS/TS → WebAssembly Component Model.
 # - assemblyscript is the TS-flavored DSL → core WASM compiler.
-# - javy is Shopify's QuickJS-based JS → single-file WASM builder
-#   (installed via npm wrapper rather than the standalone binary so it's
-#   architecture-agnostic at this layer; arch-specific binary install
-#   can land in a follow-up if size matters).
-RUN curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - \
-    && apt-get update && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/* \
-    && corepack enable \
+# - Install the same Javy binary that the npm wrapper used to download.
+RUN set -eu; \
+    case "$TARGETARCH" in \
+        amd64) node_arch=x64; node_sha=48cc0e21e048790e54c0cf5749c2725005313d652651c40b7a21feb9697aaf75; \
+               javy_arch=x86_64; javy_sha=3daf5cd1ecaa89c5ec2fe7121e45503f9ddaeab0b1936f4287f357ae2410e558 ;; \
+        arm64) node_arch=arm64; node_sha=eb187837a2230d4047161ac0be008584e16b46f726e9c9490ee35dc6b17d9ba8; \
+               javy_arch=arm; javy_sha=1e4f301b00c4f3713ed565817d8fb1c5d713ca7bfe01c1d3884ee08b33df1688 ;; \
+        *) echo "Unsupported Node and Javy architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    node_archive="node-v${NODE_VERSION}-linux-${node_arch}.tar.xz"; \
+    curl --proto '=https' -fsSLo "/tmp/$node_archive" "https://nodejs.org/dist/v${NODE_VERSION}/$node_archive"; \
+    printf '%s  %s\n' "$node_sha" "/tmp/$node_archive" | sha256sum -c -; \
+    tar -xJf "/tmp/$node_archive" -C /usr/local --strip-components=1; \
+    rm "/tmp/$node_archive"; \
+    javy_archive="javy-${javy_arch}-linux-v3.0.1.gz"; \
+    curl --proto '=https' -fsSLo "/tmp/$javy_archive" "https://github.com/bytecodealliance/javy/releases/download/v3.0.1/$javy_archive"; \
+    printf '%s  %s\n' "$javy_sha" "/tmp/$javy_archive" | sha256sum -c -; \
+    gzip -dc "/tmp/$javy_archive" > /usr/local/bin/javy; \
+    chmod 0755 /usr/local/bin/javy; \
+    rm "/tmp/$javy_archive"; \
+    corepack enable \
     && corepack prepare pnpm@11.15.0 --activate \
     && curl -fsSL https://bun.sh/install | bash \
     && ln -sf /root/.bun/bin/bun /usr/local/bin/bun \
     && npm install -g --no-fund --no-audit \
-        typescript@6 \
-        @bytecodealliance/jco \
-        @bytecodealliance/componentize-js \
-        assemblyscript \
-        javy-cli
+        typescript@6.0.3 \
+        @bytecodealliance/jco@1.41.0 \
+        @bytecodealliance/componentize-js@0.23.0 \
+        assemblyscript@0.28.20
 
 # Go (stock) — supports GOOS=js and GOOS=wasip1. Multi-arch via TARGETARCH.
 RUN set -eux; \

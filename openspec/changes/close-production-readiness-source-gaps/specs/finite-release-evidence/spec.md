@@ -231,6 +231,12 @@ The Linux amd64 release candidate SHALL retain the existing vulnerability gates 
 - **THEN** it uses `us.archive.ubuntu.com` with the existing Ubuntu archive key, suites and components
 - **AND** security updates continue to use the base image's signed security source
 
+#### Scenario: The cold build installs the existing WASM and Node tools
+- **WHEN** the image builds its WASM and Node toolchains from an empty tool cache
+- **THEN** direct upstream archives are pinned and checked before extraction and Cargo source installs select explicit package versions
+- **AND** the installed tools retain their existing command surface, with Javy available offline as the same upstream binary previously selected by its npm wrapper
+- **AND** acquisition, compiler and package manager diagnostics remain subject to the existing warning checks
+
 #### Scenario: RC4 resolves the RustSec fixes before rebuilding
 - **WHEN** the release source applies the patched Rust dependency graph and runs the existing Cargo audit
 - **THEN** the locked graph passes without adding advisory exceptions
