@@ -1,0 +1,154 @@
+# Xberg 1.4.0 production source export for UAR. See UAR-BACKPORT.md.
+
+
+[package]
+name = "xberg"
+publish = false
+version = "1.4.0"
+edition = "2024"
+rust-version = "1.95"
+authors = ["Na'aman Hirschfeld <naaman@xberg.io>", "Tobias Perlstein <tobias@xberg.io>"]
+description = "High-performance document intelligence library for Rust. Extract text, metadata, and structured data from PDFs, Office documents, images, and 107 formats and 371 programming languages via tree-sitter code intelligence with async/sync APIs."
+license = "MIT"
+repository = "https://github.com/xberg-io/xberg"
+homepage = "https://xberg.io"
+documentation = "https://docs.rs/xberg"
+keywords = ["document", "extraction", "pdf", "ocr", "parser"]
+categories = ["parser-implementations", "text-processing"]
+readme = "README.md"
+metadata = { cargo-machete = { ignored = ["tracing-opentelemetry", "icu_provider", "serde_toon_format", "tokenizers-model2vec", "getrandom", "getrandom_02", "getrandom_03"] } }
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+tokio-runtime = ["dep:tokio"]
+excel = ["dep:calamine", "dep:cfb", "dep:roxmltree", "dep:zip", "dep:quick-xml", "tokio-runtime"]
+office = ["dep:cfb", "dep:flate2", "dep:roxmltree", "dep:zip", "dep:quick-xml", "dep:biblatex", "dep:biblib", "dep:unicode-normalization", "dep:org", "dep:dbase", "dep:typst-syntax", "dep:mathemascii", "dep:html-escape", "html", "notebook"]
+notebook = ["html", "dep:unicode-width"]
+email = ["dep:mail-parser", "dep:cfb", "dep:outlook-pst", "dep:tempfile", "dep:chrono", "dep:chardetng", "html"]
+html = ["dep:html-to-markdown-rs", "dep:v_htmlescape"]
+archives = ["dep:zip", "dep:tar", "dep:sevenz-rust2", "dep:flate2"]
+image-encode = ["dep:image"]
+ocr-pipeline = ["dep:image", "image-encode", "dep:fast_image_resize", "language-detection"]
+ocr = ["ocr-pipeline", "tokio-runtime", "dep:xberg-tesseract", "dep:image", "dep:tiff", "dep:fast_image_resize", "dep:nom-exif", "dep:hayro-jpeg2000", "dep:hayro-jbig2", "dep:ureq", "html"]
+language-detection = ["dep:whatlang"]
+chunking = ["dep:auto_enums", "dep:either", "dep:icu_provider", "dep:icu_segmenter", "dep:itertools", "dep:strum"]
+tower-service = ["dep:tower", "tokio-runtime"]
+mcp = ["tower-service", "dep:rmcp", "tokio-runtime"]
+
+[dependencies]
+ahash = { version = "0.8.12", features = ["serde"] }
+async-trait = { version = "0.1.92" }
+auto_enums = { version = "0.8", optional = true }
+base64 = { version = "0.23.1" }
+biblatex = { version = "0.12", optional = true }
+biblib = { version = "0.10", default-features = false, features = ["ris", "pubmed", "xml"], optional = true }
+bitvec = "1.1"
+blake3 = { version = "1" }
+bytes = { version = "1", features = ["serde"] }
+calamine = { version = "0.38.0", features = ["dates"], optional = true }
+cfb = { version = "0.15", optional = true }
+chardetng = { version = "1.0.0", optional = true }
+chrono = { version = "0.4", optional = true }
+codepage = "0.1.3"
+comrak = { version = "0.59", default-features = false }
+dbase = { version = "0.8", optional = true }
+dirs = "7"
+either = { version = "1", optional = true }
+encoding_rs = { version = "0.8.42" }
+fast_image_resize = { version = "6.1.0", optional = true }
+flate2 = { version = "1.1", optional = true }
+hayro-jbig2 = { version = "0.3", default-features = false, features = ["std"], optional = true }
+hayro-jpeg2000 = { version = "0.4.1", default-features = false, features = ["std", "simd"], optional = true }
+hex = { version = "0.4.3" }
+html-escape = { version = "0.3.0", optional = true }
+html-to-markdown-rs = { version = "3.19.0", default-features = false, features = ["inline-images", "metadata"], optional = true }
+icu_provider = { version = "2", features = ["sync"], optional = true }
+icu_segmenter = { version = "2", optional = true }
+image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "webp", "bmp", "tiff", "gif", "pnm", "rayon"], optional = true }
+indexmap = "2.14.2"
+infer = "0.22.0"
+itertools = { version = "0.15", optional = true }
+jotdown = "0.10"
+libc = { version = "0.2.191" }
+log = { version = "0.4", features = ["std"] }
+mail-parser = { version = "0.11.9", features = ["full_encoding"], optional = true }
+mathemascii = { version = "0.4.0", optional = true }
+memchr = "2.8.3"
+memmap2 = { version = "0.9" }
+mime = { version = "0.3.17" }
+mime_guess = "2.0"
+nom-exif = { version = "3.8", default-features = false, optional = true }
+num_cpus = { version = "1.17.0" }
+once_cell = { version = "1.21.4" }
+org = { version = "0.3", optional = true }
+outlook-pst = { version = "1.2.0", optional = true }
+parking_lot = { version = "0.12.5" }
+pastey = "0.2"
+pulldown-cmark = { version = "0.13" }
+quick-xml = { version = "0.42.0", features = ["serialize"], optional = true }
+rayon = { version = "1.12.0" }
+regex = "1.13.1"
+rmcp = { version = "3.8.0", features = ["server", "macros", "base64", "transport-io", "transport-streamable-http-server", "server-side-http"], optional = true }
+rmp-serde = "1.3"
+roxmltree = { version = "0.21.2", optional = true }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["preserve_order"] }
+serde_toon_format = { version = "0.2" }
+sevenz-rust2 = { version = "0.24.1", optional = true }
+strum = { version = "0.28", features = ["derive"], optional = true }
+tar = { version = "^0.4", optional = true }
+tempfile = { version = "3.27.0", optional = true }
+thiserror = { version = "2.0.21" }
+tiff = { version = "0.11", optional = true }
+tokio = { version = "1.54.1", features = ["rt", "macros", "sync", "time", "io-util"], optional = true }
+toml = { version = "1.1.8" }
+tower = { version = "0.5", features = ["timeout", "limit", "util"], optional = true }
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["std", "registry"] }
+typst-syntax = { version = "0.15.1", optional = true }
+unicode-normalization = { version = "0.1.26", optional = true }
+unicode-width = { version = "0.2", optional = true }
+url = { version = "2.5.8" }
+urlencoding = "2"
+v_htmlescape = { version = "0.17", optional = true }
+whatlang = { version = "0.18.0", optional = true }
+xberg-tesseract = { git = "https://github.com/Know-Me-Tools/xberg.git", rev = "ffb3b1a25b6c14c13858142997dd82a16d5b2f35", optional = true }
+yaml_serde = "0.10.7"
+zip = { version = "9.1.3", optional = true, default-features = false, features = ["deflate-flate2"] }
+
+[target.'cfg(all(not(target_os = "windows"), not(target_arch = "wasm32"), not(target_os = "android")))'.dependencies]
+ureq = { version = "3.5", default-features = false, features = ["rustls", "platform-verifier", "json"], optional = true }
+
+[target.'cfg(all(target_os = "windows", not(target_arch = "wasm32")))'.dependencies]
+ureq = { version = "3.5", default-features = false, features = ["rustls", "platform-verifier", "json"], optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1.54.1", features = ["rt", "macros", "sync", "time", "io-util", "process", "fs", "rt-multi-thread"], optional = true }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.4", features = ["wasm_js"] }
+getrandom_02 = { package = "getrandom", version = "0.2", features = ["js"] }
+getrandom_03 = { package = "getrandom", version = "0.3", features = ["wasm_js"] }
+xberg-tesseract = { git = "https://github.com/Know-Me-Tools/xberg.git", rev = "ffb3b1a25b6c14c13858142997dd82a16d5b2f35", default-features = false, features = ["build-tesseract-wasm", "bundle-tessdata-eng"], optional = true }
+
+[target.'cfg(target_os = "android")'.dependencies]
+ureq = { version = "3.5", default-features = false, features = ["rustls", "json"], optional = true }
+
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.rust.unexpected_cfgs]
+level = "warn"
+check-cfg = [
+  "cfg(alef)",
+  "cfg(feature, values(\"alef-meta\"))",
+  "cfg(feature, values(\"api\", \"api-types\", \"auto-rotate\", \"auto-rotate-tract\", \"auto-rotate-types\", \"bundle-tessdata-eng\", \"candle-deepseek-ocr\", \"candle-glm-ocr\", \"candle-ocr\", \"candle-paddleocr-vl\", \"candle-trocr\", \"captioning\", \"chunking-tokenizers\", \"classification\", \"cuda\", \"diff\", \"embedding-presets\", \"embeddings\", \"enrichment\", \"excel-wasm\", \"formula-recognition\", \"heic\", \"heuristics\", \"hwp\", \"hwpx\", \"iwork\", \"keywords\", \"keywords-rake\", \"keywords-yake\", \"late-interaction\", \"late-interaction-presets\", \"layout-detection\", \"layout-tract\", \"layout-types\", \"liter-llm\", \"markdown-footnotes\", \"mcp-http\", \"mdx\", \"ner\", \"ner-candle-backend\", \"ner-llm\", \"ner-onnx\", \"ocr-wasm\", \"onnx-runtime\", \"ort-bundled\", \"otel\", \"paddle-ocr-ort\", \"paddle-ocr-tract\", \"pdf\", \"pdf-pdfium\", \"presets\", \"profiling\", \"prometheus\", \"qr-codes\", \"quality\", \"redaction\", \"redaction-rehydrate\", \"reranker\", \"reranker-presets\", \"sceptre-ocr-candle\", \"sceptre-ocr-ort\", \"sceptre-ocr-tract\", \"sceptre-wasm\", \"simd-utf8\", \"sparse-embedding-presets\", \"sparse-embeddings\", \"sqlite\", \"static-embeddings\", \"stopwords\", \"summarization\", \"summarization-llm\", \"svg\", \"tensorrt\", \"tract\", \"transcription\", \"transcription-types\", \"translation\", \"tree-sitter\", \"url-config-types\", \"url-ingestion\", \"wordperfect\", \"xml\"))",
+]
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+print_stdout = "deny"
+print_stderr = "deny"
+dbg_macro = "deny"

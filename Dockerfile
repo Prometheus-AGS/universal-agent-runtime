@@ -27,7 +27,7 @@ ARG PYTHON_VERSION=3.13
 ARG GO_VERSION=1.26.3
 # Keep aligned with both Wasmtime packages resolved in Cargo.lock. Plain
 # components are compiled by the runtime for its own engine/features/host target.
-ARG WASMTIME_VERSION=50.0.0
+ARG WASMTIME_VERSION=50.0.1
 # TinyGo is the only Go path to WASI P2 / Component Model. Pinned alongside Go.
 ARG TINYGO_VERSION=0.34.0
 
@@ -242,8 +242,8 @@ RUN cd frontend \
     && pnpm build
 
 # Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded).
-# The lockfile fetches xberg (document extraction) from a public Git fork over
-# HTTPS. Retain the optional github_token mount for private Git dependencies.
+# The lockfile fetches the pinned xberg sibling crates from a public Git fork.
+# Retain the optional github_token mount for private Git dependencies.
 # Runtime-only Git configuration rewrites SSH to credential-free HTTPS URLs;
 # the GitHub-scoped helper reads the mount only on get and never stores secrets.
 RUN --mount=type=secret,id=github_token \

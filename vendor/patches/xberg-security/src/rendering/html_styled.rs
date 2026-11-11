@@ -1,0 +1,683 @@
+//! Styled HTML renderer — direct `InternalDocument` → HTML5 with `kb-*` class hooks.
+//!
+//! Replaces the comrak-based `render_html` when the `html` feature is
+//! active and `ExtractionConfig::html_output` is `Some(...)`.
+//!
+//! # Stability contract
+//!
+//! All emitted class names (prefixed by `config.class_prefix`, default `"kb-"`)
+//! and CSS custom properties (`--kb-*`) are stable across minor versions.
+//! See `docs/reference/html-styling-contract.md`.
+
+use std::fmt::Write as FmtWrite;
+use std::sync::Arc;
+
+use v_htmlescape::escape_string;
+
+use crate::Result;
+use crate::XbergError;
+use crate::core::config::html_output::{HtmlOutputConfig, HtmlTheme};
+use crate::plugins::{InternalRenderer, Plugin};
+use crate::rendering::common::{
+    NestingKind, RenderState, annotated_math, is_body_element, render_annotated_text_with_plain,
+    render_nested_annotated_text, valid_math_annotation,
+};
+use crate::types::document_structure::{AnnotationKind, ContentLayer};
+use crate::types::internal::{ElementKind, InternalDocument, InternalElement};
+
+fn theme_css(theme: &HtmlTheme) -> &'static str {
+    match theme {
+        HtmlTheme::Unstyled => "",
+        HtmlTheme::Default | HtmlTheme::Light => DEFAULT_CSS,
+        HtmlTheme::GitHub => GITHUB_CSS,
+        HtmlTheme::Dark => DARK_CSS,
+    }
+}
+
+const DEFAULT_CSS: &str = r#":root {
+  --kb-font-family: system-ui, sans-serif;
+  --kb-mono-font-family: ui-monospace, monospace;
+  --kb-text-color: #1a1a1a;
+  --kb-bg-color: #ffffff;
+  --kb-heading-color: #111111;
+  --kb-link-color: #0066cc;
+  --kb-link-hover-color: #004499;
+  --kb-code-bg: #f5f5f5;
+  --kb-code-color: #c7254e;
+  --kb-border-color: #e0e0e0;
+  --kb-table-border: #cccccc;
+  --kb-blockquote-border: #0066cc;
+  --kb-max-width: 72ch;
+  --kb-line-height: 1.6;
+}
+.kb-doc { font-family: var(--kb-font-family); color: var(--kb-text-color); background: var(--kb-bg-color); line-height: var(--kb-line-height); }
+.kb-content { max-width: var(--kb-max-width); margin: 0 auto; padding: 1rem; }
+.kb-h { color: var(--kb-heading-color); margin: 1.5em 0 0.5em; line-height: 1.25; }
+.kb-p { margin: 0.75em 0; }
+.kb-list { margin: 0.75em 0; padding-left: 2em; }
+.kb-li { margin: 0.25em 0; }
+.kb-blockquote { border-left: 4px solid var(--kb-blockquote-border); margin: 1em 0; padding: 0.5em 1em; color: #555; }
+.kb-pre { background: var(--kb-code-bg); border: 1px solid var(--kb-border-color); border-radius: 4px; overflow-x: auto; padding: 1em; margin: 1em 0; }
+.kb-code { font-family: var(--kb-mono-font-family); font-size: 0.875em; }
+p .kb-code { background: var(--kb-code-bg); color: var(--kb-code-color); padding: 0.1em 0.3em; border-radius: 3px; }
+.kb-table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+.kb-th, .kb-td { border: 1px solid var(--kb-table-border); padding: 0.5em 0.75em; text-align: left; }
+.kb-th { background: var(--kb-code-bg); font-weight: 600; }
+.kb-figure { margin: 1em 0; }
+.kb-img { max-width: 100%; height: auto; }
+.kb-page-break { border: none; border-top: 1px dashed var(--kb-border-color); margin: 2em 0; }
+"#;
+
+const GITHUB_CSS: &str = r#":root {
+  --kb-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --kb-mono-font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+  --kb-text-color: #24292f;
+  --kb-bg-color: #ffffff;
+  --kb-heading-color: #24292f;
+  --kb-link-color: #0969da;
+  --kb-link-hover-color: #0550ae;
+  --kb-code-bg: #f6f8fa;
+  --kb-code-color: #e01e5a;
+  --kb-border-color: #d0d7de;
+  --kb-table-border: #d0d7de;
+  --kb-blockquote-border: #d0d7de;
+  --kb-max-width: 80ch;
+  --kb-line-height: 1.5;
+}
+.kb-doc { font-family: var(--kb-font-family); color: var(--kb-text-color); background: var(--kb-bg-color); line-height: var(--kb-line-height); }
+.kb-content { max-width: var(--kb-max-width); margin: 0 auto; padding: 1rem 2rem; }
+.kb-h { color: var(--kb-heading-color); margin: 1.5em 0 0.5em; border-bottom: 1px solid var(--kb-border-color); padding-bottom: 0.3em; }
+.kb-p { margin: 0.75em 0; }
+.kb-list { margin: 0.75em 0; padding-left: 2em; }
+.kb-li { margin: 0.25em 0; }
+.kb-blockquote { border-left: 4px solid var(--kb-blockquote-border); margin: 1em 0; padding: 0.5em 1em; color: #57606a; }
+.kb-pre { background: var(--kb-code-bg); border: 1px solid var(--kb-border-color); border-radius: 6px; overflow-x: auto; padding: 1em; margin: 1em 0; }
+.kb-code { font-family: var(--kb-mono-font-family); font-size: 85%; }
+p .kb-code { background: var(--kb-code-bg); color: var(--kb-code-color); padding: 0.2em 0.4em; border-radius: 6px; }
+.kb-table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+.kb-th, .kb-td { border: 1px solid var(--kb-table-border); padding: 0.4em 0.8em; }
+.kb-th { background: var(--kb-code-bg); font-weight: 600; }
+.kb-figure { margin: 1em 0; }
+.kb-img { max-width: 100%; height: auto; }
+.kb-page-break { border: none; border-top: 1px dashed var(--kb-border-color); margin: 2em 0; }
+"#;
+
+const DARK_CSS: &str = r#":root {
+  --kb-font-family: system-ui, sans-serif;
+  --kb-mono-font-family: ui-monospace, monospace;
+  --kb-text-color: #e6edf3;
+  --kb-bg-color: #0d1117;
+  --kb-heading-color: #f0f6fc;
+  --kb-link-color: #58a6ff;
+  --kb-link-hover-color: #79c0ff;
+  --kb-code-bg: #161b22;
+  --kb-code-color: #ff7b72;
+  --kb-border-color: #30363d;
+  --kb-table-border: #30363d;
+  --kb-blockquote-border: #3d444d;
+  --kb-max-width: 72ch;
+  --kb-line-height: 1.6;
+}
+.kb-doc { font-family: var(--kb-font-family); color: var(--kb-text-color); background: var(--kb-bg-color); line-height: var(--kb-line-height); }
+.kb-content { max-width: var(--kb-max-width); margin: 0 auto; padding: 1rem; }
+.kb-h { color: var(--kb-heading-color); margin: 1.5em 0 0.5em; }
+.kb-p { margin: 0.75em 0; }
+.kb-list { margin: 0.75em 0; padding-left: 2em; }
+.kb-li { margin: 0.25em 0; }
+.kb-blockquote { border-left: 4px solid var(--kb-blockquote-border); margin: 1em 0; padding: 0.5em 1em; color: #8d96a0; }
+.kb-pre { background: var(--kb-code-bg); border: 1px solid var(--kb-border-color); border-radius: 4px; overflow-x: auto; padding: 1em; margin: 1em 0; }
+.kb-code { font-family: var(--kb-mono-font-family); font-size: 0.875em; }
+p .kb-code { background: var(--kb-code-bg); color: var(--kb-code-color); padding: 0.1em 0.3em; border-radius: 3px; }
+.kb-table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+.kb-th, .kb-td { border: 1px solid var(--kb-table-border); padding: 0.5em 0.75em; }
+.kb-th { background: var(--kb-code-bg); font-weight: 600; }
+.kb-figure { margin: 1em 0; }
+.kb-img { max-width: 100%; height: auto; }
+.kb-page-break { border: none; border-top: 1px dashed var(--kb-border-color); margin: 2em 0; }
+"#;
+
+/// Styled HTML renderer.
+///
+/// Implements the [`crate::plugins::Renderer`] trait; registered as `"html"` when the
+/// `html` feature is active. Configuration is baked in at
+/// construction time — no per-render allocation for CSS resolution.
+#[cfg_attr(alef, alef(skip))]
+pub struct StyledHtmlRenderer {
+    config: Arc<HtmlOutputConfig>,
+    /// Resolved CSS: theme + css_file + inline css, concatenated once.
+    resolved_css: String,
+}
+
+impl StyledHtmlRenderer {
+    /// Build a renderer from the given configuration.
+    ///
+    /// Loads `css_file` from disk and concatenates all CSS sources. Returns
+    /// an error if `css_file` is set but cannot be read.
+    /// Maximum size in bytes for a CSS file loaded via `css_file`.
+    const MAX_CSS_FILE_SIZE: u64 = 1_048_576;
+
+    pub(crate) fn new(config: HtmlOutputConfig) -> Result<Self> {
+        if !config
+            .class_prefix
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+        {
+            return Err(XbergError::validation(format!(
+                "html_output.class_prefix must contain only alphanumerics, hyphens, and underscores, got: {:?}",
+                config.class_prefix
+            )));
+        }
+
+        if config.class_prefix != "kb-" && config.theme != HtmlTheme::Unstyled {
+            tracing::warn!(
+                "html_output.class_prefix is {:?} but theme is {:?}; \
+                 built-in theme CSS targets `.kb-*` classes and will not match. \
+                 Use theme: \"unstyled\" with a custom prefix.",
+                config.class_prefix,
+                config.theme,
+            );
+        }
+
+        let mut css = theme_css(&config.theme).to_owned();
+
+        if let Some(ref path) = config.css_file {
+            let metadata = std::fs::metadata(path).map_err(|e| XbergError::Parsing {
+                message: format!("html_output.css_file \"{}\": {}", path.display(), e),
+                source: None,
+            })?;
+            if metadata.len() > Self::MAX_CSS_FILE_SIZE {
+                return Err(XbergError::validation(format!(
+                    "html_output.css_file \"{}\": file size {} exceeds maximum of {} bytes",
+                    path.display(),
+                    metadata.len(),
+                    Self::MAX_CSS_FILE_SIZE,
+                )));
+            }
+            let file_css = std::fs::read_to_string(path).map_err(|e| XbergError::Parsing {
+                message: format!("html_output.css_file \"{}\": {}", path.display(), e),
+                source: None,
+            })?;
+            css.push('\n');
+            css.push_str(&file_css);
+        }
+
+        if let Some(ref inline) = config.css {
+            css.push('\n');
+            css.push_str(inline);
+        }
+
+        let css = css.replace("</style>", "").replace("</STYLE>", "");
+
+        Ok(Self {
+            config: Arc::new(config),
+            resolved_css: css,
+        })
+    }
+}
+
+impl Plugin for StyledHtmlRenderer {
+    fn name(&self) -> &str {
+        "html"
+    }
+}
+
+impl InternalRenderer for StyledHtmlRenderer {
+    fn render(&self, doc: &InternalDocument) -> Result<String> {
+        let p = &self.config.class_prefix;
+
+        let text_bytes: usize = doc.elements.iter().map(|e| e.text.len()).sum();
+        let cap = (text_bytes * 3).min(64 * 1024 * 1024);
+        let mut buf = String::with_capacity(cap);
+
+        write!(buf, r#"<div class="{p}doc">"#).unwrap();
+
+        if self.config.embed_css && !self.resolved_css.is_empty() {
+            buf.push_str("<style>");
+            buf.push_str(&self.resolved_css);
+            buf.push_str("</style>");
+        }
+
+        write!(buf, r#"<main class="{p}content">"#).unwrap();
+        render_elements(doc, p, &mut buf);
+        buf.push_str("</main></div>");
+
+        Ok(buf)
+    }
+}
+
+fn esc(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    escape_string(text, &mut out);
+    out
+}
+
+fn render_elements(doc: &InternalDocument, p: &str, buf: &mut String) {
+    let mut state = RenderState::default();
+    let mut list_ordered_stack: Vec<bool> = Vec::new();
+
+    for elem in &doc.elements {
+        // Footnote definitions live on the footnote layer; they are rendered once, where
+        // they were pushed, like the body-layer definitions of formats that kept them there.
+        let footnote_definition =
+            elem.kind == ElementKind::FootnoteDefinition && matches!(elem.layer, ContentLayer::Footnote);
+        if !is_body_element(elem) && !footnote_definition {
+            continue;
+        }
+
+        match elem.kind {
+            ElementKind::Title => {
+                write!(buf, r#"<h1 class="{p}doc-title">{}</h1>"#, esc(&elem.text)).unwrap();
+            }
+            ElementKind::Heading { level } => render_heading(doc, elem, p, buf, level),
+
+            ElementKind::Paragraph | ElementKind::OcrText { .. } => {
+                write!(buf, r#"<p class="{p}p">{}</p>"#, render_inline(doc, elem, p)).unwrap();
+            }
+
+            ElementKind::ListStart { ordered } => {
+                render_list_start(elem, p, buf, &mut state, &mut list_ordered_stack, ordered);
+            }
+            ElementKind::ListEnd => render_list_end(buf, &mut state, &mut list_ordered_stack),
+            ElementKind::ListItem { .. } => render_list_item(doc, elem, p, buf),
+
+            ElementKind::QuoteStart => render_quote_start(elem, p, buf, &mut state),
+            ElementKind::QuoteEnd => render_quote_end(buf, &mut state),
+
+            ElementKind::Code => render_code(elem, p, buf),
+
+            ElementKind::Formula => render_formula(elem, p, buf),
+
+            ElementKind::FootnoteDefinition => render_footnote_definition(doc, elem, p, buf),
+            ElementKind::FootnoteRef => render_footnote_ref(elem, p, buf),
+            ElementKind::CommentDefinition => render_comment_definition(doc, elem, p, buf),
+            ElementKind::CommentRef => render_comment_ref(elem, p, buf),
+            ElementKind::Citation => {
+                write!(buf, r#"<cite class="{p}citation">{}</cite>"#, esc(&elem.text)).unwrap();
+            }
+
+            ElementKind::Slide { number } => render_slide(doc, elem, p, buf, number),
+
+            ElementKind::DefinitionTerm => {
+                write!(buf, r#"<dt class="{p}dt">{}</dt>"#, render_inline(doc, elem, p)).unwrap();
+            }
+            ElementKind::DefinitionDescription => {
+                write!(buf, r#"<dd class="{p}dd">{}</dd>"#, render_inline(doc, elem, p)).unwrap();
+            }
+
+            ElementKind::Admonition => render_admonition(doc, elem, p, buf),
+
+            ElementKind::RawBlock => render_raw_block(elem, p, buf),
+            ElementKind::MetadataBlock => {
+                write!(buf, r#"<dl class="{p}metadata">{}</dl>"#, esc(&elem.text)).unwrap();
+            }
+
+            ElementKind::GroupStart => render_group_start(elem, p, buf, &mut state),
+            ElementKind::GroupEnd => render_group_end(buf, &mut state),
+
+            ElementKind::Table { table_index } => render_table_element(doc, p, buf, table_index),
+
+            ElementKind::Image { image_index } => render_image_element(doc, elem, p, buf, image_index),
+
+            ElementKind::PageBreak => render_page_break(elem, p, buf),
+        }
+    }
+}
+
+fn render_heading(doc: &InternalDocument, elem: &InternalElement, p: &str, buf: &mut String, level: u8) {
+    let lvl = level.clamp(1, 6);
+    write!(
+        buf,
+        r#"<h{lvl} class="{p}h {p}h{lvl}">{}</h{lvl}>"#,
+        render_inline(doc, elem, p)
+    )
+    .unwrap();
+}
+
+fn render_list_start(
+    elem: &InternalElement,
+    p: &str,
+    buf: &mut String,
+    state: &mut RenderState,
+    list_ordered_stack: &mut Vec<bool>,
+    ordered: bool,
+) {
+    list_ordered_stack.push(ordered);
+    state.push_container(NestingKind::List { ordered, item_count: 0 }, elem.depth);
+    if ordered {
+        write!(buf, r#"<ol class="{p}list {p}ol">"#).unwrap();
+    } else {
+        write!(buf, r#"<ul class="{p}list {p}ul">"#).unwrap();
+    }
+}
+
+fn render_list_end(buf: &mut String, state: &mut RenderState, list_ordered_stack: &mut Vec<bool>) {
+    let ordered = list_ordered_stack.pop().unwrap_or(false);
+    state.pop_container(&NestingKind::List { ordered, item_count: 0 });
+    if ordered {
+        buf.push_str("</ol>");
+    } else {
+        buf.push_str("</ul>");
+    }
+}
+
+fn render_list_item(doc: &InternalDocument, elem: &InternalElement, p: &str, buf: &mut String) {
+    // `<ol>`/`<ul>` only ever render an auto-incrementing decimal or a bullet
+    // glyph; a literal source label (e.g. "B.", "(a)") that shape cannot
+    // express is written out as visible leading text instead, same convention
+    // the other renderers use.
+    match elem.list_item_source_label() {
+        Some(label) if !label.is_empty() => write!(
+            buf,
+            r#"<li class="{p}li"><span class="{p}list-marker">{}</span> {}</li>"#,
+            esc(label),
+            render_inline(doc, elem, p)
+        )
+        .unwrap(),
+        _ => write!(buf, r#"<li class="{p}li">{}</li>"#, render_inline(doc, elem, p)).unwrap(),
+    }
+}
+
+fn render_quote_start(elem: &InternalElement, p: &str, buf: &mut String, state: &mut RenderState) {
+    state.push_container(NestingKind::BlockQuote, elem.depth);
+    write!(buf, r#"<blockquote class="{p}blockquote">"#).unwrap();
+}
+
+fn render_quote_end(buf: &mut String, state: &mut RenderState) {
+    state.pop_container(&NestingKind::BlockQuote);
+    buf.push_str("</blockquote>");
+}
+
+fn render_code(elem: &InternalElement, p: &str, buf: &mut String) {
+    let lang = elem
+        .attributes
+        .as_ref()
+        .and_then(|a| a.get("language").or_else(|| a.get("lang")))
+        .map(|s| s.as_str())
+        .unwrap_or("");
+    if lang.is_empty() {
+        write!(
+            buf,
+            r#"<pre class="{p}pre"><code class="{p}code">{}</code></pre>"#,
+            esc(&elem.text)
+        )
+        .unwrap();
+    } else {
+        let safe_lang = esc(lang);
+        write!(
+            buf,
+            r#"<pre class="{p}pre"><code class="{p}code {p}lang-{safe_lang}">{}</code></pre>"#,
+            esc(&elem.text)
+        )
+        .unwrap();
+    }
+}
+
+fn render_formula(elem: &InternalElement, p: &str, buf: &mut String) {
+    // Math, not code: emit LaTeX in `$$...$$` display-math delimiters inside a
+    // math-classed element, matching the `dollar_math`/`display_math` convention
+    // used by the comrak and djot renderers. KaTeX/MathJax auto-render both pick
+    // up `$$...$$` by default, so this is renderable as-is once such a script is
+    // present on the page; without one it degrades to visible LaTeX source rather
+    // than a misleading monospace code block.
+    write!(
+        buf,
+        r#"<div class="{p}formula {p}math" data-math-style="display">$${}$$</div>"#,
+        esc(&elem.text)
+    )
+    .unwrap();
+}
+
+fn render_footnote_definition(doc: &InternalDocument, elem: &InternalElement, p: &str, buf: &mut String) {
+    let anchor = elem.anchor.as_deref().unwrap_or("");
+    write!(
+        buf,
+        r#"<aside class="{p}footnote" id="fn-{}">{}</aside>"#,
+        esc(anchor),
+        render_inline(doc, elem, p)
+    )
+    .unwrap();
+}
+
+fn render_footnote_ref(elem: &InternalElement, p: &str, buf: &mut String) {
+    let anchor = elem.anchor.as_deref().unwrap_or("");
+    write!(
+        buf,
+        r##"<sup class="{p}footnote-ref"><a href="#fn-{}">{}</a></sup>"##,
+        esc(anchor),
+        esc(&elem.text)
+    )
+    .unwrap();
+}
+
+fn render_comment_definition(doc: &InternalDocument, elem: &InternalElement, p: &str, buf: &mut String) {
+    let anchor = elem.anchor.as_deref().unwrap_or("");
+    write!(
+        buf,
+        r#"<aside class="{p}comment" id="fn-{}">{}</aside>"#,
+        esc(anchor),
+        render_inline(doc, elem, p)
+    )
+    .unwrap();
+}
+
+fn render_comment_ref(elem: &InternalElement, p: &str, buf: &mut String) {
+    let anchor = elem.anchor.as_deref().unwrap_or("");
+    write!(
+        buf,
+        r##"<sup class="{p}comment-ref"><a href="#fn-{}">{}</a></sup>"##,
+        esc(anchor),
+        esc(&elem.text)
+    )
+    .unwrap();
+}
+
+fn render_slide(doc: &InternalDocument, elem: &InternalElement, p: &str, buf: &mut String, number: u32) {
+    // `Slide` is a marker, not a container: there is no `SlideEnd` element kind, so
+    // an unbalanced opening tag would leave every slide deck's HTML malformed. Match
+    // the djot and comrak renderers, which emit a break followed by the slide title
+    // as a level-2 heading, and keep the `slide`/`data-slide` hooks for styling.
+    write!(buf, r#"<section class="{p}slide" data-slide="{number}">"#).unwrap();
+    if !elem.text.is_empty() {
+        write!(buf, r#"<h2 class="{p}h {p}h2">{}</h2>"#, render_inline(doc, elem, p)).unwrap();
+    }
+    buf.push_str("</section>");
+}
+
+fn render_admonition(doc: &InternalDocument, elem: &InternalElement, p: &str, buf: &mut String) {
+    let kind = elem
+        .attributes
+        .as_ref()
+        .and_then(|a| a.get("kind").or_else(|| a.get("type")))
+        .map(|s| s.as_str())
+        .unwrap_or("note");
+    let safe_kind = esc(kind);
+    write!(
+        buf,
+        r#"<aside class="{p}admonition {p}admonition-{safe_kind}">{}</aside>"#,
+        render_inline(doc, elem, p)
+    )
+    .unwrap();
+}
+
+fn render_raw_block(elem: &InternalElement, p: &str, buf: &mut String) {
+    // Only a block that declares itself HTML may be written through
+    // verbatim. Most producers of a raw block do not: `odp.rs` pushes
+    // speaker notes and master-page text as `odp-speaker-notes` /
+    // `odp-master-page`, `orgmode.rs` pushes Org source, `html/structure.rs`
+    // pushes `script`/`style` bodies, and `djot_format` pushes whatever
+    // format the source declared, including `unknown`. Emitting those
+    // unescaped puts arbitrary author-typed text — a `<` in a speaker
+    // note, or LibreOffice's literal `<number>` field placeholder — into
+    // the output as if it were markup, which both corrupts the document
+    // structure and is an injection vector (#69).
+    let is_html = elem
+        .attributes
+        .as_ref()
+        .and_then(|a| a.get("format"))
+        .is_some_and(|format| format == "html");
+    if is_html {
+        buf.push_str(&elem.text);
+    } else {
+        write!(buf, r#"<pre class="{p}pre {p}raw">{}</pre>"#, esc(&elem.text)).unwrap();
+    }
+}
+
+fn render_group_start(elem: &InternalElement, p: &str, buf: &mut String, state: &mut RenderState) {
+    state.push_container(NestingKind::Group, elem.depth);
+    write!(buf, r#"<div class="{p}group">"#).unwrap();
+}
+
+fn render_group_end(buf: &mut String, state: &mut RenderState) {
+    state.pop_container(&NestingKind::Group);
+    buf.push_str("</div>");
+}
+
+fn render_table_element(doc: &InternalDocument, p: &str, buf: &mut String, table_index: u32) {
+    if let Some(table) = doc.tables.get(table_index as usize) {
+        render_table(table, p, buf);
+    }
+}
+
+fn render_image_element(doc: &InternalDocument, elem: &InternalElement, p: &str, buf: &mut String, image_index: u32) {
+    if let Some(image) = doc.images.get(image_index as usize) {
+        let render_ocr = elem.should_render_image_ocr();
+        render_image(
+            image,
+            &elem.text,
+            p,
+            doc.ocr_text_only && render_ocr,
+            doc.append_ocr_text && render_ocr,
+            buf,
+        );
+    }
+}
+
+fn render_page_break(elem: &InternalElement, p: &str, buf: &mut String) {
+    let page = elem.page.unwrap_or(0);
+    write!(buf, r#"<hr class="{p}page-break" data-page="{page}">"#).unwrap();
+}
+
+fn render_inline(_doc: &InternalDocument, elem: &crate::types::internal::InternalElement, p: &str) -> String {
+    if elem
+        .annotations
+        .iter()
+        .any(|annotation| valid_math_annotation(&elem.text, annotation))
+    {
+        return render_nested_annotated_text(
+            &elem.text,
+            &elem.annotations,
+            &|span, kind| {
+                if let Some((_, display)) = annotated_math(span, kind) {
+                    let style = if display { "display" } else { "inline" };
+                    Some(format!(
+                        r#"<span class="{p}math" data-math-style="{style}">{}</span>"#,
+                        esc(span)
+                    ))
+                } else if matches!(kind, AnnotationKind::Code) {
+                    Some(esc(span))
+                } else {
+                    None
+                }
+            },
+            &|span, kind| wrap_inline(span, kind, p),
+            &esc,
+        );
+    }
+    render_annotated_text_with_plain(
+        &elem.text,
+        &elem.annotations,
+        |span, kind| wrap_inline(&esc(span), kind, p),
+        esc,
+    )
+}
+
+fn wrap_inline(span: &str, kind: &AnnotationKind, p: &str) -> String {
+    match kind {
+        AnnotationKind::Bold => format!("<strong>{span}</strong>"),
+        AnnotationKind::Italic => format!("<em>{span}</em>"),
+        AnnotationKind::Strikethrough => format!("<del>{span}</del>"),
+        AnnotationKind::Link { url, .. } => {
+            format!(r#"<a class="{p}link" href="{}">{span}</a>"#, esc(url))
+        }
+        _ => span.to_string(),
+    }
+}
+
+fn render_table(table: &crate::types::tables::Table, p: &str, buf: &mut String) {
+    write!(buf, r#"<table class="{p}table">"#).unwrap();
+    let mut rows = table.cells.iter().peekable();
+
+    if let Some(header_row) = rows.next() {
+        write!(buf, r#"<thead class="{p}thead"><tr class="{p}tr">"#).unwrap();
+        for cell in header_row {
+            write!(buf, r#"<th class="{p}th">{}</th>"#, esc(cell)).unwrap();
+        }
+        buf.push_str("</tr></thead>");
+    }
+
+    if rows.peek().is_some() {
+        write!(buf, r#"<tbody class="{p}tbody">"#).unwrap();
+        for row in rows {
+            write!(buf, r#"<tr class="{p}tr">"#).unwrap();
+            for cell in row {
+                write!(buf, r#"<td class="{p}td">{}</td>"#, esc(cell)).unwrap();
+            }
+            buf.push_str("</tr>");
+        }
+        buf.push_str("</tbody>");
+    }
+
+    buf.push_str("</table>");
+}
+
+fn render_image(
+    image: &crate::types::ExtractedImage,
+    alt: &str,
+    p: &str,
+    ocr_text_only: bool,
+    append_ocr_text: bool,
+    buf: &mut String,
+) {
+    use base64::Engine as _;
+
+    let ocr_content = image
+        .ocr_result
+        .as_ref()
+        .map(|r| r.content.as_str())
+        .filter(|s| !s.is_empty());
+
+    if ocr_text_only && let Some(text) = ocr_content {
+        write!(buf, r#"<p class="{p}ocr-text">{}</p>"#, esc(text)).unwrap();
+        return;
+    }
+
+    let b64 = base64::engine::general_purpose::STANDARD.encode(&image.data);
+    let mime = match image.format.as_ref() {
+        "jpeg" | "jpg" => "image/jpeg",
+        "png" => "image/png",
+        "webp" => "image/webp",
+        "gif" => "image/gif",
+        "bmp" => "image/bmp",
+        "tiff" => "image/tiff",
+        _ => "image/png",
+    };
+    write!(
+        buf,
+        r#"<figure class="{p}figure"><img class="{p}img" src="data:{mime};base64,{b64}" alt="{}">"#,
+        esc(alt)
+    )
+    .unwrap();
+
+    if append_ocr_text && let Some(text) = ocr_content {
+        write!(buf, r#"<figcaption class="{p}figcaption">{}</figcaption>"#, esc(text)).unwrap();
+    }
+
+    buf.push_str("</figure>");
+}
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(test)]
+#[path = "html_styled/math/tests.rs"]
+mod math_tests;

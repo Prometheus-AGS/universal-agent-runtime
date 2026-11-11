@@ -2,7 +2,7 @@
   "schema_version": 1,
   "classification": "authored-fixture-not-executed-evidence",
   "mode": "plain-component-only",
-  "runtime": { "wasmtime": "50.0.0", "wasmtime_wasi": "50.0.0", "source": "Cargo.lock", "engine": "WasmSkillRuntime::new", "target": "actual runtime host; no distributed native cache" },
+  "runtime": { "wasmtime": "50.0.1", "wasmtime_wasi": "50.0.1", "source": "Cargo.lock", "engine": "WasmSkillRuntime::new", "target": "actual runtime host; no distributed native cache" },
   "reference": {
     "artifact": "reference.wasm",
     "upstream_path": "crates/prometheus-skill-system/skills/react/prometheus-entity-skills/entity-graph-optimize/skill.wasm",

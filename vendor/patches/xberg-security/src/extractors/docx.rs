@@ -1,0 +1,5675 @@
+//! DOCX extractor for high-performance text extraction.
+//!
+//! Supports: Microsoft Word (.docx)
+
+use crate::Result;
+use crate::core::config::ExtractionConfig;
+use crate::extraction::office_metadata;
+use crate::extractors::security::SecurityBudget;
+use crate::plugins::{InternalDocumentExtractor, Plugin};
+use crate::types::ExtractedImage;
+use crate::types::internal::InternalDocument;
+use crate::types::internal_builder::InternalDocumentBuilder;
+use crate::types::{
+    DocxMetadata, FormatMetadata, Metadata, PageBoundary, PageContent, PageInfo, PageStructure, PageUnitType, Table,
+};
+use ahash::AHashMap;
+use async_trait::async_trait;
+use bytes::Bytes;
+use std::borrow::Cow;
+use std::io::Cursor;
+use std::sync::Arc;
+#[cfg_attr(alef, alef(skip))]
+/// High-performance DOCX extractor.
+///
+/// This extractor provides:
+/// - Fast text extraction via streaming XML parsing
+/// - Comprehensive metadata extraction (core.xml, app.xml, custom.xml)
+pub struct DocxExtractor;
+
+impl DocxExtractor {
+    /// Create a new DOCX extractor.
+    pub(crate) fn new() -> Self {
+        Self
+    }
+}
+
+impl Default for DocxExtractor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Attribute key under which the resolved DOCX paragraph style name (`w:pStyle` ->
+/// `styles.xml` `w:name`, walking `w:basedOn`) is exposed on `Element.metadata.additional`.
+const STYLE_NAME_ATTRIBUTE: &str = "style_name";
+
+/// Attribute key set to `"true"` on every element that belongs to a table of contents
+/// (a `w:sdt` with a `Table of Contents` doc-part gallery, or a `TOC` field code).
+const TOC_ENTRY_ATTRIBUTE: &str = "toc_entry";
+
+/// Resolve a drawing's alt text: `wp:docPr/@descr`, falling back to `@name` (#81).
+///
+/// Word writes `@descr` only when the author fills in the description field, but always
+/// writes `@name`. Without the fallback an image the author named but never described
+/// reaches output carrying no alt text at all.
+///
+/// Shared by the placeholder element path and the `ExtractedImage` path so the two
+/// cannot disagree about what a given image is called.
+fn drawing_alt_text(drawing: &crate::extraction::docx::drawing::Drawing) -> Option<String> {
+    let properties = drawing.doc_properties.as_ref()?;
+    properties
+        .description
+        .clone()
+        .filter(|description| !description.is_empty())
+        .or_else(|| properties.name.clone().filter(|name| !name.is_empty()))
+}
+
+/// Anchor key shared by a note's reference and its definition.
+///
+/// Word numbers footnotes and endnotes independently, so footnote 1 and endnote 1
+/// need different keys. The "fn"/"en" prefixes match the ODT and WordPerfect
+/// extractors (#118).
+fn note_key(note_type: crate::extraction::docx::parser::NoteType, id: &str) -> String {
+    match note_type {
+        crate::extraction::docx::parser::NoteType::Footnote => format!("fn{id}"),
+        crate::extraction::docx::parser::NoteType::Endnote => format!("en{id}"),
+    }
+}
+
+/// Build an `InternalDocument` from parsed DOCX data.
+///
+/// Creates a flat element list with headings, paragraphs, lists, tables, images,
+/// footnotes/endnotes (with relationships), and hyperlinks (as InternalLink relationships).
+///
+/// When `inject_placeholders` is `false`, `Drawing` elements are **not** pushed into the
+/// returned `InternalDocument`, so they will not appear in `ExtractedDocument::elements`.
+/// Image data is still extracted separately by the caller.
+fn build_internal_document(
+    doc: &crate::extraction::docx::parser::Document,
+    inject_placeholders: bool,
+) -> InternalDocument {
+    use crate::types::document_structure::ContentLayer;
+    use crate::types::extraction::BoundingBox;
+    use crate::types::internal::{ElementKind, InternalElement, RelationshipKind, RelationshipTarget};
+    use crate::types::uri::ExtractedUri;
+
+    let mut builder = InternalDocumentBuilder::new("docx");
+
+    let mut current_list_numbering_id: Option<i64> = None;
+    let mut current_list_ordered: bool = false;
+    let mut current_list_nesting_level: i64 = 0;
+    let mut open_list_count: i64 = 0;
+    let mut current_page = 1;
+
+    // Bookmark name -> the element it starts in, and the internal (`#anchor`) links
+    // waiting on it. A table of contents precedes the headings it points at, so the
+    // targets are only known once the whole body has been walked. Resolving here rather
+    // than through `InternalElement::anchor` leaves the heading slug anchors that
+    // `push_heading` generates intact.
+    let mut bookmark_elements: AHashMap<String, u32> = AHashMap::new();
+    let mut pending_anchor_links: Vec<(u32, String, RelationshipKind)> = Vec::new();
+    // The label Word paints on each list item, attached once the lists are built. ~keep
+    let mut word_list_labels: AHashMap<u32, &str> = AHashMap::new();
+
+    for element in &doc.elements {
+        match element {
+            crate::extraction::docx::parser::DocumentElement::Paragraph(idx) => {
+                let paragraph = &doc.paragraphs[*idx];
+
+                let (text, annotations, math_formulas) = collect_run_annotations(&paragraph.runs);
+                for run in &paragraph.runs {
+                    if let Some((latex, false)) = &run.math_latex {
+                        builder.record_formula(latex, Some(current_page));
+                    }
+                }
+
+                if text.is_empty() && math_formulas.is_empty() {
+                    if current_list_numbering_id.is_some() {
+                        for _ in 0..open_list_count {
+                            builder.end_list();
+                        }
+                        current_list_numbering_id = None;
+                        open_list_count = 0;
+                    }
+                    // A paragraph holding only note references has no text, but its references
+                    // are still the document's: they follow the block before it. ~keep
+                    push_note_refs(&mut builder, doc.note_refs_by_paragraph.get(idx), current_page);
+                    continue;
+                }
+
+                let heading_level = paragraph.style.as_deref().and_then(|s| doc.resolve_heading_level(s));
+
+                let is_quote_style = paragraph.style.as_deref().is_some_and(|s| {
+                    let lower = s.to_ascii_lowercase();
+                    lower == "quote"
+                        || lower == "blockquote"
+                        || lower == "intenseq"
+                        || lower == "intensequote"
+                        || lower.contains("quote")
+                });
+
+                // A heading's display equations follow its note and comment refs, which attach to the block they
+                // follow, so the refs stay on the heading and the equations in the heading's section. ~keep
+                let formulas_after_refs: &[String] = if heading_level.is_some() && !text.trim().is_empty() {
+                    &math_formulas
+                } else {
+                    &[]
+                };
+
+                let element_idx: Option<u32> = if let Some(level) = heading_level {
+                    if current_list_numbering_id.is_some() {
+                        for _ in 0..open_list_count {
+                            builder.end_list();
+                        }
+                        current_list_numbering_id = None;
+                        open_list_count = 0;
+                    }
+                    let heading_idx = (!text.trim().is_empty()).then(|| {
+                        let idx = builder.push_heading(level, &text, Some(current_page), None);
+                        if !annotations.is_empty() {
+                            builder.set_annotations(idx, annotations.clone());
+                        }
+                        idx
+                    });
+                    heading_idx.or_else(|| push_formulas(&mut builder, &math_formulas, current_page))
+                } else if is_quote_style {
+                    if current_list_numbering_id.is_some() {
+                        for _ in 0..open_list_count {
+                            builder.end_list();
+                        }
+                        current_list_numbering_id = None;
+                        open_list_count = 0;
+                    }
+                    builder.push_quote_start();
+                    // Before the quote text, where a plain paragraph puts its equations too. ~keep
+                    let formula_idx = push_formulas(&mut builder, &math_formulas, current_page);
+                    let para_idx = (!text.trim().is_empty())
+                        .then(|| builder.push_paragraph(&text, annotations.clone(), Some(current_page), None));
+                    builder.push_quote_end();
+                    para_idx.or(formula_idx)
+                } else if let Some(nid) = paragraph.numbering_id {
+                    let formula_idx = push_formulas(&mut builder, &math_formulas, current_page);
+                    if !text.trim().is_empty() {
+                        let nlvl = paragraph.numbering_level.unwrap_or(0);
+                        let is_ordered = paragraph
+                            .numbering_id
+                            .zip(paragraph.numbering_level)
+                            .and_then(|(nid, nlvl)| doc.numbering_defs.get(&(nid, nlvl)))
+                            .is_some_and(|lt| *lt == crate::extraction::docx::parser::ListType::Numbered);
+                        if current_list_numbering_id != Some(nid) {
+                            if current_list_numbering_id.is_some() {
+                                for _ in 0..open_list_count {
+                                    builder.end_list();
+                                }
+                            }
+                            builder.push_list(is_ordered);
+                            current_list_numbering_id = Some(nid);
+                            current_list_ordered = is_ordered;
+                            current_list_nesting_level = nlvl;
+                            open_list_count = 1;
+                        } else if nlvl > current_list_nesting_level {
+                            let depth_increase = nlvl - current_list_nesting_level;
+                            for _ in 0..depth_increase {
+                                builder.push_list(is_ordered);
+                                open_list_count += 1;
+                            }
+                            current_list_nesting_level = nlvl;
+                        } else if nlvl < current_list_nesting_level {
+                            let depth_decrease = current_list_nesting_level - nlvl;
+                            for _ in 0..depth_decrease {
+                                builder.end_list();
+                                open_list_count = open_list_count.saturating_sub(1);
+                            }
+                            current_list_nesting_level = nlvl;
+                        }
+                        let li_idx = builder.push_list_item(
+                            &text,
+                            current_list_ordered,
+                            annotations.clone(),
+                            Some(current_page),
+                            None,
+                        );
+                        if let Some(label) = doc.list_labels.get(idx) {
+                            word_list_labels.insert(li_idx, label.as_str());
+                        }
+                        Some(li_idx)
+                    } else {
+                        formula_idx
+                    }
+                } else {
+                    if current_list_numbering_id.is_some() {
+                        for _ in 0..open_list_count {
+                            builder.end_list();
+                        }
+                        current_list_numbering_id = None;
+                        open_list_count = 0;
+                    }
+                    let formula_idx = push_formulas(&mut builder, &math_formulas, current_page);
+                    if !text.trim().is_empty() {
+                        let para_idx = builder.push_paragraph(&text, annotations.clone(), Some(current_page), None);
+                        Some(para_idx)
+                    } else {
+                        formula_idx
+                    }
+                };
+
+                if let Some(elem_idx) = element_idx {
+                    if let Some(style_name) = paragraph.style.as_deref().and_then(|s| doc.resolve_style_name(s)) {
+                        builder.merge_attribute(elem_idx, STYLE_NAME_ATTRIBUTE, style_name);
+                    }
+
+                    // Table-of-contents membership (#1452). Marked on the element rather
+                    // than expressed as a content layer so it stays additive.
+                    if paragraph.in_table_of_contents {
+                        builder.merge_attribute(elem_idx, TOC_ENTRY_ATTRIBUTE, "true");
+                    }
+
+                    for bookmark in &paragraph.bookmarks {
+                        bookmark_elements.entry(bookmark.clone()).or_insert(elem_idx);
+                    }
+
+                    for run in &paragraph.runs {
+                        if run.math_latex.is_some() || run.text.is_empty() {
+                            continue;
+                        }
+                        if let Some(ref url) = run.hyperlink_url {
+                            if let Some(anchor_key) = url.strip_prefix('#') {
+                                // A link inside a TOC is what makes that TOC navigable, so
+                                // it is reported as `TocEntry` rather than a generic
+                                // internal link.
+                                let kind = if paragraph.in_table_of_contents {
+                                    RelationshipKind::TocEntry
+                                } else {
+                                    RelationshipKind::InternalLink
+                                };
+                                pending_anchor_links.push((elem_idx, anchor_key.to_string(), kind));
+                            }
+                            builder.push_uri(ExtractedUri::hyperlink(url.as_str(), Some(run.text.clone())));
+                        }
+                    }
+
+                    push_note_refs(&mut builder, doc.note_refs_by_paragraph.get(idx), current_page);
+
+                    // Comment reference markers (#82, #300). Structurally a comment is
+                    // the same shape as a footnote (a marker in the body, a definition
+                    // elsewhere), sourced from `word/comments.xml` instead of
+                    // `word/footnotes.xml`, but it is routed through the dedicated
+                    // `CommentRef`/`NodeContent::Comment` machinery so a consumer can
+                    // tell a reviewer comment apart from an authored footnote. ~keep
+                    let mut search_start = 0;
+                    while let Some(start) = text[search_start..].find("[cmt:") {
+                        let abs_start = search_start + start;
+                        if let Some(end) = text[abs_start..].find(']') {
+                            let comment_id = &text[abs_start + 5..abs_start + end];
+                            if !comment_id.is_empty() {
+                                let key = format!("cmt{}", comment_id);
+                                builder.push_comment_ref(comment_id, &key, Some(current_page));
+                            }
+                            search_start = abs_start + end + 1;
+                        } else {
+                            break;
+                        }
+                    }
+                } else {
+                    push_note_refs(&mut builder, doc.note_refs_by_paragraph.get(idx), current_page);
+                }
+                push_formulas(&mut builder, formulas_after_refs, current_page);
+            }
+            crate::extraction::docx::parser::DocumentElement::Table(idx) => {
+                if current_list_numbering_id.is_some() {
+                    for _ in 0..open_list_count {
+                        builder.end_list();
+                    }
+                    current_list_numbering_id = None;
+                    open_list_count = 0;
+                }
+                let table = &doc.tables[*idx];
+                if let Some(ref props) = table.properties
+                    && let Some(ref caption) = props.caption
+                    && !caption.is_empty()
+                {
+                    builder.push_paragraph(caption, vec![], Some(current_page), None);
+                }
+                // A gridSpan/vMerge cell is written once at its origin and left blank in the
+                // columns/rows it covers, matching `Table::to_cell_grid` — the grid a
+                // consumer sees must not diverge from the one `Table::to_markdown` already
+                // renders correctly (xberg-io/xberg#1549). ~keep
+                let table_note_refs = doc.note_refs_by_table.get(idx);
+                let grid = match table_note_refs {
+                    Some(_) => table_without_note_markers(table).to_markdown_cell_grid_with_math(),
+                    None => table.to_markdown_cell_grid_with_math(),
+                };
+                let (cells, math) = crate::rendering::table_math::split_cell_grid(grid);
+                if !cells.is_empty() {
+                    let cell_styles = resolve_table_cell_styles(doc, table);
+                    let element_index =
+                        builder.push_table_from_cells_with_styles(&cells, &cell_styles, Some(current_page), None);
+                    if let Some(encoded) = math {
+                        builder.set_table_math_annotations(element_index, encoded);
+                    }
+                }
+                push_note_refs(&mut builder, table_note_refs, current_page);
+            }
+            crate::extraction::docx::parser::DocumentElement::Drawing(idx) => {
+                let drawing = &doc.drawings[*idx];
+
+                if let Some(ref textbox_text) = drawing.text_box_content
+                    && !textbox_text.trim().is_empty()
+                {
+                    if current_list_numbering_id.is_some() {
+                        for _ in 0..open_list_count {
+                            builder.end_list();
+                        }
+                        current_list_numbering_id = None;
+                        open_list_count = 0;
+                    }
+                    builder.push_paragraph(textbox_text, vec![], Some(current_page), None);
+                }
+
+                if drawing.image_ref.is_none() {
+                    continue;
+                }
+
+                if !inject_placeholders {
+                    continue;
+                }
+
+                if current_list_numbering_id.is_some() {
+                    for _ in 0..open_list_count {
+                        builder.end_list();
+                    }
+                    current_list_numbering_id = None;
+                    open_list_count = 0;
+                }
+                let description = drawing_alt_text(drawing);
+
+                let bbox = match &drawing.drawing_type {
+                    crate::extraction::docx::drawing::DrawingType::Anchored(anchor) => {
+                        let x = anchor.position_h.as_ref().and_then(|p| p.offset).unwrap_or(0);
+                        let y = anchor.position_v.as_ref().and_then(|p| p.offset).unwrap_or(0);
+                        let (cx, cy) = drawing.extent.as_ref().map(|e| (e.cx, e.cy)).unwrap_or((0, 0));
+                        if x != 0 || y != 0 || cx != 0 || cy != 0 {
+                            const EMU_PER_PT: f64 = 914_400.0 / 72.0;
+                            Some(BoundingBox {
+                                x0: x as f64 / EMU_PER_PT,
+                                y0: y as f64 / EMU_PER_PT,
+                                x1: (x + cx) as f64 / EMU_PER_PT,
+                                y1: (y + cy) as f64 / EMU_PER_PT,
+                            })
+                        } else {
+                            None
+                        }
+                    }
+                    _ => None,
+                };
+
+                let kind = ElementKind::Image {
+                    image_index: *idx as u32,
+                };
+                let text_val = description.as_deref().unwrap_or("");
+                let elem = InternalElement::text(kind, text_val, 0).with_page(current_page);
+                let elem = if let Some(b) = bbox { elem.with_bbox(b) } else { elem };
+                let img_elem_idx = builder.push_element(elem);
+
+                let mut attrs = AHashMap::new();
+                if let Some(ref rid) = drawing.image_ref
+                    && let Some(path) = doc.image_relationships.get(rid)
+                {
+                    attrs.insert("image_uri".to_string(), path.clone());
+                }
+                // Wire the drawing's physical size (#81) into output attributes so
+                // consumers can lay out the image without re-deriving it from EMUs.
+                if let Some(ref extent) = drawing.extent {
+                    attrs.insert("width_inches".to_string(), format!("{:.2}", extent.width_inches()));
+                    attrs.insert("height_inches".to_string(), format!("{:.2}", extent.height_inches()));
+                }
+                if !attrs.is_empty() {
+                    builder.set_attributes(img_elem_idx, attrs);
+                }
+            }
+            crate::extraction::docx::parser::DocumentElement::PageBreak => {
+                builder.push_page_break_with_page(Some(current_page));
+                current_page += 1;
+            }
+        }
+    }
+
+    if current_list_numbering_id.is_some() {
+        for _ in 0..open_list_count {
+            builder.end_list();
+        }
+    }
+
+    for hf in &doc.headers {
+        push_header_footer_content(&mut builder, hf, ContentLayer::Header);
+    }
+    for hf in &doc.footers {
+        push_header_footer_content(&mut builder, hf, ContentLayer::Footer);
+    }
+
+    for note in doc.footnotes.iter().chain(doc.endnotes.iter()) {
+        let text: String = note
+            .paragraphs
+            .iter()
+            .map(|p| p.runs_to_markdown())
+            .collect::<Vec<_>>()
+            .join(" ");
+        if !text.is_empty() {
+            let key = note_key(note.note_type, &note.id);
+            let idx = builder.push_footnote_definition(&text, &key, None);
+            builder.set_layer(idx, ContentLayer::Footnote);
+        }
+    }
+
+    // Comment definitions (#82, #300) — see the comment-reference scan above.
+    for comment in &doc.comments {
+        let text: String = comment
+            .paragraphs
+            .iter()
+            .map(|p| p.runs_to_markdown())
+            .collect::<Vec<_>>()
+            .join(" ");
+        if !text.is_empty() {
+            let key = format!("cmt{}", comment.id);
+            let idx = builder.push_comment_definition(&text, &key, None);
+            builder.set_layer(idx, ContentLayer::Footnote);
+        }
+    }
+
+    // Resolve internal (`w:anchor`) links against the bookmarks collected above. A TOC
+    // entry's several runs share one `w:hyperlink`, so the same (source, bookmark) pair
+    // arrives once per run and is emitted only once. An unknown bookmark stays a
+    // `Key` target, which `derive::resolve_relationships` reports as one warning.
+    let mut linked: std::collections::HashSet<(u32, &str)> = std::collections::HashSet::new();
+    for (source, anchor_key, kind) in &pending_anchor_links {
+        if !linked.insert((*source, anchor_key.as_str())) {
+            continue;
+        }
+        let target = match bookmark_elements.get(anchor_key) {
+            Some(&target_idx) => RelationshipTarget::Index(target_idx),
+            None => RelationshipTarget::Key(anchor_key.clone()),
+        };
+        builder.push_relationship(*source, target, *kind);
+    }
+
+    let mut document = builder.build();
+    attach_word_list_labels(&mut document, &word_list_labels);
+    document
+}
+
+/// Attach the label Word paints to each list item whose number the renderers would not write.
+///
+/// The number Word paints is not in a paragraph's text. Without a label the renderers number
+/// an ordered list's items from 1, and they write a labelled item as a bullet led by its label.
+/// So a plain `N.` on the Nth item of its list is left off, as it would only turn `1. Item`
+/// into `- 1\. Item`; every other label is kept: `Q4.`, `(b)`, `3.1`, or a list Word starts
+/// at 3 or carries on across a heading.
+fn attach_word_list_labels(document: &mut InternalDocument, labels: &AHashMap<u32, &str>) {
+    use crate::types::internal::ElementKind;
+
+    let mut positions: Vec<u32> = Vec::new();
+    for (index, element) in document.elements.iter_mut().enumerate() {
+        match element.kind {
+            ElementKind::ListStart { .. } => positions.push(0),
+            ElementKind::ListEnd => {
+                positions.pop();
+            }
+            ElementKind::ListItem { ordered } => {
+                let position = positions.last_mut().map(|position| {
+                    *position += 1;
+                    *position
+                });
+                let Some(label) = u32::try_from(index).ok().and_then(|index| labels.get(&index)) else {
+                    continue;
+                };
+                let rendered_anyway = ordered && position.is_some_and(|position| *label == format!("{position}."));
+                if !rendered_anyway {
+                    element.set_list_item_source_label(*label);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Push a header's or footer's paragraphs and tables (#85 — headers/footers now
+/// parse tables via the shared body element loop, where they previously couldn't).
+fn push_header_footer_content(
+    builder: &mut InternalDocumentBuilder,
+    hf: &crate::extraction::docx::parser::HeaderFooter,
+    layer: crate::types::document_structure::ContentLayer,
+) {
+    let text: String = hf
+        .paragraphs
+        .iter()
+        .map(|p| p.runs_to_markdown())
+        .collect::<Vec<_>>()
+        .join("\n");
+    if !text.is_empty() {
+        let idx = builder.push_paragraph(&text, vec![], None, None);
+        builder.set_layer(idx, layer);
+    }
+
+    for table in &hf.tables {
+        // Previously read no span at all, so a merged header/footer cell shifted every
+        // following cell left; now shares the same origin-once grid as body tables
+        // (xberg-io/xberg#1549). ~keep
+        let cells = table.to_cell_grid(crate::extraction::docx::parser::Paragraph::runs_to_markdown);
+        if !cells.is_empty() {
+            let idx = builder.push_table_from_cells(&cells, None, None);
+            builder.set_layer(idx, layer);
+        }
+    }
+}
+
+/// Push a paragraph's display equations as formula elements, returning the first one's index. A paragraph
+/// that holds nothing else is that element, so its bookmarks and links resolve to the equation.
+fn push_formulas(builder: &mut InternalDocumentBuilder, formulas: &[String], page: u32) -> Option<u32> {
+    let mut first = None;
+    for formula in formulas {
+        let idx = builder.push_formula(formula, Some(page), None);
+        first.get_or_insert(idx);
+    }
+    first
+}
+
+/// Collect plain text, annotations, and math formulas from a slice of Runs.
+///
+/// Returns `(plain_text, annotations, math_formulas)` where:
+/// - `plain_text` keeps inline equations in their original position, including `$` delimiters
+/// - `annotations` are byte-offset-based formatting annotations for the plain text
+/// - `math_formulas` are display equations emitted as separate Formula nodes
+fn collect_run_annotations(
+    runs: &[crate::extraction::docx::parser::Run],
+) -> (String, Vec<crate::types::TextAnnotation>, Vec<String>) {
+    use crate::types::builder;
+
+    let mut text = String::new();
+    let mut annotations = Vec::new();
+    let mut math_formulas = Vec::new();
+
+    for run in runs {
+        if let Some((ref latex, is_display)) = run.math_latex {
+            if !latex.is_empty() {
+                if is_display {
+                    math_formulas.push(latex.clone());
+                } else {
+                    let start = text.len() as u32;
+                    text.push('$');
+                    text.push_str(latex);
+                    text.push('$');
+                    annotations.push(crate::types::TextAnnotation {
+                        start,
+                        end: text.len() as u32,
+                        kind: crate::types::AnnotationKind::math(false),
+                    });
+                }
+            }
+            continue;
+        }
+
+        let run_text = text_without_note_markers(run);
+        if run_text.is_empty() {
+            continue;
+        }
+
+        let start = text.len() as u32;
+        text.push_str(&run_text);
+        let end = text.len() as u32;
+
+        if run.bold {
+            annotations.push(builder::bold(start, end));
+        }
+        if run.italic {
+            annotations.push(builder::italic(start, end));
+        }
+        if run.underline {
+            annotations.push(builder::underline(start, end));
+        }
+        if run.strikethrough {
+            annotations.push(builder::strikethrough(start, end));
+        }
+        if run.subscript {
+            annotations.push(builder::subscript(start, end));
+        }
+        if run.superscript {
+            annotations.push(builder::superscript(start, end));
+        }
+        if let Some(sz) = run.font_size {
+            let pts = sz as f64 / 2.0;
+            let value = if pts.fract() == 0.0 {
+                format!("{}pt", pts as u32)
+            } else {
+                format!("{:.1}pt", pts)
+            };
+            annotations.push(builder::font_size(start, end, &value));
+        }
+        if let Some(ref color_val) = run.font_color {
+            annotations.push(builder::color(start, end, &format!("#{}", color_val)));
+        }
+        if run.highlight.is_some() {
+            annotations.push(builder::highlight(start, end));
+        }
+        if let Some(ref url) = run.hyperlink_url {
+            annotations.push(builder::link(start, end, url, None));
+        }
+    }
+
+    merge_adjacent_annotations(&mut annotations);
+
+    (text, annotations, math_formulas)
+}
+
+/// Push a `FootnoteRef` element for each note reference, in reading order.
+fn push_note_refs(
+    builder: &mut InternalDocumentBuilder,
+    note_refs: Option<&Vec<crate::extraction::docx::parser::NoteRef>>,
+    page: u32,
+) {
+    for note_ref in note_refs.into_iter().flatten() {
+        let key = note_key(note_ref.note_type, &note_ref.id);
+        builder.push_footnote_ref(&note_ref.id, &key, Some(page));
+    }
+}
+
+/// A copy of the table whose cells carry no `[^n]` note literals: the references of a table are
+/// emitted as `FootnoteRef` elements after it, and a cell cannot hold the element.
+fn table_without_note_markers(
+    table: &crate::extraction::docx::parser::Table,
+) -> crate::extraction::docx::parser::Table {
+    let mut table = table.clone();
+    for run in table
+        .rows
+        .iter_mut()
+        .flat_map(|row| row.cells.iter_mut())
+        .flat_map(|cell| cell.paragraphs.iter_mut())
+        .flat_map(|paragraph| paragraph.runs.iter_mut())
+    {
+        if !run.note_marker_ranges.is_empty() {
+            run.text = text_without_note_markers(run).into_owned();
+            run.note_marker_ranges.clear();
+        }
+    }
+    table
+}
+
+/// The run's text without its `[^id]` note literals, whose references are emitted as
+/// `FootnoteRef` elements: the renderers write the marker, numbered to match the definitions.
+fn text_without_note_markers(run: &crate::extraction::docx::parser::Run) -> std::borrow::Cow<'_, str> {
+    if run.note_marker_ranges.is_empty() {
+        return std::borrow::Cow::Borrowed(&run.text);
+    }
+    let mut kept = String::with_capacity(run.text.len());
+    let mut from = 0;
+    for range in &run.note_marker_ranges {
+        kept.push_str(&run.text[from..range.start]);
+        from = range.end;
+    }
+    kept.push_str(&run.text[from..]);
+    std::borrow::Cow::Owned(kept)
+}
+
+/// Merge adjacent or overlapping annotations of the same kind.
+///
+/// When consecutive DOCX runs have the same formatting (e.g. bold), each run produces
+/// its own annotation. Without merging, the markdown renderer would close and immediately
+/// reopen markers, producing `**text1****text2**` instead of `**text1text2**`.
+fn merge_adjacent_annotations(annotations: &mut Vec<crate::types::TextAnnotation>) {
+    use crate::types::document_structure::AnnotationKind;
+
+    if annotations.len() < 2 {
+        return;
+    }
+
+    /// Check if two annotation kinds are the same for merging purposes.
+    /// Simple kinds match by discriminant; Link kinds match if they have the same URL.
+    fn same_kind_for_merge(a: &AnnotationKind, b: &AnnotationKind) -> bool {
+        match (a, b) {
+            (AnnotationKind::Bold, AnnotationKind::Bold)
+            | (AnnotationKind::Italic, AnnotationKind::Italic)
+            | (AnnotationKind::Underline, AnnotationKind::Underline)
+            | (AnnotationKind::Strikethrough, AnnotationKind::Strikethrough)
+            | (AnnotationKind::Subscript, AnnotationKind::Subscript)
+            | (AnnotationKind::Superscript, AnnotationKind::Superscript)
+            | (AnnotationKind::Highlight, AnnotationKind::Highlight)
+            | (AnnotationKind::Code, AnnotationKind::Code) => true,
+            (
+                AnnotationKind::Link {
+                    url: url_a,
+                    title: title_a,
+                },
+                AnnotationKind::Link {
+                    url: url_b,
+                    title: title_b,
+                },
+            ) => url_a == url_b && title_a == title_b,
+            _ => false,
+        }
+    }
+
+    fn is_mergeable(kind: &AnnotationKind) -> bool {
+        matches!(
+            kind,
+            AnnotationKind::Bold
+                | AnnotationKind::Italic
+                | AnnotationKind::Underline
+                | AnnotationKind::Strikethrough
+                | AnnotationKind::Subscript
+                | AnnotationKind::Superscript
+                | AnnotationKind::Highlight
+                | AnnotationKind::Code
+                | AnnotationKind::Link { .. }
+        )
+    }
+
+    let kind_key = |kind: &AnnotationKind| -> u8 {
+        match kind {
+            AnnotationKind::Bold => 0,
+            AnnotationKind::Italic => 1,
+            AnnotationKind::Underline => 2,
+            AnnotationKind::Strikethrough => 3,
+            AnnotationKind::Subscript => 4,
+            AnnotationKind::Superscript => 5,
+            AnnotationKind::Highlight => 6,
+            AnnotationKind::Code => 7,
+            AnnotationKind::Link { .. } => 8,
+            _ => 255,
+        }
+    };
+
+    annotations.sort_by(|a, b| kind_key(&a.kind).cmp(&kind_key(&b.kind)).then(a.start.cmp(&b.start)));
+
+    let mut merged = Vec::with_capacity(annotations.len());
+    let mut i = 0;
+    while i < annotations.len() {
+        let mut ann = annotations[i].clone();
+        if is_mergeable(&ann.kind) {
+            let mut j = i + 1;
+            while j < annotations.len()
+                && same_kind_for_merge(&annotations[j].kind, &ann.kind)
+                && annotations[j].start <= ann.end
+            {
+                ann.end = ann.end.max(annotations[j].end);
+                j += 1;
+            }
+            merged.push(ann);
+            i = j;
+        } else {
+            merged.push(ann);
+            i += 1;
+        }
+    }
+
+    *annotations = merged;
+}
+
+type DocxParseResult = (
+    String,
+    Vec<Table>,
+    Option<Vec<PageBoundary>>,
+    Vec<crate::extraction::docx::drawing::Drawing>,
+    // 1-based page number per drawing, index-aligned with the drawings vec. ~keep
+    Vec<usize>,
+    AHashMap<String, String>,
+    InternalDocument,
+);
+
+/// Parse DOCX document content and extract text, tables, page boundaries, drawings, image
+/// relationships, and an `InternalDocument`.
+///
+/// `inject_placeholders` is threaded into both `extract_text_with_boundaries` (controls
+/// whether `![…](image)` links appear in the markdown text) and `build_internal_document`
+/// (controls whether `Image` elements are added to the returned `InternalDocument`).
+fn parse_docx_core(
+    content: &[u8],
+    output_format: crate::core::config::OutputFormat,
+    inject_placeholders: bool,
+    mut budget: SecurityBudget,
+    limits: crate::extractors::security::SecurityLimits,
+) -> crate::error::Result<DocxParseResult> {
+    let mut doc = crate::extraction::docx::parser::parse_document(content, &mut budget, &limits)?;
+    // `is_markdown` gates `to_markdown()` vs. `to_plain_text()` for the flat text; DocTags takes
+    // the markdown branch because it wants the same rendered shape. It no longer has any bearing
+    // on image page numbers: those come from `Document::drawing_page_numbers()`, walked from the
+    // parsed elements. The placeholders `to_markdown` writes are all the same `![alt](image)`
+    // target, so they never could identify an individual image (GH#1546). ~keep
+    let (text, page_boundaries) = doc.extract_text_with_boundaries(
+        matches!(
+            output_format,
+            crate::core::config::OutputFormat::Markdown | crate::core::config::OutputFormat::DocTags
+        ),
+        inject_placeholders,
+    );
+
+    let table_page_nums = doc.table_page_numbers();
+    let tables: Vec<Table> = doc
+        .tables
+        .iter()
+        .enumerate()
+        .map(|(idx, table)| {
+            let page_number = table_page_nums.get(idx).copied().unwrap_or(1) as u32;
+            convert_docx_table_to_table(&doc, table, page_number)
+        })
+        .collect();
+
+    let page_boundaries = if page_boundaries.len() > 1 || !text.trim().is_empty() {
+        Some(page_boundaries)
+    } else {
+        None
+    };
+
+    let mut internal_doc = build_internal_document(&doc, inject_placeholders);
+    if !doc.revisions.is_empty() {
+        internal_doc.revisions = Some(std::mem::take(&mut doc.revisions));
+    }
+    if !doc.warnings.is_empty() {
+        internal_doc
+            .processing_warnings
+            .extend(std::mem::take(&mut doc.warnings));
+    }
+    // Must run before the `mem::take` below: `drawing_page_numbers` sizes its result off
+    // `self.drawings.len()`, so taking `doc.drawings` first left it building against an
+    // already-emptied vec, always returning `[]` and defaulting every image to page 1 (GH#1546). ~keep
+    let drawing_page_nums = doc.drawing_page_numbers();
+    let drawings = std::mem::take(&mut doc.drawings);
+    let image_rels = std::mem::take(&mut doc.image_relationships);
+    Ok((
+        text,
+        tables,
+        page_boundaries,
+        drawings,
+        drawing_page_nums,
+        image_rels,
+        internal_doc,
+    ))
+}
+
+impl Plugin for DocxExtractor {
+    fn name(&self) -> &str {
+        "docx-extractor"
+    }
+
+    fn version(&self) -> String {
+        env!("CARGO_PKG_VERSION").to_string()
+    }
+
+    fn initialize(&self) -> Result<()> {
+        Ok(())
+    }
+
+    fn shutdown(&self) -> Result<()> {
+        Ok(())
+    }
+
+    fn description(&self) -> &str {
+        "High-performance DOCX text extraction with metadata support"
+    }
+
+    fn author(&self) -> &str {
+        "Xberg Team"
+    }
+}
+
+/// Convert parsed DOCX table to Xberg Table struct with markdown representation.
+///
+/// # Arguments
+/// * `docx_table` - The parsed DOCX table
+/// * `page_number` - 1-based page number the table appears on
+///
+/// Resolve each table cell's paragraph style into the sparse list `Table::cell_styles` carries.
+///
+/// Only cells that declare a style produce an entry, and an entry is kept only when the style
+/// resolves to an outline level or a display name -- a cell styled `Normal` adds nothing. Grid
+/// positions come from `Table::to_cell_style_grid`, which lays out `gridSpan`/`vMerge` exactly
+/// as the text grid does, so a style always lands on the cell whose text it belongs to (GH#1587).
+fn resolve_table_cell_styles(
+    doc: &crate::extraction::docx::parser::Document,
+    table: &crate::extraction::docx::parser::Table,
+) -> Vec<crate::types::TableCellStyle> {
+    let mut resolved = Vec::new();
+    for (row_idx, row) in table.to_cell_style_grid().iter().enumerate() {
+        for (col_idx, style_id) in row.iter().enumerate() {
+            let Some(style_id) = style_id else { continue };
+            let heading_level = doc.resolve_heading_level(style_id);
+            let style_name = doc.resolve_style_name(style_id);
+            if heading_level.is_none() && style_name.is_none() {
+                continue;
+            }
+            resolved.push(crate::types::TableCellStyle {
+                row: row_idx as u32,
+                col: col_idx as u32,
+                heading_level,
+                style_name,
+            });
+        }
+    }
+    resolved
+}
+
+/// # Returns
+/// * `Table` - Converted table with cells and markdown representation
+fn convert_docx_table_to_table(
+    doc: &crate::extraction::docx::parser::Document,
+    docx_table: &crate::extraction::docx::parser::Table,
+    page_number: u32,
+) -> Table {
+    // Same grid as the element builder's Table arm above, and the same reason: a
+    // gridSpan/vMerge cell must appear once, not cloned per covered column/row
+    // (xberg-io/xberg#1549). ~keep
+    let (cells, math) = crate::rendering::table_math::split_cell_grid(docx_table.to_markdown_cell_grid_with_math());
+    let markdown = crate::rendering::table_math::render_table_markdown(&cells, math.as_deref());
+
+    Table {
+        cells,
+        markdown,
+        page_number,
+        bounding_box: None,
+        cell_styles: resolve_table_cell_styles(doc, docx_table),
+        ..Default::default()
+    }
+}
+
+#[cfg_attr(not(target_arch = "wasm32"), async_trait)]
+#[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
+impl InternalDocumentExtractor for DocxExtractor {
+    async fn extract_content(
+        &self,
+        content: &[u8],
+        mime_type: &str,
+        config: &ExtractionConfig,
+    ) -> Result<InternalDocument> {
+        tracing::debug!("extract_docx: starting");
+
+        let output_format = if config.images.as_ref().is_some_and(|i| i.extract_images) {
+            crate::core::config::OutputFormat::Markdown
+        } else {
+            config.output_format.clone()
+        };
+
+        let inject_placeholders = config.images.as_ref().map(|i| i.inject_placeholders).unwrap_or(true);
+        let budget = SecurityBudget::from_config(config);
+        let limits = config.security_limits.clone().unwrap_or_default();
+        let content_owned: Arc<[u8]> = Arc::from(content);
+        let (text, tables, page_boundaries, drawings, drawing_page_nums, image_rels, mut internal_doc) = {
+            #[cfg(feature = "tokio-runtime")]
+            if crate::core::batch_mode::is_batch_mode() {
+                if config.cancel_token.as_ref().map(|t| t.is_cancelled()).unwrap_or(false) {
+                    return Err(crate::error::XbergError::Cancelled);
+                }
+                let parse_content = Arc::clone(&content_owned);
+                let parse_limits = limits.clone();
+                let span = tracing::Span::current();
+                tokio::task::spawn_blocking(move || {
+                    let _guard = span.entered();
+                    parse_docx_core(&parse_content, output_format, inject_placeholders, budget, parse_limits)
+                })
+                .await
+                .map_err(|e| crate::error::XbergError::parsing(format!("DOCX extraction task failed: {}", e)))??
+            } else {
+                parse_docx_core(
+                    &content_owned,
+                    output_format,
+                    inject_placeholders,
+                    budget,
+                    limits.clone(),
+                )?
+            }
+
+            #[cfg(not(feature = "tokio-runtime"))]
+            parse_docx_core(
+                &content_owned,
+                output_format,
+                inject_placeholders,
+                budget,
+                limits.clone(),
+            )?
+        };
+
+        let mut archive = {
+            #[cfg(feature = "tokio-runtime")]
+            if crate::core::batch_mode::is_batch_mode() {
+                let archive_content = Arc::clone(&content_owned);
+                let span = tracing::Span::current();
+                tokio::task::spawn_blocking(move || -> crate::error::Result<_> {
+                    let _guard = span.entered();
+                    let cursor = Cursor::new(archive_content);
+                    zip::ZipArchive::new(cursor)
+                        .map_err(|e| crate::error::XbergError::parsing(format!("Failed to open ZIP archive: {}", e)))
+                })
+                .await
+                .map_err(|e| crate::error::XbergError::parsing(format!("Task join error: {}", e)))??
+            } else {
+                let cursor = Cursor::new(Arc::clone(&content_owned));
+                zip::ZipArchive::new(cursor)
+                    .map_err(|e| crate::error::XbergError::parsing(format!("Failed to open ZIP archive: {}", e)))?
+            }
+
+            #[cfg(not(feature = "tokio-runtime"))]
+            {
+                let cursor = Cursor::new(Arc::clone(&content_owned));
+                zip::ZipArchive::new(cursor)
+                    .map_err(|e| crate::error::XbergError::parsing(format!("Failed to open ZIP archive: {}", e)))?
+            }
+        };
+        // A second, independent open of the same bytes `parse_docx_core` already
+        // validated -- but that validation lives on the other archive handle, so relying
+        // on it here would be relying on execution order rather than on this call site
+        // being checked. One call covers both: `validate_archive_security` now runs the
+        // entry-count and size checks AND delegates the compression-ratio check to
+        // `ZipBombValidator`, so this handle gets exactly what the parsing open gets.
+        crate::extraction::docx::parser::validate_archive_security(&mut archive, &limits).map_err(|e| {
+            crate::error::XbergError::parsing(format!("DOCX metadata archive validation failed: {}", e))
+        })?;
+
+        let mut metadata_map = AHashMap::new();
+        let mut parsed_keywords: Option<Vec<String>> = None;
+        let mut docx_core_properties = None;
+        let mut docx_app_properties = None;
+        let mut docx_custom_properties: Option<std::collections::HashMap<String, serde_json::Value>> = None;
+
+        if let Ok(core) = office_metadata::extract_core_properties(&mut archive) {
+            if let Some(ref title) = core.title {
+                metadata_map.insert(Cow::Borrowed("title"), serde_json::Value::String(title.clone()));
+            }
+            if let Some(ref creator) = core.creator {
+                metadata_map.insert(
+                    Cow::Borrowed("authors"),
+                    serde_json::Value::Array(vec![serde_json::Value::String(creator.clone())]),
+                );
+                metadata_map.insert(Cow::Borrowed("created_by"), serde_json::Value::String(creator.clone()));
+            }
+            if let Some(ref subject) = core.subject {
+                metadata_map.insert(Cow::Borrowed("subject"), serde_json::Value::String(subject.clone()));
+            }
+            if let Some(ref keywords) = core.keywords {
+                parsed_keywords = Some(
+                    keywords
+                        .split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect(),
+                );
+            }
+            if let Some(ref description) = core.description {
+                metadata_map.insert(
+                    Cow::Borrowed("description"),
+                    serde_json::Value::String(description.clone()),
+                );
+            }
+            if let Some(ref modified_by) = core.last_modified_by {
+                metadata_map.insert(
+                    Cow::Borrowed("modified_by"),
+                    serde_json::Value::String(modified_by.clone()),
+                );
+            }
+            if let Some(ref created) = core.created {
+                metadata_map.insert(Cow::Borrowed("created_at"), serde_json::Value::String(created.clone()));
+            }
+            if let Some(ref modified) = core.modified {
+                metadata_map.insert(
+                    Cow::Borrowed("modified_at"),
+                    serde_json::Value::String(modified.clone()),
+                );
+            }
+            if let Some(ref revision) = core.revision {
+                metadata_map.insert(Cow::Borrowed("revision"), serde_json::Value::String(revision.clone()));
+            }
+            if let Some(ref category) = core.category {
+                metadata_map.insert(Cow::Borrowed("category"), serde_json::Value::String(category.clone()));
+            }
+            if let Some(ref content_status) = core.content_status {
+                metadata_map.insert(
+                    Cow::Borrowed("content_status"),
+                    serde_json::Value::String(content_status.clone()),
+                );
+            }
+            if let Some(ref language) = core.language {
+                metadata_map.insert(Cow::Borrowed("language"), serde_json::Value::String(language.clone()));
+            }
+            docx_core_properties = Some(core);
+        }
+
+        if let Ok(app) = office_metadata::extract_docx_app_properties(&mut archive) {
+            if let Some(pages) = app.pages {
+                metadata_map.insert(Cow::Borrowed("page_count"), serde_json::Value::Number(pages.into()));
+            }
+            if let Some(words) = app.words {
+                metadata_map.insert(Cow::Borrowed("word_count"), serde_json::Value::Number(words.into()));
+            }
+            if let Some(chars) = app.characters {
+                metadata_map.insert(
+                    Cow::Borrowed("character_count"),
+                    serde_json::Value::Number(chars.into()),
+                );
+            }
+            if let Some(lines) = app.lines {
+                metadata_map.insert(Cow::Borrowed("line_count"), serde_json::Value::Number(lines.into()));
+            }
+            if let Some(paragraphs) = app.paragraphs {
+                metadata_map.insert(
+                    Cow::Borrowed("paragraph_count"),
+                    serde_json::Value::Number(paragraphs.into()),
+                );
+            }
+            if let Some(ref template) = app.template {
+                metadata_map.insert(Cow::Borrowed("template"), serde_json::Value::String(template.clone()));
+            }
+            if let Some(ref company) = app.company {
+                metadata_map.insert(Cow::Borrowed("company"), serde_json::Value::String(company.clone()));
+            }
+            if let Some(time) = app.total_time {
+                metadata_map.insert(
+                    Cow::Borrowed("total_editing_time_minutes"),
+                    serde_json::Value::Number(time.into()),
+                );
+            }
+            if let Some(ref application) = app.application {
+                metadata_map.insert(
+                    Cow::Borrowed("application"),
+                    serde_json::Value::String(application.clone()),
+                );
+            }
+            // #230: DocSecurity was parsed into `app.doc_security` and then only ever
+            // reachable as an opaque integer buried in the format-specific metadata.
+            // Surface both the raw value and the decoded ECMA-376 flags so a consumer
+            // can tell a read-only-recommended or password-protected document apart
+            // without knowing the bit layout.
+            if let Some(raw) = app.doc_security {
+                metadata_map.insert(
+                    Cow::Borrowed(office_metadata::app_properties::DOC_SECURITY_KEY),
+                    serde_json::Value::Number(raw.into()),
+                );
+                for (key, value) in office_metadata::app_properties::decode_doc_security_flags(raw) {
+                    metadata_map.insert(Cow::Borrowed(key), serde_json::Value::Bool(value));
+                }
+            }
+            docx_app_properties = Some(app);
+        }
+
+        if let Ok(custom) = office_metadata::extract_custom_properties(&mut archive) {
+            for (key, value) in &custom {
+                metadata_map.insert(Cow::Owned(format!("custom_{}", key)), value.clone());
+            }
+            docx_custom_properties = Some(custom);
+        }
+
+        let page_structure = if let Some(boundaries) = page_boundaries {
+            let total_count = boundaries.len();
+            Some(PageStructure {
+                total_count: total_count as u32,
+                unit_type: PageUnitType::Page,
+                boundaries: Some(boundaries),
+                pages: Some(
+                    (1..=total_count)
+                        .map(|page_num| PageInfo {
+                            number: page_num as u32,
+                            title: None,
+                            dimensions: None,
+                            image_count: None,
+                            table_count: None,
+                            hidden: None,
+                            is_blank: None,
+                            has_vector_graphics: false,
+                        })
+                        .collect(),
+                ),
+            })
+        } else {
+            None
+        };
+
+        let extract_image_data = config.needs_image_data();
+        let mut extracted_images = Vec::with_capacity(drawings.len());
+        for (idx, drawing) in drawings.iter().enumerate() {
+            let description = drawing_alt_text(drawing);
+            let source_path = drawing.image_ref.as_ref().and_then(|rid| image_rels.get(rid)).cloned();
+
+            let mut image_data = None;
+            if extract_image_data
+                && let Some(ref rid) = drawing.image_ref
+                && let Some(target) = image_rels.get(rid)
+                // Relationships in `word/_rels/document.xml.rels` resolve relative to
+                // `word/`. An in-bounds `..` (e.g. `../media/image1.png`, the normal shape
+                // for an image that lives at the package root) is legitimate and must
+                // resolve; only a `..` that pops past the package root is rejected. A
+                // leading `/` re-roots to the package root, same as before.
+                && let Ok(zip_path) = crate::extractors::security::resolve_container_entry("word", target)
+                && let Ok(mut file) = archive.by_name(&zip_path)
+                && file.size() <= crate::extraction::docx::MAX_IMAGE_FILE_SIZE
+            {
+                // `file.size()` is the ZIP central directory's *declared* uncompressed size,
+                // which the archive's author chooses freely; the `zip` crate puts no `Take` on
+                // the decompressed side, so a member forging a small declared size while
+                // carrying a large deflate stream inflates without bound here. Bound the read
+                // by the declared size (already checked against `MAX_IMAGE_FILE_SIZE` above)
+                // and drop any member that yields more bytes than it declared.
+                // GHSA-85w9-wqcq-x48r. ~keep
+                let declared_size = file.size();
+                let mut data = Vec::with_capacity(usize::try_from(declared_size).unwrap_or(0));
+                let mut bounded = std::io::Read::take(&mut file, declared_size.saturating_add(1));
+                if std::io::Read::read_to_end(&mut bounded, &mut data).is_ok()
+                    && u64::try_from(data.len()).unwrap_or(u64::MAX) <= declared_size
+                {
+                    image_data = Some(data);
+                }
+            }
+
+            let (data, format, width, height) = if let Some(data) = image_data {
+                let format = crate::extraction::image_format::detect_image_format(&data);
+                let emus_per_px = crate::extraction::docx::EMUS_PER_PIXEL_96DPI;
+                let (w, h) = drawing
+                    .extent
+                    .as_ref()
+                    .map(|e| {
+                        (
+                            Some(u32::try_from(e.cx.max(0) / emus_per_px).unwrap_or(0)),
+                            Some(u32::try_from(e.cy.max(0) / emus_per_px).unwrap_or(0)),
+                        )
+                    })
+                    .unwrap_or((None, None));
+                (Bytes::from(data), format, w, h)
+            } else {
+                let format = source_path
+                    .as_ref()
+                    .and_then(|p| p.rsplit('.').next())
+                    .map(|ext| Cow::Owned(ext.to_lowercase()))
+                    .unwrap_or(Cow::Borrowed("png"));
+                (Bytes::new(), format, None, None)
+            };
+
+            // Taken from the parsed element list, not by searching rendered markdown for a
+            // placeholder: `to_markdown` renders every drawing to the same `![alt](image)`
+            // target, so the per-image key this used to look for never existed and every image
+            // fell through to page 1 (GH#1546). The element walk is also independent of
+            // `inject_placeholders`, which suppresses those placeholders entirely. ~keep
+            let page_number = Some(drawing_page_nums.get(idx).copied().unwrap_or(1) as u32);
+
+            let (image_kind, kind_confidence) =
+                crate::extraction::image_kind::classify(crate::extraction::image_kind::ImageClassifyInput {
+                    bytes: &data,
+                    format: format.as_ref(),
+                    width,
+                    height,
+                    colorspace: None,
+                    bits_per_component: None,
+                    is_mask: false,
+                });
+
+            extracted_images.push(ExtractedImage {
+                data,
+                format,
+                image_index: idx as u32,
+                page_number,
+                width,
+                height,
+                colorspace: None,
+                bits_per_component: None,
+                is_mask: false,
+                description,
+                ocr_result: None,
+                bounding_box: None,
+                source_path,
+                image_kind: Some(image_kind),
+                kind_confidence: Some(kind_confidence),
+                cluster_id: None,
+                caption: None,
+                qr_codes: None,
+                data_base64: None,
+            });
+        }
+
+        let page_contents = {
+            let arc_tables: Vec<Arc<Table>> = tables.iter().map(|t| Arc::new(t.clone())).collect();
+
+            if let Some(ref ps) = page_structure
+                && let Some(ref boundaries) = ps.boundaries
+                && !boundaries.is_empty()
+            {
+                let mut pages = Vec::with_capacity(boundaries.len());
+                for boundary in boundaries {
+                    let page_num = boundary.page_number;
+                    let page_text = if boundary.byte_start < text.len() {
+                        let mut start = boundary.byte_start.min(text.len());
+                        while start < text.len() && !text.is_char_boundary(start) {
+                            start += 1;
+                        }
+                        let mut end = boundary.byte_end.min(text.len());
+                        while end > start && !text.is_char_boundary(end) {
+                            end -= 1;
+                        }
+                        crate::extraction::docx::parser::trim_blank_lines(&text[start..end]).to_string()
+                    } else {
+                        String::new()
+                    };
+
+                    let page_tables: Vec<Arc<Table>> = arc_tables
+                        .iter()
+                        .filter(|t| t.page_number == page_num)
+                        .cloned()
+                        .collect();
+
+                    let page_image_indices: Vec<u32> = extracted_images
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, i)| i.page_number == Some(page_num))
+                        .map(|(i, _)| i as u32)
+                        .collect();
+
+                    let is_blank = page_text.chars().filter(|c| !c.is_whitespace()).count() < 3
+                        && page_tables.is_empty()
+                        && page_image_indices.is_empty();
+
+                    pages.push(PageContent {
+                        page_number: page_num,
+                        content: page_text,
+                        tables: page_tables,
+                        image_indices: page_image_indices,
+                        image_preprocessing: None,
+                        hierarchy: None,
+                        is_blank: Some(is_blank),
+                        layout_regions: None,
+                        speaker_notes: None,
+                        section_name: None,
+                        sheet_name: None,
+                        ocr_confidence: None,
+                        native_content: None,
+                    });
+                }
+                Some(pages)
+            } else {
+                Some(vec![PageContent {
+                    page_number: 1,
+                    content: text.clone(),
+                    tables: arc_tables,
+                    image_indices: (0..extracted_images.len() as u32).collect(),
+                    image_preprocessing: None,
+                    hierarchy: None,
+                    is_blank: Some(text.chars().filter(|c| !c.is_whitespace()).count() < 3),
+                    layout_regions: None,
+                    speaker_notes: None,
+                    section_name: None,
+                    sheet_name: None,
+                    ocr_confidence: None,
+                    native_content: None,
+                }])
+            }
+        };
+        internal_doc.prebuilt_pages = page_contents;
+
+        let meta_title: Option<String> = metadata_map
+            .remove(&Cow::Borrowed("title"))
+            .and_then(|v| v.as_str().map(|s| s.to_string()));
+        let meta_subject: Option<String> = metadata_map
+            .remove(&Cow::Borrowed("subject"))
+            .and_then(|v| v.as_str().map(|s| s.to_string()));
+        let meta_authors: Option<Vec<String>> = metadata_map.remove(&Cow::Borrowed("authors")).and_then(|v| {
+            v.as_array()
+                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+        });
+        let meta_created_by = metadata_map
+            .remove(&Cow::Borrowed("created_by"))
+            .and_then(|v| v.as_str().map(|s| s.to_string()));
+        let meta_modified_by = metadata_map
+            .remove(&Cow::Borrowed("modified_by"))
+            .and_then(|v| v.as_str().map(|s| s.to_string()));
+        let meta_created_at = metadata_map
+            .remove(&Cow::Borrowed("created_at"))
+            .and_then(|v| v.as_str().map(|s| s.to_string()));
+        let meta_modified_at = metadata_map
+            .remove(&Cow::Borrowed("modified_at"))
+            .and_then(|v| v.as_str().map(|s| s.to_string()));
+        let meta_language = metadata_map
+            .remove(&Cow::Borrowed("language"))
+            .and_then(|v| v.as_str().map(|s| s.to_string()));
+
+        internal_doc.metadata = Metadata {
+            title: meta_title,
+            subject: meta_subject,
+            authors: meta_authors,
+            keywords: parsed_keywords,
+            language: meta_language,
+            created_at: meta_created_at,
+            modified_at: meta_modified_at,
+            created_by: meta_created_by,
+            modified_by: meta_modified_by,
+            pages: page_structure,
+            format: Some(FormatMetadata::Docx(Box::new(DocxMetadata {
+                core_properties: docx_core_properties,
+                app_properties: docx_app_properties,
+                custom_properties: docx_custom_properties,
+            }))),
+            additional: metadata_map,
+            ..Default::default()
+        };
+
+        if let Some(ref filter) = config.content_filter {
+            use crate::types::document_structure::ContentLayer;
+            internal_doc.elements.retain(|elem| match elem.layer {
+                ContentLayer::Header => filter.include_headers,
+                ContentLayer::Footer => filter.include_footers,
+                _ => true,
+            });
+        }
+
+        internal_doc.images = extracted_images;
+        internal_doc.mime_type = mime_type.to_string();
+
+        if config.max_archive_depth > 0 {
+            let (children, embed_warnings) = crate::extraction::ooxml_embedded::extract_ooxml_embedded_objects(
+                content,
+                "word/embeddings/",
+                "docx",
+                config,
+            )
+            .await;
+            if !children.is_empty() {
+                internal_doc.children = Some(children);
+            }
+            internal_doc.processing_warnings.extend(embed_warnings);
+        }
+
+        tracing::debug!(element_count = internal_doc.elements.len(), "extract_docx: complete");
+
+        Ok(internal_doc)
+    }
+
+    fn supported_mime_types(&self) -> &[&str] {
+        &[
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/docx",
+            "application/vnd.ms-word.document.macroEnabled.12",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+            "application/vnd.ms-word.template.macroEnabled.12",
+        ]
+    }
+
+    fn priority(&self) -> i32 {
+        50
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::config::extraction::ImageExtractionConfig;
+    use crate::types::document_structure::NodeContent;
+
+    #[tokio::test]
+    async fn test_docx_extractor_plugin_interface() {
+        let extractor = DocxExtractor::new();
+        assert_eq!(extractor.name(), "docx-extractor");
+        assert_eq!(extractor.version(), env!("CARGO_PKG_VERSION"));
+        assert_eq!(extractor.priority(), 50);
+        assert_eq!(extractor.supported_mime_types().len(), 5);
+    }
+
+    #[tokio::test]
+    async fn test_docx_extractor_supports_docx() {
+        let extractor = DocxExtractor::new();
+        assert!(
+            extractor
+                .supported_mime_types()
+                .contains(&"application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        );
+    }
+
+    #[tokio::test]
+    async fn test_docx_extractor_default() {
+        let extractor = DocxExtractor;
+        assert_eq!(extractor.name(), "docx-extractor");
+    }
+
+    #[tokio::test]
+    async fn test_docx_extractor_initialize_shutdown() {
+        let extractor = DocxExtractor::new();
+        assert!(extractor.initialize().is_ok());
+        assert!(extractor.shutdown().is_ok());
+    }
+
+    #[test]
+    fn test_convert_docx_table_to_table() {
+        use crate::extraction::docx::parser::{Paragraph, Run, Table as DocxTable, TableCell, TableRow};
+
+        let mut table = DocxTable::new();
+
+        let mut header_row = TableRow::default();
+        let mut cell1 = TableCell::default();
+        let mut para1 = Paragraph::new();
+        para1.add_run(Run::new("Name".to_string()));
+        cell1.paragraphs.push(para1);
+        header_row.cells.push(cell1);
+
+        let mut cell2 = TableCell::default();
+        let mut para2 = Paragraph::new();
+        para2.add_run(Run::new("Age".to_string()));
+        cell2.paragraphs.push(para2);
+        header_row.cells.push(cell2);
+
+        table.rows.push(header_row);
+
+        let mut data_row = TableRow::default();
+        let mut cell3 = TableCell::default();
+        let mut para3 = Paragraph::new();
+        para3.add_run(Run::new("Alice".to_string()));
+        cell3.paragraphs.push(para3);
+        data_row.cells.push(cell3);
+
+        let mut cell4 = TableCell::default();
+        let mut para4 = Paragraph::new();
+        para4.add_run(Run::new("30".to_string()));
+        cell4.paragraphs.push(para4);
+        data_row.cells.push(cell4);
+
+        table.rows.push(data_row);
+
+        let doc = crate::extraction::docx::parser::Document::default();
+        let result = convert_docx_table_to_table(&doc, &table, 1);
+
+        assert_eq!(result.page_number, 1);
+        assert_eq!(result.cells.len(), 2);
+        assert_eq!(result.cells[0], vec!["Name", "Age"]);
+        assert_eq!(result.cells[1], vec!["Alice", "30"]);
+        assert!(result.markdown.contains("| Name | Age |"));
+        assert!(result.markdown.contains("| Alice | 30 |"));
+    }
+
+    /// GH#1587: a `Heading2` paragraph in a table cell reached consumers as anonymous cell
+    /// text. The cell text must stay bare -- prefixing it with `##` would put a markdown
+    /// heading inside a table cell -- so the style travels beside it in `cell_styles`. ~keep
+    #[test]
+    fn should_report_a_heading_styled_table_cell_in_cell_styles() {
+        use crate::extraction::docx::parser::{Document, Paragraph, Run, Table as DocxTable, TableCell, TableRow};
+
+        let mut banner_row = TableRow::default();
+        let mut banner_cell = TableCell::default();
+        let mut banner_para = Paragraph::new();
+        banner_para.add_run(Run::new("Cell Section".to_string()));
+        banner_para.style = Some("Heading2".to_string());
+        banner_cell.paragraphs.push(banner_para);
+        banner_row.cells.push(banner_cell);
+
+        let mut plain_row = TableRow::default();
+        let mut plain_cell = TableCell::default();
+        let mut plain_para = Paragraph::new();
+        plain_para.add_run(Run::new("left".to_string()));
+        plain_cell.paragraphs.push(plain_para);
+        plain_row.cells.push(plain_cell);
+
+        let mut table = DocxTable::new();
+        table.rows.push(banner_row);
+        table.rows.push(plain_row);
+
+        let doc = Document::default();
+        let result = convert_docx_table_to_table(&doc, &table, 1);
+
+        assert_eq!(
+            result.cells[0][0], "Cell Section",
+            "cell text must stay bare, with no heading markers"
+        );
+        assert_eq!(
+            result.cell_styles.len(),
+            1,
+            "only the styled cell should produce an entry"
+        );
+        let style = &result.cell_styles[0];
+        assert_eq!((style.row, style.col), (0, 0));
+        assert_eq!(
+            style.heading_level,
+            Some(2),
+            "Heading2 must resolve to outline level 2 even with no StyleCatalog"
+        );
+
+        let unstyled = convert_docx_table_to_table(&doc, &DocxTable::new(), 1);
+        assert!(
+            unstyled.cell_styles.is_empty(),
+            "a table with no styled cells must not gain entries"
+        );
+    }
+
+    /// Helper: build a minimal DOCX ZIP in memory with given document.xml content.
+    fn build_test_docx(document_xml: &str) -> Vec<u8> {
+        build_test_docx_with_parts(document_xml, None, None, None, None, None, None)
+    }
+
+    /// Helper: build a DOCX ZIP with optional parts.
+    fn build_test_docx_with_parts(
+        document_xml: &str,
+        styles_xml: Option<&str>,
+        footnotes_xml: Option<&str>,
+        endnotes_xml: Option<&str>,
+        header_xml: Option<&str>,
+        footer_xml: Option<&str>,
+        rels_xml: Option<&str>,
+    ) -> Vec<u8> {
+        use std::io::Write;
+        let buf = Vec::new();
+        let cursor = std::io::Cursor::new(buf);
+        let mut zip = zip::ZipWriter::new(cursor);
+        let options: zip::write::FileOptions<()> = zip::write::FileOptions::default();
+
+        let content_types = r#"<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>"#;
+        zip.start_file("[Content_Types].xml", options).unwrap();
+        zip.write_all(content_types.as_bytes()).unwrap();
+
+        zip.start_file("word/document.xml", options).unwrap();
+        zip.write_all(document_xml.as_bytes()).unwrap();
+
+        if let Some(styles) = styles_xml {
+            zip.start_file("word/styles.xml", options).unwrap();
+            zip.write_all(styles.as_bytes()).unwrap();
+        }
+
+        if let Some(fn_xml) = footnotes_xml {
+            zip.start_file("word/footnotes.xml", options).unwrap();
+            zip.write_all(fn_xml.as_bytes()).unwrap();
+        }
+
+        if let Some(en_xml) = endnotes_xml {
+            zip.start_file("word/endnotes.xml", options).unwrap();
+            zip.write_all(en_xml.as_bytes()).unwrap();
+        }
+
+        if let Some(h_xml) = header_xml {
+            zip.start_file("word/header1.xml", options).unwrap();
+            zip.write_all(h_xml.as_bytes()).unwrap();
+        }
+
+        if let Some(f_xml) = footer_xml {
+            zip.start_file("word/footer1.xml", options).unwrap();
+            zip.write_all(f_xml.as_bytes()).unwrap();
+        }
+
+        if let Some(rels) = rels_xml {
+            zip.start_file("word/_rels/document.xml.rels", options).unwrap();
+            zip.write_all(rels.as_bytes()).unwrap();
+        }
+
+        zip.finish().unwrap().into_inner()
+    }
+
+    /// Helper: build a DOCX ZIP from `word/document.xml` plus an arbitrary list of
+    /// additional package parts (path, content). Unlike [`build_test_docx_with_parts`],
+    /// this isn't limited to one header/footer/rels part — used for synthetic
+    /// fixtures needing several header/footer parts (#83), `word/comments.xml`
+    /// (#82), or a custom `word/_rels/document.xml.rels`.
+    fn build_test_docx_with_files(document_xml: &str, extra_files: &[(&str, &str)]) -> Vec<u8> {
+        use std::io::Write;
+        let buf = Vec::new();
+        let cursor = std::io::Cursor::new(buf);
+        let mut zip = zip::ZipWriter::new(cursor);
+        let options: zip::write::FileOptions<()> = zip::write::FileOptions::default();
+
+        let content_types = r#"<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>"#;
+        zip.start_file("[Content_Types].xml", options).unwrap();
+        zip.write_all(content_types.as_bytes()).unwrap();
+
+        zip.start_file("word/document.xml", options).unwrap();
+        zip.write_all(document_xml.as_bytes()).unwrap();
+
+        for (path, xml) in extra_files {
+            zip.start_file(*path, options).unwrap();
+            zip.write_all(xml.as_bytes()).unwrap();
+        }
+
+        zip.finish().unwrap().into_inner()
+    }
+
+    /// `crate::core::batch_mode` is itself gated on `tokio-runtime`
+    /// (`core/mod.rs:31`), so without this cfg the whole lib test target fails to COMPILE
+    /// under `--no-default-features --features office` with E0433, not merely fail at run
+    /// time.
+    #[cfg(feature = "tokio-runtime")]
+    #[tokio::test]
+    async fn should_match_single_extraction_in_batch_mode() {
+        let data = build_test_docx(TRACK_CHANGES_XML);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            include_document_structure: true,
+            ..Default::default()
+        };
+        let mime_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+        let single = extractor.extract_content(&data, mime_type, &config).await.unwrap();
+        let batch = crate::core::batch_mode::with_batch_mode(extractor.extract_content(&data, mime_type, &config))
+            .await
+            .unwrap();
+
+        assert_eq!(
+            serde_json::to_value(batch).unwrap(),
+            serde_json::to_value(single).unwrap(),
+            "batch-mode ownership changes must preserve the exact internal document"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_full_extraction_with_headings_paragraphs() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr><w:r><w:t>Document Title</w:t></w:r></w:p>
+    <w:p><w:r><w:t>First paragraph content.</w:t></w:r></w:p>
+    <w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>Section One</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Section one body text.</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            ..Default::default()
+        };
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert!(
+            result.content.contains("Document Title"),
+            "Title should be present: {}",
+            result.content
+        );
+        assert!(
+            result.content.contains("Section One"),
+            "Heading1 should be present: {}",
+            result.content
+        );
+        assert!(result.content.contains("First paragraph content."));
+        assert!(result.content.contains("Section one body text."));
+
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+        use crate::types::NodeContent;
+        let headings: Vec<_> = doc
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.content, NodeContent::Heading { .. }))
+            .collect();
+        assert!(!headings.is_empty(), "Should have heading nodes in DocumentStructure");
+    }
+
+    #[tokio::test]
+    async fn test_full_extraction_with_formatting() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r><w:rPr><w:b/></w:rPr><w:t>Bold text</w:t></w:r>
+      <w:r><w:t> and </w:t></w:r>
+      <w:r><w:rPr><w:i/></w:rPr><w:t>italic text</w:t></w:r>
+      <w:r><w:t> and </w:t></w:r>
+      <w:r><w:rPr><w:u/></w:rPr><w:t>underlined text</w:t></w:r>
+    </w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            ..Default::default()
+        };
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert!(result.content.contains("Bold text"), "Bold: {}", result.content);
+        assert!(result.content.contains("italic text"), "Italic: {}", result.content);
+        assert!(
+            result.content.contains("underlined text"),
+            "Underline: {}",
+            result.content
+        );
+
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+        let all_annotations: Vec<_> = doc.nodes.iter().flat_map(|n| &n.annotations).collect();
+        assert!(
+            all_annotations
+                .iter()
+                .any(|a| a.kind == crate::types::document_structure::AnnotationKind::Bold),
+            "Should have bold annotation"
+        );
+        assert!(
+            all_annotations
+                .iter()
+                .any(|a| a.kind == crate::types::document_structure::AnnotationKind::Italic),
+            "Should have italic annotation"
+        );
+        assert!(
+            all_annotations
+                .iter()
+                .any(|a| a.kind == crate::types::document_structure::AnnotationKind::Underline),
+            "Should have underline annotation"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_docx_inject_placeholders_true() {
+        let drawing_xml = r#"<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+                             xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+                             xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+                             xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"
+                             xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+          <w:r>
+            <w:drawing>
+              <wp:inline>
+                <wp:extent cx="914400" cy="457200"/>
+                <wp:docPr id="1" name="Picture 1" descr="A test image"/>
+                <a:graphic>
+                  <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                    <pic:pic>
+                      <pic:blipFill>
+                        <a:blip r:embed="rId5"/>
+                      </pic:blipFill>
+                    </pic:pic>
+                  </a:graphicData>
+                </a:graphic>
+              </wp:inline>
+            </w:drawing>
+          </w:r>
+        </w:p>"#;
+
+        let rels_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/>
+</Relationships>"#;
+
+        let document_xml = format!(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    {}
+  </w:body>
+</w:document>"#,
+            drawing_xml
+        );
+
+        let data = build_test_docx_with_parts(&document_xml, None, None, None, None, None, Some(rels_xml));
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            images: Some(crate::core::config::extraction::ImageExtractionConfig {
+                extract_images: false,
+                inject_placeholders: true,
+                ..Default::default()
+            }),
+            include_document_structure: true,
+            ..Default::default()
+        };
+
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("Extraction failed");
+
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Markdown,
+        );
+
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+        let has_image = doc.nodes.iter().any(|n| matches!(n.content, NodeContent::Image { .. }));
+        assert!(
+            has_image,
+            "Image node should be present when inject_placeholders is true"
+        );
+
+        let formatted = result
+            .formatted_content
+            .as_ref()
+            .expect("Formatted content should be present");
+        assert!(
+            formatted.contains("![A test image](media/image1.png)"),
+            "Markdown should contain image placeholder. Content: {}",
+            formatted
+        );
+    }
+
+    #[tokio::test]
+    async fn test_docx_inject_placeholders_false() {
+        let drawing_xml = r#"<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+                             xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+                             xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+                             xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"
+                             xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+          <w:r>
+            <w:drawing>
+              <wp:inline>
+                <wp:extent cx="914400" cy="457200"/>
+                <wp:docPr id="1" name="Picture 1" descr="A test image"/>
+                <a:graphic>
+                  <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+                    <pic:pic>
+                      <pic:blipFill>
+                        <a:blip r:embed="rId5"/>
+                      </pic:blipFill>
+                    </pic:pic>
+                  </a:graphicData>
+                </a:graphic>
+              </wp:inline>
+            </w:drawing>
+          </w:r>
+        </w:p>"#;
+
+        let rels_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/>
+</Relationships>"#;
+
+        let document_xml = format!(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>Before image</w:t></w:r></w:p>
+    {}
+    <w:p><w:r><w:t>After image</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#,
+            drawing_xml
+        );
+
+        let data = build_test_docx_with_parts(&document_xml, None, None, None, None, None, Some(rels_xml));
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            images: Some(ImageExtractionConfig {
+                extract_images: false,
+                inject_placeholders: false,
+                ..Default::default()
+            }),
+            include_document_structure: true,
+            ..Default::default()
+        };
+
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("Extraction failed");
+
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Markdown,
+        );
+
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+        let has_image = doc.nodes.iter().any(|n| matches!(n.content, NodeContent::Image { .. }));
+        assert!(
+            !has_image,
+            "Image node should NOT be present when inject_placeholders is false"
+        );
+
+        let formatted = result
+            .formatted_content
+            .as_ref()
+            .expect("Formatted content should be present");
+        assert!(
+            !formatted.contains("![A test image](media/image1.png)"),
+            "Markdown should NOT contain image placeholder. Content: {}",
+            formatted
+        );
+        assert!(result.content.contains("Before image"));
+        assert!(result.content.contains("After image"));
+    }
+
+    #[tokio::test]
+    async fn test_full_extraction_with_headers_footers() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>Body content here.</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let header_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:p><w:r><w:t>Page Header</w:t></w:r></w:p>
+</w:hdr>"#;
+
+        let footer_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:p><w:r><w:t>Page Footer</w:t></w:r></w:p>
+</w:ftr>"#;
+
+        let data = build_test_docx_with_parts(document_xml, None, None, None, Some(header_xml), Some(footer_xml), None);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            ..Default::default()
+        };
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert!(
+            result.content.contains("Body content here."),
+            "Body: {}",
+            result.content
+        );
+
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+        use crate::types::ContentLayer;
+        let header_nodes: Vec<_> = doc
+            .nodes
+            .iter()
+            .filter(|n| n.content_layer == ContentLayer::Header)
+            .collect();
+        assert!(!header_nodes.is_empty(), "Should have header layer nodes");
+        let footer_nodes: Vec<_> = doc
+            .nodes
+            .iter()
+            .filter(|n| n.content_layer == ContentLayer::Footer)
+            .collect();
+        assert!(!footer_nodes.is_empty(), "Should have footer layer nodes");
+    }
+
+    #[tokio::test]
+    async fn test_full_extraction_with_footnotes() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r><w:t>Text with note</w:t></w:r>
+      <w:r><w:footnoteReference w:id="2"/></w:r>
+    </w:p>
+  </w:body>
+</w:document>"#;
+
+        let footnotes_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:footnote w:id="0" w:type="separator"><w:p><w:r><w:t>separator</w:t></w:r></w:p></w:footnote>
+  <w:footnote w:id="1" w:type="continuationSeparator"><w:p><w:r><w:t>continuation</w:t></w:r></w:p></w:footnote>
+  <w:footnote w:id="2"><w:p><w:r><w:t>This is the footnote content.</w:t></w:r></w:p></w:footnote>
+</w:footnotes>"#;
+
+        let data = build_test_docx_with_parts(document_xml, None, Some(footnotes_xml), None, None, None, None);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            ..Default::default()
+        };
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert!(
+            result.content.contains("[^1]"),
+            "Should have footnote ref: {}",
+            result.content
+        );
+        let doc = result.document.as_ref().expect("should have document structure");
+        let has_footnote = doc.nodes.iter().any(
+            |n| matches!(&n.content, crate::types::NodeContent::Footnote { text } if text.contains("footnote content")),
+        );
+        assert!(has_footnote, "DocumentStructure should contain footnote node");
+        assert!(!result.content.contains("separator"), "Separator should be filtered");
+        assert!(
+            !result.content.contains("continuation"),
+            "Continuation should be filtered"
+        );
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+        assert!(
+            !doc.relationships.is_empty(),
+            "Should have footnote relationships in DocumentStructure"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_footnote_and_endnote_with_the_same_id_stay_apart() {
+        // Word numbers footnotes and endnotes independently. Keyed `fn1` alike,
+        // endnote 1 replaced footnote 1 in every rendered list of notes.
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r><w:t>Text with a footnote</w:t></w:r>
+      <w:r><w:footnoteReference w:id="1"/></w:r>
+      <w:r><w:t> and an endnote</w:t></w:r>
+      <w:r><w:endnoteReference w:id="1"/></w:r>
+    </w:p>
+  </w:body>
+</w:document>"#;
+
+        let footnotes_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:footnote w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:footnote>
+  <w:footnote w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:footnote>
+  <w:footnote w:id="1"><w:p><w:r><w:t>The footnote.</w:t></w:r></w:p></w:footnote>
+</w:footnotes>"#;
+
+        let endnotes_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:endnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:endnote w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:endnote>
+  <w:endnote w:type="continuationSeparator" w:id="0"><w:p><w:r><w:continuationSeparator/></w:r></w:p></w:endnote>
+  <w:endnote w:id="1"><w:p><w:r><w:t>The endnote.</w:t></w:r></w:p></w:endnote>
+</w:endnotes>"#;
+
+        let data = build_test_docx_with_parts(
+            document_xml,
+            None,
+            Some(footnotes_xml),
+            Some(endnotes_xml),
+            None,
+            None,
+            None,
+        );
+        let internal = DocxExtractor::new()
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &ExtractionConfig::default(),
+            )
+            .await
+            .unwrap();
+
+        let anchors = |kind: crate::types::internal::ElementKind| {
+            internal
+                .elements
+                .iter()
+                .filter(|e| e.kind == kind)
+                .filter_map(|e| e.anchor.clone())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            anchors(crate::types::internal::ElementKind::FootnoteRef),
+            ["fn1", "en1"]
+        );
+        assert_eq!(
+            anchors(crate::types::internal::ElementKind::FootnoteDefinition),
+            ["fn1", "en1"]
+        );
+
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal,
+            false,
+            crate::core::config::OutputFormat::Markdown,
+        );
+        assert!(
+            result.content.contains("The footnote."),
+            "footnote text missing: {}",
+            result.content
+        );
+        assert!(
+            result.content.contains("The endnote."),
+            "endnote text missing: {}",
+            result.content
+        );
+    }
+
+    #[tokio::test]
+    async fn test_full_extraction_with_style_based_headings() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:pPr><w:pStyle w:val="CustomTitle"/></w:pPr><w:r><w:t>Custom Title</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Body text.</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let styles_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:style w:type="paragraph" w:styleId="CustomTitle">
+    <w:name w:val="Custom Title"/>
+    <w:pPr><w:outlineLvl w:val="0"/></w:pPr>
+  </w:style>
+</w:styles>"#;
+
+        let data = build_test_docx_with_parts(document_xml, Some(styles_xml), None, None, None, None, None);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            ..Default::default()
+        };
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert!(
+            result.content.contains("Custom Title"),
+            "Style-based heading text should be present: {}",
+            result.content
+        );
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+        use crate::types::NodeContent;
+        let h1_nodes: Vec<_> = doc
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.content, NodeContent::Heading { level: 1, .. }))
+            .collect();
+        assert!(
+            !h1_nodes.is_empty(),
+            "Should have h1 heading node from style-based heading"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_paragraph_style_name_reaches_element_metadata() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:pPr><w:pStyle w:val="Quote1"/></w:pPr><w:r><w:t>A quoted paragraph.</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let styles_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:style w:type="paragraph" w:styleId="Quote1">
+    <w:name w:val="Intense Quote"/>
+  </w:style>
+</w:styles>"#;
+
+        let data = build_test_docx_with_parts(document_xml, Some(styles_xml), None, None, None, None, None);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            ..Default::default()
+        };
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+
+        let elements = crate::extraction::transform::convert_internal_elements_to_elements(&internal_doc, &None);
+        let quoted = elements
+            .iter()
+            .find(|e| e.text.contains("A quoted paragraph."))
+            .expect("quoted paragraph element should be present");
+        // Unfixed code never calls `resolve_style_name` / `merge_attribute`, so
+        // `metadata.additional` has no "style_name" key here (empty map).
+        assert_eq!(
+            quoted.metadata.additional.get(STYLE_NAME_ATTRIBUTE),
+            Some(&"Intense Quote".to_string()),
+            "resolved w:pStyle name should surface as element metadata: {:?}",
+            quoted.metadata.additional
+        );
+    }
+
+    /// A Word-generated table of contents wrapped in a `w:sdt` structured document tag,
+    /// followed by the heading its single entry points at (#1452).
+    const TOC_SDT_DOCUMENT_XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:sdt>
+      <w:sdtPr>
+        <w:docPartObj>
+          <w:docPartGallery w:val="Table of Contents"/>
+          <w:docPartUnique/>
+        </w:docPartObj>
+      </w:sdtPr>
+      <w:sdtContent>
+        <w:p><w:hyperlink w:anchor="_Toc100"><w:r><w:t>Introduction</w:t></w:r></w:hyperlink></w:p>
+      </w:sdtContent>
+    </w:sdt>
+    <w:p>
+      <w:pPr><w:pStyle w:val="Heading1"/></w:pPr>
+      <w:bookmarkStart w:id="1" w:name="_Toc100"/>
+      <w:r><w:t>Introduction</w:t></w:r>
+      <w:bookmarkEnd w:id="1"/>
+    </w:p>
+    <w:p><w:r><w:t>Body text.</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+    async fn extract_docx_internal_document(data: &[u8]) -> crate::types::internal::InternalDocument {
+        DocxExtractor::new()
+            .extract_content(
+                data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &ExtractionConfig {
+                    include_document_structure: true,
+                    ..Default::default()
+                },
+            )
+            .await
+            .unwrap()
+    }
+
+    /// End-to-end proof, through the reporter's document-structure shape, that a
+    /// style-carried `w:numId` (no direct paragraph numbering) produces one list
+    /// with three items rather than three plain paragraphs (GH#1663).
+    #[tokio::test]
+    async fn style_carried_numbering_produces_a_list_in_the_document_structure() {
+        use crate::types::internal::ElementKind;
+        let styles_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>
+  <w:style w:type="paragraph" w:styleId="ListBullet">
+    <w:name w:val="List Bullet"/><w:basedOn w:val="Normal"/>
+    <w:pPr><w:numPr><w:numId w:val="1"/></w:numPr></w:pPr>
+  </w:style>
+</w:styles>"#;
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>
+  <w:p><w:pPr><w:pStyle w:val="ListBullet"/></w:pPr><w:r><w:t>One</w:t></w:r></w:p>
+  <w:p><w:pPr><w:pStyle w:val="ListBullet"/></w:pPr><w:r><w:t>Two</w:t></w:r></w:p>
+  <w:p><w:pPr><w:pStyle w:val="ListBullet"/></w:pPr><w:r><w:t>Three</w:t></w:r></w:p>
+</w:body></w:document>"#;
+        let data = build_test_docx_with_parts(document_xml, Some(styles_xml), None, None, None, None, None);
+        let internal_doc = extract_docx_internal_document(&data).await;
+        let kinds: Vec<&ElementKind> = internal_doc.elements.iter().map(|e| &e.kind).collect();
+        let list_starts = kinds
+            .iter()
+            .filter(|k| matches!(k, ElementKind::ListStart { .. }))
+            .count();
+        let list_items = kinds
+            .iter()
+            .filter(|k| matches!(k, ElementKind::ListItem { .. }))
+            .count();
+        let paragraphs = kinds.iter().filter(|k| matches!(k, ElementKind::Paragraph)).count();
+        assert_eq!((list_starts, list_items, paragraphs), (1, 3, 0), "elements: {kinds:?}");
+    }
+
+    async fn assert_block_after_nested_list_is_top_level(block: &str, inject_placeholders: bool) {
+        use crate::types::internal::ElementKind;
+        let document_xml = format!(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+            xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+            xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"
+            xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>
+  <w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr><w:r><w:t>Outer</w:t></w:r></w:p>
+  <w:p><w:pPr><w:numPr><w:ilvl w:val="1"/><w:numId w:val="1"/></w:numPr></w:pPr><w:r><w:t>Inner</w:t></w:r></w:p>
+  {block}
+  <w:p><w:r><w:t>After</w:t></w:r></w:p>
+</w:body></w:document>"#
+        );
+        let rels_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/>
+</Relationships>"#;
+        let data = build_test_docx_with_parts(&document_xml, None, None, None, None, None, Some(rels_xml));
+        let config = ExtractionConfig {
+            images: Some(ImageExtractionConfig {
+                extract_images: false,
+                inject_placeholders,
+                ..Default::default()
+            }),
+            include_document_structure: true,
+            ..Default::default()
+        };
+        let internal_doc = DocxExtractor::new()
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+
+        let elements = &internal_doc.elements;
+        let starts = elements
+            .iter()
+            .filter(|e| matches!(e.kind, ElementKind::ListStart { .. }))
+            .count();
+        let ends = elements
+            .iter()
+            .filter(|e| matches!(e.kind, ElementKind::ListEnd))
+            .count();
+        assert_eq!((starts, ends), (2, 2), "elements: {elements:?}");
+
+        let inner = elements.iter().position(|e| e.text == "Inner").unwrap();
+        let after_list: Vec<_> = elements[inner + 1..]
+            .iter()
+            .filter(|e| !matches!(e.kind, ElementKind::ListEnd))
+            .collect();
+        assert!(after_list.len() >= 2, "elements: {elements:?}");
+        assert!(after_list.iter().all(|e| e.depth == 0), "elements: {elements:?}");
+    }
+
+    #[tokio::test]
+    async fn table_after_nested_list_is_not_inside_the_list() {
+        let table = r#"<w:tbl><w:tr><w:tc><w:p><w:r><w:t>Region</w:t></w:r></w:p></w:tc></w:tr></w:tbl>"#;
+        assert_block_after_nested_list_is_top_level(table, false).await;
+    }
+
+    #[tokio::test]
+    async fn text_box_after_nested_list_is_not_inside_the_list() {
+        let text_box = r#"<w:p><w:r><w:drawing><wp:inline>
+  <wp:extent cx="100000" cy="100000"/><wp:docPr id="2" name="Text Box 1"/>
+  <a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">
+    <wps:wsp><wps:txbx><w:txbxContent><w:p><w:r><w:t>Boxed</w:t></w:r></w:p></w:txbxContent></wps:txbx></wps:wsp>
+  </a:graphicData></a:graphic>
+</wp:inline></w:drawing></w:r></w:p>"#;
+        assert_block_after_nested_list_is_top_level(text_box, false).await;
+    }
+
+    #[tokio::test]
+    async fn image_after_nested_list_is_not_inside_the_list() {
+        let image = r#"<w:p><w:r><w:drawing><wp:inline>
+  <wp:extent cx="914400" cy="457200"/><wp:docPr id="1" name="Chart"/>
+  <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+    <pic:pic><pic:blipFill><a:blip r:embed="rId5"/></pic:blipFill></pic:pic>
+  </a:graphicData></a:graphic>
+</wp:inline></w:drawing></w:r></w:p>"#;
+        assert_block_after_nested_list_is_top_level(image, true).await;
+    }
+
+    #[tokio::test]
+    async fn test_sdt_table_of_contents_marks_its_entries() {
+        let data = build_test_docx_with_parts(TOC_SDT_DOCUMENT_XML, None, None, None, None, None, None);
+        let internal_doc = extract_docx_internal_document(&data).await;
+        let elements = crate::extraction::transform::convert_internal_elements_to_elements(&internal_doc, &None);
+
+        let introductions: Vec<_> = elements.iter().filter(|e| e.text.trim() == "Introduction").collect();
+        assert_eq!(
+            introductions.len(),
+            2,
+            "expected the TOC entry and the heading it points at: {:?}",
+            elements.iter().map(|e| &e.text).collect::<Vec<_>>()
+        );
+
+        // Unfixed code never looks at `w:sdt`/`w:docPartGallery`, so no element carries
+        // the marker and `get("toc_entry")` is `None` here.
+        assert_eq!(
+            introductions[0].metadata.additional.get(TOC_ENTRY_ATTRIBUTE),
+            Some(&"true".to_string()),
+            "the sdt-wrapped TOC entry should be marked: {:?}",
+            introductions[0].metadata.additional
+        );
+        assert_eq!(
+            introductions[1].metadata.additional.get(TOC_ENTRY_ATTRIBUTE),
+            None,
+            "the heading the TOC points at is not itself a TOC entry"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_bare_toc_field_code_marks_its_entries() {
+        // No `w:sdt`: the `TOC` field code is the only marker. The first entry's paragraph
+        // is where the field begins, the second holds a nested `PAGEREF` field (whose `end`
+        // must not close the TOC) and then the TOC field's own `end`.
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+      <w:r><w:instrText xml:space="preserve">TOC \o "1-3" \h \z \u</w:instrText></w:r>
+      <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+      <w:hyperlink w:anchor="_Toc200"><w:r><w:t>First section</w:t></w:r></w:hyperlink>
+    </w:p>
+    <w:p>
+      <w:hyperlink w:anchor="_Toc201"><w:r><w:t>Second section</w:t></w:r></w:hyperlink>
+      <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+      <w:r><w:instrText xml:space="preserve">PAGEREF _Toc201 \h</w:instrText></w:r>
+      <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+      <w:r><w:t>2</w:t></w:r>
+      <w:r><w:fldChar w:fldCharType="end"/></w:r>
+      <w:r><w:fldChar w:fldCharType="end"/></w:r>
+    </w:p>
+    <w:p><w:r><w:t>Body text outside the TOC.</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx_with_parts(document_xml, None, None, None, None, None, None);
+        let internal_doc = extract_docx_internal_document(&data).await;
+        let elements = crate::extraction::transform::convert_internal_elements_to_elements(&internal_doc, &None);
+
+        let first_entry = elements
+            .iter()
+            .find(|e| e.text.contains("First section"))
+            .expect("first TOC entry element");
+        let second_entry = elements
+            .iter()
+            .find(|e| e.text.contains("Second section"))
+            .expect("second TOC entry element");
+        let body = elements
+            .iter()
+            .find(|e| e.text.contains("Body text outside"))
+            .expect("post-TOC body element");
+
+        // Unfixed code accumulates the `TOC` instruction into `field_instruction` and
+        // discards it, so `get("toc_entry")` is `None` for both entries.
+        assert_eq!(
+            first_entry.metadata.additional.get(TOC_ENTRY_ATTRIBUTE),
+            Some(&"true".to_string()),
+            "the entry whose paragraph opens the TOC field should be marked"
+        );
+        assert_eq!(
+            second_entry.metadata.additional.get(TOC_ENTRY_ATTRIBUTE),
+            Some(&"true".to_string()),
+            "a nested PAGEREF field's end must not close the TOC region"
+        );
+        assert_eq!(
+            body.metadata.additional.get(TOC_ENTRY_ATTRIBUTE),
+            None,
+            "content after the TOC field's end is not part of the TOC"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_toc_entry_anchor_resolves_to_a_toc_entry_relationship() {
+        use crate::types::document_structure::RelationshipKind as PublicRelationshipKind;
+
+        let data = build_test_docx_with_parts(TOC_SDT_DOCUMENT_XML, None, None, None, None, None, None);
+        let internal_doc = extract_docx_internal_document(&data).await;
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Plain,
+        );
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+
+        // Unfixed code reads only `r:id` on `w:hyperlink`, so the `w:anchor` jump produces
+        // no link at all and `doc.relationships` is empty — this fails with `0`.
+        let toc_relationships: Vec<_> = doc
+            .relationships
+            .iter()
+            .filter(|rel| rel.kind == PublicRelationshipKind::TocEntry)
+            .collect();
+        assert_eq!(
+            toc_relationships.len(),
+            1,
+            "expected one TocEntry relationship, got: {:?}",
+            doc.relationships
+        );
+
+        // Hierarchical derivation represents a heading as the Group it heads, with the
+        // Heading itself as that group's first child (`derive.rs`), and `elem_to_node`
+        // maps the heading element to the GROUP. So a bookmark on a heading resolves to
+        // the section, which is the correct destination for a table-of-contents entry --
+        // following it should land on the whole section, not just its title line.
+        let target = &doc.nodes[toc_relationships[0].target.0 as usize];
+        assert!(
+            matches!(
+                &target.content,
+                crate::types::NodeContent::Group { heading_text: Some(text), .. } if text == "Introduction"
+            ),
+            "TocEntry should target the section headed by the bookmarked heading, got: {:?}",
+            target.content
+        );
+        let heading_child = &doc.nodes[target.children[0].0 as usize];
+        assert!(
+            matches!(&heading_child.content, crate::types::NodeContent::Heading { text, .. } if text == "Introduction"),
+            "the targeted group's first child should be the heading itself, got: {:?}",
+            heading_child.content
+        );
+    }
+
+    #[tokio::test]
+    async fn test_internal_anchor_outside_a_toc_is_an_internal_link() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:hyperlink w:anchor="_Ref9001"><w:r><w:t>see the appendix</w:t></w:r></w:hyperlink></w:p>
+    <w:p>
+      <w:pPr><w:pStyle w:val="Heading1"/></w:pPr>
+      <w:bookmarkStart w:id="4" w:name="_Ref9001"/>
+      <w:r><w:t>Appendix</w:t></w:r>
+      <w:bookmarkEnd w:id="4"/>
+    </w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx_with_parts(document_xml, None, None, None, None, None, None);
+        let internal_doc = extract_docx_internal_document(&data).await;
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Plain,
+        );
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+
+        // Unfixed code yields no relationship at all here, so this fails with `[]`.
+        assert_eq!(
+            doc.relationships.len(),
+            1,
+            "expected one internal link, got: {:?}",
+            doc.relationships
+        );
+        assert_eq!(
+            doc.relationships[0].kind,
+            crate::types::document_structure::RelationshipKind::InternalLink,
+            "an anchor link outside a table of contents stays an InternalLink"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_document_structure_generation() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr><w:r><w:t>Doc Title</w:t></w:r></w:p>
+    <w:p><w:r><w:t>A paragraph.</w:t></w:r></w:p>
+    <w:tbl>
+      <w:tr><w:tc><w:p><w:r><w:t>Cell 1</w:t></w:r></w:p></w:tc></w:tr>
+    </w:tbl>
+  </w:body>
+</w:document>"#;
+
+        let header_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:p><w:r><w:t>Header</w:t></w:r></w:p>
+</w:hdr>"#;
+
+        let data = build_test_docx_with_parts(document_xml, None, None, None, Some(header_xml), None, None);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            include_document_structure: true,
+            ..Default::default()
+        };
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert!(result.document.is_some(), "DocumentStructure should be populated");
+        let doc = result.document.unwrap();
+
+        assert!(!doc.nodes.is_empty(), "Should have document nodes");
+
+        assert!(doc.validate().is_ok(), "DocumentStructure should be valid");
+
+        use crate::types::NodeContent;
+        let headings: Vec<_> = doc
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.content, NodeContent::Heading { .. }))
+            .collect();
+        assert!(!headings.is_empty(), "Should have heading nodes");
+
+        let paragraphs: Vec<_> = doc
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.content, NodeContent::Paragraph { .. }))
+            .collect();
+        assert!(!paragraphs.is_empty(), "Should have paragraph nodes");
+
+        let tables: Vec<_> = doc
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.content, NodeContent::Table { .. }))
+            .collect();
+        assert!(!tables.is_empty(), "Should have table nodes");
+
+        use crate::types::ContentLayer;
+        let headers: Vec<_> = doc
+            .nodes
+            .iter()
+            .filter(|n| n.content_layer == ContentLayer::Header)
+            .collect();
+        assert!(!headers.is_empty(), "Should have header nodes");
+    }
+
+    #[tokio::test]
+    async fn test_pages_populated_single_page() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>Simple single page document.</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            ..Default::default()
+        };
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert!(
+            result.content.contains("Simple single page document."),
+            "Content should contain the document text: {}",
+            result.content
+        );
+        let page_structure = result
+            .metadata
+            .pages
+            .as_ref()
+            .expect("non-empty DOCX should report its one-page structure");
+        assert_eq!(page_structure.total_count, 1);
+        assert_eq!(page_structure.boundaries.as_ref().map(Vec::len), Some(1));
+        assert_eq!(result.pages.as_ref().map(Vec::len), Some(1));
+        let elements = crate::extraction::transform::transform_extraction_result_to_elements(&result);
+        assert_eq!(elements.len(), 1);
+        assert_eq!(elements[0].metadata.page_number, Some(1));
+    }
+
+    #[tokio::test]
+    async fn should_attribute_docx_elements_to_pages_and_preserve_break_order() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>Page one body text</w:t></w:r></w:p>
+    <w:p><w:r><w:br w:type="page"/></w:r></w:p>
+    <w:p><w:r><w:t>Page two body text</w:t></w:r></w:p>
+    <w:p><w:r><w:br w:type="page"/></w:r></w:p>
+    <w:p><w:r><w:t>Page three body text</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &ExtractionConfig::default(),
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+        let elements = crate::extraction::transform::transform_extraction_result_to_elements(&result);
+
+        assert_eq!(
+            elements.iter().map(|element| element.element_type).collect::<Vec<_>>(),
+            vec![
+                crate::types::ElementType::NarrativeText,
+                crate::types::ElementType::PageBreak,
+                crate::types::ElementType::NarrativeText,
+                crate::types::ElementType::PageBreak,
+                crate::types::ElementType::NarrativeText,
+            ]
+        );
+        assert_eq!(
+            elements
+                .iter()
+                .map(|element| element.metadata.page_number)
+                .collect::<Vec<_>>(),
+            vec![Some(1), Some(1), Some(2), Some(2), Some(3)]
+        );
+        assert_eq!(
+            elements.iter().map(|element| element.text.as_str()).collect::<Vec<_>>(),
+            vec![
+                "Page one body text",
+                "--- PAGE BREAK (page 1 → 2) ---",
+                "Page two body text",
+                "--- PAGE BREAK (page 2 → 3) ---",
+                "Page three body text"
+            ]
+        );
+        assert_eq!(result.pages.as_ref().map(Vec::len), Some(3));
+        assert_eq!(result.metadata.pages.as_ref().map(|pages| pages.total_count), Some(3));
+    }
+
+    /// GH#1592: a table row that straddles a page boundary gets Word's
+    /// `lastRenderedPageBreak` hint written into *every* cell of that row — one
+    /// physical break, one hint per cell. Three such rows must report four pages
+    /// end-to-end (`metadata.pages.total_count` and the highest element `page_number`),
+    /// exactly as three rows with the hint in only their first cell would (the shape
+    /// covered by `should_attribute_docx_elements_to_pages_and_preserve_break_order`'s
+    /// sibling tests in `extraction::docx::parser`).
+    #[tokio::test]
+    async fn gh1592_table_row_break_duplicated_into_every_cell_reports_correct_page_count() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>before</w:t></w:r></w:p>
+    <w:tbl>
+      <w:tblPr></w:tblPr>
+      <w:tblGrid><w:gridCol w:w="2000"/><w:gridCol w:w="2000"/></w:tblGrid>
+      <w:tr><w:tc><w:tcPr><w:tcW w:w="2000" w:type="dxa"/></w:tcPr>
+          <w:p><w:r><w:lastRenderedPageBreak/></w:r><w:r><w:t>r0c0</w:t></w:r></w:p>
+        </w:tc><w:tc><w:tcPr><w:tcW w:w="2000" w:type="dxa"/></w:tcPr>
+          <w:p><w:r><w:lastRenderedPageBreak/></w:r><w:r><w:t>r0c1</w:t></w:r></w:p>
+        </w:tc></w:tr>
+      <w:tr><w:tc><w:tcPr><w:tcW w:w="2000" w:type="dxa"/></w:tcPr>
+          <w:p><w:r><w:lastRenderedPageBreak/></w:r><w:r><w:t>r1c0</w:t></w:r></w:p>
+        </w:tc><w:tc><w:tcPr><w:tcW w:w="2000" w:type="dxa"/></w:tcPr>
+          <w:p><w:r><w:lastRenderedPageBreak/></w:r><w:r><w:t>r1c1</w:t></w:r></w:p>
+        </w:tc></w:tr>
+      <w:tr><w:tc><w:tcPr><w:tcW w:w="2000" w:type="dxa"/></w:tcPr>
+          <w:p><w:r><w:lastRenderedPageBreak/></w:r><w:r><w:t>r2c0</w:t></w:r></w:p>
+        </w:tc><w:tc><w:tcPr><w:tcW w:w="2000" w:type="dxa"/></w:tcPr>
+          <w:p><w:r><w:lastRenderedPageBreak/></w:r><w:r><w:t>r2c1</w:t></w:r></w:p>
+        </w:tc></w:tr>
+    </w:tbl>
+    <w:p><w:r><w:t>after</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &ExtractionConfig::default(),
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+        let elements = crate::extraction::transform::transform_extraction_result_to_elements(&result);
+
+        assert_eq!(
+            result.metadata.pages.as_ref().map(|pages| pages.total_count),
+            Some(4),
+            "three straddling rows must report four pages, not one collapsed page nor six inflated ones"
+        );
+        let max_page_number = elements.iter().filter_map(|element| element.metadata.page_number).max();
+        assert_eq!(max_page_number, Some(4));
+    }
+
+    #[tokio::test]
+    async fn test_full_extraction_with_endnotes() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r><w:t>Text with endnote</w:t></w:r>
+      <w:r><w:endnoteReference w:id="2"/></w:r>
+    </w:p>
+  </w:body>
+</w:document>"#;
+
+        let endnotes_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:endnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:endnote w:id="0" w:type="separator"><w:p><w:r><w:t>separator</w:t></w:r></w:p></w:endnote>
+  <w:endnote w:id="1" w:type="continuationSeparator"><w:p><w:r><w:t>continuation</w:t></w:r></w:p></w:endnote>
+  <w:endnote w:id="2"><w:p><w:r><w:t>This is the endnote.</w:t></w:r></w:p></w:endnote>
+</w:endnotes>"#;
+
+        let data = build_test_docx_with_parts(document_xml, None, None, Some(endnotes_xml), None, None, None);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            ..Default::default()
+        };
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert!(
+            result.content.contains("[^1]"),
+            "Should have endnote ref: {}",
+            result.content
+        );
+        assert!(
+            result.document.as_ref().is_some_and(|doc| doc.nodes.iter().any(
+                |n| matches!(&n.content, crate::types::NodeContent::Footnote { text } if text.contains("endnote"))
+            )),
+            "DocumentStructure should contain endnote node"
+        );
+        assert!(!result.content.contains("separator"), "Separator should be filtered");
+    }
+
+    #[tokio::test]
+    async fn test_typed_metadata_fields_populated() {
+        use std::io::Write;
+        let buf = Vec::new();
+        let cursor = std::io::Cursor::new(buf);
+        let mut zip = zip::ZipWriter::new(cursor);
+        let options: zip::write::FileOptions<()> = zip::write::FileOptions::default();
+
+        zip.start_file("[Content_Types].xml", options).unwrap();
+        zip.write_all(br#"<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>"#).unwrap();
+
+        zip.start_file("word/document.xml", options).unwrap();
+        zip.write_all(
+            br#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Content</w:t></w:r></w:p></w:body>
+</w:document>"#,
+        )
+        .unwrap();
+
+        zip.start_file("docProps/core.xml", options).unwrap();
+        zip.write_all(
+            br#"<?xml version="1.0" encoding="UTF-8"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+                   xmlns:dc="http://purl.org/dc/elements/1.1/"
+                   xmlns:dcterms="http://purl.org/dc/terms/">
+  <dc:title>My Document</dc:title>
+  <dc:creator>Jane Doe</dc:creator>
+  <dc:subject>Test Subject</dc:subject>
+  <cp:lastModifiedBy>John Smith</cp:lastModifiedBy>
+  <dcterms:created>2024-01-15T10:30:00Z</dcterms:created>
+  <dcterms:modified>2024-02-20T14:45:00Z</dcterms:modified>
+  <dc:language>en-US</dc:language>
+</cp:coreProperties>"#,
+        )
+        .unwrap();
+
+        let data = zip.finish().unwrap().into_inner();
+
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            ..Default::default()
+        };
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert_eq!(result.metadata.title.as_deref(), Some("My Document"));
+        assert_eq!(result.metadata.subject.as_deref(), Some("Test Subject"));
+        assert_eq!(result.metadata.authors, Some(vec!["Jane Doe".to_string()]));
+        assert_eq!(result.metadata.created_by.as_deref(), Some("Jane Doe"));
+        assert_eq!(result.metadata.modified_by.as_deref(), Some("John Smith"));
+        assert_eq!(result.metadata.created_at.as_deref(), Some("2024-01-15T10:30:00Z"));
+        assert_eq!(result.metadata.modified_at.as_deref(), Some("2024-02-20T14:45:00Z"));
+        assert_eq!(result.metadata.language.as_deref(), Some("en-US"));
+
+        assert!(
+            result.metadata.additional.get("title").is_none(),
+            "title should not be in additional"
+        );
+        assert!(
+            result.metadata.additional.get("created_by").is_none(),
+            "created_by should not be in additional"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_images_none_when_extraction_disabled() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>No images.</w:t></w:r></w:p></w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert!(
+            result.images.is_none(),
+            "Images should be None when extraction is disabled"
+        );
+    }
+
+    #[test]
+    fn test_vertical_merge_renders_empty_cells() {
+        use crate::extraction::docx::parser::{Paragraph, Run, Table as DocxTable, TableCell, TableRow};
+        use crate::extraction::docx::table::{CellProperties, RowProperties, VerticalMerge};
+
+        let mut table = DocxTable::new();
+
+        let mut row1 = TableRow {
+            properties: Some(RowProperties {
+                is_header: true,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let mut cell1 = TableCell::default();
+        let mut p1 = Paragraph::new();
+        p1.add_run(Run::new("Name".to_string()));
+        cell1.paragraphs.push(p1);
+        row1.cells.push(cell1);
+
+        let mut cell2 = TableCell {
+            properties: Some(CellProperties {
+                v_merge: Some(VerticalMerge::Restart),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let mut p2 = Paragraph::new();
+        p2.add_run(Run::new("Score".to_string()));
+        cell2.paragraphs.push(p2);
+        row1.cells.push(cell2);
+        table.rows.push(row1);
+
+        let mut row2 = TableRow::default();
+        let mut cell3 = TableCell::default();
+        let mut p3 = Paragraph::new();
+        p3.add_run(Run::new("Alice".to_string()));
+        cell3.paragraphs.push(p3);
+        row2.cells.push(cell3);
+
+        let mut cell4 = TableCell {
+            properties: Some(CellProperties {
+                v_merge: Some(VerticalMerge::Continue),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let mut p4 = Paragraph::new();
+        p4.add_run(Run::new("Should be hidden".to_string()));
+        cell4.paragraphs.push(p4);
+        row2.cells.push(cell4);
+        table.rows.push(row2);
+
+        let md = table.to_markdown();
+        assert!(md.contains("Score"), "Restart cell should show content");
+        assert!(
+            !md.contains("Should be hidden"),
+            "Continue cell should be empty: {}",
+            md
+        );
+        assert!(md.contains("Alice"), "Normal cell should show content");
+    }
+
+    #[tokio::test]
+    async fn test_drawing_image_placeholder_in_markdown() {
+        use crate::extraction::docx::drawing::{DocProperties, Drawing, DrawingType};
+        use crate::extraction::docx::parser::{Document, DocumentElement, Paragraph, Run};
+
+        let mut doc = Document::new();
+
+        let mut para = Paragraph::new();
+        para.add_run(Run::new("Before image.".to_string()));
+        let p_idx = doc.paragraphs.len();
+        doc.paragraphs.push(para);
+        doc.elements.push(DocumentElement::Paragraph(p_idx));
+
+        let drawing = Drawing {
+            drawing_type: DrawingType::Inline,
+            extent: None,
+            doc_properties: Some(DocProperties {
+                id: Some("1".to_string()),
+                name: Some("Picture 1".to_string()),
+                description: Some("A test image".to_string()),
+            }),
+            image_ref: Some("rId1".to_string()),
+            text_box_content: None,
+        };
+        let d_idx = doc.drawings.len();
+        doc.drawings.push(drawing);
+        doc.elements.push(DocumentElement::Drawing(d_idx));
+
+        let mut para2 = Paragraph::new();
+        para2.add_run(Run::new("After image.".to_string()));
+        let p2_idx = doc.paragraphs.len();
+        doc.paragraphs.push(para2);
+        doc.elements.push(DocumentElement::Paragraph(p2_idx));
+
+        let md = doc.to_markdown(true);
+        assert!(
+            md.contains("![A test image](image)"),
+            "Should have image placeholder: {}",
+            md
+        );
+        assert!(md.contains("Before image."), "Should have text before");
+        assert!(md.contains("After image."), "Should have text after");
+    }
+
+    /// Regression test for issue #484: image placeholders must appear even with
+    /// default (Plain) output format when extract_images is enabled.
+    #[tokio::test]
+    async fn test_image_placeholder_with_default_output_format() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+            xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+            xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <w:body>
+    <w:p><w:r><w:t>Text before image.</w:t></w:r></w:p>
+    <w:p><w:r>
+      <w:drawing>
+        <wp:inline>
+          <wp:extent cx="914400" cy="914400"/>
+          <wp:docPr id="1" name="Picture 1" descr="Test image"/>
+          <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+            <pic:pic><pic:blipFill><a:blip r:embed="rId5"/></pic:blipFill></pic:pic>
+          </a:graphicData></a:graphic>
+        </wp:inline>
+      </w:drawing>
+    </w:r></w:p>
+    <w:p><w:r><w:t>Text after image.</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let docx_bytes = build_test_docx(document_xml);
+
+        let config = ExtractionConfig {
+            images: Some(crate::core::config::ImageExtractionConfig {
+                extract_images: true,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let extractor = DocxExtractor::new();
+        let result = extractor
+            .extract_content(
+                &docx_bytes,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert!(
+            result.content.contains("Text before image."),
+            "Should contain text before image: {}",
+            result.content
+        );
+        assert!(
+            result.content.contains("Text after image."),
+            "Should contain text after image: {}",
+            result.content
+        );
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+        use crate::types::NodeContent;
+        let image_nodes: Vec<_> = doc
+            .nodes
+            .iter()
+            .filter(|n| matches!(n.content, NodeContent::Image { .. }))
+            .collect();
+        assert!(!image_nodes.is_empty(), "Should have image nodes in DocumentStructure");
+    }
+
+    #[tokio::test]
+    async fn test_docx_metadata_format_field() {
+        use std::io::Write;
+        let buf = Vec::new();
+        let cursor = std::io::Cursor::new(buf);
+        let mut zip = zip::ZipWriter::new(cursor);
+        let options: zip::write::FileOptions<()> = zip::write::FileOptions::default();
+
+        zip.start_file("[Content_Types].xml", options).unwrap();
+        zip.write_all(br#"<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>"#).unwrap();
+
+        zip.start_file("word/document.xml", options).unwrap();
+        zip.write_all(
+            br#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Content</w:t></w:r></w:p></w:body>
+</w:document>"#,
+        )
+        .unwrap();
+
+        zip.start_file("docProps/core.xml", options).unwrap();
+        zip.write_all(
+            br#"<?xml version="1.0" encoding="UTF-8"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+                   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <dc:title>Format Test</dc:title>
+</cp:coreProperties>"#,
+        )
+        .unwrap();
+
+        zip.start_file("docProps/app.xml", options).unwrap();
+        zip.write_all(
+            br#"<?xml version="1.0" encoding="UTF-8"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
+  <Pages>3</Pages>
+  <Words>500</Words>
+</Properties>"#,
+        )
+        .unwrap();
+
+        let data = zip.finish().unwrap().into_inner();
+
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            ..Default::default()
+        };
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+
+        assert!(result.metadata.format.is_some(), "Format should be populated");
+        match result.metadata.format.as_ref().unwrap() {
+            FormatMetadata::Docx(docx_meta) => {
+                assert!(docx_meta.core_properties.is_some(), "Core properties should be present");
+                let core = docx_meta.core_properties.as_ref().unwrap();
+                assert_eq!(core.title.as_deref(), Some("Format Test"));
+
+                assert!(docx_meta.app_properties.is_some(), "App properties should be present");
+                let app = docx_meta.app_properties.as_ref().unwrap();
+                assert_eq!(app.pages, Some(3));
+                assert_eq!(app.words, Some(500));
+            }
+            _ => panic!("Expected FormatMetadata::Docx"),
+        }
+    }
+
+    /// Document XML with one insertion (w:ins), one deletion (w:del), and one
+    /// format change (w:rPrChange), each carrying w:id / w:author / w:date.
+    const TRACK_CHANGES_XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r><w:t xml:space="preserve">Original text. </w:t></w:r>
+      <w:ins w:id="1" w:author="Alice" w:date="2024-03-15T10:00:00Z">
+        <w:r><w:t>inserted content</w:t></w:r>
+      </w:ins>
+    </w:p>
+    <w:p>
+      <w:del w:id="2" w:author="Bob" w:date="2024-03-16T14:30:00Z">
+        <w:r><w:delText>deleted text</w:delText></w:r>
+      </w:del>
+      <w:r><w:t>Remaining text.</w:t></w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:rPr>
+          <w:rPrChange w:id="3" w:author="Carol" w:date="2024-03-17T09:15:00Z">
+            <w:rPr><w:b/></w:rPr>
+          </w:rPrChange>
+          <w:i/>
+        </w:rPr>
+        <w:t>Format-changed text.</w:t>
+      </w:r>
+    </w:p>
+  </w:body>
+</w:document>"#;
+
+    #[tokio::test]
+    async fn should_extract_correct_revision_count_from_track_changes_docx() {
+        let data = build_test_docx(TRACK_CHANGES_XML);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            false,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        let revisions = result
+            .revisions
+            .expect("revisions should be Some for a doc with track changes");
+        assert_eq!(revisions.len(), 3, "expected 3 revisions (1 ins + 1 del + 1 rPrChange)");
+    }
+
+    #[tokio::test]
+    async fn should_extract_revision_authors_timestamps_and_kinds() {
+        use crate::types::revisions::RevisionKind;
+
+        let data = build_test_docx(TRACK_CHANGES_XML);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            false,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        let revisions = result.revisions.unwrap();
+
+        let ins = revisions.iter().find(|r| r.kind == RevisionKind::Insertion).unwrap();
+        assert_eq!(ins.author.as_deref(), Some("Alice"));
+        assert_eq!(ins.timestamp.as_deref(), Some("2024-03-15T10:00:00Z"));
+        assert_eq!(ins.revision_id, "1");
+
+        let del = revisions.iter().find(|r| r.kind == RevisionKind::Deletion).unwrap();
+        assert_eq!(del.author.as_deref(), Some("Bob"));
+        assert_eq!(del.timestamp.as_deref(), Some("2024-03-16T14:30:00Z"));
+        assert_eq!(del.revision_id, "2");
+
+        let fmt = revisions.iter().find(|r| r.kind == RevisionKind::FormatChange).unwrap();
+        assert_eq!(fmt.author.as_deref(), Some("Carol"));
+        assert_eq!(fmt.timestamp.as_deref(), Some("2024-03-17T09:15:00Z"));
+        assert_eq!(fmt.revision_id, "3");
+    }
+
+    #[tokio::test]
+    async fn should_capture_format_change_property_delta() {
+        use crate::types::revisions::RevisionKind;
+
+        let data = build_test_docx(TRACK_CHANGES_XML);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            false,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        let revisions = result.revisions.unwrap();
+        let fmt = revisions.iter().find(|r| r.kind == RevisionKind::FormatChange).unwrap();
+        assert!(fmt.delta.content.is_empty());
+        assert!(fmt.delta.table_changes.is_empty());
+        assert!(
+            fmt.delta.property_changes.iter().any(|change| {
+                change.name == "bold" && change.from.as_deref() == Some("true") && change.to.as_deref() == Some("false")
+            }),
+            "expected bold delta in {:?}",
+            fmt.delta.property_changes
+        );
+        assert!(
+            fmt.delta.property_changes.iter().any(|change| {
+                change.name == "italic" && change.from.is_none() && change.to.as_deref() == Some("true")
+            }),
+            "expected italic delta in {:?}",
+            fmt.delta.property_changes
+        );
+    }
+
+    #[tokio::test]
+    async fn should_include_inserted_text_and_exclude_deleted_text_in_content() {
+        let data = build_test_docx(TRACK_CHANGES_XML);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            false,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        assert!(
+            result.content.contains("inserted content"),
+            "inserted text must appear in accepted-changes content: {}",
+            result.content
+        );
+        assert!(
+            !result.content.contains("deleted text"),
+            "deleted text must not appear in accepted-changes content: {}",
+            result.content
+        );
+    }
+
+    #[tokio::test]
+    async fn should_capture_insertion_delta_text_in_revision() {
+        use crate::types::revisions::{DiffLine, RevisionKind};
+
+        let data = build_test_docx(TRACK_CHANGES_XML);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            false,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        let revisions = result.revisions.unwrap();
+        let ins = revisions.iter().find(|r| r.kind == RevisionKind::Insertion).unwrap();
+        assert!(
+            ins.delta
+                .content
+                .iter()
+                .any(|l| matches!(l, DiffLine::Added(t) if t == "inserted content")),
+            "insertion delta should contain Added(\"inserted content\")"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_capture_deletion_delta_text_in_revision() {
+        use crate::types::revisions::DiffLine;
+
+        let data = build_test_docx(TRACK_CHANGES_XML);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            false,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        let revisions = result.revisions.unwrap();
+        let del = revisions
+            .iter()
+            .find(|r| r.kind == crate::types::revisions::RevisionKind::Deletion)
+            .unwrap();
+        assert!(
+            del.delta
+                .content
+                .iter()
+                .any(|l| matches!(l, DiffLine::Removed(t) if t == "deleted text")),
+            "deletion delta should contain Removed(\"deleted text\")"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_assign_paragraph_anchor_indices_to_revisions() {
+        use crate::types::revisions::{RevisionAnchor, RevisionKind};
+
+        let data = build_test_docx(TRACK_CHANGES_XML);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            false,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        let revisions = result.revisions.unwrap();
+
+        let ins = revisions.iter().find(|r| r.kind == RevisionKind::Insertion).unwrap();
+        assert!(
+            matches!(ins.anchor, Some(RevisionAnchor::Paragraph { index: 0 })),
+            "insertion anchor should be Paragraph {{ index: 0 }}, got {:?}",
+            ins.anchor
+        );
+
+        let del = revisions.iter().find(|r| r.kind == RevisionKind::Deletion).unwrap();
+        assert!(
+            matches!(del.anchor, Some(RevisionAnchor::Paragraph { index: 1 })),
+            "deletion anchor should be Paragraph {{ index: 1 }}, got {:?}",
+            del.anchor
+        );
+
+        let fmt = revisions.iter().find(|r| r.kind == RevisionKind::FormatChange).unwrap();
+        assert!(
+            matches!(fmt.anchor, Some(RevisionAnchor::Paragraph { index: 2 })),
+            "format-change anchor should be Paragraph {{ index: 2 }}, got {:?}",
+            fmt.anchor
+        );
+    }
+
+    #[tokio::test]
+    async fn should_return_none_revisions_for_document_without_track_changes() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>No track changes here.</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            false,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        assert!(
+            result.revisions.is_none(),
+            "revisions should be None for a document without track-changes markup"
+        );
+    }
+
+    // --- Issue #81: text-box text, drawing alt-text fallback, and drawing dimensions ---
+
+    #[tokio::test]
+    async fn test_issue_81_textbox_alt_text_fallback_and_dimensions() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+            xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+            xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"
+            xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <w:body>
+    <w:p><w:r><w:drawing>
+      <wp:inline>
+        <wp:extent cx="914400" cy="457200"/>
+        <wp:docPr id="1" name="My Picture"/>
+        <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+          <pic:pic><pic:blipFill><a:blip r:embed="rId5"/></pic:blipFill></pic:pic>
+        </a:graphicData></a:graphic>
+      </wp:inline>
+    </w:drawing></w:r></w:p>
+    <w:p><w:r><w:drawing>
+      <wp:inline>
+        <wp:extent cx="100000" cy="100000"/>
+        <wp:docPr id="2" name="Text Box 1"/>
+        <a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">
+          <wps:wsp><wps:txbx><w:txbxContent>
+            <w:p><w:r><w:t>Textbox message here.</w:t></w:r></w:p>
+          </w:txbxContent></wps:txbx></wps:wsp>
+        </a:graphicData></a:graphic>
+      </wp:inline>
+    </w:drawing></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let rels_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/>
+</Relationships>"#;
+
+        let data = build_test_docx_with_parts(document_xml, None, None, None, None, None, Some(rels_xml));
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            images: Some(ImageExtractionConfig {
+                extract_images: false,
+                inject_placeholders: true,
+                ..Default::default()
+            }),
+            include_document_structure: true,
+            ..Default::default()
+        };
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("extraction should succeed");
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+
+        let image_node = doc
+            .nodes
+            .iter()
+            .find(|n| matches!(&n.content, NodeContent::Image { .. }))
+            .expect("Image node should be present");
+        match &image_node.content {
+            NodeContent::Image { description, .. } => {
+                assert_eq!(
+                    description.as_deref(),
+                    Some("My Picture"),
+                    "alt text should fall back to docPr/@name when @descr is absent"
+                );
+            }
+            _ => unreachable!(),
+        }
+        let attrs = image_node
+            .attributes
+            .as_ref()
+            .expect("image node should carry attributes");
+        assert_eq!(attrs.get("width_inches").map(String::as_str), Some("1.00"));
+        assert_eq!(attrs.get("height_inches").map(String::as_str), Some("0.50"));
+
+        let has_textbox_paragraph = doc
+            .nodes
+            .iter()
+            .any(|n| matches!(&n.content, NodeContent::Paragraph { text } if text == "Textbox message here."));
+        assert!(
+            has_textbox_paragraph,
+            "w:txbxContent text should be extracted as a paragraph; nodes: {:?}",
+            doc.nodes
+        );
+    }
+
+    #[tokio::test]
+    async fn test_issue_81_vml_textbox_fallback_not_duplicated_with_choice() {
+        // mc:Choice carries the DrawingML text box; mc:Fallback carries the VML
+        // equivalent for older readers. Both must not surface the text twice.
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+            xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
+            xmlns:v="urn:schemas-microsoft-com:vml">
+  <w:body>
+    <w:p><w:r>
+      <mc:AlternateContent>
+        <mc:Choice Requires="wps">
+          <w:drawing><wps:wsp><wps:txbx><w:txbxContent>
+            <w:p><w:r><w:t>Shared text box body.</w:t></w:r></w:p>
+          </w:txbxContent></wps:txbx></wps:wsp></w:drawing>
+        </mc:Choice>
+        <mc:Fallback>
+          <w:pict><v:shape><v:textbox><w:txbxContent>
+            <w:p><w:r><w:t>Shared text box body.</w:t></w:r></w:p>
+          </w:txbxContent></v:textbox></v:shape></w:pict>
+        </mc:Fallback>
+      </mc:AlternateContent>
+    </w:r></w:p>
+    <w:p><w:r>
+      <w:pict><v:shape><v:textbox><w:txbxContent>
+        <w:p><w:r><w:t>Standalone VML text box.</w:t></w:r></w:p>
+      </w:txbxContent></v:textbox></v:shape></w:pict>
+    </w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("extraction should succeed");
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            false,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        let occurrences = result.content.matches("Shared text box body.").count();
+        assert_eq!(
+            occurrences, 1,
+            "mc:Choice and mc:Fallback must not both surface the same text box text; content: {}",
+            result.content
+        );
+        assert!(
+            result.content.contains("Standalone VML text box."),
+            "a bare (non-AlternateContent) VML text box should still be extracted; content: {}",
+            result.content
+        );
+    }
+
+    // --- Issue #82: DOCX comments ---
+
+    #[tokio::test]
+    async fn test_issue_82_comment_extracted_and_joined_to_reference() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:commentRangeStart w:id="0"/>
+      <w:r><w:t>flagged text</w:t></w:r>
+      <w:commentRangeEnd w:id="0"/>
+      <w:r><w:commentReference w:id="0"/></w:r>
+    </w:p>
+  </w:body>
+</w:document>"#;
+        let comments_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:comment w:id="0" w:author="Alice"><w:p><w:r><w:t>This needs revision.</w:t></w:r></w:p></w:comment>
+</w:comments>"#;
+
+        let data = build_test_docx_with_files(document_xml, &[("word/comments.xml", comments_xml)]);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            include_document_structure: true,
+            ..Default::default()
+        };
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("extraction should succeed");
+        assert!(
+            internal_doc.processing_warnings.is_empty(),
+            "a resolvable comment reference should not produce a warning: {:?}",
+            internal_doc.processing_warnings
+        );
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        assert!(
+            result.content.contains("flagged text"),
+            "body text should still be present: {}",
+            result.content
+        );
+
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+        let has_comment_definition = doc
+            .nodes
+            .iter()
+            .any(|n| matches!(&n.content, NodeContent::Comment { text } if text.contains("This needs revision.")));
+        assert!(
+            has_comment_definition,
+            "comment body should be joined to the reference; nodes: {:?}",
+            doc.nodes
+        );
+    }
+
+    /// Regression for #300: a DOCX reviewer comment must produce
+    /// `NodeContent::Comment`, not `NodeContent::Footnote` — the two share the same
+    /// marker/definition machinery internally, but a consumer needs to be able to
+    /// tell them apart. This also proves the fix does not over-fire: a real
+    /// footnote in the same document must still surface as `NodeContent::Footnote`.
+    #[tokio::test]
+    async fn test_issue_300_docx_comment_produces_comment_not_footnote_node() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:commentRangeStart w:id="0"/>
+      <w:r><w:t>flagged text</w:t></w:r>
+      <w:commentRangeEnd w:id="0"/>
+      <w:r><w:commentReference w:id="0"/></w:r>
+    </w:p>
+    <w:p><w:r><w:t>See note</w:t></w:r><w:r><w:footnoteReference w:id="2"/></w:r></w:p>
+  </w:body>
+</w:document>"#;
+        let comments_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:comment w:id="0" w:author="Alice"><w:p><w:r><w:t>This needs revision.</w:t></w:r></w:p></w:comment>
+</w:comments>"#;
+        let footnotes_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:footnote w:id="0"><w:p><w:r><w:t>separator</w:t></w:r></w:p></w:footnote>
+  <w:footnote w:id="1"><w:p><w:r><w:t>continuation</w:t></w:r></w:p></w:footnote>
+  <w:footnote w:id="2"><w:p><w:r><w:t>This is a real footnote.</w:t></w:r></w:p></w:footnote>
+</w:footnotes>"#;
+
+        let data = build_test_docx_with_files(
+            document_xml,
+            &[
+                ("word/comments.xml", comments_xml),
+                ("word/footnotes.xml", footnotes_xml),
+            ],
+        );
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            include_document_structure: true,
+            ..Default::default()
+        };
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("extraction should succeed");
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+
+        let comment_node = doc
+            .nodes
+            .iter()
+            .find(|n| matches!(&n.content, NodeContent::Comment { text } if text.contains("This needs revision.")));
+        assert_eq!(
+            comment_node.map(|n| &n.content),
+            Some(&NodeContent::Comment {
+                text: "This needs revision.".to_string()
+            }),
+            "a DOCX reviewer comment must produce NodeContent::Comment; nodes: {:?}",
+            doc.nodes
+        );
+
+        let footnote_node = doc.nodes.iter().find(
+            |n| matches!(&n.content, NodeContent::Footnote { text } if text.contains("This is a real footnote.")),
+        );
+        assert_eq!(
+            footnote_node.map(|n| &n.content),
+            Some(&NodeContent::Footnote {
+                text: "This is a real footnote.".to_string()
+            }),
+            "a real footnote must still produce NodeContent::Footnote (no over-fire); nodes: {:?}",
+            doc.nodes
+        );
+
+        assert!(
+            !doc.nodes
+                .iter()
+                .any(|n| matches!(&n.content, NodeContent::Footnote { text } if text.contains("This needs revision."))),
+            "the comment body must not also surface as a Footnote node; nodes: {:?}",
+            doc.nodes
+        );
+    }
+
+    #[tokio::test]
+    async fn test_issue_82_dangling_comment_reference_warns() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>text</w:t></w:r><w:r><w:commentReference w:id="7"/></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("extraction should succeed even with a dangling comment reference");
+
+        assert!(
+            internal_doc
+                .processing_warnings
+                .iter()
+                .any(|w| w.source == "docx" && w.message.contains('7')),
+            "a comment reference with no matching comments.xml entry should warn: {:?}",
+            internal_doc.processing_warnings
+        );
+    }
+
+    // --- Issue #83: headers/footers beyond the old hardcoded 1..=3 range ---
+
+    #[tokio::test]
+    async fn test_issue_83_fourth_header_and_footer_discovered_via_relationships() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Body content.</w:t></w:r></w:p></w:body>
+</w:document>"#;
+
+        let rels_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header2.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header3.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header4.xml"/>
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer4.xml"/>
+</Relationships>"#;
+
+        fn hdr(text: &str) -> String {
+            format!(
+                r#"<?xml version="1.0" encoding="UTF-8"?><w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:r><w:t>{}</w:t></w:r></w:p></w:hdr>"#,
+                text
+            )
+        }
+        fn ftr(text: &str) -> String {
+            format!(
+                r#"<?xml version="1.0" encoding="UTF-8"?><w:ftr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:r><w:t>{}</w:t></w:r></w:p></w:ftr>"#,
+                text
+            )
+        }
+
+        let h1 = hdr("Header 1 text");
+        let h2 = hdr("Header 2 text");
+        let h3 = hdr("Header 3 text");
+        let h4 = hdr("Header 4 text");
+        let f4 = ftr("Footer 4 text");
+
+        let data = build_test_docx_with_files(
+            document_xml,
+            &[
+                ("word/_rels/document.xml.rels", rels_xml),
+                ("word/header1.xml", &h1),
+                ("word/header2.xml", &h2),
+                ("word/header3.xml", &h3),
+                ("word/header4.xml", &h4),
+                ("word/footer4.xml", &f4),
+            ],
+        );
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            include_document_structure: true,
+            ..Default::default()
+        };
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("extraction should succeed");
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Plain,
+        );
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+
+        for expected in ["Header 1 text", "Header 2 text", "Header 3 text", "Header 4 text"] {
+            assert!(
+                doc.nodes.iter().any(|n| {
+                    n.content_layer == crate::types::ContentLayer::Header
+                        && matches!(&n.content, NodeContent::Paragraph { text } if text.contains(expected))
+                }),
+                "missing header layer node for {:?}; nodes: {:?}",
+                expected,
+                doc.nodes
+            );
+        }
+        assert!(
+            doc.nodes.iter().any(|n| {
+                n.content_layer == crate::types::ContentLayer::Footer
+                    && matches!(&n.content, NodeContent::Paragraph { text } if text.contains("Footer 4 text"))
+            }),
+            "missing footer layer node for the 4th footer; nodes: {:?}",
+            doc.nodes
+        );
+    }
+
+    // --- Issue #85: headers/footers/notes converge on the shared body element loop ---
+
+    #[tokio::test]
+    async fn test_issue_85_header_table_extracted_via_shared_loop() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Body.</w:t></w:r></w:p></w:body>
+</w:document>"#;
+        let header_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:tbl><w:tr><w:tc><w:p><w:r><w:t>Cell A</w:t></w:r></w:p></w:tc></w:tr></w:tbl>
+</w:hdr>"#;
+
+        let data = build_test_docx_with_parts(document_xml, None, None, None, Some(header_xml), None, None);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            include_document_structure: true,
+            ..Default::default()
+        };
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("extraction should succeed");
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Plain,
+        );
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+
+        let header_table = doc.nodes.iter().find(|n| {
+            n.content_layer == crate::types::ContentLayer::Header && matches!(&n.content, NodeContent::Table { .. })
+        });
+        assert!(
+            header_table.is_some(),
+            "a table inside a header must now be extracted (was previously dropped entirely); nodes: {:?}",
+            doc.nodes
+        );
+        if let Some(NodeContent::Table { grid }) = header_table.map(|n| &n.content) {
+            assert_eq!(grid.cells.first().map(|c| c.content.as_str()), Some("Cell A"));
+        }
+    }
+
+    #[tokio::test]
+    async fn test_issue_85_footnote_table_flattened_via_shared_loop() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>Text with note</w:t></w:r><w:r><w:footnoteReference w:id="2"/></w:r></w:p>
+  </w:body>
+</w:document>"#;
+        let footnotes_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:footnote w:id="0"><w:p><w:r><w:t>separator</w:t></w:r></w:p></w:footnote>
+  <w:footnote w:id="1"><w:p><w:r><w:t>continuation</w:t></w:r></w:p></w:footnote>
+  <w:footnote w:id="2">
+    <w:tbl><w:tr><w:tc><w:p><w:r><w:t>Note cell text</w:t></w:r></w:p></w:tc></w:tr></w:tbl>
+  </w:footnote>
+</w:footnotes>"#;
+
+        let data = build_test_docx_with_parts(document_xml, None, Some(footnotes_xml), None, None, None, None);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            include_document_structure: true,
+            ..Default::default()
+        };
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("extraction should succeed");
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Plain,
+        );
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+
+        assert!(
+            doc.nodes
+                .iter()
+                .any(|n| { matches!(&n.content, NodeContent::Footnote { text } if text.contains("Note cell text")) }),
+            "a table inside a footnote must be flattened into its text (was previously dropped entirely); nodes: {:?}",
+            doc.nodes
+        );
+    }
+
+    // --- Issues #88 / #239: field-code hyperlinks and general field parsing ---
+
+    #[tokio::test]
+    async fn test_issue_88_fldchar_hyperlink_url_recovered() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+      <w:r><w:instrText xml:space="preserve"> HYPERLINK "https://example.com/page" </w:instrText></w:r>
+      <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+      <w:r><w:t>Example Link</w:t></w:r>
+      <w:r><w:fldChar w:fldCharType="end"/></w:r>
+    </w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            include_document_structure: true,
+            ..Default::default()
+        };
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("extraction should succeed");
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        assert!(
+            result.content.contains("Example Link"),
+            "visible result text should be kept: {}",
+            result.content
+        );
+        assert!(
+            !result.content.contains("HYPERLINK"),
+            "field instruction text must not leak into output: {}",
+            result.content
+        );
+
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+        let has_url_annotation = doc.nodes.iter().any(|n| {
+            n.annotations.iter().any(|a| {
+                matches!(&a.kind, crate::types::document_structure::AnnotationKind::Link { url, .. } if url == "https://example.com/page")
+            })
+        });
+        assert!(
+            has_url_annotation,
+            "the HYPERLINK field's URL should be recovered onto the result run; nodes: {:?}",
+            doc.nodes
+        );
+    }
+
+    #[tokio::test]
+    async fn test_issue_239_fldsimple_hyperlink_and_generic_field() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:fldSimple w:instr="HYPERLINK &quot;https://example.org/simple&quot;">
+      <w:r><w:t>Simple Link</w:t></w:r>
+    </w:fldSimple></w:p>
+    <w:p><w:fldSimple w:instr="PAGE">
+      <w:r><w:t>1</w:t></w:r>
+    </w:fldSimple></w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            include_document_structure: true,
+            ..Default::default()
+        };
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("extraction of w:fldSimple fields should not crash");
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        assert_eq!(
+            result.content.matches('1').count(),
+            1,
+            "the PAGE field's cached result text must appear exactly once, not be duplicated: {}",
+            result.content
+        );
+        assert!(
+            result.content.contains("Simple Link"),
+            "the HYPERLINK fldSimple's visible text should be kept: {}",
+            result.content
+        );
+
+        let doc = result.document.as_ref().expect("DocumentStructure should be present");
+        let has_url_annotation = doc.nodes.iter().any(|n| {
+            n.annotations.iter().any(|a| {
+                matches!(&a.kind, crate::types::document_structure::AnnotationKind::Link { url, .. } if url == "https://example.org/simple")
+            })
+        });
+        assert!(
+            has_url_annotation,
+            "the fldSimple HYPERLINK's URL should be recovered; nodes: {:?}",
+            doc.nodes
+        );
+    }
+
+    // --- Issue #224: w:sym, w:noBreakHyphen, and w:br (column/textWrapping) ---
+
+    #[tokio::test]
+    async fn test_issue_224_symbol_and_nobreakhyphen_and_column_break() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r><w:t>Value:</w:t></w:r>
+      <w:r><w:sym w:font="Wingdings" w:char="F0E0"/></w:r>
+      <w:r><w:noBreakHyphen/></w:r>
+      <w:r><w:t>after</w:t></w:r>
+    </w:p>
+    <w:p>
+      <w:r><w:t>Col1</w:t></w:r>
+      <w:r><w:br w:type="column"/></w:r>
+      <w:r><w:t>Col2</w:t></w:r>
+    </w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("extraction should succeed");
+        assert!(
+            internal_doc.processing_warnings.is_empty(),
+            "a well-formed w:sym char code should not produce a warning: {:?}",
+            internal_doc.processing_warnings
+        );
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            false,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        let expected = "Value:\u{F0E0}\u{2011}after";
+        assert!(
+            result.content.contains(expected),
+            "w:sym should map to its Unicode scalar and w:noBreakHyphen to U+2011: {}",
+            result.content
+        );
+        assert!(
+            result.content.contains("Col1\nCol2"),
+            "a non-page w:br (column/textWrapping) should insert a newline: {}",
+            result.content
+        );
+    }
+
+    #[tokio::test]
+    async fn test_issue_224_unmappable_symbol_warns_and_inserts_placeholder() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:sym w:font="Wingdings" w:char="ZZZZ"/></w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+        let data = build_test_docx(document_xml);
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("an unmappable w:sym must degrade gracefully, not fail extraction");
+
+        assert!(
+            internal_doc
+                .processing_warnings
+                .iter()
+                .any(|w| w.source == "docx" && w.message.contains("ZZZZ")),
+            "an unmappable w:sym char code should produce a ProcessingWarning: {:?}",
+            internal_doc.processing_warnings
+        );
+    }
+
+    /// GH#639: the archive entry-count ceiling must come from
+    /// `config.security_limits.max_files_in_archive`, not a hardcoded constant. A limit
+    /// above 10,000 would pass under both the old and new code, so this uses a limit well
+    /// below the old hardcoded 10,000 default - only the fixed code reads it.
+    #[tokio::test]
+    async fn test_docx_extract_content_honours_configured_archive_entry_limit() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Hello</w:t></w:r></w:p></w:body>
+</w:document>"#;
+        let extra_files: Vec<(String, String)> = (0..5)
+            .map(|i| (format!("word/extra_{}.xml", i), "<x/>".to_string()))
+            .collect();
+        let extra_refs: Vec<(&str, &str)> = extra_files.iter().map(|(p, x)| (p.as_str(), x.as_str())).collect();
+        let data = build_test_docx_with_files(document_xml, &extra_refs);
+
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            security_limits: Some(crate::extractors::security::SecurityLimits {
+                max_files_in_archive: 3,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await;
+
+        assert!(
+            result.is_err(),
+            "an archive with more entries than the configured max_files_in_archive must be rejected"
+        );
+        let err_msg = result.unwrap_err().to_string();
+        assert!(
+            err_msg.contains('3'),
+            "error should mention the configured limit (3), got: {}",
+            err_msg
+        );
+    }
+
+    /// Sibling of the rejection test above: the same archive shape, but under a
+    /// configured limit that comfortably fits it, must still extract successfully.
+    #[tokio::test]
+    async fn test_docx_extract_content_succeeds_under_configured_archive_entry_limit() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Hello</w:t></w:r></w:p></w:body>
+</w:document>"#;
+        let extra_files: Vec<(String, String)> = (0..5)
+            .map(|i| (format!("word/extra_{}.xml", i), "<x/>".to_string()))
+            .collect();
+        let extra_refs: Vec<(&str, &str)> = extra_files.iter().map(|(p, x)| (p.as_str(), x.as_str())).collect();
+        let data = build_test_docx_with_files(document_xml, &extra_refs);
+
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig {
+            security_limits: Some(crate::extractors::security::SecurityLimits {
+                max_files_in_archive: 50,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "an archive within the configured max_files_in_archive must extract successfully: {:?}",
+            result.err()
+        );
+    }
+
+    /// A normal document with no `security_limits` override (the common case) must still
+    /// extract successfully under the default `SecurityLimits::max_files_in_archive`.
+    #[tokio::test]
+    async fn test_docx_extract_content_succeeds_under_default_archive_entry_limit() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Hello, default limits.</w:t></w:r></w:p></w:body>
+</w:document>"#;
+        let data = build_test_docx(document_xml);
+
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await;
+
+        assert!(
+            result.is_ok(),
+            "a normal document must extract under the default archive entry limit: {:?}",
+            result.err()
+        );
+    }
+
+    /// A DOCX body with a single inline drawing whose blip embeds `rId5`, used by the
+    /// forged-declared-size tests below.
+    const FORGED_MEDIA_DOCUMENT_XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+            xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+            xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <w:body>
+    <w:p><w:r>
+      <w:drawing><wp:inline>
+        <wp:extent cx="914400" cy="914400"/>
+        <wp:docPr id="1" name="Picture 1" descr="Bomb"/>
+        <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+          <pic:pic><pic:blipFill><a:blip r:embed="rId5"/></pic:blipFill></pic:pic>
+        </a:graphicData></a:graphic>
+      </wp:inline></w:drawing>
+    </w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+    const FORGED_MEDIA_RELS_XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/bomb.png"/>
+</Relationships>"#;
+
+    /// Build a DOCX whose `word/media/bomb.png` member holds `payload` bytes.
+    fn build_docx_with_media(payload: &str) -> Vec<u8> {
+        build_test_docx_with_files(
+            FORGED_MEDIA_DOCUMENT_XML,
+            &[
+                ("word/_rels/document.xml.rels", FORGED_MEDIA_RELS_XML),
+                ("word/media/bomb.png", payload),
+            ],
+        )
+    }
+
+    /// Rewrite `word/media/bomb.png`'s *declared* uncompressed size -- in both the local file
+    /// header and the central directory -- to `forged_size`, leaving the deflate stream and the
+    /// CRC untouched. The member therefore reads back cleanly and only its size claim is a lie,
+    /// which is precisely the shape `validate_archive_security` and `ZipBombValidator` cannot
+    /// see: both read declared sizes out of the central directory and never decompress.
+    fn forge_declared_media_size(mut data: Vec<u8>, forged_size: u32) -> Vec<u8> {
+        let member: &[u8] = b"word/media/bomb.png";
+        let mut patched = 0usize;
+        let mut i = 0usize;
+        while i + 46 <= data.len() {
+            if data[i..i + 4] == *b"PK\x01\x02" {
+                let name_len = u16::from_le_bytes([data[i + 28], data[i + 29]]) as usize;
+                if i + 46 + name_len <= data.len() && data[i + 46..i + 46 + name_len] == *member {
+                    let local_offset =
+                        u32::from_le_bytes([data[i + 42], data[i + 43], data[i + 44], data[i + 45]]) as usize;
+                    assert!(
+                        local_offset + 26 <= data.len() && data[local_offset..local_offset + 4] == *b"PK\x03\x04",
+                        "central directory entry must point at a local file header"
+                    );
+                    data[i + 24..i + 28].copy_from_slice(&forged_size.to_le_bytes());
+                    data[local_offset + 22..local_offset + 26].copy_from_slice(&forged_size.to_le_bytes());
+                    patched += 1;
+                }
+            }
+            i += 1;
+        }
+        assert_eq!(
+            patched, 1,
+            "exactly one central-directory record for the media member must be patched"
+        );
+        data
+    }
+
+    fn image_extraction_config() -> ExtractionConfig {
+        ExtractionConfig {
+            images: Some(crate::core::config::ImageExtractionConfig {
+                extract_images: true,
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    }
+
+    /// GHSA-85w9-wqcq-x48r: the image-extraction loop bounded the *declared* uncompressed size
+    /// (`file.size() <= MAX_IMAGE_FILE_SIZE`) and then called `read_to_end` with no `Take`, so a
+    /// member forging a small declared size while carrying a large deflate stream inflated
+    /// without bound into `image_data`. Here the member declares 64 bytes and delivers 2 MiB;
+    /// the extraction must not retain a buffer larger than the member claimed.
+    ///
+    /// Neutralisation that must break this test: restore
+    /// `Read::read_to_end(&mut file, &mut data)` in place of the `Read::take` bound in
+    /// `extract_content`'s image loop.
+    #[tokio::test]
+    async fn test_docx_image_read_is_bounded_by_declared_member_size() {
+        const FORGED_SIZE: u32 = 64;
+        let payload = "A".repeat(2 * 1024 * 1024);
+        let data = forge_declared_media_size(build_docx_with_media(&payload), FORGED_SIZE);
+
+        let extractor = DocxExtractor::new();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &image_extraction_config(),
+            )
+            .await
+            .expect("a forged declared size must be contained, not turned into an extraction failure");
+
+        let oversized: Vec<usize> = internal_doc
+            .images
+            .iter()
+            .map(|image| image.data.len())
+            .filter(|len| *len > FORGED_SIZE as usize)
+            .collect();
+        assert!(
+            oversized.is_empty(),
+            "a member declaring {} bytes must not yield a larger buffer, got lengths {:?}",
+            FORGED_SIZE,
+            oversized
+        );
+    }
+
+    /// Positive control for the bound above: a bound that dropped every image would also pass a
+    /// test that only checks "nothing oversized". An honestly-declared member must still be
+    /// read back in full, byte for byte.
+    #[tokio::test]
+    async fn test_docx_image_with_honest_declared_size_is_read_in_full() {
+        let payload = "PNGPAYLOAD".repeat(64);
+        let data = build_docx_with_media(&payload);
+
+        let extractor = DocxExtractor::new();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &image_extraction_config(),
+            )
+            .await
+            .expect("an ordinary media member must extract");
+
+        assert_eq!(internal_doc.images.len(), 1, "the single drawing must yield one image");
+        assert_eq!(
+            internal_doc.images[0].data.as_ref(),
+            payload.as_bytes(),
+            "an honestly-declared media member must be read back in full"
+        );
+    }
+
+    /// REV-C6 regression for GH#1662: an OCR-only config (no `extract_images`, no
+    /// captioning, no QR codes) must still read the real embedded-image bytes out of the
+    /// container, not an empty buffer. Before the fix, `needs_image_data` did not count
+    /// embedded-image OCR, so the `else` arm attached `Bytes::new()` with a format guessed
+    /// from the file extension, and OCR then ran on zero bytes and reported "Could not
+    /// determine image format".
+    #[tokio::test]
+    async fn test_docx_ocr_only_config_reads_real_embedded_image_bytes() {
+        let payload = "PNGPAYLOAD".repeat(64);
+        let data = build_docx_with_media(&payload);
+
+        let config = ExtractionConfig {
+            ocr: Some(crate::core::config::OcrConfig::default()),
+            ..Default::default()
+        };
+
+        let extractor = DocxExtractor::new();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .expect("an ordinary media member must extract");
+
+        assert_eq!(internal_doc.images.len(), 1, "the single drawing must yield one image");
+        assert_eq!(
+            internal_doc.images[0].data.as_ref(),
+            payload.as_bytes(),
+            "an OCR-only config must still read the real embedded-image bytes, not an empty buffer"
+        );
+    }
+
+    /// Two drawings separated by two explicit page breaks, both referencing the same media part.
+    const PAGED_IMAGES_DOCUMENT_XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+            xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+            xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <w:body>
+    <w:p><w:r>
+      <w:drawing><wp:inline>
+        <wp:extent cx="914400" cy="914400"/>
+        <wp:docPr id="1" name="Picture 1" descr="First"/>
+        <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+          <pic:pic><pic:blipFill><a:blip r:embed="rId5"/></pic:blipFill></pic:pic>
+        </a:graphicData></a:graphic>
+      </wp:inline></w:drawing>
+    </w:r></w:p>
+    <w:p><w:r><w:br w:type="page"/></w:r></w:p>
+    <w:p><w:r><w:br w:type="page"/></w:r></w:p>
+    <w:p><w:r>
+      <w:drawing><wp:inline>
+        <wp:extent cx="914400" cy="914400"/>
+        <wp:docPr id="2" name="Picture 2" descr="Second"/>
+        <a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+          <pic:pic><pic:blipFill><a:blip r:embed="rId5"/></pic:blipFill></pic:pic>
+        </a:graphicData></a:graphic>
+      </wp:inline></w:drawing>
+    </w:r></w:p>
+  </w:body>
+</w:document>"#;
+
+    /// GH#1546: every DOCX image reported `page_number == Some(1)`. The page was resolved by
+    /// searching the rendered text for `![](image_N)`, but `to_markdown` writes the same literal
+    /// `![alt](image)` target for every drawing, so that key never matched and each image fell
+    /// through to the page-1 default.
+    ///
+    /// Asserting the exact pair is deliberate: a check that the two page numbers merely *differ*
+    /// would also pass on `[2, 5]`, and one that they are "not all 1" would pass on `[1, 2]`.
+    ///
+    /// Neutralisation that must break this test: resolve `page_number` by searching `text` for a
+    /// per-image placeholder again instead of consulting `Document::drawing_page_numbers()`.
+    #[tokio::test]
+    async fn test_docx_image_page_numbers_follow_explicit_page_breaks() {
+        let data = build_test_docx_with_files(
+            PAGED_IMAGES_DOCUMENT_XML,
+            &[
+                ("word/_rels/document.xml.rels", FORGED_MEDIA_RELS_XML),
+                ("word/media/bomb.png", "PNGPAYLOAD"),
+            ],
+        );
+
+        let extractor = DocxExtractor::new();
+        let internal_doc = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &image_extraction_config(),
+            )
+            .await
+            .expect("a two-image document must extract");
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal_doc,
+            true,
+            crate::core::config::OutputFormat::Plain,
+        );
+
+        let images = result
+            .images
+            .as_ref()
+            .expect("image extraction is enabled, so images must be populated");
+        let page_numbers: Vec<Option<u32>> = images.iter().map(|image| image.page_number).collect();
+        assert_eq!(
+            page_numbers,
+            vec![Some(1), Some(3)],
+            "the first drawing sits on page 1 and the second after two page breaks on page 3, got {page_numbers:?}"
+        );
+    }
+
+    /// `validate_archive_security` checked per-file and total *declared* uncompressed size,
+    /// but never a compression ratio -- unlike every other OOXML/ODF container (XLSX, PPTX,
+    /// ODT, ODP, HWPX, EPUB, iWork), which routes its ratio check through
+    /// `ZipBombValidator`. A member well under both size limits can still be a compression
+    /// bomb by ratio: this part is 2,000,000 bytes of a single repeated byte -- far under the
+    /// 100 MB per-file / 500 MB total ceilings -- but compresses to a few hundred bytes,
+    /// comfortably past the default 100:1 `max_compression_ratio`. Against the unfixed code
+    /// this document extracts successfully (the ratio is never examined); against the fixed
+    /// code `ZipBombValidator::validate` rejects it before `word/document.xml` is even read.
+    #[tokio::test]
+    async fn test_docx_extract_content_rejects_high_compression_ratio_member() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Hello</w:t></w:r></w:p></w:body>
+</w:document>"#;
+        let bomb_content = "A".repeat(2_000_000);
+        let data = build_test_docx_with_files(document_xml, &[("word/bomb.xml", &bomb_content)]);
+
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await;
+
+        assert!(
+            result.is_err(),
+            "a member whose compression ratio exceeds max_compression_ratio must be rejected"
+        );
+        let err_msg = result.unwrap_err().to_string().to_lowercase();
+        assert!(
+            err_msg.contains("bomb") || err_msg.contains("ratio"),
+            "error should mention the compression-ratio rejection, got: {}",
+            err_msg
+        );
+    }
+
+    /// Positive control for the ratio check above: a validator that rejects everything would
+    /// also pass a test that only checks `is_err()`, so this proves an ordinary DOCX -- built
+    /// the same way, with the default (deflate) compression that yields an unremarkable ratio
+    /// for short XML text -- still extracts, and still extracts the *same* text, unaffected by
+    /// the new check.
+    #[tokio::test]
+    async fn test_docx_extract_content_succeeds_for_ordinary_compression_ratio() {
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Hello, ordinary ratio.</w:t></w:r></w:p></w:body>
+</w:document>"#;
+        let data = build_test_docx(document_xml);
+
+        let internal_doc = extract_docx_internal_document(&data).await;
+
+        assert!(
+            internal_doc
+                .elements
+                .iter()
+                .any(|e| e.text.contains("Hello, ordinary ratio.")),
+            "an ordinary DOCX with a normal compression ratio must extract its text unchanged: {:?}",
+            internal_doc.elements
+        );
+    }
+
+    /// With no `security_limits` override the container must still enforce the default
+    /// `SecurityLimits::max_files_in_archive`: "unset" means the default ceiling, not "no
+    /// ceiling". One entry past that default must be rejected.
+    #[tokio::test]
+    async fn test_docx_extract_content_rejects_archive_over_default_entry_limit() {
+        let default_limit = crate::extractors::security::SecurityLimits::default().max_files_in_archive;
+        let document_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Hello</w:t></w:r></w:p></w:body>
+</w:document>"#;
+        // The builder adds its own fixed parts, so this alone already exceeds the ceiling.
+        let extra_files: Vec<(String, String)> = (0..=default_limit)
+            .map(|i| (format!("word/extra_{}.xml", i), "<x/>".to_string()))
+            .collect();
+        let extra_refs: Vec<(&str, &str)> = extra_files.iter().map(|(p, x)| (p.as_str(), x.as_str())).collect();
+        let data = build_test_docx_with_files(document_xml, &extra_refs);
+
+        let extractor = DocxExtractor::new();
+        let config = ExtractionConfig::default();
+        assert!(
+            config.security_limits.is_none(),
+            "this test must exercise the unset fallback, not an explicit limit"
+        );
+
+        let result = extractor
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await;
+
+        assert!(
+            result.is_err(),
+            "an archive over the default max_files_in_archive must be rejected when no limit is configured"
+        );
+        let err_msg = result.unwrap_err().to_string();
+        assert!(
+            err_msg.contains(&default_limit.to_string()),
+            "error should mention the default limit ({default_limit}), got: {err_msg}"
+        );
+    }
+
+    #[tokio::test]
+    async fn should_trim_inline_and_display_equations() {
+        let (elements, result) = extract_math_docx(
+            r#"<w:p><w:r><w:t xml:space="preserve">Angle </w:t></w:r><m:oMath><m:r><m:t>&#x3B1;</m:t></m:r></m:oMath>
+            <w:r><w:t xml:space="preserve"> and </w:t></w:r><m:oMath><m:r><m:t xml:space="preserve"> </m:t></m:r></m:oMath>
+            <w:r><w:t>end</w:t></w:r></w:p>
+            <w:p><m:oMathPara><m:oMath><m:r><m:t>&#x3B2;</m:t></m:r></m:oMath><m:oMath><m:r><m:t>&#x3B3;</m:t></m:r></m:oMath></m:oMathPara></w:p>"#,
+        )
+        .await;
+        assert_eq!(
+            math_blocks(&elements),
+            [
+                ("paragraph", "Angle $\\alpha$ and end"),
+                ("formula", "\\beta \\\\ \\gamma")
+            ]
+        );
+        assert_eq!(formula_latex(&result), ["\\alpha", "\\beta \\\\ \\gamma"]);
+    }
+
+    fn docx_plain_text(body: &str) -> String {
+        let document_xml = format!(
+            r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><w:body>{body}</w:body></w:document>"#
+        );
+        let limits = crate::extractors::security::SecurityLimits::default();
+        let mut budget = SecurityBudget::from_limits(&limits);
+        crate::extraction::docx::parser::parse_document(&build_test_docx(&document_xml), &mut budget, &limits)
+            .unwrap()
+            .to_plain_text()
+    }
+
+    #[test]
+    fn should_keep_trimmed_equations_apart_from_following_letters_in_plain_text() {
+        let alpha = "<m:oMath><m:r><m:t>&#x3B1;</m:t></m:r></m:oMath>";
+        let x = "<m:oMath><m:r><m:t>x</m:t></m:r></m:oMath>";
+        let display = "<m:oMathPara><m:oMath><m:r><m:t>&#x3B1;</m:t></m:r></m:oMath></m:oMathPara>";
+        let text = |t: &str| format!(r#"<w:r><w:t xml:space="preserve">{t}</w:t></w:r>"#);
+        let paragraphs = [
+            format!("{alpha}{}", text("b")),
+            format!("{alpha}{}", text("2")),
+            format!("{alpha}{}", text(" c")),
+            format!("{alpha}{}", text(".")),
+            format!("{alpha}{x}"),
+            format!("{x}{}", text("d")),
+            format!("{display}{}", text("then")),
+        ];
+        let body: String = paragraphs.iter().map(|p| format!("<w:p>{p}</w:p>")).collect();
+        let plain = docx_plain_text(&body);
+        let lines: Vec<&str> = plain.lines().filter(|line| !line.is_empty()).collect();
+        assert_eq!(
+            lines,
+            [
+                "\\alpha b",
+                "\\alpha2",
+                "\\alpha c",
+                "\\alpha.",
+                "\\alpha x",
+                "xd",
+                "\\alpha then"
+            ]
+        );
+    }
+
+    /// Plain, Json and Custom output keep each page's plain text as its content, so the space shows there.
+    #[tokio::test]
+    async fn should_keep_an_equation_apart_from_a_following_letter_in_plain_page_content() {
+        let xml = r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><w:body><w:p>
+            <w:r><w:t xml:space="preserve">Let </w:t></w:r><m:oMath><m:r><m:t>&#x3B1;</m:t></m:r></m:oMath>
+            <w:r><w:t>b hold.</w:t></w:r></w:p></w:body></w:document>"#;
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Plain,
+            pages: Some(crate::core::config::PageConfig {
+                extract_pages: true,
+                ..Default::default()
+            }),
+            use_cache: false,
+            ..Default::default()
+        };
+        let result = crate::core::extractor::extract_bytes(
+            &build_test_docx(xml),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            &config,
+        )
+        .await
+        .unwrap();
+        let pages = result.pages.expect("pages requested");
+        assert!(
+            pages[0].content.contains("Let \\alpha b hold."),
+            "{:?}",
+            pages[0].content
+        );
+    }
+
+    #[tokio::test]
+    async fn should_keep_issue_2123_inline_math_in_its_docx_sentence() {
+        let xml = r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><w:body><w:p>
+            <w:r><w:t>Équation </w:t></w:r><m:oMath><m:r><m:t>α</m:t></m:r></m:oMath>
+            <w:r><w:t> holds.</w:t></w:r></w:p></w:body></w:document>"#;
+        let data = build_test_docx(xml);
+        let internal = DocxExtractor::new()
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &ExtractionConfig::default(),
+            )
+            .await
+            .unwrap();
+        let paragraphs: Vec<_> = internal
+            .elements
+            .iter()
+            .filter(|element| element.kind == crate::types::internal::ElementKind::Paragraph)
+            .collect();
+        assert_eq!(paragraphs.len(), 1);
+        assert_eq!(paragraphs[0].text, "Équation $\\alpha$ holds.");
+        let annotation = paragraphs[0]
+            .annotations
+            .iter()
+            .find(|annotation| {
+                matches!(&annotation.kind,
+            crate::types::AnnotationKind::Custom { name, .. } if name == "xberg.math")
+            })
+            .unwrap();
+        assert_eq!(
+            &paragraphs[0].text[annotation.start as usize..annotation.end as usize],
+            "$\\alpha$"
+        );
+        assert_eq!(annotation.start as usize, "Équation ".len());
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal,
+            true,
+            crate::core::config::OutputFormat::Markdown,
+        );
+        assert_eq!(result.content.trim(), "Équation $\\alpha$ holds.");
+        assert_eq!(result.formulas.len(), 1);
+        assert_eq!(result.formulas[0].latex.trim(), "\\alpha");
+        assert_issue_2123_public_math_payload(&result);
+    }
+
+    fn assert_issue_2123_public_math_payload(result: &crate::types::extraction::ExtractedDocument) {
+        let document = result.document.as_ref().expect("public document structure requested");
+        assert_eq!(document.nodes.len(), 1);
+        let node = &document.nodes[0];
+        let text = node.content.text().expect("public paragraph text");
+        assert_eq!(text, "Équation $\\alpha$ holds.");
+        assert_eq!(node.annotations.len(), 1);
+        let annotation = &node.annotations[0];
+        assert_eq!(annotation.start as usize, "Équation ".len());
+        assert_eq!(annotation.end as usize, "Équation $\\alpha$".len());
+        assert_eq!(&text[annotation.start as usize..annotation.end as usize], "$\\alpha$");
+        assert_eq!(
+            annotation.kind,
+            crate::types::AnnotationKind::Custom {
+                name: "xberg.math".into(),
+                value: Some("inline".into()),
+            }
+        );
+        let payload = serde_json::to_value(result).expect("serialize actual public extraction");
+        assert_eq!(
+            payload["document"]["nodes"][0]["annotations"],
+            serde_json::json!([{
+                "start": "Équation ".len(), "end": "Équation $\\alpha$".len(),
+                "kind": {"annotation_type":"custom", "name":"xberg.math", "value":"inline"},
+            }])
+        );
+        let restored: crate::types::extraction::ExtractedDocument =
+            serde_json::from_value(payload).expect("deserialize public binding payload");
+        assert_eq!(restored.document.as_ref(), Some(document));
+    }
+
+    #[test]
+    fn should_keep_issue_2123_adjacent_inline_math_separate_from_display_math() {
+        use crate::extraction::docx::parser::Run;
+        let runs = vec![
+            Run::new("π ".into()),
+            Run {
+                math_latex: Some(("x".into(), false)),
+                ..Default::default()
+            },
+            Run {
+                math_latex: Some(("y".into(), false)),
+                ..Default::default()
+            },
+            Run::new(" tail".into()),
+            Run {
+                math_latex: Some(("z".into(), true)),
+                ..Default::default()
+            },
+        ];
+        let (text, annotations, display) = collect_run_annotations(&runs);
+        assert_eq!(text, "π $x$$y$ tail");
+        assert_eq!(display, ["z"]);
+        assert_eq!(annotations.len(), 2);
+        let spans: Vec<_> = annotations
+            .iter()
+            .map(|annotation| &text[annotation.start as usize..annotation.end as usize])
+            .collect();
+        assert_eq!(spans, ["$x$", "$y$"]);
+    }
+
+    async fn extract_math_docx(
+        body: &str,
+    ) -> (
+        Vec<crate::types::internal::InternalElement>,
+        crate::types::extraction::ExtractedDocument,
+    ) {
+        let document_xml = format!(
+            r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><w:body>{body}</w:body></w:document>"#
+        );
+        let internal = extract_docx_internal_document(&build_test_docx(&document_xml)).await;
+        let elements = internal.elements.clone();
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal,
+            true,
+            crate::core::config::OutputFormat::Markdown,
+        );
+        (elements, result)
+    }
+
+    #[tokio::test]
+    async fn should_render_genuine_table_cell_math_without_escaping_gh2256() {
+        let body = r#"<w:tbl><w:tr>
+            <w:tc><w:p><w:r><w:t>Angle</w:t></w:r></w:p></w:tc>
+            <w:tc><w:p><m:oMath><m:r><m:t>α</m:t></m:r></m:oMath></w:p></w:tc>
+            </w:tr></w:tbl>"#;
+        let (_, result) = extract_math_docx(body).await;
+        assert_eq!(result.tables.len(), 1);
+        let table = &result.tables[0];
+        assert_eq!(table.cells[0][0], "Angle");
+        assert_eq!(table.cells[0][1].trim(), "$\\alpha$");
+        assert!(result.content.contains("\\alpha"), "{}", result.content);
+        assert!(!result.content.contains("\\\\alpha"), "{}", result.content);
+        assert_eq!(
+            table.markdown.trim(),
+            result.formatted_content.as_deref().unwrap().trim()
+        );
+        assert!(
+            !serde_json::to_string(&result)
+                .unwrap()
+                .contains("xberg:internal:table-cell-math")
+        );
+    }
+
+    #[tokio::test]
+    async fn should_keep_cell_math_and_literal_dollars_distinct_gh2256() {
+        let body = r#"<w:tbl><w:tr><w:tc><w:p>
+            <w:r><w:t xml:space="preserve">Équation $cash$ </w:t></w:r>
+            <m:oMath><m:r><m:t>x</m:t></m:r></m:oMath>
+            <w:r><w:t xml:space="preserve"> then </w:t></w:r>
+            <m:oMath><m:r><m:t>y</m:t></m:r></m:oMath>
+            </w:p><w:p><m:oMathPara><m:oMath><m:r><m:t>z</m:t></m:r></m:oMath></m:oMathPara>
+            </w:p></w:tc></w:tr></w:tbl>"#;
+        let (elements, result) = extract_math_docx(body).await;
+        let table = elements
+            .iter()
+            .find(|element| matches!(element.kind, crate::types::internal::ElementKind::Table { .. }))
+            .unwrap();
+        let annotations =
+            crate::rendering::table_math::read_annotations(table.attributes.as_ref(), &result.tables[0].cells);
+        let spans = &annotations[&(0, 0)];
+        assert_eq!(spans.len(), 3);
+        let cell = &result.tables[0].cells[0][0];
+        let math: Vec<_> = spans
+            .iter()
+            .map(|span| &cell[span.start as usize..span.end as usize])
+            .collect();
+        assert_eq!(math, ["$x$", "$y$", "$$z$$"]);
+        assert_eq!(
+            spans.iter().map(|span| span.kind.math_display()).collect::<Vec<_>>(),
+            [Some(false), Some(false), Some(true)]
+        );
+        assert!(cell.starts_with("Équation $cash$ "));
+        assert!(table.public_attributes().is_none());
+    }
+
+    #[tokio::test]
+    async fn should_record_merged_cell_math_only_at_its_origin_gh2256() {
+        let body = r#"<w:tbl><w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/><w:vMerge w:val="restart"/></w:tcPr>
+            <w:p><m:oMath><m:r><m:t>x</m:t></m:r></m:oMath></w:p></w:tc></w:tr>
+            <w:tr><w:tc><w:tcPr><w:gridSpan w:val="2"/><w:vMerge/></w:tcPr><w:p/></w:tc></w:tr></w:tbl>"#;
+        let (elements, result) = extract_math_docx(body).await;
+        let table = elements
+            .iter()
+            .find(|element| matches!(element.kind, crate::types::internal::ElementKind::Table { .. }))
+            .unwrap();
+        assert_eq!(
+            result.tables[0].cells,
+            [
+                vec!["$x$".to_string(), String::new()],
+                vec![String::new(), String::new()]
+            ]
+        );
+        let annotations =
+            crate::rendering::table_math::read_annotations(table.attributes.as_ref(), &result.tables[0].cells);
+        assert_eq!(annotations.len(), 1);
+        assert_eq!(annotations[&(0, 0)].len(), 1);
+    }
+
+    #[tokio::test]
+    async fn should_publish_the_same_math_in_page_table_markdown_gh2256() {
+        let xml = r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><w:body>
+            <w:tbl><w:tr><w:tc><w:p><m:oMath><m:r><m:t>α</m:t></m:r></m:oMath>
+            </w:p></w:tc></w:tr></w:tbl></w:body></w:document>"#;
+        let config = ExtractionConfig {
+            output_format: crate::core::config::OutputFormat::Markdown,
+            pages: Some(crate::core::config::PageConfig {
+                extract_pages: true,
+                ..Default::default()
+            }),
+            use_cache: false,
+            ..Default::default()
+        };
+        let result = crate::core::extractor::extract_bytes(
+            &build_test_docx(xml),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            &config,
+        )
+        .await
+        .unwrap();
+        let pages = result.pages.as_ref().unwrap();
+        assert_eq!(pages.len(), 1);
+        assert_eq!(pages[0].tables.len(), 1);
+        assert_eq!(pages[0].tables[0].markdown, result.tables[0].markdown);
+        assert!(!pages[0].tables[0].markdown.contains("\\\\alpha"));
+    }
+
+    fn math_blocks(elements: &[crate::types::internal::InternalElement]) -> Vec<(&'static str, &str)> {
+        use crate::types::internal::ElementKind;
+        elements
+            .iter()
+            .filter_map(|element| {
+                let kind = match element.kind {
+                    ElementKind::Heading { .. } => "heading",
+                    ElementKind::Paragraph => "paragraph",
+                    ElementKind::ListItem { .. } => "list_item",
+                    ElementKind::Formula => "formula",
+                    ElementKind::QuoteStart => "quote_start",
+                    ElementKind::QuoteEnd => "quote_end",
+                    _ => return None,
+                };
+                Some((kind, element.text.as_str()))
+            })
+            .collect()
+    }
+
+    fn formula_latex(result: &crate::types::extraction::ExtractedDocument) -> Vec<&str> {
+        let mut latex: Vec<&str> = result.formulas.iter().map(|formula| formula.latex.as_str()).collect();
+        latex.sort_unstable();
+        latex
+    }
+
+    const DISPLAY_X: &str = "<m:oMathPara><m:oMath><m:r><m:t>x=1</m:t></m:r></m:oMath></m:oMathPara>";
+    const DISPLAY_Y: &str = "<m:oMathPara><m:oMath><m:r><m:t>y=2</m:t></m:r></m:oMath></m:oMathPara>";
+
+    #[tokio::test]
+    async fn should_emit_display_math_in_a_heading_after_the_heading() {
+        for level in ["1", "2", "3"] {
+            let body = format!(
+                r#"<w:p><w:pPr><w:pStyle w:val="Heading{level}"/></w:pPr>
+                <w:r><w:t xml:space="preserve">Area </w:t></w:r><m:oMath><m:r><m:t>A</m:t></m:r></m:oMath>
+                {DISPLAY_X}{DISPLAY_Y}</w:p>"#
+            );
+            let (elements, result) = extract_math_docx(&body).await;
+            assert_eq!(
+                math_blocks(&elements),
+                [("heading", "Area $A$"), ("formula", "x=1"), ("formula", "y=2")],
+                "Heading{level}"
+            );
+            assert_eq!(formula_latex(&result), ["A", "x=1", "y=2"], "Heading{level}");
+        }
+    }
+
+    #[tokio::test]
+    async fn should_emit_a_heading_holding_only_display_math_as_a_formula() {
+        let space = r#"<w:r><w:t xml:space="preserve"> </w:t></w:r>"#;
+        for blank in ["", space, "<w:r><w:tab/></w:r>"] {
+            let body = format!(
+                r#"<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr>{blank}{DISPLAY_X}</w:p>
+                <w:p><w:pPr><w:pStyle w:val="Quote"/></w:pPr>{blank}{DISPLAY_Y}</w:p>"#
+            );
+            let (elements, result) = extract_math_docx(&body).await;
+            assert_eq!(
+                math_blocks(&elements),
+                [
+                    ("formula", "x=1"),
+                    ("quote_start", ""),
+                    ("formula", "y=2"),
+                    ("quote_end", "")
+                ],
+                "{blank}"
+            );
+            assert_eq!(formula_latex(&result), ["x=1", "y=2"], "{blank}");
+        }
+    }
+
+    #[tokio::test]
+    async fn should_skip_a_blank_plain_paragraph_next_to_display_math() {
+        let space = r#"<w:r><w:t xml:space="preserve"> </w:t></w:r>"#;
+        for blank in [space, "<w:r><w:tab/></w:r>"] {
+            let body = format!(
+                r#"<w:p>{blank}{DISPLAY_X}</w:p>
+                <w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr>{blank}{DISPLAY_Y}</w:p>"#
+            );
+            let (elements, result) = extract_math_docx(&body).await;
+            assert_eq!(
+                math_blocks(&elements),
+                [("formula", "x=1"), ("formula", "y=2")],
+                "{blank}"
+            );
+            assert_eq!(formula_latex(&result), ["x=1", "y=2"], "{blank}");
+        }
+    }
+
+    /// Renderers attach a note reference to the block it follows, so a heading's equations come after its refs.
+    #[tokio::test]
+    async fn should_keep_a_heading_note_reference_on_the_heading_before_its_display_math() {
+        let document_xml = format!(
+            r#"<w:document xmlns:w="{NOTES_DOCUMENT_NS}"
+            xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><w:body>
+<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>Area</w:t></w:r><w:r><w:footnoteReference w:id="2"/></w:r>{DISPLAY_X}</w:p>
+</w:body></w:document>"#
+        );
+        let data = build_test_docx_with_parts(&document_xml, None, Some(NOTE_A_B_FOOTNOTES), None, None, None, None);
+        let internal = DocxExtractor::new()
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &ExtractionConfig::default(),
+            )
+            .await
+            .unwrap();
+        let kinds: Vec<&str> = internal
+            .elements
+            .iter()
+            .map(|element| element.kind.discriminant())
+            .filter(|kind| ["heading", "footnote_ref", "formula"].contains(kind))
+            .collect();
+        assert_eq!(kinds, ["heading", "footnote_ref", "formula"]);
+        let result = crate::extraction::derive::derive_extraction_result(
+            internal,
+            true,
+            crate::core::config::OutputFormat::Markdown,
+        );
+        let markdown = result.formatted_content.as_deref().unwrap_or(&result.content);
+        assert!(markdown.starts_with("# Area[^1]\n\n```math\nx=1\n```"), "{markdown:?}");
+    }
+
+    #[tokio::test]
+    async fn should_keep_display_math_inside_its_quote() {
+        let body = format!(
+            r#"<w:p><w:pPr><w:pStyle w:val="Quote"/></w:pPr><w:r><w:t>As said</w:t></w:r>{DISPLAY_X}</w:p>
+            <w:p><w:pPr><w:pStyle w:val="Quote"/></w:pPr>{DISPLAY_Y}</w:p>"#
+        );
+        let (elements, result) = extract_math_docx(&body).await;
+        assert_eq!(
+            math_blocks(&elements),
+            [
+                ("quote_start", ""),
+                ("formula", "x=1"),
+                ("paragraph", "As said"),
+                ("quote_end", ""),
+                ("quote_start", ""),
+                ("formula", "y=2"),
+                ("quote_end", ""),
+            ]
+        );
+        assert_eq!(formula_latex(&result), ["x=1", "y=2"]);
+        let markdown = result.formatted_content.as_deref().unwrap_or(&result.content);
+        assert!(markdown.contains("> ```math\n> y=2\n> ```"), "{markdown}");
+    }
+
+    #[tokio::test]
+    async fn should_list_every_equation_whatever_the_paragraph_style() {
+        let mut body = String::new();
+        let styles = [
+            r#"<w:pStyle w:val="Heading1"/>"#,
+            r#"<w:pStyle w:val="Heading4"/>"#,
+            r#"<w:pStyle w:val="Quote"/>"#,
+            r#"<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>"#,
+            "",
+        ];
+        let mut expected = Vec::new();
+        for (index, style) in styles.iter().enumerate() {
+            for with_text in [false, true] {
+                let text = if with_text { "<w:r><w:t>Words</w:t></w:r>" } else { "" };
+                let (display, inline) = (format!("d{index}{with_text}"), format!("i{index}{with_text}"));
+                body.push_str(&format!(
+                    r#"<w:p><w:pPr>{style}</w:pPr>{text}<m:oMath><m:r><m:t>{inline}</m:t></m:r></m:oMath>
+                    <m:oMathPara><m:oMath><m:r><m:t>{display}</m:t></m:r></m:oMath></m:oMathPara></w:p>"#
+                ));
+                expected.push(display);
+                expected.push(inline);
+            }
+        }
+        let (elements, result) = extract_math_docx(&body).await;
+        expected.sort_unstable();
+        assert_eq!(formula_latex(&result), expected);
+        for element in &elements {
+            assert!(
+                !element.text.contains("$$"),
+                "display math left in text: {:?}",
+                element.text
+            );
+            for annotation in &element.annotations {
+                if annotation.kind.math_display().is_some() {
+                    let span = element.text.get(annotation.start as usize..annotation.end as usize);
+                    assert!(
+                        span.is_some_and(|span| span.len() > 2 && span.starts_with('$') && span.ends_with('$')),
+                        "math annotation off its span in {:?}",
+                        element.text
+                    );
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn should_resolve_bookmarks_on_paragraphs_holding_only_display_math() {
+        let body = format!(
+            r#"<w:sdt><w:sdtPr><w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj></w:sdtPr>
+            <w:sdtContent><w:p><w:hyperlink w:anchor="_Toc1"><w:r><w:t>Equation</w:t></w:r></w:hyperlink></w:p></w:sdtContent></w:sdt>
+            <w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:bookmarkStart w:id="1" w:name="_Toc1"/>{DISPLAY_X}<w:bookmarkEnd w:id="1"/></w:p>
+            <w:p><w:bookmarkStart w:id="2" w:name="eq2"/>{DISPLAY_Y}<w:bookmarkEnd w:id="2"/></w:p>
+            <w:p><w:hyperlink w:anchor="eq2"><w:r><w:t>see</w:t></w:r></w:hyperlink></w:p>"#
+        );
+        let document_xml = format!(
+            r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><w:body>{body}</w:body></w:document>"#
+        );
+        let internal = extract_docx_internal_document(&build_test_docx(&document_xml)).await;
+        let targets: Vec<(crate::types::internal::RelationshipKind, &str)> = internal
+            .relationships
+            .iter()
+            .map(|relationship| {
+                let crate::types::internal::RelationshipTarget::Index(target) = relationship.target else {
+                    panic!("unresolved link: {:?}", relationship.target);
+                };
+                let element = &internal.elements[target as usize];
+                assert_eq!(element.kind, crate::types::internal::ElementKind::Formula);
+                (relationship.kind, element.text.as_str())
+            })
+            .collect();
+        assert_eq!(
+            targets,
+            [
+                (crate::types::internal::RelationshipKind::TocEntry, "x=1"),
+                (crate::types::internal::RelationshipKind::InternalLink, "y=2"),
+            ]
+        );
+    }
+
+    async fn render_docx_notes(
+        document_xml: &str,
+        footnotes_xml: Option<&str>,
+        endnotes_xml: Option<&str>,
+        output_format: crate::core::config::OutputFormat,
+    ) -> String {
+        let data = build_test_docx_with_parts(document_xml, None, footnotes_xml, endnotes_xml, None, None, None);
+        let config = ExtractionConfig {
+            output_format: output_format.clone(),
+            ..Default::default()
+        };
+        let result = DocxExtractor::new()
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &config,
+            )
+            .await
+            .unwrap();
+        let result = crate::extraction::derive::derive_extraction_result(result, true, output_format);
+        result.formatted_content.unwrap_or(result.content)
+    }
+
+    const NOTES_DOCUMENT_NS: &str = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+
+    /// A LibreOffice document numbers its first footnote `w:id="2"` (0 and 1 are separators).
+    /// The marker written for the reference must be the number of its definition, once.
+    #[tokio::test]
+    async fn should_write_each_footnote_reference_once_numbered_like_its_definition() {
+        let document_xml = format!(
+            r#"<w:document xmlns:w="{NOTES_DOCUMENT_NS}"><w:body>
+<w:p><w:r><w:t>First claim</w:t></w:r><w:r><w:footnoteReference w:id="2"/></w:r><w:r><w:t xml:space="preserve"> and second claim</w:t></w:r><w:r><w:footnoteReference w:id="3"/></w:r><w:r><w:t>.</w:t></w:r></w:p>
+<w:p><w:r><w:t>Next paragraph.</w:t></w:r></w:p>
+</w:body></w:document>"#
+        );
+        let footnotes_xml = format!(
+            r#"<w:footnotes xmlns:w="{NOTES_DOCUMENT_NS}">
+<w:footnote w:id="0" w:type="separator"><w:p><w:r><w:t>separator</w:t></w:r></w:p></w:footnote>
+<w:footnote w:id="1" w:type="continuationSeparator"><w:p><w:r><w:t>continuation</w:t></w:r></w:p></w:footnote>
+<w:footnote w:id="2"><w:p><w:r><w:t>Note A.</w:t></w:r></w:p></w:footnote>
+<w:footnote w:id="3"><w:p><w:r><w:t>Note B.</w:t></w:r></w:p></w:footnote>
+</w:footnotes>"#
+        );
+        use crate::core::config::OutputFormat as F;
+        for format in [F::Markdown, F::Plain, F::Djot] {
+            let out = render_docx_notes(&document_xml, Some(&footnotes_xml), None, format.clone()).await;
+            assert!(
+                out.starts_with("First claim and second claim.[^1][^2]\n\nNext paragraph."),
+                "{format:?}: {out:?}"
+            );
+            assert_eq!(out.matches("[^1]").count(), 2, "{format:?}: {out:?}");
+            assert_eq!(out.matches("[^2]").count(), 2, "{format:?}: {out:?}");
+            assert!(!out.contains("[^3]"), "{format:?}: {out:?}");
+        }
+
+        let html = render_docx_notes(&document_xml, Some(&footnotes_xml), None, F::Html).await;
+        assert_eq!(html.matches("data-footnote-ref>").count(), 2, "{html:?}");
+        assert!(html.contains("<p>First claim and second claim.<sup"), "{html:?}");
+    }
+
+    /// Word numbers footnotes and endnotes separately, so footnote 1 and endnote 1 share an id.
+    /// The renderers number them in one sequence, and the markers follow that sequence.
+    #[tokio::test]
+    async fn should_not_link_an_endnote_marker_to_the_footnote_with_the_same_word_id() {
+        let document_xml = format!(
+            r#"<w:document xmlns:w="{NOTES_DOCUMENT_NS}"><w:body>
+<w:p><w:r><w:t>Body</w:t></w:r><w:r><w:footnoteReference w:id="1"/></w:r><w:r><w:t xml:space="preserve"> text</w:t></w:r><w:r><w:endnoteReference w:id="1"/></w:r><w:r><w:t>.</w:t></w:r></w:p>
+</w:body></w:document>"#
+        );
+        let footnotes_xml = format!(
+            r#"<w:footnotes xmlns:w="{NOTES_DOCUMENT_NS}"><w:footnote w:id="1"><w:p><w:r><w:t>THE FOOTNOTE</w:t></w:r></w:p></w:footnote></w:footnotes>"#
+        );
+        let endnotes_xml = format!(
+            r#"<w:endnotes xmlns:w="{NOTES_DOCUMENT_NS}"><w:endnote w:id="1"><w:p><w:r><w:t>THE ENDNOTE</w:t></w:r></w:p></w:endnote></w:endnotes>"#
+        );
+        let out = render_docx_notes(
+            &document_xml,
+            Some(&footnotes_xml),
+            Some(&endnotes_xml),
+            crate::core::config::OutputFormat::Djot,
+        )
+        .await;
+        assert!(out.starts_with("Body text.[^1][^2]"), "{out:?}");
+        assert!(out.contains("[^1]: THE FOOTNOTE"), "{out:?}");
+        assert!(out.contains("[^2]: THE ENDNOTE"), "{out:?}");
+    }
+
+    const NOTE_A_B_FOOTNOTES: &str = r#"<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:footnote w:id="0" w:type="separator"><w:p><w:r><w:t>separator</w:t></w:r></w:p></w:footnote>
+<w:footnote w:id="1" w:type="continuationSeparator"><w:p><w:r><w:t>continuation</w:t></w:r></w:p></w:footnote>
+<w:footnote w:id="2"><w:p><w:r><w:t>Note A.</w:t></w:r></w:p></w:footnote>
+<w:footnote w:id="3"><w:p><w:r><w:t>Note B.</w:t></w:r></w:p></w:footnote>
+</w:footnotes>"#;
+
+    /// A paragraph that holds only a note reference has no text of its own; its reference
+    /// still has to be written, once, and its definition must not be left unreferenced.
+    #[tokio::test]
+    async fn should_keep_the_reference_of_a_paragraph_that_holds_only_a_note_reference() {
+        let document_xml = format!(
+            r#"<w:document xmlns:w="{NOTES_DOCUMENT_NS}"><w:body>
+<w:p><w:r><w:t>Before.</w:t></w:r></w:p>
+<w:p><w:r><w:footnoteReference w:id="2"/></w:r></w:p>
+<w:p><w:r><w:t>After.</w:t></w:r></w:p>
+</w:body></w:document>"#
+        );
+        use crate::core::config::OutputFormat as F;
+        for format in [F::Markdown, F::Plain, F::Djot] {
+            let out = render_docx_notes(&document_xml, Some(NOTE_A_B_FOOTNOTES), None, format.clone()).await;
+            assert!(out.starts_with("Before.[^1]\n\nAfter."), "{format:?}: {out:?}");
+            assert_eq!(out.matches("[^1]").count(), 2, "{format:?}: {out:?}");
+            assert!(out.contains("Note A."), "{format:?}: {out:?}");
+        }
+    }
+
+    /// A reference in a table cell is written after the table, numbered like its definition,
+    /// and its source-id literal stays out of the cell.
+    #[tokio::test]
+    async fn should_write_a_table_cell_note_reference_after_the_table_numbered_like_its_note() {
+        let document_xml = format!(
+            r#"<w:document xmlns:w="{NOTES_DOCUMENT_NS}"><w:body>
+<w:p><w:r><w:t>Intro</w:t></w:r><w:r><w:footnoteReference w:id="3"/></w:r></w:p>
+<w:tbl><w:tr>
+<w:tc><w:p><w:r><w:t>cell</w:t></w:r><w:r><w:footnoteReference w:id="2"/></w:r></w:p></w:tc>
+<w:tc><w:p><w:r><w:t>plain</w:t></w:r></w:p></w:tc>
+</w:tr></w:tbl>
+<w:p><w:r><w:t>Tail.</w:t></w:r></w:p>
+</w:body></w:document>"#
+        );
+        use crate::core::config::OutputFormat as F;
+        for format in [F::Markdown, F::Djot] {
+            let out = render_docx_notes(&document_xml, Some(NOTE_A_B_FOOTNOTES), None, format.clone()).await;
+            assert!(out.starts_with("Intro[^1]\n\n"), "{format:?}: {out:?}");
+            assert!(
+                out.contains("| cell | plain |"),
+                "the cell must not carry the literal: {format:?}: {out:?}"
+            );
+            assert!(out.contains("[^2]\n\nTail."), "{format:?}: {out:?}");
+            assert_eq!(out.matches("[^1]").count(), 2, "{format:?}: {out:?}");
+            assert_eq!(out.matches("[^2]").count(), 2, "{format:?}: {out:?}");
+            assert!(out.find("Note B.") < out.find("Note A."), "{format:?}: {out:?}");
+        }
+    }
+
+    /// `pages[].content` is built on the parser's own text path; its markers and definitions
+    /// use the numbers the renderers use, and footnote 1 and endnote 1 stay apart.
+    #[tokio::test]
+    async fn should_number_page_content_notes_like_the_rendered_output() {
+        let document_xml = format!(
+            r#"<w:document xmlns:w="{NOTES_DOCUMENT_NS}"><w:body>
+<w:p><w:r><w:t>Body</w:t></w:r><w:r><w:footnoteReference w:id="3"/></w:r><w:r><w:t xml:space="preserve"> text</w:t></w:r><w:r><w:endnoteReference w:id="1"/></w:r><w:r><w:t>.</w:t></w:r></w:p>
+<w:tbl><w:tr><w:tc><w:p><w:r><w:t>cell</w:t></w:r><w:r><w:footnoteReference w:id="2"/></w:r></w:p></w:tc></w:tr></w:tbl>
+</w:body></w:document>"#
+        );
+        let endnotes_xml = format!(
+            r#"<w:endnotes xmlns:w="{NOTES_DOCUMENT_NS}"><w:endnote w:id="1"><w:p><w:r><w:t>THE ENDNOTE</w:t></w:r></w:p></w:endnote></w:endnotes>"#
+        );
+        let data = build_test_docx_with_parts(
+            &document_xml,
+            None,
+            Some(NOTE_A_B_FOOTNOTES),
+            Some(&endnotes_xml),
+            None,
+            None,
+            None,
+        );
+        let result = DocxExtractor::new()
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &ExtractionConfig::default(),
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+        let page = &result.pages.as_ref().expect("page content")[0].content;
+        assert!(page.contains("Body[^1] text[^2]."), "{page:?}");
+        assert!(page.contains("cell[^3]"), "{page:?}");
+        assert!(page.contains("1: Note B."), "{page:?}");
+        assert!(page.contains("2: THE ENDNOTE"), "{page:?}");
+        assert!(page.contains("3: Note A."), "{page:?}");
+    }
+
+    async fn docx_page_content(document_xml: &str, footnotes_xml: &str, endnotes_xml: Option<&str>) -> String {
+        let data = build_test_docx_with_parts(document_xml, None, Some(footnotes_xml), endnotes_xml, None, None, None);
+        let result = DocxExtractor::new()
+            .extract_content(
+                &data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                &ExtractionConfig::default(),
+            )
+            .await
+            .unwrap();
+        let result =
+            crate::extraction::derive::derive_extraction_result(result, true, crate::core::config::OutputFormat::Plain);
+        result.pages.as_ref().expect("page content")[0].content.clone()
+    }
+
+    /// Footnote 1 and endnote 1 share a Word id; in page content they must not share a label.
+    #[tokio::test]
+    async fn should_keep_a_footnote_and_an_endnote_with_the_same_word_id_apart_in_page_content() {
+        let document_xml = format!(
+            r#"<w:document xmlns:w="{NOTES_DOCUMENT_NS}"><w:body>
+<w:p><w:r><w:t>Body</w:t></w:r><w:r><w:footnoteReference w:id="1"/></w:r><w:r><w:endnoteReference w:id="1"/></w:r></w:p>
+</w:body></w:document>"#
+        );
+        let footnotes_xml = format!(
+            r#"<w:footnotes xmlns:w="{NOTES_DOCUMENT_NS}"><w:footnote w:id="1"><w:p><w:r><w:t>THE FOOTNOTE</w:t></w:r></w:p></w:footnote></w:footnotes>"#
+        );
+        let endnotes_xml = format!(
+            r#"<w:endnotes xmlns:w="{NOTES_DOCUMENT_NS}"><w:endnote w:id="1"><w:p><w:r><w:t>THE ENDNOTE</w:t></w:r></w:p></w:endnote></w:endnotes>"#
+        );
+        let page = docx_page_content(&document_xml, &footnotes_xml, Some(&endnotes_xml)).await;
+        assert!(page.starts_with("Body[^1][^2]"), "{page:?}");
+        assert!(page.contains("1: THE FOOTNOTE"), "{page:?}");
+        assert!(page.contains("2: THE ENDNOTE"), "{page:?}");
+    }
+
+    /// A reference in a table nested in a cell belongs to the outer table: it is written after it.
+    #[tokio::test]
+    async fn should_write_a_nested_table_note_reference_after_the_outer_table() {
+        let document_xml = format!(
+            r#"<w:document xmlns:w="{NOTES_DOCUMENT_NS}"><w:body>
+<w:tbl><w:tr><w:tc>
+<w:p><w:r><w:t>outer</w:t></w:r></w:p>
+<w:tbl><w:tr><w:tc><w:p><w:r><w:t>inner</w:t></w:r><w:r><w:footnoteReference w:id="2"/></w:r></w:p></w:tc></w:tr></w:tbl>
+<w:p/>
+</w:tc></w:tr></w:tbl>
+<w:p><w:r><w:t>Tail.</w:t></w:r></w:p>
+</w:body></w:document>"#
+        );
+        let out = render_docx_notes(
+            &document_xml,
+            Some(NOTE_A_B_FOOTNOTES),
+            None,
+            crate::core::config::OutputFormat::Djot,
+        )
+        .await;
+        assert!(!out.contains("inner[^"), "{out:?}");
+        assert!(out.contains("[^1]\n\nTail."), "{out:?}");
+        assert_eq!(out.matches("[^1]").count(), 2, "{out:?}");
+    }
+
+    #[test]
+    fn should_keep_the_note_literal_out_of_annotated_run_text() {
+        use crate::extraction::docx::parser::Run;
+        let mut text = String::from("claim");
+        let start = text.len();
+        text.push_str("[^2]");
+        let runs = vec![
+            Run {
+                text,
+                bold: true,
+                note_marker_ranges: std::iter::once(start..start + 4).collect(),
+                ..Default::default()
+            },
+            Run::new(" tail".into()),
+        ];
+        let (text, annotations, _) = collect_run_annotations(&runs);
+        assert_eq!(text, "claim tail");
+        assert!(
+            annotations.iter().all(|a| (a.start, a.end) == (0, 5)),
+            "the bold span must cover `claim` only: {annotations:?}"
+        );
+    }
+}

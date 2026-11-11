@@ -1,0 +1,1865 @@
+//! Post-processing pipeline orchestration.
+//!
+//! This module orchestrates the post-processing pipeline, executing validators,
+//! quality processing, chunking, and custom hooks in the correct order.
+
+mod cache;
+mod execution;
+pub(crate) mod features;
+mod format;
+mod initialization;
+mod page_markers;
+
+#[cfg(test)]
+mod tests;
+
+pub use cache::clear_processor_cache;
+pub use format::apply_output_format;
+#[cfg(any(
+    feature = "classification",
+    feature = "summarization",
+    feature = "translation",
+    feature = "captioning",
+    feature = "qr-codes",
+    feature = "ner",
+    feature = "redaction",
+    feature = "quality",
+    feature = "keywords-yake",
+    feature = "keywords-rake"
+))]
+pub(crate) use initialization::automatic_registration_allowed;
+pub(crate) use initialization::{
+    with_builtin_registration_recovery, with_post_processor_enabled, with_post_processor_suppressed,
+};
+
+use crate::Result;
+use crate::core::config::ExtractionConfig;
+use crate::types::ExtractedDocument;
+use crate::types::internal::InternalDocument;
+
+use execution::{execute_processor_stages, execute_validators};
+use features::{execute_chunking, execute_language_detection, execute_token_reduction};
+use initialization::{builtin_registration_error, initialize_processor_cache_for_async_pipeline};
+
+const CAPTIONING_PROCESSOR_NAME: &str = "captioning";
+const BUILTIN_REGISTRATION_SOURCE: &str = "builtin_registration";
+
+pub(crate) async fn prepare_extraction_cache_lifecycle(config: &ExtractionConfig) -> Result<()> {
+    let postprocessing_enabled = config
+        .postprocessor
+        .as_ref()
+        .is_none_or(|processor_config| processor_config.enabled);
+    if postprocessing_enabled {
+        // ~keep Stabilize cold-start built-in registration before taking cache lifecycle snapshots.
+        drop(initialize_processor_cache_for_async_pipeline().await?);
+    }
+    Ok(())
+}
+// `pub(crate)` so `pdf::native::images` can reference this SAME constant when deciding, before
+// any per-image decode, whether a full-page image will end up excluded here anyway (GH#1732) --
+// the two checks must use one number, never two independently-maintained literals. ~keep
+#[cfg(all(feature = "ocr", feature = "tokio-runtime"))]
+pub(crate) const FULL_PAGE_IMAGE_AREA_RATIO: f64 = 0.85;
+
+type PostProcessorHandle = std::sync::Arc<dyn crate::plugins::PostProcessor>;
+
+/// Where [`run_pipeline_impl`] reads its post-processor registry, cache and registration gate
+/// from. Production code always uses `Global`; `Isolated` exists only so a test that mutates a
+/// registry and asserts on the outcome of that mutation can give itself a private
+/// `initialization::ProcessorRegistryState` instead of racing every other extraction in the
+/// binary against the process-wide statics (#1749). ~keep
+enum ProcessorSource {
+    Global,
+    #[cfg(all(test, feature = "tokio-runtime"))]
+    Isolated(std::sync::Arc<initialization::ProcessorRegistryState>),
+}
+
+#[cfg(all(feature = "ocr", feature = "tokio-runtime"))]
+fn image_ocr_positions(doc: &InternalDocument) -> Vec<usize> {
+    if image_file_text_is_already_extracted(doc) {
+        return Vec::new();
+    }
+    doc.images
+        .iter()
+        .enumerate()
+        .filter_map(|(position, image)| (!should_skip_pdf_image_ocr(doc, image)).then_some(position))
+        .collect()
+}
+
+/// Whether the OCR read of an image file already gave the document text or a table.
+///
+/// The picture of an image file is the document, not a picture inside it: the image extractor
+/// read it with OCR, and that read is the text and the tables of the document. Image OCR would
+/// read the same picture again with other settings and show its words a second time. A file
+/// whose read gave no text and no table stays eligible, so image OCR can still find its
+/// words. The text of an image element describes the picture and is not a read of it, so it
+/// does not count. ~keep
+#[cfg(all(feature = "ocr", feature = "tokio-runtime"))]
+fn image_file_text_is_already_extracted(doc: &InternalDocument) -> bool {
+    use crate::types::internal::ElementKind;
+
+    if doc.source_format != "image" {
+        return false;
+    }
+    let has_text = doc
+        .elements
+        .iter()
+        .any(|element| !matches!(element.kind, ElementKind::Image { .. }) && !element.text.trim().is_empty());
+    let has_table = doc
+        .tables
+        .iter()
+        .any(|table| table.cells.iter().flatten().any(|cell| !cell.trim().is_empty()));
+    has_text || has_table
+}
+
+#[cfg(all(feature = "ocr", feature = "tokio-runtime"))]
+fn should_skip_pdf_image_ocr(doc: &InternalDocument, image: &crate::types::ExtractedImage) -> bool {
+    if image.image_kind == Some(crate::types::ImageKind::PageRaster) {
+        return true;
+    }
+    // A page-sized PDF XObject repeats content already supplied by native text or
+    // page OCR. Keep empty pages eligible so image OCR can still recover their text.
+    if doc.source_format != "pdf" || !page_has_extracted_text(doc, image.page_number) {
+        return false;
+    }
+
+    let Some(bounding_box) = image.bounding_box.as_ref() else {
+        return false;
+    };
+    let Some(page_number) = image.page_number else {
+        return false;
+    };
+    let Some(dimensions) = doc
+        .metadata
+        .pages
+        .as_ref()
+        .and_then(|structure| structure.pages.as_ref())
+        .and_then(|pages| pages.iter().find(|page| page.number == page_number))
+        .and_then(|page| page.dimensions)
+    else {
+        return false;
+    };
+    let page_width = dimensions.width;
+    let page_height = dimensions.height;
+    if page_width <= 0.0 || page_height <= 0.0 {
+        return false;
+    }
+
+    let image_area = (bounding_box.x1 - bounding_box.x0).abs() * (bounding_box.y1 - bounding_box.y0).abs();
+    image_area / (page_width * page_height) >= FULL_PAGE_IMAGE_AREA_RATIO
+}
+
+/// Whether `ExtractedDocument.images` must survive past embedded-image OCR (GH#1703).
+///
+/// `needs_image_data`/`runs_ocr_on_embedded_images` (GH#1662) are the READ gate: they make a
+/// container read an embedded image's bytes so OCR has something to decode. This is the WRITE
+/// gate, asked once rendering (which folds `ExtractedImage.ocr_result.content` into `content`
+/// for every `ElementKind::Image`, `doc.rs`'s render_plain/render_markdown/etc.) has already
+/// consumed those bytes: it widens `wants_own_bytes_in_result` (extract_images/captioning/
+/// qr_codes) with the two other ways the same bytes end up wanted in the output rather than
+/// merely read for OCR input — `pdf_options.ocr_inline_images` (the OCR'd images ARE the
+/// requested result, see `test_ocr_inline_images_enters_decompression_path`) and
+/// `images.include_page_rasters` (per-page OCR renders live in this same `Vec`). Without this,
+/// every OCR'd container returned every embedded image's raw bytes regardless of `images`,
+/// because the GH#1662 read gate has no matching write-side gate of its own. ~keep
+fn should_retain_images_after_ocr(config: &ExtractionConfig) -> bool {
+    if config.wants_own_bytes_in_result() {
+        return true;
+    }
+    #[cfg(feature = "pdf")]
+    if config
+        .pdf_options
+        .as_ref()
+        .is_some_and(|options| options.ocr_inline_images)
+    {
+        return true;
+    }
+    config.images.as_ref().is_some_and(|images| images.include_page_rasters)
+}
+
+/// Drop `result.images` once OCR has consumed the bytes and rendering has folded any
+/// per-image OCR text into `content` (GH#1703), keeping `PageContent::image_indices`
+/// consistent with the now-empty `images` collection they index into. Returns how many
+/// images were dropped so `DocumentCounts::images` (documented as always populated, even
+/// when the collection itself is not returned) can still report them.
+///
+/// Must run AFTER `derive_extraction_result`, not before: that call is what renders
+/// `content` from `doc.elements` + `doc.images` in the first place (`render_plain`,
+/// `render_markdown`, …), reading `ExtractedImage.ocr_result` off each `ElementKind::Image`
+/// element as it goes. Clearing the bytes any earlier would silently drop that OCR text
+/// along with the raw image data instead of just the bytes GH#1703 is about. Chunk-level
+/// `image_indices` need no matching cleanup: `execute_chunking` only populates them from
+/// `result.images.is_some()`, so setting `images` to `None` here already keeps chunks
+/// consistent by construction. ~keep
+fn drop_ocr_only_images(result: &mut ExtractedDocument) -> usize {
+    let dropped = result.images.take().map_or(0, |images| images.len());
+    if let Some(ref mut pages) = result.pages {
+        for page in pages.iter_mut() {
+            page.image_indices.clear();
+        }
+    }
+    dropped
+}
+
+#[cfg(all(feature = "ocr", feature = "tokio-runtime"))]
+fn page_has_extracted_text(doc: &InternalDocument, page_number: Option<u32>) -> bool {
+    let Some(page_number) = page_number else {
+        return false;
+    };
+    doc.elements
+        .iter()
+        .any(|element| element.page == Some(page_number) && !element.text.trim().is_empty())
+        || doc.prebuilt_pages.as_ref().is_some_and(|pages| {
+            pages
+                .iter()
+                .any(|page| page.page_number == page_number && !page.content.trim().is_empty())
+        })
+}
+
+fn processors_without_captioning(
+    processors: &std::sync::Arc<Vec<PostProcessorHandle>>,
+) -> std::sync::Arc<Vec<PostProcessorHandle>> {
+    std::sync::Arc::new(
+        processors
+            .iter()
+            .filter(|processor| processor.name() != CAPTIONING_PROCESSOR_NAME)
+            .cloned()
+            .collect(),
+    )
+}
+
+/// Values produced by the captioning prepass that have no `InternalDocument`
+/// destination and therefore cannot be merged back onto `doc`.
+///
+/// The prepass runs the captioning post-processor against a full
+/// `ExtractedDocument` derived from `doc`, but the pipeline then re-derives the
+/// final result from `doc`. Fields the derivation does not read back are carried
+/// here and re-applied to the derived result instead of being discarded.
+#[derive(Debug, Default)]
+struct CaptioningCarryOver {
+    /// Content authored by the prepass processor, when it rewrote `content`.
+    content: Option<String>,
+    /// Named entities produced by the prepass processor.
+    entities: Option<Vec<crate::types::Entity>>,
+}
+
+impl CaptioningCarryOver {
+    fn apply(self, result: &mut ExtractedDocument) {
+        if let Some(content) = self.content {
+            result.content = content;
+        }
+        if self.entities.is_some() {
+            result.entities = self.entities;
+        }
+    }
+}
+
+/// Whether the prepass changed any image description, including by adding or
+/// removing images. A change invalidates the extractor's pre-rendered content.
+fn image_descriptions_changed(
+    before: &[crate::types::ExtractedImage],
+    after: Option<&Vec<crate::types::ExtractedImage>>,
+) -> bool {
+    let after = match after {
+        Some(images) => images.as_slice(),
+        None => &[],
+    };
+    before.len() != after.len()
+        || before
+            .iter()
+            .zip(after)
+            .any(|(retained, captioned)| retained.description != captioned.description)
+}
+
+/// Push a `ProcessingWarning` onto `doc` when the latest built-in post-processor
+/// registration pass (#271) reported a failure. `registration_error` is
+/// `initialization::builtin_registration_error()`; `None` means every enabled
+/// built-in processor registered successfully (or registration has not run yet).
+///
+/// Without this, a processor that failed to register (e.g. `summarization`) simply
+/// never appears in the processor cache, so a caller who configured it saw a clean
+/// `Ok` with no output for that stage and no indication why — the same class of gap
+/// the captioning-only "processor missing" warning below closes for captioning.
+fn push_builtin_registration_warning(doc: &mut InternalDocument, registration_error: Option<String>) {
+    let Some(error) = registration_error else {
+        return;
+    };
+    doc.processing_warnings.push(crate::types::ProcessingWarning {
+        source: std::borrow::Cow::Borrowed(BUILTIN_REGISTRATION_SOURCE),
+        message: std::borrow::Cow::Owned(format!(
+            "built-in post-processor registration was incomplete ({error}); a configured \
+             processor may silently produce no output for its stage"
+        )),
+    });
+}
+
+async fn run_captioning_prepass(
+    doc: &mut InternalDocument,
+    config: &ExtractionConfig,
+    include_structure: bool,
+    pp_config: &Option<&crate::core::config::PostProcessorConfig>,
+    middle_processors: &std::sync::Arc<Vec<PostProcessorHandle>>,
+) -> Result<CaptioningCarryOver> {
+    if config.captioning.is_none() {
+        return Ok(CaptioningCarryOver::default());
+    }
+
+    let captioning_processors = std::sync::Arc::new(
+        middle_processors
+            .iter()
+            .filter(|processor| processor.name() == CAPTIONING_PROCESSOR_NAME)
+            .cloned()
+            .collect::<Vec<_>>(),
+    );
+    if captioning_processors.is_empty() {
+        // Captioning was requested but no captioning processor is registered — the
+        // feature is compiled out (e.g. the Docker `--features all` gap in #1382) or
+        // otherwise unavailable. Surface it instead of silently no-opping.
+        doc.processing_warnings.push(crate::types::ProcessingWarning {
+            source: std::borrow::Cow::Borrowed("captioning"),
+            message: std::borrow::Cow::Borrowed("captioning feature not enabled — rebuild with --features captioning"),
+        });
+        return Ok(CaptioningCarryOver::default());
+    }
+
+    crate::extraction::derive::resolve_relationships(doc);
+    let mut caption_result = crate::extraction::derive::derive_extraction_result(
+        doc.clone(),
+        include_structure,
+        config.output_format.clone(),
+    );
+
+    let content_before = caption_result.content.clone();
+
+    execute_processor_stages(
+        &mut caption_result,
+        config,
+        pp_config,
+        &[(crate::plugins::ProcessingStage::Middle, captioning_processors)],
+    )
+    .await?;
+
+    // Merge the prepass result back. Everything the processor produced that the
+    // derivation re-reads goes onto `doc`; the rest is carried to the derived
+    // result. Previously only description/caption, warnings and usage survived.
+    let description_changed = image_descriptions_changed(&doc.images, caption_result.images.as_ref());
+    // Replace the image vec wholesale instead of zipping it against `doc.images`:
+    // a processor that adds or removes an image made `zip` truncate to the shorter
+    // side, dropping added images and mis-pairing the rest.
+    doc.images = caption_result.images.take().unwrap_or_default();
+    if description_changed {
+        doc.pre_rendered_content = None;
+    }
+    doc.metadata = std::mem::take(&mut caption_result.metadata);
+    // #355: the prepass derives a full `ExtractedDocument` from `doc` above, and that
+    // derivation destructively `.remove()`s `CODE_INTELLIGENCE_SCRATCH_KEY` from
+    // `metadata.additional` (see `derive::derive_extraction_result`) so the raw
+    // scratch payload never leaks into user-visible metadata. The `doc.metadata`
+    // assignment just above then overwrites `doc`'s metadata with that
+    // already-stripped copy, so the *second* derivation the pipeline runs later
+    // (after this prepass returns) finds no scratch key and falls back to a
+    // degraded `CodeMetadata`-only `code_intelligence` payload. Put the full
+    // payload the first derivation already computed back under the scratch key so
+    // the second derivation round-trips the same `.remove()` and reconstructs the
+    // identical, non-degraded result. ~keep
+    #[cfg(feature = "tree-sitter")]
+    if let Some(code_intelligence) = caption_result.code_intelligence.take() {
+        doc.metadata.additional.insert(
+            std::borrow::Cow::Borrowed(crate::extractors::code::CODE_INTELLIGENCE_SCRATCH_KEY),
+            code_intelligence,
+        );
+    }
+    doc.uris = caption_result.uris.take().unwrap_or_default();
+    doc.processing_warnings = std::mem::take(&mut caption_result.processing_warnings);
+    doc.llm_usage = caption_result.llm_usage.take();
+
+    Ok(CaptioningCarryOver {
+        content: (caption_result.content != content_before).then(|| std::mem::take(&mut caption_result.content)),
+        entities: caption_result.entities.take(),
+    })
+}
+
+/// Run the post-processing pipeline on an `InternalDocument`.
+///
+/// Derives `ExtractedDocument` from `InternalDocument` via the derivation pipeline,
+/// then executes post-processing in the following order:
+/// 1. Post-Processors - Execute by stage (Early immediately; Middle/Late after a
+///    provisional chunking pass, so chunk-aware post-processors see `result.chunks`)
+/// 2. Language detection
+/// 3. Quality Processing - Token reduction, NFC normalization, output-format application
+/// 4. Validators - Run validation hooks on the processed result (can fail fast)
+/// 5. Chunking (final) - Text splitting if enabled
+/// 6. Encoded output - A binary format such as DOCX packages the finished rendering,
+///    leaving base64 in `content`; its chunks describe the Markdown it was built from
+///
+/// Chunking runs **twice** when Middle/Late post-processors are active: once right
+/// after Early post-processors (so a chunk-aware post-processor sees non-empty
+/// `result.chunks`, per the tested contract in
+/// `test_middle_postprocessors_run_after_explicit_chunking`), and again as the
+/// **last** step, after every step that rewrites `content` (token reduction, NFC
+/// normalization, output-format swapping). Only the final pass's `result.chunks`
+/// is returned. Chunk `byte_start`/`byte_end` (and page-derived
+/// `first_page`/`last_page`) are byte offsets into whatever `content` looked like at
+/// chunking time, and are the join key consumers use for highlighting and
+/// rehydration — running chunking only once, early, left those offsets silently
+/// indexing stale content once later steps mutated it (#213). The first pass's
+/// offsets are provisional; a Middle/Late post-processor must not treat them as
+/// final. This trades an extra (usually cheap) chunking pass — and, if embeddings
+/// are configured, a discarded first embedding batch — for offset correctness in
+/// the returned result.
+///
+/// # Arguments
+///
+/// * `doc` - The internal document produced by the extractor
+/// * `config` - Extraction configuration
+///
+/// # Returns
+///
+/// The processed extraction result.
+///
+/// # Errors
+///
+/// - Validator errors bubble up immediately
+/// - Post-processor errors are caught and recorded in metadata
+/// - System errors (IO, RuntimeError equivalents) always bubble up
+#[cfg_attr(feature = "otel", tracing::instrument(
+    skip(doc, config),
+    fields(
+        { crate::telemetry::conventions::OPERATION } = crate::telemetry::conventions::operations::PIPELINE,
+        content.element_count = doc.elements.len(),
+    )
+))]
+#[cfg_attr(alef, alef(skip))]
+pub async fn run_pipeline(doc: InternalDocument, config: &ExtractionConfig) -> Result<ExtractedDocument> {
+    run_pipeline_impl(doc, config, ProcessorSource::Global).await
+}
+
+/// Isolated-registry counterpart of [`run_pipeline`] for the #1749 tests described on
+/// [`ProcessorSource`]: identical behavior, except the post-processing stage reads `state`
+/// instead of the process-wide registry, cache and registration gate.
+#[cfg(all(test, feature = "tokio-runtime"))]
+async fn run_pipeline_with_isolated_registry(
+    doc: InternalDocument,
+    config: &ExtractionConfig,
+    state: std::sync::Arc<initialization::ProcessorRegistryState>,
+) -> Result<ExtractedDocument> {
+    run_pipeline_impl(doc, config, ProcessorSource::Isolated(state)).await
+}
+
+async fn run_pipeline_impl(
+    mut doc: InternalDocument,
+    config: &ExtractionConfig,
+    processor_source: ProcessorSource,
+) -> Result<ExtractedDocument> {
+    (doc.ocr_text_only, doc.append_ocr_text) = image_ocr_text_rendering(config);
+    doc.escape_markdown = config.escape_markdown;
+    doc.include_watermarks = config
+        .content_filter
+        .as_ref()
+        .is_some_and(|filter| filter.include_watermarks);
+    doc.table_anchors = config.table_anchors;
+    doc.page_marker_format = config
+        .pages
+        .as_ref()
+        .filter(|p| p.insert_page_markers)
+        .map(|p| p.marker_format.clone());
+
+    // Calls `runs_ocr_on_embedded_images` rather than re-deriving it: `needs_image_data`
+    // (the READ gate a container consults before it reads an embedded image's bytes at all)
+    // is defined in terms of this same method, and the two being separately-written copies
+    // is exactly how GH#1662 happened. Do not inline the condition back. ~keep
+    #[cfg(all(feature = "ocr", feature = "tokio-runtime"))]
+    if config.runs_ocr_on_embedded_images() && !doc.images.is_empty() {
+        let image_positions = image_ocr_positions(&doc);
+        // Clone only selected images so skipped entries keep their positions and a
+        // batch-level OCR failure cannot discard the original extracted images.
+        if !image_positions.is_empty() {
+            let images_to_process = image_positions
+                .iter()
+                .map(|&position| doc.images[position].clone())
+                .collect();
+            match crate::extraction::image_ocr::process_images_with_ocr(
+                images_to_process,
+                config,
+                &mut doc.processing_warnings,
+            )
+            .await
+            {
+                Ok(processed) => {
+                    for (position, image) in image_positions.into_iter().zip(processed) {
+                        doc.images[position] = image;
+                    }
+                }
+                Err(e) => {
+                    doc.processing_warnings.push(crate::types::ProcessingWarning {
+                        source: std::borrow::Cow::Borrowed("image_ocr"),
+                        message: std::borrow::Cow::Owned(format!("Image OCR failed: {e}")),
+                    });
+                }
+            }
+        }
+    }
+
+    // Before the fold: the fold turns an OCR text anchor into a paragraph, and after it the
+    // picture of the anchor would read as a picture that nothing shows. ~keep
+    let inline_images = images_without_an_element(&doc);
+    #[cfg(all(feature = "ocr", feature = "tokio-runtime"))]
+    fold_embedded_image_ocr_text(&mut doc);
+
+    // After the fold: a marker follows each page break, and the fold removes the page break
+    // of a page that held only a picture with no text. ~keep
+    if let Some(format) = doc.page_marker_format.clone() {
+        page_markers::inject_page_marker_elements(&mut doc, &format);
+    }
+
+    replace_embedded_image_markdown_with_ocr(&mut doc, &inline_images);
+    append_embedded_image_ocr_text(&mut doc, &inline_images);
+
+    let pp_config = config.postprocessor.as_ref();
+    let postprocessing_enabled = pp_config.is_none_or(|processor_config| processor_config.enabled);
+    let processor_stages = if postprocessing_enabled {
+        let processor_stages = match &processor_source {
+            ProcessorSource::Global => {
+                let snapshot = initialize_processor_cache_for_async_pipeline().await?;
+                push_builtin_registration_warning(&mut doc, builtin_registration_error());
+                snapshot
+            }
+            #[cfg(all(test, feature = "tokio-runtime"))]
+            ProcessorSource::Isolated(state) => initialization::processor_snapshot_from_state(state).await?,
+        };
+        Some(processor_stages)
+    } else {
+        None
+    };
+
+    let include_structure = config.include_document_structure;
+    let mut captioning_carry_over = CaptioningCarryOver::default();
+    if let Some(snapshot) = &processor_stages {
+        captioning_carry_over =
+            run_captioning_prepass(&mut doc, config, include_structure, &pp_config, &snapshot.middle).await?;
+    }
+
+    // Computed once, up front, from `doc` (independent of the later derivation and
+    // content-mutating steps) and carried to the relocated `execute_chunking` call
+    // near the end of this function — see the ordering note on `run_pipeline` (#213).
+    #[cfg(feature = "chunking")]
+    let chunker_heading_source: Option<String> = {
+        let needs_markdown = config.chunking.as_ref().is_some_and(|c| {
+            c.chunker_type == crate::core::config::ChunkerType::Markdown
+                || c.resolve_preset().chunker_type == crate::core::config::ChunkerType::Markdown
+        }) && config.output_format == crate::core::config::OutputFormat::Plain;
+        if needs_markdown {
+            Some(crate::rendering::render_markdown(&doc))
+        } else {
+            None
+        }
+    };
+    #[cfg(not(feature = "chunking"))]
+    let chunker_heading_source: Option<String> = None;
+
+    #[cfg(feature = "html")]
+    let styled_html_prerender: Option<String> = {
+        use crate::plugins::InternalRenderer as _;
+        if config.output_format == crate::core::config::OutputFormat::Html {
+            config.html_output.as_ref().and_then(|html_cfg| {
+                match crate::rendering::StyledHtmlRenderer::new(html_cfg.clone()) {
+                    Ok(renderer) => match renderer.render(&doc) {
+                        Ok(html) => Some(html),
+                        Err(e) => {
+                            tracing::warn!("StyledHtmlRenderer render failed, falling back to default HTML: {e}");
+                            None
+                        }
+                    },
+                    Err(e) => {
+                        tracing::warn!("StyledHtmlRenderer construction failed, falling back to default HTML: {e}");
+                        None
+                    }
+                }
+            })
+        } else {
+            None
+        }
+    };
+
+    let doc_for_elements = if config.result_format == crate::types::ResultFormat::ElementBased {
+        Some(doc.clone())
+    } else {
+        None
+    };
+
+    let mut result =
+        crate::extraction::derive::derive_extraction_result(doc, include_structure, config.output_format.clone());
+    result.internal_document = doc_for_elements;
+    captioning_carry_over.apply(&mut result);
+
+    // GH#1662 reads embedded-image bytes so OCR has something to decode; rendering above
+    // (inside `derive_extraction_result`) has already folded any resulting OCR text into
+    // `content`. GH#1703: drop the bytes themselves now unless the caller actually wanted
+    // them (see `should_retain_images_after_ocr`). Gated on `runs_ocr_on_embedded_images`:
+    // GH#1703 is about bytes GH#1662's OCR read gate pulled in, not about images a
+    // container populates for reasons that have nothing to do with OCR (markdown inline
+    // data-URI images, Jupyter output/attachment images, ODT/DOCX/PPTX embedded pictures
+    // read for their own sake). Dropping unconditionally here regressed all of those --
+    // `images` came back `None` even though no OCR ever ran. ~keep
+    let images_dropped_after_ocr = if config.runs_ocr_on_embedded_images() && !should_retain_images_after_ocr(config) {
+        drop_ocr_only_images(&mut result)
+    } else {
+        0
+    };
+
+    // #286: record the text the preserved element tree stands for, so the divergence check
+    // below can tell whether post-processing has since made the tree a stale second copy of
+    // the document text. See `discard_diverged_internal_document`.
+    let internal_document_source_content = result.internal_document.is_some().then(|| result.content.clone());
+
+    #[cfg(feature = "html")]
+    if let Some(html) = styled_html_prerender {
+        result.formatted_content = Some(html);
+    }
+
+    // #331: same idea for the rendered output format, which `apply_output_format` swaps into
+    // `content` at the very end. See `discard_diverged_formatted_content`.
+    let formatted_content_source = result
+        .formatted_content
+        .as_ref()
+        .map(|formatted| (result.content.clone(), formatted.clone()));
+
+    #[cfg(feature = "image-encode")]
+    if let Some(ref image_cfg) = config.images {
+        apply_output_format_pass_with_security_limits(&mut result, image_cfg, config.security_limits.as_ref());
+    }
+
+    if let Some(ref image_cfg) = config.images {
+        apply_data_base64_pass(&mut result, image_cfg);
+    }
+
+    if let Some(snapshot) = &processor_stages {
+        execute_processor_stages(
+            &mut result,
+            config,
+            &pp_config,
+            &[(
+                crate::plugins::ProcessingStage::Early,
+                std::sync::Arc::clone(&snapshot.early),
+            )],
+        )
+        .await?;
+    }
+
+    execute_language_detection(&mut result, config)?;
+
+    // Chunk here too (in addition to the corrective re-chunk near the end, after all
+    // content-mutating steps — see the doc comment above and #213) so that Middle/Late
+    // post-processors can see `result.chunks` populated, per the documented pipeline
+    // contract ("1. Post-Processors ... 3. Chunking" is honored for processor
+    // visibility) and the tested chunk-aware-post-processor contract
+    // (`test_middle_postprocessors_run_after_explicit_chunking`). This first pass's
+    // chunks (and their byte offsets) are provisional and get fully recomputed — and
+    // `result.chunks` overwritten — by the final `execute_chunking` call below once
+    // `content` stops changing, so a middle/late processor must not treat these
+    // offsets as final.
+    execute_chunking(&mut result, config, chunker_heading_source.as_deref())?;
+
+    if let Some(snapshot) = &processor_stages {
+        let middle_processors = if config.captioning.is_some() {
+            processors_without_captioning(&snapshot.middle)
+        } else {
+            std::sync::Arc::clone(&snapshot.middle)
+        };
+        execute_processor_stages(
+            &mut result,
+            config,
+            &pp_config,
+            &[
+                (crate::plugins::ProcessingStage::Middle, middle_processors),
+                (
+                    crate::plugins::ProcessingStage::Late,
+                    std::sync::Arc::clone(&snapshot.late),
+                ),
+            ],
+        )
+        .await?;
+    }
+    drop(processor_stages);
+
+    execute_token_reduction(&mut result, config)?;
+    execute_validators(&result, config).await?;
+
+    // NFC normalization moved ahead of the element transform so the divergence check below
+    // sees the final plain-text `content`, and so the fallback element build reads the same
+    // normalized text that `content` carries (#286).
+    normalize_nfc(&mut result);
+    discard_diverged_internal_document(&mut result, internal_document_source_content.as_deref());
+    discard_diverged_formatted_content(&mut result, formatted_content_source.as_ref());
+    apply_element_transform(&mut result, config);
+
+    // ~keep Run LLM-based structured extraction BEFORE output formatting
+    // ~keep so extraction sees plain text, not markdown/HTML
+    #[cfg(all(feature = "liter-llm", not(target_arch = "wasm32")))]
+    if let Some(ref structured_config) = config.structured_extraction {
+        match crate::llm::structured::extract_structured(&result.content, structured_config).await {
+            Ok((output, usage)) => {
+                result.structured_output = Some(output);
+                crate::llm::usage::push_llm_usage(&mut result, usage);
+            }
+            Err(e) => {
+                let usage = crate::llm::usage::usage_from_error(&e);
+                crate::llm::usage::push_llm_usage(&mut result, usage);
+                tracing::warn!("Structured extraction failed: {e}");
+                result.processing_warnings.push(crate::types::ProcessingWarning {
+                    source: std::borrow::Cow::Borrowed("structured_extraction"),
+                    message: std::borrow::Cow::Owned(format!("Structured extraction failed: {e}")),
+                });
+            }
+        }
+    }
+
+    #[cfg(not(feature = "liter-llm"))]
+    if config.structured_extraction.is_some() {
+        result.processing_warnings.push(crate::types::ProcessingWarning {
+            source: std::borrow::Cow::Borrowed("structured_extraction"),
+            message: std::borrow::Cow::Borrowed("Structured extraction requires the 'liter-llm' feature"),
+        });
+    }
+
+    #[cfg(all(feature = "liter-llm", target_arch = "wasm32"))]
+    if config.structured_extraction.is_some() {
+        result.processing_warnings.push(crate::types::ProcessingWarning {
+            source: std::borrow::Cow::Borrowed("structured_extraction"),
+            message: std::borrow::Cow::Borrowed("Structured extraction is not available on wasm builds"),
+        });
+    }
+
+    result = apply_output_format(result, config.output_format.clone());
+
+    // Chunking runs last, after every step above that rewrites `content` — see the
+    // ordering note on this function's doc comment (#213).
+    execute_chunking(&mut result, config, chunker_heading_source.as_deref())?;
+
+    populate_document_counts(&mut result, images_dropped_after_ocr);
+
+    #[cfg(feature = "heuristics")]
+    {
+        use crate::heuristics::confidence::{ConfidenceSignals, ConfidenceWeights, score_confidence};
+        let text_coverage = measure_text_coverage(&result);
+        let schema_compliance = structured_extraction_compliance(config, &result);
+        let signals = ConfidenceSignals::from_extraction_result(&result, schema_compliance, text_coverage);
+        result.extraction_confidence = Some(score_confidence(signals, ConfidenceWeights::default()));
+    }
+
+    format::finish_output_format(&mut result, &config.output_format)?;
+
+    Ok(result)
+}
+
+/// Run the post-processing pipeline synchronously (WASM-compatible version).
+///
+/// This is a synchronous implementation for WASM and non-async contexts.
+/// It performs a subset of the full async pipeline, excluding async post-processors
+/// and validators.
+///
+/// # Arguments
+///
+/// * `doc` - The internal document produced by the extractor
+/// * `config` - Extraction configuration
+///
+/// # Returns
+///
+/// The processed extraction result.
+///
+/// # Notes
+///
+/// This function is only available when the `tokio-runtime` feature is disabled.
+/// It handles:
+/// - Language detection (if enabled)
+/// - Quality processing (token reduction, NFC normalization, output-format application)
+/// - Chunking (if enabled) — runs after the content-mutating steps above (#213)
+/// - Encoded output (DOCX), packaged last from the finished rendering
+///
+/// It does NOT handle:
+/// - Async post-processors
+/// - Async validators
+#[cfg(not(feature = "tokio-runtime"))]
+#[cfg_attr(feature = "otel", tracing::instrument(
+    skip(doc, config),
+    fields(
+        { crate::telemetry::conventions::OPERATION } = crate::telemetry::conventions::operations::PIPELINE,
+        content.element_count = doc.elements.len(),
+    )
+))]
+#[cfg_attr(alef, alef(skip))]
+pub fn run_pipeline_sync(mut doc: InternalDocument, config: &ExtractionConfig) -> Result<ExtractedDocument> {
+    (doc.ocr_text_only, doc.append_ocr_text) = image_ocr_text_rendering(config);
+    doc.escape_markdown = config.escape_markdown;
+    doc.include_watermarks = config
+        .content_filter
+        .as_ref()
+        .is_some_and(|filter| filter.include_watermarks);
+    doc.table_anchors = config.table_anchors;
+    doc.page_marker_format = config
+        .pages
+        .as_ref()
+        .filter(|p| p.insert_page_markers)
+        .map(|p| p.marker_format.clone());
+    if let Some(format) = doc.page_marker_format.clone() {
+        page_markers::inject_page_marker_elements(&mut doc, &format);
+    }
+
+    // Mirror `run_pipeline`'s embedded-image OCR text handling (#219): without these,
+    // `images.ocr_text_only` / `images.append_ocr_text` are silently ignored on the
+    // sync (non-tokio, WASM) path even though the fields above are now set.
+    let inline_images = images_without_an_element(&doc);
+    replace_embedded_image_markdown_with_ocr(&mut doc, &inline_images);
+    append_embedded_image_ocr_text(&mut doc, &inline_images);
+
+    // Computed once, up front, from `doc` (independent of the later derivation and
+    // content-mutating steps) and carried to the relocated `execute_chunking` call
+    // near the end of this function — see the ordering note on `run_pipeline` (#213).
+    #[cfg(feature = "chunking")]
+    let chunker_heading_source: Option<String> = {
+        let needs_markdown = config.chunking.as_ref().is_some_and(|c| {
+            c.chunker_type == crate::core::config::ChunkerType::Markdown
+                || c.resolve_preset().chunker_type == crate::core::config::ChunkerType::Markdown
+        }) && config.output_format == crate::core::config::OutputFormat::Plain;
+        if needs_markdown {
+            Some(crate::rendering::render_markdown(&doc))
+        } else {
+            None
+        }
+    };
+    #[cfg(not(feature = "chunking"))]
+    let chunker_heading_source: Option<String> = None;
+
+    #[cfg(feature = "html")]
+    let styled_html_prerender: Option<String> = {
+        use crate::plugins::InternalRenderer as _;
+        if config.output_format == crate::core::config::OutputFormat::Html {
+            config.html_output.as_ref().and_then(|html_cfg| {
+                match crate::rendering::StyledHtmlRenderer::new(html_cfg.clone()) {
+                    Ok(renderer) => match renderer.render(&doc) {
+                        Ok(html) => Some(html),
+                        Err(e) => {
+                            tracing::warn!("StyledHtmlRenderer render failed, falling back to default HTML: {e}");
+                            None
+                        }
+                    },
+                    Err(e) => {
+                        tracing::warn!("StyledHtmlRenderer construction failed, falling back to default HTML: {e}");
+                        None
+                    }
+                }
+            })
+        } else {
+            None
+        }
+    };
+
+    let doc_for_elements = if config.result_format == crate::types::ResultFormat::ElementBased {
+        Some(doc.clone())
+    } else {
+        None
+    };
+    let include_structure = config.include_document_structure;
+    let mut result =
+        crate::extraction::derive::derive_extraction_result(doc, include_structure, config.output_format.clone());
+
+    // GH#1703: mirror `run_pipeline` -- rendering above has consumed the OCR text, so the bytes
+    // read only for embedded-image OCR (GH#1662) go unless the caller asked for images. ~keep
+    let images_dropped_after_ocr = if should_retain_images_after_ocr(config) {
+        0
+    } else {
+        drop_ocr_only_images(&mut result)
+    };
+    result.internal_document = doc_for_elements;
+
+    // #286: mirrors `run_pipeline` — see `discard_diverged_internal_document`.
+    let internal_document_source_content = result.internal_document.is_some().then(|| result.content.clone());
+
+    #[cfg(feature = "html")]
+    if let Some(html) = styled_html_prerender {
+        result.formatted_content = Some(html);
+    }
+
+    // #331: same idea for the rendered output format, which `apply_output_format` swaps into
+    // `content` at the very end. See `discard_diverged_formatted_content`.
+    let formatted_content_source = result
+        .formatted_content
+        .as_ref()
+        .map(|formatted| (result.content.clone(), formatted.clone()));
+
+    #[cfg(feature = "image-encode")]
+    if let Some(ref image_cfg) = config.images {
+        apply_output_format_pass_with_security_limits(&mut result, image_cfg, config.security_limits.as_ref());
+    }
+
+    if let Some(ref image_cfg) = config.images {
+        apply_data_base64_pass(&mut result, image_cfg);
+    }
+
+    execute_language_detection(&mut result, config)?;
+    execute_token_reduction(&mut result, config)?;
+
+    normalize_nfc(&mut result);
+    discard_diverged_internal_document(&mut result, internal_document_source_content.as_deref());
+    discard_diverged_formatted_content(&mut result, formatted_content_source.as_ref());
+    apply_element_transform(&mut result, config);
+
+    result = apply_output_format(result, config.output_format.clone());
+
+    // Chunking runs last, after every step above that rewrites `content` — see the
+    // ordering note on `run_pipeline`'s doc comment (#213).
+    execute_chunking(&mut result, config, chunker_heading_source.as_deref())?;
+
+    populate_document_counts(&mut result, images_dropped_after_ocr);
+
+    #[cfg(feature = "heuristics")]
+    {
+        use crate::heuristics::confidence::{ConfidenceSignals, ConfidenceWeights, score_confidence};
+        let text_coverage = measure_text_coverage(&result);
+        let schema_compliance = structured_extraction_compliance(config, &result);
+        let signals = ConfidenceSignals::from_extraction_result(&result, schema_compliance, text_coverage);
+        result.extraction_confidence = Some(score_confidence(signals, ConfidenceWeights::default()));
+    }
+
+    format::finish_output_format(&mut result, &config.output_format)?;
+
+    Ok(result)
+}
+
+/// Populate [`ExtractedDocument::counts`] with cheap structural counts.
+///
+/// The page count is read from the parse-time page inventory
+/// (`metadata.pages.total_count`) so it is available even when per-page content
+/// extraction is disabled; it falls back to the materialized `pages` length, then to
+/// a format-specific page count that was captured independent of any page tracking
+/// (GH#1888: a scanned PDF extracted with OCR disabled and no `PageConfig` builds
+/// neither `metadata.pages` nor `pages` -- there is no text to assign page boundaries
+/// to -- even though `metadata.format`'s PDF page count was already read from the
+/// page tree up front), and finally `0` for inputs that are not page-addressable
+/// (plain text, etc.). Table and image counts are the lengths of the
+/// already-populated collections.
+fn populate_document_counts(result: &mut ExtractedDocument, images_dropped_after_ocr: usize) {
+    // ~keep `counts.pages` is documented as the SOURCE document's page count, so the format's own
+    // count is a floor and not merely a last resort. Page tracking counts the pages that produced
+    // content, which is fewer than the document has whenever a page yields none: with OCR off, a
+    // fully scanned PDF tracks nothing and used to report 0, and a PDF with one native page beside
+    // one scanned page reports 1 of its 2 (GH#1888). Taking the larger of the two can only correct
+    // such a shortfall -- a format count is read from the page tree, independently of any tracking.
+    let tracked = result
+        .metadata
+        .pages
+        .as_ref()
+        .map(|p| p.total_count as usize)
+        .filter(|&n| n > 0)
+        .or_else(|| result.pages.as_ref().map(Vec::len));
+    let pages = match (tracked, format_metadata_page_count(&result.metadata)) {
+        (Some(tracked), Some(declared)) => tracked.max(declared),
+        (Some(tracked), None) => tracked,
+        (None, declared) => declared.unwrap_or(0),
+    };
+    result.counts = crate::types::DocumentCounts {
+        pages,
+        tables: result.tables.len(),
+        images: result.images.as_ref().map_or(images_dropped_after_ocr, Vec::len),
+    };
+}
+
+/// Page count carried by format-specific metadata, independent of per-page tracking.
+///
+/// Only PDF reports one this way today: `PdfMetadata::page_count` is read from the
+/// document's page tree during metadata extraction regardless of whether page
+/// boundaries were tracked (GH#1888).
+#[cfg(feature = "pdf")]
+fn format_metadata_page_count(metadata: &crate::types::Metadata) -> Option<usize> {
+    match metadata.format.as_ref()? {
+        crate::types::FormatMetadata::Pdf(pdf) => pdf.page_count.map(|n| n as usize),
+        _ => None,
+    }
+}
+
+#[cfg(not(feature = "pdf"))]
+fn format_metadata_page_count(_metadata: &crate::types::Metadata) -> Option<usize> {
+    None
+}
+
+/// Determine the [`SchemaCompliance`](crate::heuristics::confidence::SchemaCompliance) signal
+/// to feed into confidence scoring for a completed pipeline run (GH#1624).
+///
+/// Reuses the existing three variants instead of adding a fourth: `AllValid` covers both "no
+/// schema was requested" (nothing to violate) and "the requested schema produced output";
+/// `AllInvalid` covers every case where structured extraction was requested but the pipeline
+/// still has no `structured_output` -- an LLM failure, the `liter-llm` feature being absent, or
+/// wasm's unsupported-stage warning all leave that field `None`. Before this fix the pipeline
+/// passed `AllValid` unconditionally, so a failed or skipped structured extraction scored as
+/// if it had fully validated. ~keep
+#[cfg(feature = "heuristics")]
+fn structured_extraction_compliance(
+    config: &ExtractionConfig,
+    result: &ExtractedDocument,
+) -> crate::heuristics::confidence::SchemaCompliance {
+    use crate::heuristics::confidence::SchemaCompliance;
+    if config.structured_extraction.is_some() && result.structured_output.is_none() {
+        SchemaCompliance::AllInvalid
+    } else {
+        SchemaCompliance::AllValid
+    }
+}
+
+/// Measure the fraction of pages with usable (non-blank) text, for
+/// [`crate::heuristics::confidence::ConfidenceSignals::text_coverage`] (#214).
+///
+/// For page-addressable documents (`result.pages` populated — PDFs, and any format
+/// with a per-page breakdown), this is the fraction of pages whose trimmed content is
+/// non-empty: a document with 3 of 10 pages OCR-blank or unreadable measures `0.7`,
+/// not a hardcoded `1.0` that hides the gap. For formats without a page breakdown
+/// (plain text, Markdown, HTML, …), coverage collapses to a binary full/empty signal:
+/// `1.0` when `result.content` has any non-whitespace text, `0.0` when it does not —
+/// a document that produced no text at all should not score as if it were fully
+/// covered. Pages the source has but `result.pages` omits (it only lists pages that
+/// carry content when derived from elements) count as unusable, so the score does not
+/// depend on whether per-page output was requested.
+#[cfg(feature = "heuristics")]
+fn measure_text_coverage(result: &ExtractedDocument) -> f32 {
+    match result.pages.as_deref() {
+        Some(pages) if !pages.is_empty() => {
+            let usable = pages.iter().filter(|page| !page.content.trim().is_empty()).count();
+            // ~keep the fallback page list is built from page-tagged elements, so a page with no text has no
+            // entry; the source page count restores it to the denominator regardless of page output (#2170).
+            let population = pages.len().max(result.counts.pages);
+            usable as f32 / population as f32
+        }
+        _ => {
+            if result.content.trim().is_empty() {
+                0.0
+            } else {
+                1.0
+            }
+        }
+    }
+}
+
+/// Re-encode all images in `result` to the format requested by `config.output_format`.
+///
+/// Runs after OCR has completed and before post-processors so that downstream
+/// consumers (captioning, QR) always see coherent `data` + `format` pairs.
+/// Images whose source format cannot be decoded (e.g. EMF, WMF) are left untouched;
+/// a `ProcessingWarning` is pushed for each failure.
+///
+/// When the `svg` feature is active and `config.output_format` is `Native`, a
+/// sanitization pass is still applied to SVG images if `config.svg.sanitize` is set.
+#[cfg(all(feature = "image-encode", test))]
+fn apply_output_format_pass(
+    result: &mut ExtractedDocument,
+    config: &crate::core::config::extraction::ImageExtractionConfig,
+) {
+    apply_output_format_pass_with_security_limits(result, config, None);
+}
+
+#[cfg(feature = "image-encode")]
+fn apply_output_format_pass_with_security_limits(
+    result: &mut ExtractedDocument,
+    config: &crate::core::config::extraction::ImageExtractionConfig,
+    security_limits: Option<&crate::extractors::security::SecurityLimits>,
+) {
+    use crate::core::config::extraction::ImageOutputFormat;
+    use crate::core::image_encode::re_encode;
+
+    #[cfg(not(feature = "svg"))]
+    if matches!(config.output_format, ImageOutputFormat::Native) {
+        return;
+    }
+    #[cfg(feature = "svg")]
+    if matches!(config.output_format, ImageOutputFormat::Native) && !config.svg.sanitize {
+        return;
+    }
+
+    let target = config.output_format;
+    let default_security_limits = crate::extractors::security::SecurityLimits::default();
+    let security_limits = security_limits.unwrap_or(&default_security_limits);
+    for image in result.images.iter_mut().flatten() {
+        match re_encode(
+            image,
+            target,
+            security_limits,
+            #[cfg(feature = "svg")]
+            &config.svg,
+        ) {
+            Ok(_) => {}
+            Err(warning) => {
+                result.processing_warnings.push(crate::types::ProcessingWarning {
+                    source: std::borrow::Cow::Borrowed("image_encoder"),
+                    message: std::borrow::Cow::Owned(warning.to_string()),
+                });
+            }
+        }
+    }
+}
+
+/// Populate `ExtractedImage::data_base64` when the caller opts in via
+/// `ImageExtractionConfig::include_data_base64`.
+fn apply_data_base64_pass(
+    result: &mut ExtractedDocument,
+    config: &crate::core::config::extraction::ImageExtractionConfig,
+) {
+    if !config.include_data_base64 {
+        return;
+    }
+    use base64::Engine as _;
+    for image in result.images.iter_mut().flatten() {
+        image.data_base64 = Some(base64::engine::general_purpose::STANDARD.encode(&image.data));
+    }
+}
+
+/// Drop the preserved extractor `InternalDocument` once post-processing has rewritten
+/// `content`, so nothing downstream can hand out pre-post-processing text (#286).
+///
+/// `source_content` is `result.content` as it stood when the tree was stored, or `None`
+/// when no tree was stored at all.
+///
+/// The tree is a verbatim clone of the extractor's element list, taken before the
+/// post-processor stages run. No stage writes back into it: redaction, summarisation,
+/// translation and token reduction all rewrite `result.content` and leave the tree holding
+/// the original text. Two consumers then read that stale tree:
+///
+/// - `plugins::renderer`'s blanket `impl<T: InternalRenderer> Renderer for T`, so the
+///   public `Renderer::render_result` renders text that never went through
+///   post-processing and disagrees with `ExtractedDocument::content`;
+/// - `extraction::transform::transform_extraction_result_to_elements`, which prefers the
+///   tree over `content`/`pages`, so the public `elements` — including the copy the
+///   renderer registry hands to foreign renderers — carries the same stale text.
+///
+/// Dropping the tree makes both fall back to the post-processed `content`/`pages`: the
+/// blanket impl returns `content` verbatim, per its documented `Renderer` default. The
+/// tree is kept whenever `content` is untouched, which is the overwhelmingly common case
+/// and preserves the extractor reading order the field exists to carry.
+fn discard_diverged_internal_document(result: &mut ExtractedDocument, source_content: Option<&str>) {
+    let Some(source_content) = source_content else {
+        return;
+    };
+    if result.content != source_content {
+        result.internal_document = None;
+    }
+}
+
+/// `ProcessingWarning::source` for the output-format downgrade below.
+const OUTPUT_FORMAT_WARNING_SOURCE: &str = "output_format";
+
+/// Drop `formatted_content` when post-processing has rewritten `content` since it was
+/// rendered.
+///
+/// `formatted_content` is produced by `derive_extraction_result` from the extractor's
+/// element tree, before any post-processor runs, and [`apply_output_format`] then
+/// overwrites `content` with it at the very end of the pipeline. So a processor that
+/// rewrote `content` — redaction, summarisation, translation — had its work silently
+/// thrown away for every output format that renders one (Markdown, Djot, HTML, JSON,
+/// Custom); with redaction configured, the returned document was the *unredacted*
+/// rendering (#331).
+///
+/// A processor that maintains both surfaces is honoured, not punished: the built-in
+/// redaction processor rewrites `formatted_content` alongside `content`
+/// (`text/redaction/engine.rs`), and its rendering is correct, so it is kept. Only a
+/// rendering that did *not* move while `content` did is stale, and only that one is
+/// dropped — correctness over presentation, with the caller told the requested format was
+/// downgraded rather than being handed text no processor ever saw.
+fn discard_diverged_formatted_content(result: &mut ExtractedDocument, source: Option<&(String, String)>) {
+    let Some((source_content, source_formatted)) = source else {
+        return;
+    };
+
+    // `content` never moved — the rendering still stands for it.
+    if result.content == *source_content {
+        return;
+    }
+    // Both moved: a processor rewrote the rendering alongside the text, so it is current.
+    if result.formatted_content.as_deref() != Some(source_formatted.as_str()) {
+        return;
+    }
+
+    result.formatted_content = None;
+    crate::core::diagnostics::push_warning(
+        &mut result.processing_warnings,
+        OUTPUT_FORMAT_WARNING_SOURCE,
+        "Post-processing rewrote the document text after the requested output format had \
+         already been rendered, so the rendering was discarded and the post-processed plain \
+         text is returned instead. Rendering it in the requested format would have undone \
+         the post-processors' changes",
+    );
+}
+
+/// Transform to element-based output if requested by the config.
+fn apply_element_transform(result: &mut ExtractedDocument, config: &ExtractionConfig) {
+    if config.result_format == crate::types::ResultFormat::ElementBased {
+        result.elements = Some(crate::extraction::transform::transform_extraction_result_to_elements(
+            result,
+        ));
+    }
+}
+
+/// Put the OCR text of each embedded picture where every later step reads it.
+///
+/// An OCR text anchor (`InternalElement::image_ocr_text_anchor`) becomes a paragraph that
+/// holds the text, at the same position. With no text it is removed, together with a page
+/// break that only it gave a reason for. The text of a picture with an anchor or an image
+/// element is also added to the prebuilt content of its page: an extractor writes those
+/// pages before the pictures are sent to OCR. Runs before any renderer, so `content`, the
+/// page content and the chunks all come from the same elements (GH#2068). ~keep
+#[cfg(all(feature = "ocr", feature = "tokio-runtime"))]
+fn fold_embedded_image_ocr_text(doc: &mut InternalDocument) {
+    use crate::types::internal::{ElementKind, InternalElement, RelationshipTarget};
+
+    // A paragraph with a page tag in a document whose other elements have none would be the
+    // only member of its page, and a formatted page is rendered from its members alone. ~keep
+    let pages_are_tagged = doc
+        .elements
+        .iter()
+        .any(|element| element.page.is_some() && element.image_ocr_text_anchor_index().is_none());
+
+    let mut keep = vec![true; doc.elements.len()];
+    for (index, kept) in keep.iter_mut().enumerate() {
+        let element = &doc.elements[index];
+        let anchored_image = element.image_ocr_text_anchor_index();
+        let image_index = match (anchored_image, element.kind) {
+            (Some(image_index), _) | (None, ElementKind::Image { image_index }) => image_index,
+            _ => continue,
+        };
+        let (page_number, depth) = (element.page, element.depth);
+        let text = doc
+            .images
+            .get(image_index as usize)
+            .and_then(|image| image.ocr_result.as_ref())
+            .map(|result| result.content.as_str())
+            .filter(|content| !content.is_empty() && element.should_render_image_ocr());
+
+        if let (Some(text), Some(page_number)) = (text, page_number)
+            && let Some(page) = doc
+                .prebuilt_pages
+                .as_mut()
+                .and_then(|pages| pages.iter_mut().find(|page| page.page_number == page_number))
+        {
+            if !page.content.is_empty() {
+                page.content.push_str("\n\n");
+            }
+            page.content.push_str(text);
+        }
+
+        if anchored_image.is_none() {
+            continue;
+        }
+        let Some(text) = text else {
+            *kept = false;
+            continue;
+        };
+        let mut paragraph = InternalElement::text(ElementKind::Paragraph, text, depth);
+        paragraph.page = page_number.filter(|_| pages_are_tagged);
+        doc.elements[index] = paragraph.with_index(index as u32);
+    }
+
+    // A run of elements between two page breaks that is empty only because its anchors were
+    // removed takes one of the two breaks with it: without the picture, the extractor would
+    // not have counted that page as content. ~keep
+    let run_ends: Vec<usize> = doc
+        .elements
+        .iter()
+        .enumerate()
+        .filter(|(_, element)| element.kind == ElementKind::PageBreak)
+        .map(|(index, _)| index)
+        .chain(std::iter::once(doc.elements.len()))
+        .collect();
+    let mut run_start = 0;
+    for boundary in run_ends {
+        if run_start < boundary && keep[run_start..boundary].iter().all(|kept| !kept) {
+            if run_start > 0 {
+                keep[run_start - 1] = false;
+            } else if boundary < doc.elements.len() {
+                keep[boundary] = false;
+            }
+        }
+        run_start = boundary + 1;
+    }
+
+    if keep.iter().all(|kept| *kept) {
+        return;
+    }
+    // `Relationship` holds raw positions in `elements`, so a removal moves every later one. ~keep
+    let mut next_index = 0u32;
+    let old_to_new: Vec<Option<u32>> = keep
+        .iter()
+        .map(|kept| {
+            kept.then(|| {
+                next_index += 1;
+                next_index - 1
+            })
+        })
+        .collect();
+    let mut kept = keep.iter().copied();
+    doc.elements.retain(|_| kept.next().unwrap_or(true));
+    doc.relationships.retain_mut(|relationship| {
+        let Some(source) = old_to_new.get(relationship.source as usize).copied().flatten() else {
+            return false;
+        };
+        relationship.source = source;
+        if let RelationshipTarget::Index(target) = &mut relationship.target {
+            let Some(remapped) = old_to_new.get(*target as usize).copied().flatten() else {
+                return false;
+            };
+            *target = remapped;
+        }
+        true
+    });
+}
+
+/// How the OCR text of a picture is rendered: `(ocr_text_only, append_ocr_text)`.
+///
+/// A missing `images` block reads as the default block, the same way the gate that sends
+/// the pictures to OCR reads it. ~keep
+fn image_ocr_text_rendering(config: &ExtractionConfig) -> (bool, bool) {
+    let images = config.images.clone().unwrap_or_default();
+    (images.ocr_text_only, images.append_ocr_text)
+}
+
+/// Positions in `doc.images` of the pictures that no image element and no OCR text anchor
+/// shows.
+///
+/// An inline `![alt](url)` placeholder pairs with these, in order. A picture with an image
+/// element gets its OCR text from the renderer and a picture with an anchor gets it from the
+/// fold, and pairing it here too would add the text a second time. ~keep
+fn images_without_an_element(doc: &InternalDocument) -> Vec<usize> {
+    let mut has_element = vec![false; doc.images.len()];
+    for element in &doc.elements {
+        #[cfg(all(feature = "ocr", feature = "tokio-runtime"))]
+        let anchored_image = element.image_ocr_text_anchor_index();
+        #[cfg(not(all(feature = "ocr", feature = "tokio-runtime")))]
+        let anchored_image: Option<u32> = None;
+        let image_index = match element.kind {
+            crate::types::internal::ElementKind::Image { image_index } => Some(image_index),
+            _ => anchored_image,
+        };
+        if let Some(image_index) = image_index
+            && let Some(flag) = has_element.get_mut(image_index as usize)
+        {
+            *flag = true;
+        }
+    }
+    (0..doc.images.len())
+        .filter(|&position| !has_element[position])
+        .collect()
+}
+
+/// Replace inline markdown image references with OCR text for formats (e.g. PPTX)
+/// that bake placeholders into paragraph text rather than using `ElementKind::Image`.
+///
+/// `inline_images` is the result of [`images_without_an_element`] for the document as the
+/// extractor made it.
+fn replace_embedded_image_markdown_with_ocr(doc: &mut InternalDocument, inline_images: &[usize]) {
+    if !doc.ocr_text_only || inline_images.is_empty() {
+        return;
+    }
+
+    let mut image_idx = 0usize;
+
+    for elem in &mut doc.elements {
+        if !matches!(elem.kind, crate::types::internal::ElementKind::Paragraph) {
+            continue;
+        }
+        if !is_markdown_image_reference(&elem.text) {
+            continue;
+        }
+        if let Some(img) = inline_images
+            .get(image_idx)
+            .and_then(|&position| doc.images.get(position))
+            && let Some(ocr) = &img.ocr_result
+            && !ocr.content.is_empty()
+        {
+            elem.text = ocr.content.clone();
+            image_idx += 1;
+            continue;
+        }
+        image_idx += 1;
+    }
+
+    for table in &mut doc.tables {
+        for row in &mut table.cells {
+            for cell in row {
+                if !is_markdown_image_reference(cell) {
+                    continue;
+                }
+                if let Some(img) = inline_images
+                    .get(image_idx)
+                    .and_then(|&position| doc.images.get(position))
+                    && let Some(ocr) = &img.ocr_result
+                    && !ocr.content.is_empty()
+                {
+                    *cell = ocr.content.clone();
+                    image_idx += 1;
+                    continue;
+                }
+                image_idx += 1;
+            }
+        }
+    }
+}
+
+/// Append OCR text after inline markdown image references for formats (e.g. PPTX)
+/// that bake placeholders into paragraph text. Only runs when `append_ocr_text` is
+/// `true` and `ocr_text_only` is `false`.
+///
+/// `inline_images` is the result of [`images_without_an_element`] for the document as the
+/// extractor made it.
+fn append_embedded_image_ocr_text(doc: &mut InternalDocument, inline_images: &[usize]) {
+    if doc.ocr_text_only || !doc.append_ocr_text || inline_images.is_empty() {
+        return;
+    }
+
+    let mut image_idx = 0usize;
+    let mut new_elements = Vec::with_capacity(doc.elements.len() * 2);
+
+    for elem in &doc.elements {
+        new_elements.push(elem.clone());
+
+        if matches!(elem.kind, crate::types::internal::ElementKind::Paragraph)
+            && is_markdown_image_reference(&elem.text)
+        {
+            if let Some(img) = inline_images
+                .get(image_idx)
+                .and_then(|&position| doc.images.get(position))
+                && let Some(ocr) = &img.ocr_result
+                && !ocr.content.is_empty()
+            {
+                let mut ocr_elem = crate::types::internal::InternalElement::text(
+                    crate::types::internal::ElementKind::Paragraph,
+                    ocr.content.clone(),
+                    elem.depth,
+                );
+                ocr_elem.page = elem.page;
+                new_elements.push(ocr_elem);
+            }
+            image_idx += 1;
+        }
+    }
+
+    doc.elements = new_elements;
+
+    for table in &mut doc.tables {
+        for row in &mut table.cells {
+            for cell in row {
+                if !is_markdown_image_reference(cell) {
+                    continue;
+                }
+                if let Some(img) = inline_images
+                    .get(image_idx)
+                    .and_then(|&position| doc.images.get(position))
+                    && let Some(ocr) = &img.ocr_result
+                    && !ocr.content.is_empty()
+                {
+                    *cell = format!("{}\n\n{}", cell.trim(), ocr.content);
+                }
+                image_idx += 1;
+            }
+        }
+    }
+}
+
+/// Returns `true` if `text` is exactly a markdown image reference (`![alt](url)`).
+fn is_markdown_image_reference(text: &str) -> bool {
+    let t = text.trim();
+    if !t.starts_with("![") {
+        return false;
+    }
+    let Some(bracket_end) = t.find("](") else {
+        return false;
+    };
+    if bracket_end < 2 {
+        return false;
+    }
+    let after = &t[bracket_end + 2..];
+    after.ends_with(')')
+}
+
+/// Apply NFC unicode normalization to all text content.
+///
+/// Ensures consistent representation of composed characters (e.g., é vs e+combining accent)
+/// across all extraction backends (PDF, OCR, DOCX, HTML, etc.).
+fn normalize_nfc(result: &mut ExtractedDocument) {
+    #[cfg(feature = "quality")]
+    {
+        use unicode_normalization::UnicodeNormalization;
+        result.content = result.content.nfc().collect();
+        if let Some(pages) = result.pages.as_mut() {
+            for page in pages.iter_mut() {
+                page.content = page.content.nfc().collect();
+                if let Some(native_content) = page.native_content.as_mut() {
+                    *native_content = native_content.nfc().collect();
+                }
+            }
+        }
+    }
+    let _ = result;
+}
+
+/// Regression tests for #214: `measure_text_coverage` replaces the hardcoded
+/// `DEFAULT_TEXT_COVERAGE = 1.0` passed into `ConfidenceSignals::from_extraction_result`.
+#[cfg(all(test, feature = "heuristics"))]
+mod issue_214_text_coverage_tests {
+    use super::*;
+    use crate::types::PageContent;
+
+    fn page(page_number: u32, content: &str) -> PageContent {
+        PageContent {
+            page_number,
+            content: content.to_string(),
+            tables: Vec::new(),
+            image_indices: Vec::new(),
+            image_preprocessing: None,
+            hierarchy: None,
+            is_blank: None,
+            layout_regions: None,
+            speaker_notes: None,
+            section_name: None,
+            sheet_name: None,
+            ocr_confidence: None,
+            native_content: None,
+        }
+    }
+
+    #[test]
+    fn counts_source_pages_missing_from_the_page_list_as_unusable() {
+        let result = ExtractedDocument {
+            pages: Some(vec![page(1, "Real text here"), page(3, "More real text")]),
+            counts: crate::types::DocumentCounts {
+                pages: 3,
+                tables: 0,
+                images: 0,
+            },
+            ..Default::default()
+        };
+        assert!((measure_text_coverage(&result) - (2.0 / 3.0)).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn measures_fraction_of_non_blank_pages() {
+        let result = ExtractedDocument {
+            pages: Some(vec![
+                page(1, "Real text here"),
+                page(2, "   "),
+                page(3, "More real text"),
+            ]),
+            ..Default::default()
+        };
+        assert!(
+            (measure_text_coverage(&result) - (2.0 / 3.0)).abs() < f32::EPSILON,
+            "expected 2/3 non-blank pages, got {}",
+            measure_text_coverage(&result)
+        );
+    }
+
+    #[test]
+    fn measures_full_coverage_when_all_pages_have_text() {
+        let result = ExtractedDocument {
+            pages: Some(vec![page(1, "Text one"), page(2, "Text two")]),
+            ..Default::default()
+        };
+        assert_eq!(measure_text_coverage(&result), 1.0);
+    }
+
+    #[test]
+    fn measures_zero_coverage_when_all_pages_are_blank() {
+        let result = ExtractedDocument {
+            pages: Some(vec![page(1, ""), page(2, "   \n\t")]),
+            ..Default::default()
+        };
+        assert_eq!(measure_text_coverage(&result), 0.0);
+    }
+
+    #[test]
+    fn falls_back_to_binary_signal_when_pages_are_absent() {
+        let with_text = ExtractedDocument {
+            pages: None,
+            content: "Some extracted text".to_string(),
+            ..Default::default()
+        };
+        assert_eq!(measure_text_coverage(&with_text), 1.0);
+
+        let empty = ExtractedDocument {
+            pages: None,
+            content: String::new(),
+            ..Default::default()
+        };
+        assert_eq!(measure_text_coverage(&empty), 0.0);
+    }
+
+    #[test]
+    fn falls_back_to_binary_signal_when_pages_is_empty_vec() {
+        let result = ExtractedDocument {
+            pages: Some(vec![]),
+            content: "Some text".to_string(),
+            ..Default::default()
+        };
+        assert_eq!(measure_text_coverage(&result), 1.0);
+    }
+}
+
+/// Regression test for #219: `run_pipeline_sync` (the non-tokio/WASM path) omitted
+/// `doc.ocr_text_only` / `doc.append_ocr_text` and the corresponding embedded-image OCR
+/// text substitution the async `run_pipeline` performs, so `images.ocr_text_only` /
+/// `images.append_ocr_text` were silently ignored on that path.
+///
+/// Compiled only under `not(feature = "tokio-runtime")`, exactly like `run_pipeline_sync`
+/// itself — a `--features full` build never compiles this test (or the function).
+#[cfg(all(test, not(feature = "tokio-runtime")))]
+mod issue_219_sync_pipeline_ocr_text_options_tests {
+    use super::*;
+    use crate::core::config::extraction::ImageExtractionConfig;
+    use crate::types::ExtractedImage;
+    use crate::types::internal::{ElementKind, InternalDocument, InternalElement};
+    use std::borrow::Cow;
+
+    fn image_with_ocr_text(ocr_text: &str) -> ExtractedImage {
+        ExtractedImage {
+            data: bytes::Bytes::new(),
+            format: Cow::Borrowed("png"),
+            ocr_result: Some(Box::new(ExtractedDocument {
+                content: ocr_text.to_string(),
+                ..Default::default()
+            })),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn ocr_text_only_replaces_embedded_image_markdown_on_sync_pipeline() {
+        let mut doc = InternalDocument::new("pptx");
+        doc.push_element(InternalElement::text(ElementKind::Paragraph, "![img](embedded)", 0));
+        doc.images = vec![image_with_ocr_text("Recognized OCR text")];
+
+        let config = ExtractionConfig {
+            images: Some(ImageExtractionConfig {
+                ocr_text_only: true,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let result = run_pipeline_sync(doc, &config).unwrap();
+
+        assert!(
+            result.content.contains("Recognized OCR text"),
+            "sync pipeline must replace embedded image markdown with OCR text when \
+             ocr_text_only=true, got: {:?}",
+            result.content
+        );
+        assert!(
+            !result.content.contains("![img]"),
+            "sync pipeline must not leave the markdown image placeholder when ocr_text_only=true, got: {:?}",
+            result.content
+        );
+    }
+
+    #[test]
+    fn append_ocr_text_appends_after_embedded_image_markdown_on_sync_pipeline() {
+        let mut doc = InternalDocument::new("pptx");
+        doc.push_element(InternalElement::text(ElementKind::Paragraph, "![img](embedded)", 0));
+        doc.images = vec![image_with_ocr_text("Appended OCR text")];
+
+        let config = ExtractionConfig {
+            images: Some(ImageExtractionConfig {
+                append_ocr_text: true,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let result = run_pipeline_sync(doc, &config).unwrap();
+
+        assert!(
+            result.content.contains("![img]"),
+            "append_ocr_text must keep the original markdown placeholder, got: {:?}",
+            result.content
+        );
+        assert!(
+            result.content.contains("Appended OCR text"),
+            "sync pipeline must append the OCR text when append_ocr_text=true, got: {:?}",
+            result.content
+        );
+    }
+
+    #[test]
+    fn default_config_appends_after_embedded_image_markdown_on_sync_pipeline() {
+        let mut doc = InternalDocument::new("pptx");
+        doc.push_element(InternalElement::text(ElementKind::Paragraph, "![img](embedded)", 0));
+        doc.images = vec![image_with_ocr_text("Recognized OCR text")];
+
+        let result = run_pipeline_sync(doc, &ExtractionConfig::default()).unwrap();
+
+        assert!(
+            result.content.contains("![img]"),
+            "the default config must keep the markdown placeholder, got: {:?}",
+            result.content
+        );
+        assert_eq!(
+            result.content.matches("Recognized OCR text").count(),
+            1,
+            "the default config must append the OCR text one time, got: {:?}",
+            result.content
+        );
+    }
+
+    #[test]
+    fn append_ocr_text_off_does_not_touch_embedded_image_markdown_on_sync_pipeline() {
+        let mut doc = InternalDocument::new("pptx");
+        doc.push_element(InternalElement::text(ElementKind::Paragraph, "![img](embedded)", 0));
+        doc.images = vec![image_with_ocr_text("Should not appear")];
+
+        let config = ExtractionConfig {
+            images: Some(ImageExtractionConfig {
+                append_ocr_text: false,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let result = run_pipeline_sync(doc, &config).unwrap();
+
+        assert!(
+            result.content.contains("![img]"),
+            "append_ocr_text=false must leave the markdown placeholder untouched, got: {:?}",
+            result.content
+        );
+        assert!(
+            !result.content.contains("Should not appear"),
+            "append_ocr_text=false must not inject OCR text, got: {:?}",
+            result.content
+        );
+    }
+}
+
+/// Regression test for #213: chunking must run after every pipeline step that rewrites
+/// `content`, so `Chunk::metadata::byte_start`/`byte_end` always index the *returned*
+/// `content` — not a pre-mutation snapshot of it.
+#[cfg(all(test, feature = "chunking", feature = "quality", feature = "tokio-runtime"))]
+mod issue_213_chunk_offset_ordering_tests {
+    use super::*;
+    use crate::core::config::{ChunkerType, ChunkingConfig, OutputFormat};
+    use crate::types::internal::{ElementKind, InternalDocument, InternalElement};
+
+    /// "Cafe" + combining acute accent (U+0301) — 3 bytes for "e\u{0301}", decomposed.
+    /// `normalize_nfc` composes this into "é" (2 bytes), shortening `content`. Before
+    /// the fix, chunk offsets were computed against the pre-normalization (longer)
+    /// text but returned alongside the post-normalization (shorter) `content`.
+    const DECOMPOSED: &str = "Cafe\u{0301} is served here with extra words to keep the chunk large enough to matter.";
+
+    #[tokio::test]
+    async fn chunk_offsets_index_the_final_normalized_content() {
+        let mut doc = InternalDocument::new("plain");
+        doc.push_element(InternalElement::text(ElementKind::Paragraph, DECOMPOSED, 0));
+
+        let config = ExtractionConfig {
+            output_format: OutputFormat::Plain,
+            chunking: Some(ChunkingConfig {
+                max_characters: 2000,
+                overlap: 0,
+                trim: true,
+                chunker_type: ChunkerType::Text,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let result = run_pipeline(doc, &config).await.unwrap();
+
+        assert!(
+            !result.content.contains('\u{0301}'),
+            "expected NFC normalization to compose the combining accent away, got: {:?}",
+            result.content
+        );
+        assert!(
+            result.content.contains('é'),
+            "expected composed 'é' in: {:?}",
+            result.content
+        );
+        assert!(
+            result.content.len() < DECOMPOSED.len(),
+            "normalization must have shortened the content by at least one byte"
+        );
+
+        let chunks = result.chunks.expect("chunks must be populated");
+        assert_eq!(chunks.len(), 1);
+        for chunk in &chunks {
+            let slice = &result.content[chunk.metadata.byte_start..chunk.metadata.byte_end];
+            assert_eq!(
+                slice, chunk.content,
+                "chunk byte_start/byte_end must index the FINAL (post-normalization) content, \
+                 not a pre-mutation snapshot"
+            );
+        }
+    }
+}
+
+/// Regression tests for #271: `builtin_registration_error()` used to be dead code —
+/// nothing surfaced it, so a user whose e.g. `summarization` processor failed to
+/// register got a clean `Ok` with no output and no explanation. These test the pure
+/// warning-construction helper directly so the test does not mutate process-global registry state.
+#[cfg(test)]
+mod issue_271_builtin_registration_warning_tests {
+    use super::*;
+
+    #[test]
+    fn pushes_a_warning_naming_the_registration_error() {
+        let mut doc = InternalDocument::new("plain");
+
+        push_builtin_registration_warning(&mut doc, Some("summarization: boom".to_string()));
+
+        assert_eq!(doc.processing_warnings.len(), 1);
+        assert_eq!(doc.processing_warnings[0].source, "builtin_registration");
+        assert_eq!(
+            doc.processing_warnings[0].message,
+            "built-in post-processor registration was incomplete (summarization: boom); a configured \
+             processor may silently produce no output for its stage"
+        );
+    }
+
+    #[test]
+    fn pushes_nothing_when_registration_succeeded() {
+        let mut doc = InternalDocument::new("plain");
+
+        push_builtin_registration_warning(&mut doc, None);
+
+        assert!(doc.processing_warnings.is_empty());
+    }
+
+    /// Exercises the actual call site in `run_pipeline` (not just the pure helper
+    /// above), by forcing `initialization::builtin_registration_error()` to report
+    /// a failure via the test-only setter and checking the warning that comes back
+    /// out of a real `run_pipeline` call. This is the test that catches a regression
+    /// where `push_builtin_registration_warning` exists but nothing calls it — the
+    /// exact shape of the bug #271 originally described.
+    ///
+    /// `#[serial]`: `BUILTIN_REGISTRATION_ERROR` is a process-global static with no
+    /// injectable variant, so a concurrent pipeline run expecting `None` would race
+    /// this test — same reasoning as the other process-global-static tests in this
+    /// crate (see `initialization::tests::processor_cache_rebuilds_when_registry_changes_after_first_use`).
+    #[tokio::test]
+    #[serial_test::serial]
+    async fn run_pipeline_surfaces_a_forced_builtin_registration_failure() {
+        use crate::core::pipeline::initialization::test_support::set_registration_error;
+        use crate::types::internal::InternalDocument;
+
+        set_registration_error(Some("summarization: boom".to_string()));
+
+        let mut doc = InternalDocument::new("plain");
+        doc.mime_type = "text/plain".to_string();
+        let config = ExtractionConfig::default();
+
+        let result = run_pipeline(doc, &config).await;
+
+        set_registration_error(None);
+
+        let processed = result.expect("run_pipeline must still succeed despite the registration failure");
+        assert_eq!(processed.processing_warnings.len(), 1);
+        assert_eq!(processed.processing_warnings[0].source, "builtin_registration");
+        assert_eq!(
+            processed.processing_warnings[0].message,
+            "built-in post-processor registration was incomplete (summarization: boom); a configured \
+             processor may silently produce no output for its stage"
+        );
+    }
+}

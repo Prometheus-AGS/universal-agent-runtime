@@ -211,6 +211,12 @@ The Linux amd64 release candidate SHALL retain the existing vulnerability gates 
 - **THEN** the affected dependency paths resolve a patched Glob in the root and standalone frontend lockfiles
 - **AND** coverage includes unexecuted eligible source while respecting exclusions, and Storybook emits metadata for discovered typed props
 
+#### Scenario: RC4 resolves the RustSec fixes before rebuilding
+- **WHEN** the release source applies the patched Rust dependency graph and runs the existing Cargo audit
+- **THEN** the locked graph passes without adding advisory exceptions
+- **AND** the runtime and proxy retain explicit RustCrypto provider ownership and fail closed when another provider already owns the process slot
+- **AND** document extraction, governed MCP execution, persistent store recovery, and the Wasmtime component trust boundary retain their existing behavior on the replacement candidate
+
 #### Scenario: A2UI consumers migrate to a patched Zod 4 boundary
 - **WHEN** the shipped UAR renderer or the independent PEM client processes a valid A2UI surface and dispatches a catalog-defined action
 - **THEN** the renderer, catalog and binder exchange Zod 4 schemas through the same compatible core in that consumer, preserving data-model bindings and action forwarding
