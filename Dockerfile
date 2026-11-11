@@ -340,7 +340,7 @@ RUN mkdir -p /out/bin /out/static /out/skills/builtin \
 FROM toolchain AS runtime-toolchain
 
 RUN groupadd --gid 65532 uar \
-    && useradd --uid 65532 --gid 65532 --home-dir /var/lib/uar/cache/toolchain \
+    && useradd --key UID_MAX=65532 --uid 65532 --gid 65532 --home-dir /var/lib/uar/cache/toolchain \
         --no-create-home --no-log-init --shell /usr/sbin/nologin uar \
     && install -d -m 0700 -o 65532 -g 65532 /var/lib/uar/cache/toolchain
 
