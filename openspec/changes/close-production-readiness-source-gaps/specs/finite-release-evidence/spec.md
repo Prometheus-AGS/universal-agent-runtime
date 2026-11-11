@@ -236,6 +236,7 @@ The Linux amd64 release candidate SHALL retain the existing vulnerability gates 
 - **THEN** direct upstream archives are pinned and checked before extraction and Cargo source installs select explicit package versions
 - **AND** the installed tools retain their existing command surface, with Javy available offline as the same upstream binary previously selected by its npm wrapper
 - **AND** the standalone ComponentizeJS CLI resolves its Commander and Preview 2 shim runtime dependencies on the installed image
+- **AND** the runtime UID 65532 can compile a JavaScript component offline using its passwd home and writable cache under `/var/lib/uar`
 - **AND** acquisition, compiler and package manager diagnostics remain subject to the existing warning checks
 
 #### Scenario: RC4 resolves the RustSec fixes before rebuilding
