@@ -54,7 +54,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PATH=/usr/local/cargo/bin:/usr/local/go/bin:/root/.local/bin:/root/.bun/bin:$PATH
 
 # Ubuntu omits manpages, but xz and GCC alternatives install links to them.
-RUN apt-get update && apt-get -o 'DPkg::Options::=--path-include=/usr/share/man/man1/*' \
+RUN if [ "$TARGETARCH" = amd64 ]; then \
+        sources=/etc/apt/sources.list.d/ubuntu.sources; \
+        grep -Fxq 'URIs: http://archive.ubuntu.com/ubuntu/' "$sources" \
+            && sed -i 's|^URIs: http://archive\.ubuntu\.com/ubuntu/$|URIs: http://us.archive.ubuntu.com/ubuntu/|' "$sources"; \
+    fi \
+    && apt-get update && apt-get -o 'DPkg::Options::=--path-include=/usr/share/man/man1/*' \
         install -y --no-install-recommends \
         ca-certificates curl git build-essential pkg-config \
         libssl-dev cmake unzip xz-utils \

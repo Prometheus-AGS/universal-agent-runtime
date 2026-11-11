@@ -221,6 +221,11 @@ The Linux amd64 release candidate SHALL retain the existing vulnerability gates 
 - **THEN** it verifies both pinned SHA-256 values before extracting and building the archives, and builds Python against the installed mpdecimal library
 - **AND** the installed image's Python aliases resolve to that interpreter and support native extensions, virtual environments and the existing Python component tooling
 
+#### Scenario: The amd64 builder uses the approved Ubuntu archive mirror
+- **WHEN** the amd64 toolchain stage fetches its Noble archive packages
+- **THEN** it uses `us.archive.ubuntu.com` with the existing Ubuntu archive key, suites and components
+- **AND** security updates continue to use the base image's signed security source
+
 #### Scenario: RC4 resolves the RustSec fixes before rebuilding
 - **WHEN** the release source applies the patched Rust dependency graph and runs the existing Cargo audit
 - **THEN** the locked graph passes without adding advisory exceptions
