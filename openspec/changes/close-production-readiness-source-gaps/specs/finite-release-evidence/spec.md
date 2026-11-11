@@ -211,6 +211,11 @@ The Linux amd64 release candidate SHALL retain the existing vulnerability gates 
 - **THEN** the affected dependency paths resolve a patched Glob in the root and standalone frontend lockfiles
 - **AND** coverage includes unexecuted eligible source while respecting exclusions, and Storybook emits metadata for discovered typed props
 
+#### Scenario: The cold Linux toolchain install supplies manpage alternatives
+- **WHEN** the Linux toolchain installs its packages from a fresh Ubuntu base
+- **THEN** dpkg installs the section-one manpages used as xz and compiler alternative targets
+- **AND** the build log is checked with the existing diagnostic policy
+
 #### Scenario: RC4 resolves the RustSec fixes before rebuilding
 - **WHEN** the release source applies the patched Rust dependency graph and runs the existing Cargo audit
 - **THEN** the locked graph passes without adding advisory exceptions

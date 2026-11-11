@@ -53,7 +53,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     RUSTUP_HOME=/usr/local/rustup \
     PATH=/usr/local/cargo/bin:/usr/local/go/bin:/root/.local/bin:/root/.bun/bin:$PATH
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Ubuntu omits manpages, but xz and GCC alternatives install links to them.
+RUN apt-get update && apt-get -o 'DPkg::Options::=--path-include=/usr/share/man/man1/*' \
+        install -y --no-install-recommends \
         ca-certificates curl git build-essential pkg-config \
         libssl-dev cmake unzip xz-utils \
         software-properties-common gnupg lsb-release \
