@@ -8,6 +8,7 @@ import io
 import json
 from pathlib import Path
 import tarfile
+import tomllib
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -35,8 +36,9 @@ def prepare(directory):
             else:
                 raise AssertionError('Unexpected schema archive member')
     # Reuse the exact already-locked compatible peer, without installing/upgrading product packages.
-    zod = ROOT / 'node_modules/.pnpm/zod@3.25.76/node_modules/zod'
-    assert json.loads((zod / 'package.json').read_text())['version'] == '3.25.76'
+    zod_version = tomllib.loads((ROOT / 'versions.toml').read_text())['pins']['zod']
+    zod = ROOT / f'node_modules/.pnpm/zod@{zod_version}/node_modules/zod'
+    assert json.loads((zod / 'package.json').read_text())['version'] == zod_version
     dependencies = directory / 'package/node_modules'
     dependencies.mkdir(exist_ok=True)
     link = dependencies / 'zod'
@@ -46,7 +48,7 @@ def prepare(directory):
     assert module.is_file()
     (directory / 'provenance.json').write_text(json.dumps({
         'name': provenance['name'], 'version': provenance['version'],
-        'integrity': integrity, 'zod': '3.25.76', 'module': str(module),
+        'integrity': integrity, 'zod': zod_version, 'module': str(module),
     }, indent=2) + '\n')
     return module
 

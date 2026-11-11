@@ -1,16 +1,70 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { readFileSync, realpathSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { dirname, isAbsolute, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber';
 
 setDefaultTimeout(240_000);
-// The client packages live in an isolated folder outside the pnpm workspace,
-// so the published PEM 4.3.0 and web_core 0.12.0 are used, not workspace copies.
-const clientRequire = createRequire(resolve('scripts/behaviors/clients/a2ui-pem/package.json'));
+// Keep the consumer outside the pnpm workspace dependency graph.
+const historicalClientDirectory = resolve('scripts/behaviors/clients/a2ui-pem');
+const clientDirectory = process.env.UAR_A2UI_PEM_CLIENT_DIR ?? historicalClientDirectory;
+assert.ok(isAbsolute(clientDirectory), 'UAR_A2UI_PEM_CLIENT_DIR must be an absolute path');
+const clientRequire = createRequire(resolve(clientDirectory, 'package.json'));
 const load = specifier => import(pathToFileURL(clientRequire.resolve(specifier)).href);
+
+function clientPackageEvidence() {
+  const lock = JSON.parse(readFileSync(resolve(clientDirectory, 'package-lock.json'), 'utf8'));
+  const migrated = lock.packages?.['node_modules/@prometheus-ags/a2ui-react']?.version === '4.3.1-rc.1';
+  assert.ok(!process.env.UAR_A2UI_PEM_CLIENT_DIR || migrated, 'The staged consumer must use the migrated PEM package');
+  const expected = [
+    ['@prometheus-ags/a2ui-react', '@prometheus-ags/a2ui-react',
+      migrated ? '4.3.1-rc.1' : '4.3.0', '@prometheus-ags/a2ui-react/headless'],
+    ['@a2ui/web_core', migrated ? '@prometheus-ags/a2ui-web-core-zod4' : '@a2ui/web_core',
+      migrated ? '0.14.0-rc.1' : '0.12.0', '@a2ui/web_core/v0_9'],
+  ];
+  const packages = expected.map(([alias, name, version, entrypoint]) => {
+    const path = `node_modules/${alias}`;
+    const record = lock.packages?.[path];
+    const directory = realpathSync(resolve(clientDirectory, path));
+    assert.equal(directory, resolve(realpathSync(clientDirectory), path), `Isolated ${alias} install`);
+    const installed = JSON.parse(readFileSync(resolve(directory, 'package.json'), 'utf8'));
+    assert.equal(installed.name, name, `Installed ${alias} package identity`);
+    assert.equal(installed.version, version, `Installed ${alias} package version`);
+    assert.equal(record?.version, version, `Locked ${alias} version`);
+    assert.match(record?.integrity ?? '', /^sha512-[A-Za-z0-9+/]+=*$/);
+    assert.ok(realpathSync(clientRequire.resolve(entrypoint)).startsWith(`${directory}/`));
+    const origin = record.resolved?.startsWith('file:') ? 'local-tarball' : 'npm-registry';
+    if (origin === 'local-tarball') {
+      assert.ok(migrated && record.resolved.endsWith('.tgz'), 'Local candidate must be a packed tarball');
+    } else {
+      const url = new URL(record.resolved);
+      assert.ok(url.origin === 'https://registry.npmjs.org' && !url.username && !url.password);
+    }
+    return { alias, name, version, origin, integrity: record.integrity };
+  });
+  assert.equal(packages[0].origin, packages[1].origin, 'Use one origin for both candidate packages');
+  const pemRequire = createRequire(clientRequire.resolve('@prometheus-ags/a2ui-react/headless'));
+  const coreEntrypoint = '@a2ui/web_core/v0_9';
+  const corePath = realpathSync(clientRequire.resolve(coreEntrypoint));
+  assert.equal(realpathSync(pemRequire.resolve(coreEntrypoint)), corePath,
+    'PEM and the independent binder must share the same installed core');
+  if (migrated) {
+    const zodPath = realpathSync(pemRequire.resolve('zod'));
+    assert.equal(realpathSync(createRequire(corePath).resolve('zod')), zodPath,
+      'PEM and the core must share the same installed Zod');
+    assert.ok(zodPath.startsWith(`${realpathSync(clientDirectory)}/node_modules/zod/`));
+    const zod = lock.packages?.['node_modules/zod'];
+    const installed = JSON.parse(readFileSync(resolve(clientDirectory, 'node_modules/zod/package.json'), 'utf8'));
+    assert.equal(zod?.version, '4.6.7');
+    assert.equal(installed.version, zod.version);
+    assert.match(zod.integrity, /^sha512-[A-Za-z0-9+/]+=*$/);
+    packages.push({ alias: 'zod', name: 'zod', version: zod.version, origin: 'npm-registry', integrity: zod.integrity });
+  }
+  return { packages, migrated };
+}
 const UAR_CATALOGS = ['https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json', 'urn:uar:a2ui:catalog:1'];
 const NOTE_PATH = '/form/note';
 
@@ -126,7 +180,7 @@ Given('a disposable agent on the dedicated AG-UI route that publishes a ticket s
   this.route = `/api/uar/ag-ui/agents/${this.agentId}`;
   this.record = resolve(`.prometheus/verification/agui-route-a2ui/${this.agentId}.json`);
   this.evidence = { scenario: 'I19-AGUI-ROUTE-A2UI', platform: process.platform, model: this.model, agent_id: this.agentId,
-    route: this.route, client: '@prometheus-ags/a2ui-react@4.3.0 headless + @a2ui/web_core@0.12.0 binder',
+    route: this.route, client: clientPackageEvidence(),
     authentication_supplied_by_test: false, streams: {}, exchanges: [] };
   const agent = await request(this, 'GET', '/api/agents/default-agent');
   Object.assign(agent, { id: this.agentId, version: '1.0.0' });
@@ -150,7 +204,7 @@ Given('a disposable agent on the dedicated AG-UI route that publishes a ticket s
   await request(this, 'POST', '/api/agents', agent, [201]);
 });
 
-Given("a PEM 4.3.0 headless client configured with UAR's catalog ids", async function () {
+Given("the pinned PEM headless client configured with UAR's catalog ids", async function () {
   this.runtime = await createRuntime(this);
   this.threadId = randomUUID();
   this.messages = [];

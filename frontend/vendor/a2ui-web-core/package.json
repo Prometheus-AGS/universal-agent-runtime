@@ -1,0 +1,152 @@
+{
+  "name": "@prometheus-ags/a2ui-web-core-zod4",
+  "version": "0.14.0-rc.1",
+  "private": true,
+  "description": "A2UI Core Library",
+  "homepage": "https://a2ui.org/",
+  "repository": {
+    "directory": "frontend/vendor/a2ui-web-core",
+    "type": "git",
+    "url": "git+https://github.com/Prometheus-AGS/universal-agent-runtime.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues"
+  },
+  "keywords": [
+    "a2ui",
+    "web",
+    "ai",
+    "agent",
+    "ui",
+    "renderer"
+  ],
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./catalog": {
+      "types": "./src/catalog/index.ts",
+      "default": "./src/catalog/index.ts"
+    },
+    "./state": {
+      "types": "./src/state/index.ts",
+      "default": "./src/state/index.ts"
+    },
+    "./processing": {
+      "types": "./src/processing/index.ts",
+      "default": "./src/processing/index.ts"
+    },
+    "./resolution": {
+      "types": "./src/resolution/index.ts",
+      "default": "./src/resolution/index.ts"
+    },
+    "./rendering": {
+      "types": "./src/resolution/index.ts",
+      "default": "./src/resolution/index.ts"
+    },
+    "./validation": {
+      "types": "./src/validation/index.ts",
+      "default": "./src/validation/index.ts"
+    },
+    "./validating": {
+      "types": "./src/validation/integrity-checker.ts",
+      "default": "./src/validation/integrity-checker.ts"
+    },
+    "./reactivity": {
+      "types": "./src/reactivity/index.ts",
+      "default": "./src/reactivity/index.ts"
+    },
+    "./expressions": {
+      "types": "./src/expressions/index.ts",
+      "default": "./src/expressions/index.ts"
+    },
+    "./adapters": {
+      "types": "./src/processing/adapters/index.ts",
+      "default": "./src/processing/adapters/index.ts"
+    },
+    "./rpc": {
+      "types": "./src/rpc/index.ts",
+      "default": "./src/rpc/index.ts"
+    },
+    "./errors": {
+      "types": "./src/errors.ts",
+      "default": "./src/errors.ts"
+    },
+    "./events": {
+      "types": "./src/common/events.ts",
+      "default": "./src/common/events.ts"
+    },
+    "./semver": {
+      "types": "./src/common/semver.ts",
+      "default": "./src/common/semver.ts"
+    },
+    "./v0_8": {
+      "types": "./src/v0_8/index.ts",
+      "default": "./src/v0_8/index.ts"
+    },
+    "./v0_8/basic_catalog": {
+      "types": "./src/v0_8/basic_catalog/index.ts",
+      "default": "./src/v0_8/basic_catalog/index.ts"
+    },
+    "./v0_9": {
+      "types": "./src/v0_9/index.ts",
+      "default": "./src/v0_9/index.ts"
+    },
+    "./v0_9/universal": {
+      "types": "./src/v0_9/universal/index.ts",
+      "default": "./src/v0_9/universal/index.ts"
+    },
+    "./v0_9/basic_catalog": {
+      "types": "./src/v0_9/basic_catalog/index.ts",
+      "default": "./src/v0_9/basic_catalog/index.ts"
+    },
+    "./v1_0": {
+      "types": "./src/v1_0/index.ts",
+      "default": "./src/v1_0/index.ts"
+    },
+    "./catalogs/basic/v1": {
+      "types": "./src/catalogs/basic/v1/index.ts",
+      "default": "./src/catalogs/basic/v1/index.ts"
+    },
+    "./universal": {
+      "types": "./src/universal/index.ts",
+      "default": "./src/universal/index.ts"
+    },
+    "./data/*": {
+      "types": "./src/v0_8/data/*.ts",
+      "default": "./src/v0_8/data/*.ts"
+    },
+    "./types/*": {
+      "types": "./src/v0_8/types/*.ts",
+      "default": "./src/v0_8/types/*.ts"
+    },
+    "./styles/*": {
+      "types": "./src/v0_8/styles/*.ts",
+      "default": "./src/v0_8/styles/*.ts"
+    }
+  },
+  "type": "module",
+  "sideEffects": ["./src/common/zod.ts"],
+  "author": "Google",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@lit/context": "^1.1.6",
+    "@preact/signals-core": "^1.14.2",
+    "lit": "^3.3.3",
+    "redos-detector": "^6.1.4",
+    "validate-color": "^2.2.4",
+    "zod": "4.6.7"
+  },
+  "files": [
+    "src",
+    "ORIGIN.md"
+  ],
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "stage:package": "node scripts/stage-package.mjs",
+    "verify:migration": "node --test scripts/verify-migration.mjs"
+  }
+}

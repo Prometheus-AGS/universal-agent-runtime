@@ -1,8 +1,9 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import { compileA2uiTestDecorators } from "../a2ui-core/vitest-decorators.ts";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), compileA2uiTestDecorators()],
   test: {
     environment: "happy-dom",
     globals: true,

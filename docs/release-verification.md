@@ -86,6 +86,30 @@ BUILD_RECEIPT_FILE='<source-bound-build-receipt.json>' \
   scripts/prepare-release-evidence-local.sh target/platform-archives target/release-evidence
 ```
 
+When the tooling and release source live in separate checkouts, set
+`UAR_RELEASE_SOURCE_ROOT` to the clean checkout of the release commit.
+The producer reads the exact registry index by digest and records its runtime
+platforms in the manifest. The verifier checks the index bytes and platform
+list. Keep `release-image-index.mjs` alongside the verifier in the downloaded
+evidence set. Before signing, the producer requires matching build and test
+receipts for the source tree and image, and a passing audit for the same image
+and release repository. For Linux amd64, both receipts must bind the same
+archive bytes. The producer verifies the published image signature and
+attestations against the approved identity and issuer before reporting success.
+
+For an audit-remediation candidate, retain the lockfile and artifact audit
+results separately from GitHub's open Dependabot alerts. GitHub reports those
+alerts for the default branch. A candidate-only dependency fix can pass a local
+audit while the F14 zero-open-alerts prerequisite is still pending.
+
+The A2UI Zod 4 migration crosses the catalog and renderer boundary. Verify the
+resolved schema runtime, v0.9 data bindings and action forwarding, constrained
+input refusal, and Markdown sanitization. Run the existing independent PEM
+client scenario with the exact successor package set. Record package versions
+and integrity hashes and identify whether each package was installed from a
+local tarball or the registry. Earlier I19 receipts keep their original
+published package identities.
+
 Download the supply checksum index first, authenticate it, then download only
 the files it names and verify that exact set:
 
@@ -133,7 +157,7 @@ repository checkout:
 node verify-release.mjs release-manifest.json
 ```
 
-Verify the signed multi-architecture image by digest (the digest is in the
+Verify the signed image index by digest (the digest is in the
 manifest):
 
 ```bash

@@ -108,6 +108,27 @@ Functional qualification SHALL use externally provisioned identity ingress and o
 - **THEN** only the existing safe error and terminal lifecycle events are published, without generated presentation patches
 - **AND** successful admission still enables the existing content and presentation publication
 
+#### Scenario: A persisted graph fixture enters through production admission
+- **WHEN** a controlled graph case exposes a tool and uses durable storage
+- **THEN** its fixture supplies the production skill-matching service and registers the controlled model's tool capability
+- **AND** when the controlled model lacks catalog capacity, its registered synthetic window allows the runtime to apply the ordinary finite output reservation
+- **AND** missing persisted history still fails the scenario, with its admission and provider observations retained for diagnosis
+
+#### Scenario: The isolated MCP outcome fixture observes owned peer lifetime
+- **WHEN** the controlled stdio MCP peer starts under the isolated verifier
+- **THEN** it publishes a process-owned lock before discovery and the verifier checks peer counts and closure by observing that lock
+- **AND** the pre-dispatch case still terminates a live owned peer and checks its exit, typed outcome, and absence of an effect
+
+#### Scenario: A controlled team Chat call settles before the next provider dispatch
+- **WHEN** a completed controlled Chat stream was requested with streaming usage enabled
+- **THEN** the peer reports deterministic provider counters before its stream terminator so ordinary durable accounting can settle the call
+- **AND** the next provider call still requires the existing finite team reservation and the tool outcome assertions remain in force
+
+#### Scenario: A Dot04 writer reads the protected deployment catalog
+- **WHEN** a functional team or agent-instance writer requests the exact deployment-catalog GET through its loopback fixture host
+- **THEN** the host forwards the configured admin key and existing verified owner to the real endpoint without exposing credentials to the functional client
+- **AND** the ingress drops caller-supplied authentication and supplies no admin key on other methods or paths
+
 #### Scenario: A trusted Rust host composes a credential-free fixture handler
 - **WHEN** A trusted host supplies additional routes through the server's host-route entrypoint
 - **THEN** Those handlers use the ordinary initialized server state, production identity/governance middleware and owned shutdown path
@@ -165,3 +186,46 @@ AG-UI correlation SHALL preserve the originally admitted native artifact identit
 - **WHEN** The shipped Send path intentionally omits a model override and uses saved AgentSession policy for a controlled tool-loop turn
 - **THEN** Its fixture asserts inherited-policy dispatch and qualifies the actual selected model through existing authoritative configuration/admitted/provider evidence
 - **AND** It retains canonical segment/reload/provider-arrival/effect-count assertions without requiring an impossible POST model override or changing production policy
+
+### Requirement: Qualify audit remediation on the release candidate
+
+The Linux amd64 release candidate SHALL retain the existing vulnerability gates and verify dependency changes on the exact affected lockfiles and artifact. Historical candidate receipts retain their original identity.
+
+#### Scenario: The release candidate updates dependencies to resolve audit findings
+- **WHEN** audit remediation changes direct, transitive or vendored dependencies
+- **THEN** the affected package and runtime checks exercise the resolved graph
+- **AND** the release evidence records the candidate's audit result separately from default-branch alert state and the prior candidate's receipts
+
+#### Scenario: OpenCode resolves a patched Effect dependency
+- **WHEN** the project installs the pinned OpenCode plugin from its frozen lockfile
+- **THEN** the plugin resolves the patched Effect version and can execute a declared tool and an Effect plugin hook
+- **AND** Effect rejects injected cookie attributes and retains its TOML parser override
+
+#### Scenario: A2UI consumers migrate to a patched Zod 4 boundary
+- **WHEN** the shipped UAR renderer or the independent PEM client processes a valid A2UI surface and dispatches a catalog-defined action
+- **THEN** the renderer, catalog and binder exchange Zod 4 schemas through the same compatible core in that consumer, preserving data-model bindings and action forwarding
+- **AND** Node renderer checks load the same vendored core with its standard decorators compiled, preserving the existing renderer assertions
+- **AND** product frontend lint excludes the three vendored A2UI core and reference-renderer directories and keeps its existing rules for first-party source
+- **AND** oversized constrained input is refused before traversing its elements, and rich Markdown remains sanitized
+- **AND** the existing independent client scenario retains its original interaction and refusal assertions, records the exact packages installed, and distinguishes locally packed compatibility evidence from published registry evidence
+
+#### Scenario: A fresh embedded store receives its first A2UI action
+- **WHEN** the trusted SurrealKV host opens a fresh store and a valid AG-UI action checks for an earlier logical receipt
+- **THEN** startup has initialized the receipt table and the lookup returns no prior receipt
+- **AND** the first admitted claim retains its original scope and identity, while repeated, conflicting, or uncertain claims preserve the existing no-redispatch safeguards
+
+### Requirement: Bind signed image platform claims to published bytes
+The release workflow SHALL bind platform claims to the exact published image index and require a passing security audit for the same artifact before signing.
+
+#### Scenario: The release candidate has one runtime platform
+- **WHEN** the producer receives a digest-addressed image index containing one runtime platform and attestation descriptors
+- **THEN** the manifest declares the runtime platform from the verified index and the independent verifier rejects a changed index or inconsistent platform list
+
+#### Scenario: Release audit evidence fails
+- **WHEN** the audit receipt is failed or belongs to another image
+- **THEN** the existing producer refuses before creating release output or submitting signatures
+
+#### Scenario: Evidence is mixed across candidate images or repositories
+- **WHEN** an RC4 or later evidence bundle omits its digest-bound image index, or the producer receives mismatched source, image, archive or repository receipts
+- **THEN** verification refuses the incomplete bundle and the producer refuses mismatched receipts before requesting signatures
+- **AND** preparation reports success only after verifying the image signature and both attestations against the approved identity and issuer

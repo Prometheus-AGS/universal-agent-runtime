@@ -19,7 +19,7 @@ describe("surface UX contract", () => {
   });
 
   it("localizes renderer-owned fallback copy without changing payload text", () => {
-    const { surface } = buildSurface(uarBasicCatalog, [{ id: "root", component: "ChoicePicker", options: [{ label: "Rojo", value: "red" }] }]);
+    const { surface } = buildSurface(uarBasicCatalog, [{ id: "root", component: "ChoicePicker", value: [], options: [{ label: "Rojo", value: "red" }] }]);
     render(<UarSurface surface={surface} locale="es" />);
     expect(screen.getByRole("listbox", { name: "Opciones" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Rojo" })).toBeInTheDocument();

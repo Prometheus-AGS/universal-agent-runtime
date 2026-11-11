@@ -1,2 +1,3 @@
 import { defineConfig } from "vitest/config";
-export default defineConfig({ test: { environment: "happy-dom", exclude: ["dist/**", "node_modules/**"] } });
+import { compileA2uiTestDecorators } from "../a2ui-core/vitest-decorators.ts";
+export default defineConfig({ plugins: [compileA2uiTestDecorators()], test: { environment: "happy-dom", exclude: ["dist/**", "node_modules/**"] } });

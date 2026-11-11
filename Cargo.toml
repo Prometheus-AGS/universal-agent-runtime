@@ -55,7 +55,7 @@ libc = "=0.2.191"
 
 [package]
 name = "universal-agent-runtime"
-version = "1.4.0-rc.3"
+version = "1.4.0-rc.4"
 edition = "2024"
 license = "MIT"
 
@@ -466,8 +466,8 @@ sse-stream = "0.2.4"
 # that arm compiles to a hard `bail!`, so MemoryService construction fails, the
 # service is left as None, and every memory endpoint answers
 # `503 Memory system not enabled` even when config explicitly enables memory.
-# It pulls candle 0.9.2 (surreal-memory's own pin) alongside the 0.11.0 UAR's
-# `candle-embeddings` uses since #163; cargo resolves the two independently.
+# The vendored memory manifest aligns Candle with UAR's 0.11 line to use the
+# patched ZIP dependency for PyTorch weight loading.
 surreal-memory = { path = "vendor/git/surreal-memory-server/crates/surreal-memory", default-features = false, features = [
     "local-embeddings",
 ] }

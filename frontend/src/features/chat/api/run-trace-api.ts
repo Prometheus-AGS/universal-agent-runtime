@@ -77,8 +77,8 @@ const runtimeAgentArtifactSchema = z.object({
   extensions: jsonObject,
 });
 
-function parseResponse<Output, Input>(
-  schema: z.ZodType<Output, z.ZodTypeDef, Input>,
+function parseResponse<Output>(
+  schema: z.ZodType<Output>,
   value: unknown,
   label: string,
 ): Output {

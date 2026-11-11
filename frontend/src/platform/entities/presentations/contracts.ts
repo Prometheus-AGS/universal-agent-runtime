@@ -15,7 +15,7 @@ export const presentationTemplateSchema = z.object({
   version: z.literal(A2UI_VERSION),
   catalog_id: z.literal(A2UI_CATALOG_ID),
   components: z.array(a2uiComponentSchema).min(1).max(500),
-  default_data: z.record(z.unknown()).default({}),
+  default_data: z.record(z.string(), z.unknown()).default({}),
 }).strict();
 
 const presentationContentSchema = z.object({

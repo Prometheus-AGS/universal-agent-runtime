@@ -5,6 +5,8 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 
+import { releaseImagePlatforms } from "./release-image-index.mjs";
+
 const [manifestPath] = process.argv.slice(2);
 if (!manifestPath) {
   console.error("usage: validate-release-manifest.mjs <release-manifest.json>");
@@ -35,6 +37,7 @@ function archiveBinary(artifact) {
   try {
     const listing = execFileSync(zip ? "unzip" : "tar", zip ? ["-Z1", archivePath] : ["-tzf", archivePath], {
       encoding: "utf8",
+      maxBuffer: 8 * 1024 * 1024,
     });
     const executable = zip ? "universal-agent-runtime.exe" : "universal-agent-runtime";
     const matches = listing
@@ -96,7 +99,15 @@ function validateImageProvenance() {
 }
 
 if (manifest.schema_version !== "1.0.0") failures.push("unsupported schema_version");
-if (!/^v\d+\.\d+\.\d+(?:-rc\.\d+)?$/.test(manifest.release ?? "")) failures.push("invalid release tag");
+const releaseTag = /^v(\d+)\.(\d+)\.(\d+)(?:-rc\.(\d+))?$/.exec(manifest.release ?? "");
+if (!releaseTag) failures.push("invalid release tag");
+const [major, minor, patch, candidate] = releaseTag?.slice(1).map(Number) ?? [];
+const requiresExactImage = major > 1 || (major === 1 && (
+  minor > 4 || (minor === 4 && (patch > 0 || !Number.isFinite(candidate) || candidate >= 4))
+));
+const usesExactImage = requiresExactImage || manifest.image?.index !== undefined;
+const imageReference = `${manifest.image?.reference}@${manifest.image?.digest}`;
+const sourceTree = manifest.source?.git_tree;
 if (!/^[0-9a-f]{40}$/.test(manifest.source?.sha ?? "")) failures.push("invalid source SHA");
 if (!/^[0-9a-f]{40}$/.test(manifest.source?.git_tree ?? "")) failures.push("invalid source tree");
 for (const field of ["cargo_lock_sha256", "catalog_sha256", "model_bundle_sha256"]) {
@@ -151,12 +162,48 @@ if (requireFile(manifest.image?.provenance, "image provenance")) {
   validateImageProvenance();
 }
 
+const platforms = manifest.image?.platforms;
+if (manifest.release === "v1.4.0-rc.4" &&
+    (platforms?.length !== 1 || platforms[0] !== "linux/amd64")) {
+  failures.push("RC4 requires exactly the selected Linux amd64 image platform");
+}
+if (!Array.isArray(platforms) || platforms.length === 0 ||
+    platforms.some((platform) => !/^[a-z0-9_]+\/[a-z0-9_]+(?:\/[a-z0-9_]+)?$/.test(platform)) ||
+    new Set(platforms).size !== platforms.length) {
+  failures.push("invalid release image platforms");
+} else if (manifest.image.index === undefined) {
+  if (requiresExactImage || platforms.length < 2) failures.push("release image requires digest-bound index evidence");
+} else if (requireFile(manifest.image.index, "image index")) {
+  linkedEvidence.add(manifest.image.index);
+  try {
+    const actual = releaseImagePlatforms(readFileSync(join(root, manifest.image.index)), manifest.image.digest);
+    if (JSON.stringify(actual) !== JSON.stringify([...platforms].sort())) failures.push("image platforms differ from digest-bound index");
+  } catch (error) {
+    failures.push(error.message);
+  }
+}
+
 if (manifest.builder?.kind !== "local") failures.push("release evidence builder must be local");
 if (manifest.builder?.source_sha !== manifest.source?.sha) failures.push("builder source SHA does not match release source");
+let buildReceipt;
 if (requireFile(manifest.builder?.receipt, "builder receipt")) {
   linkedEvidence.add(manifest.builder.receipt);
   if (!shaPattern.test(manifest.builder?.receipt_sha256 ?? "") || manifest.builder.receipt_sha256 !== digest(join(root, manifest.builder.receipt))) {
     failures.push("builder receipt digest mismatch");
+  }
+  if (requiresExactImage) {
+    try {
+      buildReceipt = JSON.parse(readFileSync(join(root, manifest.builder.receipt), "utf8"));
+      if (buildReceipt.source_sha !== manifest.source?.sha || buildReceipt.source_tree !== sourceTree ||
+          buildReceipt.image !== imageReference) failures.push("builder receipt does not bind the release source and image");
+      if (platforms?.length === 1 && platforms[0] === "linux/amd64") {
+        const payloads = manifest.artifacts?.filter(({ kind }) => kind === "platform-archive") ?? [];
+        if (payloads.length !== 1 || payloads[0].name !== buildReceipt.archive ||
+            payloads[0].sha256 !== buildReceipt.archive_sha256) failures.push("builder receipt does not bind the Linux amd64 archive");
+      }
+    } catch {
+      failures.push("invalid builder receipt");
+    }
   }
 }
 if (!manifest.builder?.identity) failures.push("local builder identity is missing");
@@ -171,6 +218,27 @@ for (const [name, record] of Object.entries({ tests: manifest.evidence?.tests, a
     linkedEvidence.add(record.name);
     if (!shaPattern.test(record?.sha256 ?? "") || record.sha256 !== digest(join(root, record.name))) {
       failures.push(`${name} evidence digest mismatch`);
+    }
+    if (name === "audits" && usesExactImage) {
+      try {
+        const audit = JSON.parse(readFileSync(join(root, record.name), "utf8"));
+        if (audit.source_sha !== manifest.source?.sha || audit.outcome !== "passed" ||
+            audit.image !== imageReference || (requiresExactImage && audit.repository !== manifest.source?.repository) ||
+            audit.open_dependabot_alerts !== 0) failures.push("security audit did not pass for the exact release source and image");
+      } catch {
+        failures.push("invalid security audit receipt");
+      }
+    }
+    if (name === "tests" && requiresExactImage) {
+      try {
+        const tests = JSON.parse(readFileSync(join(root, record.name), "utf8"));
+        if (tests.source_sha !== manifest.source?.sha || tests.source_tree !== sourceTree ||
+            tests.image !== imageReference) failures.push("test receipt does not bind the release source and image");
+        if (platforms?.length === 1 && platforms[0] === "linux/amd64" &&
+            tests.archive_sha256 !== buildReceipt?.archive_sha256) failures.push("test receipt does not bind the Linux amd64 archive");
+      } catch {
+        failures.push("invalid test receipt");
+      }
     }
   }
   if (record?.source_sha !== manifest.source?.sha) failures.push(`${name} source SHA does not match release source`);

@@ -20,10 +20,9 @@ export function buildSurface(
       version: "v0.9",
       createSurface: { surfaceId, catalogId: catalog.id },
     },
-    {
-      version: "v0.9",
-      updateComponents: { surfaceId, components },
-    },
+    ...(components.length > 0
+      ? [{ version: "v0.9" as const, updateComponents: { surfaceId, components } }]
+      : []),
     {
       version: "v0.9",
       updateDataModel: { surfaceId, path: "/", value: data },

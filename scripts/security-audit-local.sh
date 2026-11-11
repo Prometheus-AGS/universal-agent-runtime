@@ -175,7 +175,7 @@ run_check pnpm-frontend-audit pnpm -C frontend audit
 run_check npm-website-audit audit_website_dependencies
 run_check npm-typescript-sdk-audit npm --prefix sdks/typescript audit
 run_check documentation-image-inputs check_documentation_image_inputs
-run_check osv-source-scan osv-scanner --recursive --skip-git "$root"
+run_check osv-source-scan osv-scanner scan source --recursive "$root"
 run_check grype-image-scan grype "$image" --fail-on high
 
 gh api "repos/$repository/dependabot/alerts" --paginate --slurp \
@@ -193,11 +193,12 @@ open_alerts="$(jq 'length' "$output_directory/dependabot-alerts.open.json")"
 finished_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 jq -n \
   --arg source_sha "$source_sha" \
+  --arg repository "$repository" \
   --arg image "$image" \
   --arg started_at "$started_at" \
   --arg finished_at "$finished_at" \
   --argjson open_dependabot_alerts "$open_alerts" \
-  '{schema_version:1,source_sha:$source_sha,image:$image,started_at:$started_at,finished_at:$finished_at,outcome:"passed",open_dependabot_alerts:$open_dependabot_alerts}' \
+  '{schema_version:1,source_sha:$source_sha,repository:$repository,image:$image,started_at:$started_at,finished_at:$finished_at,outcome:"passed",open_dependabot_alerts:$open_dependabot_alerts}' \
   >"$output_directory/security-audit-evidence.json"
 (
   cd "$output_directory"

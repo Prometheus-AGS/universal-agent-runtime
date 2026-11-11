@@ -3,7 +3,7 @@
   "version": "0.10.1",
   "private": true,
   "type": "module",
-  "description": "REFERENCE IMPLEMENTATION ONLY. UAR-vendored, version-pinned re-export of Google's @a2ui/react — the A2UI project's official React renderer. This is NOT the UAR-owned renderer; that is @prometheus-ags/a2ui-uar (Change 17, a2ui-uar-renderer-on-webcore), built on @prometheus-ags/a2ui-core. Do not import this package from UAR product code.",
+  "description": "REFERENCE IMPLEMENTATION ONLY. UAR wrapper for the Zod 4 port of Google's official A2UI React renderer. This is NOT the UAR-owned renderer; that is @prometheus-ags/a2ui-uar (Change 17, a2ui-uar-renderer-on-webcore), built on @prometheus-ags/a2ui-core. Do not import this package from UAR product code.",
   "license": "Apache-2.0",
   "author": "Google LLC (upstream, https://github.com/a2ui-project/a2ui); vendored by Prometheus AGS",
   "homepage": "https://a2ui.org/",
@@ -27,7 +27,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@a2ui/react": "0.14.0"
+    "@a2ui/react": "workspace:@prometheus-ags/a2ui-react-reference-zod4@0.14.0-rc.1"
   },
   "peerDependencies": {
     "react": "^19.2.7",

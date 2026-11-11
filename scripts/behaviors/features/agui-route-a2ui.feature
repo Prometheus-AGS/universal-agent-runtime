@@ -2,7 +2,7 @@
 Feature: An AG-UI app shows the agent's A2UI surface and the user's clicks reach the agent
   Scenario: The app shows the agent's surface, the user clicks it twice, and a reconnect still shows it
     Given a disposable agent on the dedicated AG-UI route that publishes a ticket surface with a note field and a Confirm button
-    And a PEM 4.3.0 headless client configured with UAR's catalog ids
+    And the pinned PEM headless client configured with UAR's catalog ids
     When the client asks for a fresh ticket surface
     Then the client renders the surface with the requested heading and a Confirm button
     When the user enters a note and presses Confirm

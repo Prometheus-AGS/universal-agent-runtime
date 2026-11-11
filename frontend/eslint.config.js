@@ -23,6 +23,10 @@ export default tseslint.config({
         "coverage/**",
         "test-results/**",
         "../static",
+        // A2UI dependency sources and distributions keep their upstream layout.
+        "vendor/a2ui-react-reference/**",
+        "vendor/a2ui-react-reference-legacy/**",
+        "vendor/a2ui-web-core/**",
         // Workspace packages have their own build/test lifecycle. Linting
         // the product frontend must not traverse their examples, generated
         // skill templates, or independently versioned source trees.

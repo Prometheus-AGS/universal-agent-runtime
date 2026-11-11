@@ -33,6 +33,18 @@ async fn concurrent_logical_claims_retain_original_identity_without_effect_repla
         continuation_run_id: "host-reserved-run".into(),
         wire_binding: None,
     };
+    assert!(
+        store
+            .load_a2ui_action(
+                &receipt.owner,
+                &receipt.agent_id,
+                &receipt.thread_id,
+                &receipt.interaction_id,
+            )
+            .await
+            .expect("look up receipt on a fresh store")
+            .is_none()
+    );
     let owned_effects = std::sync::atomic::AtomicUsize::new(0);
     let (left, right) = tokio::join!(
         store.create_a2ui_action(&receipt),
@@ -316,6 +328,14 @@ mod recovery_routes {
         manager.shutdown_run_history().await.unwrap();
     }
 
+    async fn public_run_errors(manager: &RunManager, run_id: &str) -> Vec<(String, String)> {
+        manager.history_since(run_id, None).await.unwrap_or_default().into_iter()
+            .filter_map(|entry| match entry.event {
+                universal_agent_runtime::uar::domain::events::NormalizedEvent::Error { code, message, .. } => Some((code, message)),
+                _ => None,
+            }).collect()
+    }
+
     /// Requires externally provisioned a2ui-recovery and a2ui-recovery-foreign
     /// identity-capture profiles. No fixture reads, constructs or sends credentials.
     #[tokio::test]
@@ -449,11 +469,20 @@ mod recovery_routes {
             artifact.id = "agent".into();
             artifact.policy.skills.max_active = 0;
             artifact.policy.tools.allow.clear();
+            artifact.extensions.insert("uar.run_policy".into(), json!({
+                "version": 1, "skills": { "mode": "none" }, "tools": { "mode": "none" }
+            }));
             artifact.memory.kb.enabled = false;
             let mut request = RunExecutionRequest::new(artifact, "hold producer".into()).with_user_context(&user).unwrap();
             request.session_id = Some(live_receipt.thread_id.clone());
             let live_id = manager.execute_request(request).await;
-            tokio::time::timeout(Duration::from_secs(30), driver.entered.notified()).await.expect("actual producer entered");
+            if tokio::time::timeout(Duration::from_secs(30), driver.entered.notified()).await.is_err() {
+                let diagnostics = tokio::time::timeout(Duration::from_secs(5), async {
+                    let status = manager.get_run(&live_id).await.map(|run| run.status);
+                    (status, public_run_errors(&manager, &live_id).await)
+                }).await;
+                panic!("{protocol} producer did not enter for {live_id}: diagnostics={diagnostics:?}");
+            }
             live_receipt.continuation_run_id = live_id.clone();
             if protocol == "agui" {
                 live_receipt.wire_binding = Some(AguiRunBinding {
@@ -604,8 +633,25 @@ mod recovery_routes {
     }
 
 
-    #[tokio::test]
-    async fn public_deployment_action_keeps_original_receipt_outcomes_after_reopen_without_catalog_or_redispatch() {
+    #[test]
+    fn public_deployment_action_keeps_original_receipt_outcomes_after_reopen_without_catalog_or_redispatch() {
+        // Match the production host stack for the full mounted admission path.
+        std::thread::Builder::new()
+            .name("a2ui-bound-deployment-gate".into())
+            .stack_size(8 * 1024 * 1024)
+            .spawn(|| {
+                tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap()
+                    .block_on(bound_deployment_action_outcomes())
+            })
+            .unwrap()
+            .join()
+            .unwrap();
+    }
+
+    async fn bound_deployment_action_outcomes() {
         use universal_agent_runtime::{llm::{ProviderRegistry, registry::ProviderConfig},
             uar::{api::model_verification, domain::collaboration::{PackageSourceRequest, BindingCommandRequest},
                 settings::{manager::SettingsManager, schema::{SettingsType, Settings}}}};
@@ -655,26 +701,29 @@ mod recovery_routes {
         manifest["lock"] = json!([]);
         finalize_fixture(&mut manifest);
         let owner = user.session_owner_key().unwrap();
-        let installed = catalog.install_package(&owner, PackageSourceRequest {
+        // The deployment catalog and durable run receipts use different
+        // established storage keys for the same verified principal.
+        let catalog_owner = universal_agent_runtime::uar::api::user_settings::principal_storage_key(&user).unwrap();
+        let installed = catalog.install_package(&catalog_owner, PackageSourceRequest {
             command_id: "r028-package".into(), expected_catalog_revision: None,
             manifest: serde_json::to_string_pretty(&manifest).unwrap(),
             files: [("agent-definition.json".into(), source)].into_iter().collect(),
         }).await.unwrap();
         let mut binding: Value = serde_json::from_str(include_str!("fixtures/collaboration/deployment-binding.json")).unwrap();
         binding["id"] = json!("r028-binding");
-        binding["ownerId"] = json!(owner);
+        binding["ownerId"] = json!(catalog_owner);
         binding["workspaceId"] = json!("workspace:r028");
         binding["package"] = serde_json::to_value(installed.preflight.package).unwrap();
         binding["skillBindings"] = json!([]);
         binding["representationGrantRefs"] = json!([]);
-        binding["modelBindings"] = json!([{"requestedAlias":"local-default","providerId":"openai","modelId":"gpt-4o"}]);
+        binding["modelBindings"][0]["modelId"] = json!("gpt-4o");
         finalize_fixture(&mut binding);
-        let installed = catalog.install_binding(&owner, "workspace:r028", BindingCommandRequest {
+        let installed = catalog.install_binding(&catalog_owner, "workspace:r028", BindingCommandRequest {
             command_id: "r028-binding".into(), expected_revision: Some(0), binding,
         }).await.unwrap();
         assert!(installed.preflight.activation_supported, "{:?}", installed.preflight);
         let target = universal_agent_runtime::uar::api::targets::agent_target_id("r028-binding");
-        let resolved = catalog.resolve_bound_agent_run(&owner, "workspace:r028", "r028-binding").await.unwrap();
+        let resolved = catalog.resolve_bound_agent_run(&catalog_owner, "workspace:r028", "r028-binding").await.unwrap();
         assert_ne!(target, resolved.artifact.id);
 
         let driver = Arc::new(BoundActionProducer::default());
@@ -704,7 +753,17 @@ mod recovery_routes {
             *driver.mode.lock().unwrap() = expected.into();
             let entered = driver.entered.notified();
             let reply = bound_request(&app, "POST", &path, Some(input.clone())).await;
-            tokio::time::timeout(Duration::from_secs(30), entered).await.expect("actual action dispatch");
+            assert_eq!(reply.status(), StatusCode::OK, "{expected} action admission");
+            if tokio::time::timeout(Duration::from_secs(30), entered).await.is_err() {
+                let diagnostics = tokio::time::timeout(Duration::from_secs(5), async {
+                    match store.load_agui_run(&owner, &target, &thread, "wire-action").await {
+                        Ok(Some(row)) => Some(public_run_errors(&manager, &row.native_run_id).await),
+                        _ => None,
+                    }
+                }).await;
+                let calls = driver.calls.load(Ordering::SeqCst);
+                panic!("{expected} action did not reach the producer checkpoint: calls={calls}, diagnostics={diagnostics:?}");
+            }
             let admitted = store.load_agui_run(&owner, &target, &thread, "wire-action").await.unwrap().unwrap();
             if expected == "cancelled" {
                 assert!(manager.cancel_run_for_context(&user, &admitted.native_run_id).await);

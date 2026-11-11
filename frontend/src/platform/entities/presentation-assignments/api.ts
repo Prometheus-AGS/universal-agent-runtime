@@ -32,7 +32,7 @@ async function request(path: string, global: boolean, method = "GET", body?: unk
   catch { throw new AssignmentApiError(writing ? "Save response unreadable. Check saved assignment before saving again." : "Assignment response unreadable. No policy was loaded.", response.status, writing); }
 }
 
-const object = z.record(z.unknown());
+const object = z.record(z.string(), z.unknown());
 
 function agentPolicy(agent: unknown): Record<string, unknown> {
   const artifact = object.parse(agent);

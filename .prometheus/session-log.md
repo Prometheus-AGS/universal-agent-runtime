@@ -7348,3 +7348,11 @@ An unquoted evidence heredoc invoked shell substitutions and started an unintend
 ### 2026-11-03 — Issue #386 standalone closure
 
 Pushed implementation and evidence commit 53cf7c6ac848a66a95c0c7d6810482770bce7b21 to origin/codex/issue-386-media-authority. GitHub returned state closed for issue #386 after adding the commit and acceptance evidence links. The GitHub Actions deployment-only policy validator and commitlint passed with the normal hooks. The first commit attempt was stopped by pnpm's automatic dependency reinstall prompt against the temporary node_modules link. The retry used a command-local pnpm setting to prevent automatic install while retaining both hooks. Restored the preexisting Liter checkout. No canonical KBD transition, main-branch merge, or release certification is recorded.
+
+### 2026-11-10 — RC4 audit remediation in progress
+
+Created the separate codex/pr476-rc4-release worktree from merged PR #490. Staged the previously verified F14 tooling repair, RC4 product and Rust SDK pins, and dependency remediation across the selected release source and its affected lockfiles. The deployment policy validator passed before and after the RC4 tag exclusion. The complete audit, product tests, builds, signing and #465 closeout remain pending. The bounded plan, authority and source receipts are retained in the existing parent qualification Gate177 packet.
+
+### 2026-11-10 — RC4 A2UI implementation checkpoint
+
+The root and frontend lock resolutions include the native A2UI Zod 4 core and preserve the first-party and legacy React renderers. The migrated PEM client source is in the isolated Gate177 staging packet. The existing I19 scenario still exercises the same surfaces and actions and now binds its receipt to the exact client package graph. The historical PEM gitlink and published RC3 remain unchanged. Gate177 has no product verification result yet.

@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import { compileA2uiTestDecorators } from "../a2ui-core/vitest-decorators.ts";
 import react from "@vitejs/plugin-react";
 
 /**
@@ -11,7 +12,7 @@ import react from "@vitejs/plugin-react";
  * bundled into the same job/report as `pnpm test`.
  */
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), compileA2uiTestDecorators()],
   test: {
     environment: "happy-dom",
     globals: true,

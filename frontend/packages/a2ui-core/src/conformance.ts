@@ -11,7 +11,7 @@ export const UAR_CONFORMANCE_COMPONENTS = [
   { id: "card-text", component: "Text", text: "Card content" },
   { id: "divider", component: "Divider" },
 ] as const;
-export const UAR_CONFORMANCE_DATA = { heading: "Runtime surface", subscribed: true, name: "Ada", region: "east" } as const;
+export const UAR_CONFORMANCE_DATA = { heading: "Runtime surface", subscribed: true, name: "Ada", region: ["east"] } as const;
 
 export interface SemanticSnapshot { text: string; buttons: string[]; checkboxes: Array<{ name: string; checked: boolean }>; inputs: Array<{ name: string; value: string }>; separators: number; }
 export function semanticSnapshot(root: ParentNode): SemanticSnapshot {

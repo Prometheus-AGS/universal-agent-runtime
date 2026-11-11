@@ -11,6 +11,9 @@ mod process;
 #[path = "support/external_identity_host.rs"]
 mod external_identity_host;
 
+#[path = "support/f06_graph_admission.rs"]
+mod f06_graph_admission;
+
 use axum::{
     Extension, Router,
     body::{Body, to_bytes},
@@ -121,31 +124,9 @@ fn llm(peer: &peer::Peer) -> LlmConfig {
     config
 }
 
-fn fixture_peer_pids(trace: &Path) -> Vec<u32> {
-    let output = Command::new("/bin/ps")
-        .args(["-axo", "pid=,args="])
-        .output()
-        .unwrap();
-    assert!(output.status.success());
-    let script = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/fixtures/truthful_tool_outcome_mcp.py");
-    String::from_utf8(output.stdout)
-        .unwrap()
-        .lines()
-        .filter_map(|line| {
-            let mut fields = line.split_whitespace();
-            let pid = fields.next()?.parse().ok()?;
-            let arguments = fields.collect::<Vec<_>>();
-            (arguments.contains(&script.to_str().unwrap())
-                && arguments.contains(&trace.to_str().unwrap()))
-            .then_some(pid)
-        })
-        .collect()
-}
-
 async fn await_fixture_peer_exit(trace: &Path) {
     let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
-    while !fixture_peer_pids(trace).is_empty() {
+    while !peer::live_pids(trace).is_empty() {
         assert!(
             tokio::time::Instant::now() < deadline,
             "fixture MCP peer did not close"
@@ -156,7 +137,7 @@ async fn await_fixture_peer_exit(trace: &Path) {
 
 async fn close_fixture_peer_before_dispatch(registry: &McpRegistry, trace: &Path) {
     assert!(registry.resolve_mcp_tool(peer::TOOL).is_some());
-    let pids = fixture_peer_pids(trace);
+    let pids = peer::live_pids(trace);
     assert!(!pids.is_empty(), "real discovered MCP peer must exist");
     for pid in pids {
         assert!(
@@ -364,8 +345,12 @@ async fn activation_boundary(root: &Path, mode: &str) {
     );
     assert!(context.mcp_preflight().unwrap().servers().is_empty());
     assert!(
-        fixture_peer_pids(&trace).is_empty(),
+        peer::live_pids(&trace).is_empty(),
         "inactive skill dependency was started"
+    );
+    assert!(
+        !trace.with_extension("peers").try_exists().unwrap(),
+        "inactive skill dependency started and exited before observation"
     );
     let result = activate("dot04", &mut context, InvokeType::Attachment).await;
     if mode == "eligible" {
@@ -415,10 +400,16 @@ async fn activation_boundary(root: &Path, mode: &str) {
             "prospective binding was committed"
         );
         assert_eq!(
-            fixture_peer_pids(&trace).len(),
+            peer::live_pids(&trace).len(),
             usize::from(mode == "missing"),
             "denied dependency started or missing-tool control never discovered its real server"
         );
+        if mode == "denied" {
+            assert!(
+                !trace.with_extension("peers").try_exists().unwrap(),
+                "denied dependency started and exited before observation"
+            );
+        }
     }
     runtime.shutdown().await.unwrap();
     await_fixture_peer_exit(&trace).await;
@@ -553,12 +544,16 @@ async fn direct_run(root: &Path, store: &Arc<dyn PersistenceLayer>, mode: &str) 
         close_fixture_peer_before_dispatch(&registry, &trace).await;
     }
     let peer = peer::Peer::start(root).await;
+    let config = llm(&peer);
+    let (skill_service, providers) = f06_graph_admission::configure(store, &config).await;
+    let driver = universal_agent_runtime::llm::orchestrator::build_driver(&config)
+        .expect("build the controlled provider driver from its host configuration");
     let manager = Arc::new(
         RunManager::with_classifier_config(
-            llm(&peer),
+            config,
             registry.clone(),
             SessionStore::new(),
-            Arc::new(RwLock::new(SkillRegistry::default())),
+            Arc::clone(skill_service.registry()),
             Arc::new(VectorMatcher::new(
                 Arc::new(SwappableEmbeddingBackend::new(Arc::new(
                     UnavailableEmbeddingBackend::new(
@@ -572,7 +567,10 @@ async fn direct_run(root: &Path, store: &Arc<dyn PersistenceLayer>, mode: &str) 
             ClassifierConfig::default(),
             Arc::new(NativeSkillRegistry::new()),
         )
-        .await,
+        .await
+        .with_skill_service(skill_service)
+        .with_provider_registry(providers)
+        .with_llm_driver(driver),
     );
     let state = Arc::new(RunApiState {
         manager: manager.clone(),

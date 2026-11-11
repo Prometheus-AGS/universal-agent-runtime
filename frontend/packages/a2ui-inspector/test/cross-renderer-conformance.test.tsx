@@ -8,7 +8,7 @@ import { A2uiLitSurface } from "@prometheus-ags/a2ui-lit";
 import A2uiSvelteSurface from "@prometheus-ags/a2ui-svelte";
 import { UarSurface, uarBasicCatalog } from "@prometheus-ags/a2ui-uar";
 
-const semanticCatalog = new Catalog<ComponentApi>("semantic", [TextApi, ButtonApi, TextFieldApi, CheckBoxApi, ChoicePickerApi, RowApi, ColumnApi, CardApi, DividerApi]);
+const semanticCatalog = new Catalog<ComponentApi>("semantic", "v0.9.1", [TextApi, ButtonApi, TextFieldApi, CheckBoxApi, ChoicePickerApi, RowApi, ColumnApi, CardApi, DividerApi]);
 function build<T extends ComponentApi>(catalog: Catalog<T>, id: string) { const processor = new MessageProcessor([catalog]); processor.processMessages([{ version: "v0.9", createSurface: { surfaceId: id, catalogId: catalog.id } }, { version: "v0.9", updateComponents: { surfaceId: id, components: [...UAR_CONFORMANCE_COMPONENTS] } }, { version: "v0.9", updateDataModel: { surfaceId: id, path: "/", value: { ...UAR_CONFORMANCE_DATA } } }]); return processor.model.getSurface(id)!; }
 afterEach(() => { cleanupReact(); cleanupSvelte(); document.body.replaceChildren(); });
 describe("React/Lit/Svelte semantic conformance", () => {
