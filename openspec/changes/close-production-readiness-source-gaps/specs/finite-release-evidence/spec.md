@@ -196,6 +196,11 @@ The Linux amd64 release candidate SHALL retain the existing vulnerability gates 
 - **THEN** the affected package and runtime checks exercise the resolved graph
 - **AND** the release evidence records the candidate's audit result separately from default-branch alert state and the prior candidate's receipts
 
+#### Scenario: OpenCode resolves a patched Effect dependency
+- **WHEN** the project installs the pinned OpenCode plugin from its frozen lockfile
+- **THEN** the plugin resolves the patched Effect version and can execute a declared tool and an Effect plugin hook
+- **AND** Effect rejects injected cookie attributes and retains its TOML parser override
+
 #### Scenario: A2UI consumers migrate to a patched Zod 4 boundary
 - **WHEN** the shipped UAR renderer or the independent PEM client processes a valid A2UI surface and dispatches a catalog-defined action
 - **THEN** the renderer, catalog and binder exchange Zod 4 schemas through the same compatible core in that consumer, preserving data-model bindings and action forwarding
