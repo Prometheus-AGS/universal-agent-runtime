@@ -180,6 +180,7 @@ RUN set -eu; \
         typescript@6.0.3 \
         @bytecodealliance/jco@1.41.0 \
         @bytecodealliance/componentize-js@0.23.0 \
+        commander@14.0.3 \
         assemblyscript@0.28.20
 
 # Go (stock) — supports GOOS=js and GOOS=wasip1. Multi-arch via TARGETARCH.
