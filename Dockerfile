@@ -61,7 +61,7 @@ RUN if [ "$TARGETARCH" = amd64 ]; then \
     fi \
     && apt-get update && apt-get -o 'DPkg::Options::=--path-include=/usr/share/man/man1/*' \
         install -y --no-install-recommends \
-        ca-certificates curl git build-essential pkg-config \
+        ca-certificates curl git build-essential patch pkg-config \
         libssl-dev cmake unzip xz-utils \
         gnupg lsb-release \
         protobuf-compiler libprotobuf-dev \
@@ -76,6 +76,8 @@ RUN if [ "$TARGETARCH" = amd64 ]; then \
         libgdbm-compat-dev liblzma-dev libncurses-dev libreadline-dev \
         libsqlite3-dev tk-dev uuid-dev zlib1g-dev patchelf \
     && rm -rf /var/lib/apt/lists/*
+
+COPY vendor/patches/cpython/gh-127878-import-cache.patch /tmp/cpython-import.patch
 
 # Noble lacks libmpdec-dev. Build the pinned upstream library before CPython.
 # uv manages the system interpreter's packages. venv still uses bundled ensurepip.
@@ -98,6 +100,8 @@ RUN set -eu; \
     echo 'abb0102e6d4ae027509bcb82327d9dd85515b44a3ba8ad538cfc5e9847029f68  python.tar.xz' \
         | sha256sum -c -; \
     tar -xJf python.tar.xz --strip-components=1; \
+    patch --batch --forward --fuzz=0 -p1 < /tmp/cpython-import.patch; \
+    rm /tmp/cpython-import.patch; \
     ./configure --enable-shared --enable-loadable-sqlite-extensions \
         --with-system-libmpdec --with-ensurepip=no; \
     make -j "$(nproc)"; \

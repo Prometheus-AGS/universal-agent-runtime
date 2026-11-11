@@ -221,6 +221,11 @@ The Linux amd64 release candidate SHALL retain the existing vulnerability gates 
 - **THEN** it verifies both pinned SHA-256 values before extracting and building the archives, and builds Python against the installed mpdecimal library
 - **AND** the installed image's Python aliases resolve to that interpreter and support native extensions, virtual environments and the existing Python component tooling
 
+#### Scenario: The CPython build applies the upstream import warning fix
+- **WHEN** the toolchain builds the verified Python 3.13.18 archive
+- **THEN** it applies upstream GH-127878 to the extracted source before configure with no fuzzy matching
+- **AND** the Linux image build retains compiler warning checks and the installed Python qualification
+
 #### Scenario: The amd64 builder uses the approved Ubuntu archive mirror
 - **WHEN** the amd64 toolchain stage fetches its Noble archive packages
 - **THEN** it uses `us.archive.ubuntu.com` with the existing Ubuntu archive key, suites and components
