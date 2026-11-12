@@ -41,6 +41,7 @@ async fn run() -> anyhow::Result<(u128, u128)> {
 
     anyhow::ensure!(row.0 == 1, "expected id=1, got id={}", row.0);
 
+    conn.close().await?;
     server.shutdown()?;
     Ok((boot_ms, query_ms))
 }
