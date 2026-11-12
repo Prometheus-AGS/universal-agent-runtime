@@ -22,7 +22,9 @@ scripts/package-offline-source.sh dist/uar-offline-source.tar.gz
 The archive includes recursive-checkout source, committed catalog/model inputs,
 unpublished dependency sources, all registry and Git crate sources selected by
 `Cargo.lock`, Cargo's generated source replacements in `.cargo/config.toml`,
-and license files. On a machine with no network access:
+and license files. Cargo stores generated dependencies in
+`vendor/cargo-sources` and resolves the tracked `esaxx-rs` patch from its
+original path. On a machine with no network access:
 
 ```bash
 tar -xzf uar-offline-source.tar.gz -C uar-source

@@ -21,7 +21,8 @@ mkdir -p "$stage/source" "$(dirname "$output")"
 mkdir -p "$stage/source/.cargo"
 (
   cd "$stage/source"
-  cargo vendor --locked vendor/crates >../vendor-config.toml
+  # Keep Cargo's checksum-validated directory separate from tracked path patches.
+  cargo vendor --locked vendor/cargo-sources >../vendor-config.toml
   if [[ ! -s ../vendor-config.toml ]]; then
     printf 'cargo vendor did not emit source replacement configuration\n' >&2
     exit 1
