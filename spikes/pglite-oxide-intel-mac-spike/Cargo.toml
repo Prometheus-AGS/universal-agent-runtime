@@ -8,12 +8,13 @@ publish = false
 description = "Throwaway spike verifying pglite-oxide's portable-wasix fallback boots and serves queries on x86_64-apple-darwin. See openspec/changes/pglite-oxide-intel-mac-spike/."
 
 [dependencies]
-pglite-oxide = "0.5.1"
+pglite-oxide = "=0.5.1"
 sqlx = { version = "0.9", features = ["postgres", "runtime-tokio"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 anyhow = "1"
 
 [patch.crates-io]
+pglite-oxide = { path = "../../vendor/patches/pglite-oxide-0.5.1" }
 # Use the runtime's SQLite binding backport for this independent SQLx lock.
 sqlx-sqlite = { path = "../../vendor/patches/sqlx-sqlite-0.9.0" }
 object = { path = "../../vendor/patches/object-0.39.1" }

@@ -13,12 +13,13 @@ use virtual_fs::{
 };
 use webc::metadata::annotations::Wasi as WasiAnnotation;
 
+#[cfg(feature = "journal")]
+use crate::journal::{DynJournal, DynReadableJournal, SnapshotTrigger};
 use crate::{
     WasiEnvBuilder,
     bin_factory::{BinaryPackage, BinaryPackageMounts},
     capabilities::Capabilities,
     fs::WasiFsRoot,
-    journal::{DynJournal, DynReadableJournal, SnapshotTrigger},
 };
 
 pub const MAPPED_CURRENT_DIR_DEFAULT_PATH: &str = "/home";
@@ -49,10 +50,15 @@ pub(crate) struct CommonWasiOptions {
     pub(crate) is_home_mapped: bool,
     pub(crate) injected_packages: Vec<BinaryPackage>,
     pub(crate) capabilities: Capabilities,
+    #[cfg(feature = "journal")]
     pub(crate) read_only_journals: Vec<Arc<DynReadableJournal>>,
+    #[cfg(feature = "journal")]
     pub(crate) writable_journals: Vec<Arc<DynJournal>>,
+    #[cfg(feature = "journal")]
     pub(crate) snapshot_on: Vec<SnapshotTrigger>,
+    #[cfg(feature = "journal")]
     pub(crate) snapshot_interval: Option<std::time::Duration>,
+    #[cfg(feature = "journal")]
     pub(crate) stop_running_after_snapshot: bool,
     pub(crate) skip_stdio_during_bootstrap: bool,
     pub(crate) current_dir: Option<PathBuf>,
