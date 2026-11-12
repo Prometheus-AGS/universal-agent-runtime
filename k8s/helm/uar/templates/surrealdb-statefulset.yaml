@@ -22,12 +22,14 @@ spec:
         app.kubernetes.io/component: database
         app.kubernetes.io/part-of: universal-agent-runtime
     spec:
-      {{- if .Values.surrealdb.qualificationSharedVolume }}
       securityContext:
+        fsGroup: 65532
+        {{- if .Values.surrealdb.qualificationSharedVolume }}
         runAsNonRoot: true
         runAsUser: 65532
         runAsGroup: 65532
-        fsGroup: 65532
+        {{- end }}
+      {{- if .Values.surrealdb.qualificationSharedVolume }}
       initContainers:
         - name: qualification-volume-directories
           image: "{{ .Values.uar.image.repository }}@{{ required "qualificationSharedVolume requires the immutable UAR image digest" .Values.uar.image.digest }}"
@@ -46,7 +48,7 @@ spec:
             - start
             - --log
             - info
-            - "rocksdb:/data/surreal.db"
+            - "surrealkv:/data/surreal.db"
           ports:
             - name: http
               containerPort: 8000
@@ -63,7 +65,8 @@ spec:
                   name: {{ default (printf "%s-secrets" (include "uar.fullname" .)) .Values.uar.existingSecret }}
                   key: SURREAL_PASS
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /ready
               port: http
             initialDelaySeconds: 10
             periodSeconds: 10

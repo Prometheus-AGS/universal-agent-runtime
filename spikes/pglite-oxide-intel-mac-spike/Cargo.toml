@@ -12,3 +12,15 @@ pglite-oxide = "0.5.1"
 sqlx = { version = "0.9", features = ["postgres", "runtime-tokio"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
 anyhow = "1"
+
+[patch.crates-io]
+# Use the runtime's SQLite binding backport for this independent SQLx lock.
+sqlx-sqlite = { path = "../../vendor/patches/sqlx-sqlite-0.9.0" }
+object = { path = "../../vendor/patches/object-0.39.1" }
+shared-buffer = { path = "../../vendor/patches/shared-buffer-0.1.4" }
+virtual-net = { path = "../../vendor/patches/virtual-net-0.702.1" }
+wasmer = { path = "../../vendor/patches/wasmer-7.2.0-alpha.3" }
+wasmer-config = { path = "../../vendor/patches/wasmer-config-0.702.0-alpha.3" }
+wasmer-derive = { path = "../../vendor/patches/wasmer-derive-7.2.0-alpha.3" }
+wasmer-journal = { path = "../../vendor/patches/wasmer-journal-0.702.0-alpha.3" }
+wasmer-wasix = { path = "../../vendor/patches/wasmer-wasix-0.702.0-alpha.3" }

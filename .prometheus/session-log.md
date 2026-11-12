@@ -7356,3 +7356,12 @@ Created the separate codex/pr476-rc4-release worktree from merged PR #490. Stage
 ### 2026-11-10 — RC4 A2UI implementation checkpoint
 
 The root and frontend lock resolutions include the native A2UI Zod 4 core and preserve the first-party and legacy React renderers. The migrated PEM client source is in the isolated Gate177 staging packet. The existing I19 scenario still exercises the same surfaces and actions and now binds its receipt to the exact client package graph. The historical PEM gitlink and published RC3 remain unchanged. Gate177 has no product verification result yet.
+
+### 2026-11-12 — F14 archive source remediation checkpoint
+
+Integrated the GTK3 and GLib port into nine lock roots, the remaining
+Skill System and Entity Management repairs, Intel spike overlays, and the
+Surrealism verifier crypto update. All 1,069 historical Cargo findings
+point to retired 3.3 paths or versions absent from their original paths.
+The old findings comparison is source evidence. Clean recursive pins,
+exact-tree VLBV, and fresh OSV remain pending.

@@ -46,8 +46,11 @@ SurrealDB store. On a PostgreSQL deployment, enable `memory` to get memory.
 
 The selected current lane is Linux amd64 container APIs behind a trusted
 host/gateway, embedded SurrealDB 4.0.0 on an owned SurrealKV volume by default,
-and restricted PostgreSQL 18. The [embedded upgrade qualification](embedded-surrealdb-4-upgrade.md#qualification-scope)
-covers the recorded 4.0 candidate and pinned 3.3.0 baseline. The [canonical recovery contract](../product-support-matrix.md#execution-and-recovery-guarantees)
+and restricted PostgreSQL 18. Companion SurrealDB deployments use the 4.0.0
+image pinned in [versions.toml](../../versions.toml) and persistent deployments
+use SurrealKV. Companion deployment and restart behavior require their own
+qualification on the new image. The [embedded upgrade qualification](embedded-surrealdb-4-upgrade.md#qualification-scope)
+retains the recorded migration evidence. The [canonical recovery contract](../product-support-matrix.md#execution-and-recovery-guarantees)
 and [final checklist](../releases/v1.4.0-final.md) distinguish acknowledgement,
 retention, replay, effects and upgrade evidence. Automatic memory also requires
 an explicit [operator relevance cutoff](memory-injection-provenance.md).

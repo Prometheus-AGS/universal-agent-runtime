@@ -6,11 +6,21 @@ This procedure covers the Linux amd64 UAR OCI service and its dedicated embedded
 
 The SurrealDB upgrade phase passed five scenarios for the recorded Linux amd64 candidate behind a trusted gateway. The evidence covers fresh persistence, offline migration from the pinned 3.3.0 SurrealKV baseline, selected data and query parity, storage shutdown and reopen, and rollback after interruption or a recorded write disposition. The original snapshot stayed byte-for-byte unchanged.
 
-The child evidence packet is identified by SHA-256 `2c8649980b135e69fdcc14bd99ee8ad6fbc9ce19f9c1e150795264839749a188`. Its scope is the recorded artifacts, configuration, and fixture data classes. Final release qualification remains tracked in the [release checklist](../releases/v1.4.0-final.md#finite-selected-obligations). The separate standalone SurrealDB server image remains pinned to 3.3.0 in [versions.toml](../../versions.toml).
+The child evidence packet is identified by SHA-256 `2c8649980b135e69fdcc14bd99ee8ad6fbc9ce19f9c1e150795264839749a188`. Its scope is the recorded artifacts, configuration, and fixture data classes. Final release qualification remains tracked in the [release checklist](../releases/v1.4.0-final.md#finite-selected-obligations). The active standalone companion server now uses SurrealDB 4.0.0, pinned by digest in [versions.toml](../../versions.toml). The earlier embedded migration evidence applies to its recorded artifacts.
+
+For current deployments, attach a fresh or already converted SurrealDB 4.0
+SurrealKV store. The deployment templates preserve the existing volume and
+datastore path. They do not perform a conversion. Keep legacy storage
+offline and retain its recovery point before changing a volume assignment.
+
+## Historical migration procedure
+
+The following procedure records the earlier 3.3-to-4.0 qualification.
+Current 4.0-only qualification uses fresh stores and 4.0 recovery points.
 
 ## Bind the source and recovery point
 
-Use a store last written by the pinned UAR **3.3.0 embedded SurrealKV** baseline and closed by that same artifact. The upstream 3.3.0 source export identifies revision `238bfeb11f5725bebed370167656748df8067595`. The baseline uses the UAR lifecycle overlays for `surrealdb`, `surrealdb-core`, `surrealdb-engine-api`, `surrealdb-engine-local`, `surrealdb-kvs-surrealkv` and `surrealdb-kvs-rocksdb`, all at `3.3.0`. Bind the actual patch contents from the baseline checkout. The standalone SurrealDB 3.3 server image is a separate artifact.
+Use a store last written by the pinned UAR **3.3.0 embedded SurrealKV** baseline and closed by that same artifact. The upstream 3.3.0 source export identifies revision `238bfeb11f5725bebed370167656748df8067595`. The baseline uses the UAR lifecycle overlays for `surrealdb`, `surrealdb-core`, `surrealdb-engine-api`, `surrealdb-engine-local`, `surrealdb-kvs-surrealkv` and `surrealdb-kvs-rocksdb`, all at `3.3.0`. Bind the actual patch contents from the baseline checkout. The historical standalone SurrealDB 3.3 server image is a separate artifact.
 
 Before attempting an upgrade, record an eligibility receipt with all of the following fields. Bind it to the exact snapshot and retain it with the recovery material. Stop if a field is unknown or the recorded source is outside the baseline.
 

@@ -12,7 +12,7 @@
 # Services:
 #   postgres   — PostgreSQL 18 (flint-forge image, pgvector); UAR uses its own `uar` database
 #   redis      — Redis 7 with AOF persistence
-#   surreal    — SurrealDB v2 (memory / knowledge-graph backend for UAR memory)
+#   surreal    — SurrealDB 4.0 (memory / knowledge-graph backend for UAR memory)
 #   surrealist — SurrealDB web UI (http://localhost:8080)
 #   dbgate     — DB admin UI for Postgres (http://localhost:5050)
 #   uar        — Universal Agent Runtime (http://localhost:1906)
@@ -74,9 +74,9 @@ services:
     networks:
       - uar-net
 
-  # ── SurrealDB 3.3.0 (agent memory / graph — not primary UAR persistence here) ─
+  # ── SurrealDB 4.0.0 (agent memory / graph — not primary UAR persistence here) ─
   surreal:
-    image: surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20
+    image: surrealdb/surrealdb:v4.0.0@sha256:c35893410644e65fa90aa1bef446ac9cb0a0c2733b9d405ce3eb56754b85c330
     container_name: uar-surreal
     restart: unless-stopped
     command:
@@ -84,13 +84,13 @@ services:
       - --user=${SURREAL_USER:-root}
       - --pass=${SURREAL_PASS:-changeme}
       - --bind=0.0.0.0:8000
-      - rocksdb:/data/memory.db
+      - surrealkv:/data/memory.db
     volumes:
       - surreal-data:/data
     ports:
       - "8000:8000"
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      test: ["CMD", "/surreal", "is-ready", "--endpoint", "http://localhost:8000"]
       interval: 15s
       timeout: 5s
       retries: 5

@@ -1,10 +1,14 @@
 # SurrealDB lifecycle patch set
 
-This directory is a source patch overlay for the UAR-pinned SurrealDB 3.3.0
-crate family. It was copied from the local Cargo registry source cache on
-2026-10-20; registry sources were not modified.
+The UAR root workspace selects four SurrealDB 4.0.0 overlays in this
+directory through `[patch.crates-io]` and resolves them with the root
+`Cargo.lock`: the SDK, core, local engine, and SurrealKV adapter. The
+standalone fuzz, Rust SDK, and Tauri manifests select the same overlays
+in their independent workspaces.
 
-Patched crates:
+The earlier SurrealDB 3.3.0 lifecycle sources and crate-local lockfiles
+are recorded in the [historical UAR tree](https://github.com/Prometheus-AGS/universal-agent-runtime/tree/32cb3bcfc9691212ec0b0359ce22474968bc6850/vendor/patches/surrealdb-lifecycle).
+The earlier overlay covered:
 
 - `surrealdb-3.3.0`
 - `surrealdb-engine-api-3.3.0`
@@ -13,8 +17,7 @@ Patched crates:
 - `surrealdb-kvs-surrealkv-3.3.0`
 - `surrealdb-kvs-rocksdb-3.3.0`
 
-The root Cargo manifest activates all six crates through `patch.crates-io`;
-their lockfile entries are local source entries. The base crate export records
+The 3.3.0 base crate export records
 upstream commit `238bfeb11f5725bebed370167656748df8067595` in
 `.cargo_vcs_info.json`. Upstream source provenance:
 [SurrealDB source](https://github.com/surrealdb/surrealdb/tree/238bfeb11f5725bebed370167656748df8067595).
@@ -40,6 +43,13 @@ shared admission closure, awaited stream closure, joined embedded task shutdown,
 error-preserving engine close behavior, explicit transport-loss observation and
 generation-checked reconnection with acknowledged session replay. Record the upstream release and the
 replacement proof in the lifecycle handoff before removing the Cargo overrides.
+
+## Archived dependency resolutions
+
+The full offline source archive retains every crate-local lockfile in the
+current tree. The 4.0 standalone resolutions share applicable UAR dependency
+backports with the root workspace. The phase inventory records the residual
+package and advisory IDs.
 
 ## Evidence boundary
 

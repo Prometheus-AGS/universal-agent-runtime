@@ -18,5 +18,5 @@
   "docker_config": "/Users/gqadonis/.docker",
   "platform": "linux/arm64",
   "postgres_image": "docker.io/supabase/postgres:17.6.1.173@sha256:da28f45caeb2d0857a5f53759654859a46c469112f257290e28bc2c291727506",
-  "surreal_image": "surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20"
+  "surreal_image": "surrealdb/surrealdb:v4.0.0@sha256:c35893410644e65fa90aa1bef446ac9cb0a0c2733b9d405ce3eb56754b85c330"
 }

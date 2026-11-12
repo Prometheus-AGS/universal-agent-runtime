@@ -31,8 +31,39 @@ tokio = { version = "1", features = ["full"] }
 clap = { version = "4.6.7", features = ["derive", "env"] }
 
 [patch.crates-io]
+# Linux GTK3 uses the upstream GLib 0.22 and WebKitGTK 4.1 port.
+libappindicator = { path = "../vendor/patches/gtk3-glib/libappindicator-0.9.0" }
+libappindicator-sys = { path = "../vendor/patches/gtk3-glib/libappindicator-sys-0.9.0" }
+muda = { path = "../vendor/patches/gtk3-glib/muda-0.20.0" }
+tao = { path = "../vendor/patches/gtk3-glib/tao-0.37.2" }
+tauri = { path = "../vendor/patches/gtk3-glib/tauri-2.12.5" }
+tauri-runtime = { path = "../vendor/patches/gtk3-glib/tauri-runtime-2.12.2" }
+tauri-runtime-wry = { path = "../vendor/patches/gtk3-glib/tauri-runtime-wry-2.12.3" }
+tray-icon = { path = "../vendor/patches/gtk3-glib/tray-icon-0.25.1" }
+webkit2gtk = { path = "../vendor/patches/gtk3-glib/webkit2gtk-2.0.2" }
+webkit2gtk-sys = { path = "../vendor/patches/gtk3-glib/webkit2gtk-2.0.2/sys" }
+wry = { path = "../vendor/patches/gtk3-glib/wry-0.57.1" }
+biblatex = { path = "../vendor/patches/biblatex-0.12.0" }
+rav1e = { path = "../vendor/patches/rav1e-0.8.1" }
+tokenizers-v022 = { package = "tokenizers", path = "../vendor/patches/tokenizers-0.22.2" }
+tokenizers-v023 = { package = "tokenizers", path = "../vendor/patches/tokenizers-0.23.2" }
+gemm = { path = "../vendor/patches/gemm-0.19.0" }
+gemm-c32 = { path = "../vendor/patches/gemm-c32-0.19.0" }
+gemm-c64 = { path = "../vendor/patches/gemm-c64-0.19.0" }
+gemm-common = { path = "../vendor/patches/gemm-common-0.19.0" }
+gemm-f16 = { path = "../vendor/patches/gemm-f16-0.19.0" }
+gemm-f32 = { path = "../vendor/patches/gemm-f32-0.19.0" }
+gemm-f64 = { path = "../vendor/patches/gemm-f64-0.19.0" }
+pulp = { path = "../vendor/patches/pulp-0.22.3" }
+heapless = { path = "../vendor/patches/heapless-0.7.17" }
+indicatif = { path = "../vendor/patches/indicatif-0.17.11" }
+surrealmx = { path = "../vendor/patches/surrealmx-1.1.0" }
+wasmtimer = { path = "../vendor/patches/wasmtimer-0.4.3" }
 # Independent workspaces do not inherit the runtime lifecycle overlays.
 surrealdb = { path = "../vendor/patches/surrealdb-lifecycle/surrealdb-4.0.0" }
 surrealdb-core = { path = "../vendor/patches/surrealdb-lifecycle/surrealdb-core-4.0.0" }
 surrealdb-engine-local = { path = "../vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-4.0.0" }
 surrealdb-kvs-surrealkv = { path = "../vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-4.0.0" }
+# Independent lockfiles also use the runtime RustCrypto backports.
+jsonwebtoken-v10 = { package = "jsonwebtoken", path = "../vendor/patches/jwt-rustcrypto/jsonwebtoken-10.4.0" }
+jsonwebtoken-v11 = { package = "jsonwebtoken", path = "../vendor/patches/jwt-rustcrypto/jsonwebtoken-11.1.0" }

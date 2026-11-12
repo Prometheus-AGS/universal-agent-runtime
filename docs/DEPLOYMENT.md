@@ -168,66 +168,20 @@ Key `values.yaml` knobs:
 | `hpa.enabled` | `true`, `2`–`10` replicas | Horizontal Pod Autoscaler |
 | `networkPolicies.enabled` | `true` | Namespace-scoped `NetworkPolicy` resources |
 
-## SurrealDB 3.3.0 migration gates
+## SurrealDB 4.0 companion server
 
-Every checked-in Compose, Kustomize, Helm, and OpenTofu SurrealDB workload is
-pinned to
-`surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20`.
+Compose, Kustomize, Helm, and OpenTofu select the same immutable SurrealDB
+4.0.0 image pinned in [versions.toml](../versions.toml). Persistent
+configurations use SurrealKV at the declared path on their existing volume.
+Provision a fresh or verified 4.0 store before enabling these templates.
+Keep historical data offline. The templates leave conversion outside the
+startup path.
 
-For an existing 3.2 datastore, take and retain a restorable export before the
-first 3.3.0 start. SurrealDB applies the 3.2-to-3.3 datastore migration when
-3.3.0 first opens it; readiness may return `503` while that migration runs.
-Afterward, 3.2 cannot safely reopen that datastore. Rollback therefore means
-restoring the pre-upgrade export into a 3.2 datastore, not merely restoring the
-old executable or container image. Follow the official
-[3.2-to-3.3 migration guide](https://surrealdb.com/docs/build/migrating/from-old-surrealdb-versions/32-to-33)
-for the exact engine and deployment topology in use.
-
-### Migrating a 2.x datastore
-
-That pin is safe for a new datastore. It does **not** make an existing 2.x data
-directory readable by 3.x. The uncomfortable failure mode is an operator
-replacing the image first and discovering only then that the 3.x server cannot
-open the 2.x store.
-
-Use the official
-[SurrealDB 2.x-to-3.x procedure](https://github.com/surrealdb/docs.surrealdb.com/blob/main/src/content/build/migrating/from-old-surrealdb-versions/2x-to-3x.mdx)
-before applying these manifests to a 2.x-backed environment:
-
-1. Quiesce application writes, capture a restorable backup of the 2.x volume,
-   and record representative namespace/database counts and queries. Resolve the
-   migration diagnostics, including every item that requires manual changes.
-2. Keep the 2.x server running against its original volume. From the SurrealDB
-   3.3.0 CLI, create a v3-compatible export:
-
-   ```bash
-   surreal v2 export --v3 \
-     --namespace <namespace> \
-     --database <database> \
-     --token <v2-token> \
-     v2-export-for-v3.surql
-   ```
-
-3. Start an empty 3.3.0 target on a different endpoint and a new volume. Import
-   the export; never point the 3.x process at the 2.x data directory:
-
-   ```bash
-   surreal import \
-     --namespace <namespace> \
-     --database <database> \
-     --endpoint <v3-endpoint> \
-     --token <v3-token> \
-     v2-export-for-v3.surql
-   ```
-
-4. Repeat the recorded counts and representative queries against the 3.3.0
-   target, then prove an authenticated create/read/query cycle before changing
-   the application endpoint. Keep the 2.x volume and manifest available for
-   rollback until the 3.3.0 verification window closes.
-
-Rehearse the same sequence against disposable representative data before a
-production window. A rehearsal proves the command path and catches schema
-incompatibilities; it is not permission to migrate or delete production state.
+The 4.0 image runs as UID and GID 65532. Ensure the provisioned volume is
+writable by that account before startup. Readiness must report that the
+datastore is accepting connections. On an isolated deployment, write and
+read a representative record, then verify it again after a clean shutdown
+and reopen against the same volume. Retain a verified 4.0 backup for recovery.
 
 ## Configuration reference
 

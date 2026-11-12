@@ -1,7 +1,7 @@
 # =============================================================================
 # UAR — Embedded persistence (development / single-machine)
 # =============================================================================
-# SurrealDB embedded engine (SurrealKV on disk). No separate database process.
+# SurrealDB 4.0 embedded engine (SurrealKV on disk). No separate database process.
 # Usage:
 #   CONFIG_FILE=config.embedded.yaml cargo run
 # Or merge ideas into your own `config.yaml`.

@@ -72,6 +72,6 @@ The template includes client SDK scaffolding:
 
 1. Review `README.md` and update project description
 2. Update `LICENSE` files if needed
-3. Run `bun install` then `cargo build`
+3. Run `pnpm install --frozen-lockfile` then `cargo build`
 4. Test with `cargo run`
 5. Commit changes: `git commit -m "chore: initialize from template"`

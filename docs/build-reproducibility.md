@@ -20,9 +20,9 @@ scripts/package-offline-source.sh dist/uar-offline-source.tar.gz
 ```
 
 The archive includes recursive-checkout source, committed catalog/model inputs,
-unpublished dependency sources, all registry crate sources selected by
-`Cargo.lock`, `.cargo/config.toml` source replacement, and license files. On a
-machine with no network access:
+unpublished dependency sources, all registry and Git crate sources selected by
+`Cargo.lock`, Cargo's generated source replacements in `.cargo/config.toml`,
+and license files. On a machine with no network access:
 
 ```bash
 tar -xzf uar-offline-source.tar.gz -C uar-source
@@ -30,9 +30,23 @@ cd uar-source
 cargo build --locked --offline --features minimal
 ```
 
-CI performs this build from two independent extractions. It remaps source paths,
-sets `SOURCE_DATE_EPOCH`, and compares the declared release binary and catalog
-digest byte-for-byte.
+The release audit scans the full extracted archive recursively, including
+lockfiles in pinned nested checkouts. Keep these lockfiles current even when
+their workspace is outside the Linux runtime build. The root JavaScript
+workspace uses the pinned pnpm lockfile for development and container builds.
+
+Create the archive from a clean candidate with all recursive submodules at
+their recorded commits. Record the source commit, recursive pins, archive
+digest, and the build and scanner results with the release evidence. Run
+release qualification locally. The offline minimal build exercises the
+server artifact, while the recursive scan also covers desktop and
+standalone tools carried in the archive.
+
+The Linux desktop source uses GTK3 with WebKitGTK 4.1. Its Rust lock selects
+GTK3 0.19 and GLib 0.22 through the reviewed Tauri and WebKitGTK source overlays.
+Build that desktop target with Rust 1.92 or newer and the existing GTK3 and
+WebKitGTK 4.1 development libraries. Linux desktop behavior requires its own
+verification evidence.
 
 ## Refresh reviewed inputs
 
@@ -50,12 +64,11 @@ Update `catalog/SNAPSHOT.md` with the date, digest, entry count, and both source
 commits only after reviewing the provider/model diff and running the bounded
 catalog/routing checks required by the active phase.
 
-The current reviewed runtime-input baseline is also recorded in
-`versions.toml`: Liter 1.18.2 at
-`c5c6caac617eb931cd5009146a70831422ec236c`, the curated Surreal Memory source
-at `432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8`, and the Skill System parent at
-`ad5c82c6c16145637c589a3ddfa06e0f20d603e7`. Each commit is reachable from its
-authoritative remote `main` branch before UAR records it.
+The candidate runtime-input pins for Liter, the curated Surreal Memory
+source, and Skill System are recorded in `versions.toml`. The release input
+provenance binds those pins to the Git tree and nested source. Ensure the
+release's submodule commits are available from their declared remotes so
+another maintainer can reproduce the checkout.
 
 Local model refresh is similarly explicit:
 

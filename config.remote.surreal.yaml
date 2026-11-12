@@ -1,5 +1,5 @@
 # =============================================================================
-# UAR — Remote SurrealDB (server / cloud)
+# UAR — Remote SurrealDB 4.0 (server / cloud)
 # =============================================================================
 # Use when SurrealDB runs as a separate process (Docker, Kubernetes, Surreal Cloud).
 # Set credentials via environment (recommended) or uncomment below for local dev only.

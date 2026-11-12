@@ -10,7 +10,7 @@
 #   docker compose -f docker-compose.prod.yaml --env-file .env up -d
 #
 # Services:
-#   surreal — SurrealDB v2 (application persistence + optional memory endpoint)
+#   surreal — SurrealDB 4.0 (application persistence + optional memory endpoint)
 #   redis   — Redis (caching / sessions when external cache is enabled)
 #   app     — Universal Agent Runtime (http://localhost:${APP_PORT:-1906})
 #
@@ -96,7 +96,7 @@ services:
       - uar-prod-net
 
   surreal:
-    image: surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20
+    image: surrealdb/surrealdb:v4.0.0@sha256:c35893410644e65fa90aa1bef446ac9cb0a0c2733b9d405ce3eb56754b85c330
     restart: always
     env_file: .env
     ports:
@@ -106,11 +106,11 @@ services:
       - --user=${SURREAL_USER:-root}
       - --pass=${SURREAL_PASS:-changeme}
       - --bind=0.0.0.0:8000
-      - rocksdb:/data/surreal.db
+      - surrealkv:/data/surreal.db
     volumes:
       - surreal_data_prod:/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      test: ["CMD", "/surreal", "is-ready", "--endpoint", "http://localhost:8000"]
       interval: 10s
       timeout: 5s
       retries: 5

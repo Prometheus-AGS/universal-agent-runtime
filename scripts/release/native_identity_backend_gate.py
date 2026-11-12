@@ -28,9 +28,10 @@ import uuid
 
 sys.dont_write_bytecode = True
 from uar_1_1_1_support import (AttachedContainer, Blocked, Resources,
-                               SURREAL_IMAGE, postgres_final_server, surreal_listening)
+                               postgres_final_server, surreal_listening)
 
 ROOT = Path(__file__).resolve().parents[2]
+SURREAL_IMAGE = tomllib.loads((ROOT / "versions.toml").read_text())["pins"]["surrealdb_image"]
 POSTGRES_IMAGE = "docker.io/supabase/postgres:17.6.1.173@sha256:da28f45caeb2d0857a5f53759654859a46c469112f257290e28bc2c291727506"
 AGENT_TESTS = {
     "tree_limits_refuse_the_fifth_concurrent_child",
@@ -322,14 +323,14 @@ class BackendResources(Resources):
             credentials = self.env_file(kind, {"SURREAL_USER": user, "SURREAL_PASS": password})
             self.docker(*common, "--publish", "127.0.0.1::8000", "--user", "0",
                 "--env-file", str(credentials), "--volume", volume + ":/data", SURREAL_IMAGE,
-                "start", "--bind", "0.0.0.0:8000", "rocksdb:/data/phase.db")
+                "start", "--bind", "0.0.0.0:8000", "surrealkv:/data/phase.db")
             self.start_attached(name, surreal_listening).ready()
             # Scoped process environment has no proxy variables; auth stays in the HTTP header.
             address = self.docker("port", name, "8000/tcp").stdout.strip()
             require(re.fullmatch(r"127\.0\.0\.1:\d+", address), "Surreal loopback binding missing")
             host_url = self.authenticate_surreal(name, user, password)
             entry = {"name": name, "username": user, "password": password,
-                     "host_url": host_url, "image": SURREAL_IMAGE, "durability": "owned-rocksdb-volume"}
+                     "host_url": host_url, "image": SURREAL_IMAGE, "durability": "owned-surrealkv-volume"}
         else:
             image = self.settings["postgres_image"]
             credentials = self.env_file(kind, {"POSTGRES_USER": "supabase_admin", "POSTGRES_PASSWORD": password})
@@ -687,7 +688,7 @@ def configure(path):
     require(re.fullmatch(r"[0-9a-f]{64}", settings["cargo_config_sha256"]), "real Cargo configuration SHA256 required")
     require(re.fullmatch(r"[0-9a-f]{40}", settings["staged_git_tree"]), "real staged source tree required")
     require(settings["platform"] == "linux/arm64", "this prepared gate selects linux/arm64")
-    require(settings["surreal_image"] == SURREAL_IMAGE, "Surreal image must match authoritative3.3.0 pin")
+    require(settings["surreal_image"] == SURREAL_IMAGE, "Surreal image must match the release policy pin")
     require(settings["postgres_image"] == POSTGRES_IMAGE,
             "PostgreSQL image must match the selected immutable Supabase17.6 registry reference")
     for key in ("source_manifest", "output_dir", "resource_dir", "cargo_binary", "rustc_binary", "git_binary",
@@ -809,7 +810,7 @@ def execute(settings):
             UAR_DOT06_EVIDENCE_ROOT=str(private_dir(resource_root / "dot06-evidence")),
             UAR_DOT07_EVIDENCE_ROOT=str(private_dir(resource_root / "dot07-evidence")),
             VERTEXAI_PROJECT="dot05-fixture", VERTEXAI_LOCATION="us-central1")
-        require(surreal["durability"] == "owned-rocksdb-volume", "durable owned Surreal setup missing")
+        require(surreal["durability"] == "owned-surrealkv-volume", "durable owned Surreal setup missing")
         environment["UAR_REMOTE_SURREAL_DURABILITY_ATTESTED"] = "1"
         freeze.capture("after-setup")
         receipt.update(status="running", environment_keys=sorted(environment),

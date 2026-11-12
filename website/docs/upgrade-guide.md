@@ -65,7 +65,10 @@ Keep the persistence provider and location stable unless the release supplies a
 tested migration. Never start an older binary against data changed by a newer
 engine unless the release explicitly declares backward readability.
 
-## Upgrade embedded SurrealKV for RC3
+## Historical RC3 embedded SurrealKV upgrade
+
+Current deployments use SurrealDB 4.0. The procedure below describes the
+earlier RC3 migration qualification.
 
 Treat embedded SurrealDB 3.3.0 to 4.0.0 as a storage-engine change. Freeze
 writes, stop every store owner, and retain the verified original snapshot. Use

@@ -21,13 +21,12 @@ mkdir -p "$stage/source" "$(dirname "$output")"
 mkdir -p "$stage/source/.cargo"
 (
   cd "$stage/source"
-  cargo vendor --quiet --locked vendor/crates
-  printf '%s\n' \
-    '[source.crates-io]' \
-    'replace-with = "vendored-sources"' \
-    '' \
-    '[source.vendored-sources]' \
-    'directory = "vendor/crates"' >.cargo/config.toml
+  cargo vendor --locked vendor/crates >../vendor-config.toml
+  if [[ ! -s ../vendor-config.toml ]]; then
+    printf 'cargo vendor did not emit source replacement configuration\n' >&2
+    exit 1
+  fi
+  mv ../vendor-config.toml .cargo/config.toml
 )
 
 tar -czf "$output" -C "$stage/source" .
