@@ -9,11 +9,12 @@ use wasmer::{Engine, Module};
 use wasmer_types::ModuleHash;
 use webc::metadata::{Command, annotations::Wasi};
 
+#[cfg(feature = "journal")]
+use crate::journal::{DynJournal, DynReadableJournal, SnapshotTrigger};
 use crate::{
     Runtime, WasiEnvBuilder, WasiError, WasiRuntimeError,
     bin_factory::BinaryPackage,
     capabilities::Capabilities,
-    journal::{DynJournal, DynReadableJournal, SnapshotTrigger},
     runners::{MappedDirectory, MountedDirectory, wasi_common::CommonWasiOptions},
     runtime::task_manager::VirtualTaskManagerExt,
 };
@@ -364,7 +365,7 @@ impl WasiRunner {
 
         let wasi = webc::metadata::annotations::Wasi::new(program_name);
 
-        let mut builder = runner.prepare_webc_env(
+        let builder = runner.prepare_webc_env(
             program_name,
             &wasi,
             PackageOrHash::Hash(module_hash),
@@ -373,12 +374,11 @@ impl WasiRunner {
         )?;
 
         #[cfg(feature = "ctrlc")]
-        {
-            builder = builder.attach_ctrl_c();
-        }
+        let builder = builder.attach_ctrl_c();
 
         #[cfg(feature = "journal")]
-        {
+        let builder = {
+            let mut builder = builder;
             for journal in runner.wasi.read_only_journals.iter().cloned() {
                 builder.add_read_only_journal(journal);
             }
@@ -407,7 +407,8 @@ impl WasiRunner {
 
             builder.with_stop_running_after_snapshot(runner.wasi.stop_running_after_snapshot);
             builder.with_skip_stdio_during_bootstrap(runner.wasi.skip_stdio_during_bootstrap);
-        }
+            builder
+        };
 
         let env = builder.build()?;
         let runtime = env.runtime.clone();

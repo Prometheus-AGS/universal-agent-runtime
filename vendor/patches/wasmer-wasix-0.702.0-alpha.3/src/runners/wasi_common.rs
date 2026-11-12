@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::{Context, Error};
+#[cfg(feature = "host-fs")]
 use tokio::runtime::Handle;
 use virtual_fs::{
     ArcFileSystem, ExactMountConflictMode, FileSystem, MountFileSystem, OverlayFileSystem,
