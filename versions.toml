@@ -19,7 +19,7 @@ loro_crdt = "1.13.9"
 # Operator retained current committed Liter source on 2026-10-31, including
 # prepared streaming bodies for UAR accounting. Qualification remains required.
 liter_llm = "2.3.0"
-liter_llm_commit = "6f87c44ec400c6f605ff450c77b7099a18a8dbec"
+liter_llm_commit = "0c0376ba4c2be77703fb295dd5ca42f95b5e4c20"
 # Surreal Memory is pinned to the exact dependency commit rebased on the
 # reviewed documentation and native-MLX remote head.
 surreal_memory_server_base_commit = "e5f48916048a8e26d3ace83c44746b8105f0696c"
