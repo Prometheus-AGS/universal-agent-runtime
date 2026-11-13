@@ -17,7 +17,7 @@ const DATABASE = 'prompt';
 const READY_TIMEOUT_MS = 180_000;
 const EXIT_TIMEOUT_MS = 60_000;
 // The Surreal server must match the pinned server version (versions.toml surrealdb_server).
-const SURREAL_BIN = join(homedir(), '.prometheus/bin/surreal');
+const SURREAL_BIN = process.env.UAR_C52_SURREAL_DB_BIN ?? join(homedir(), '.prometheus/bin/surreal');
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -67,8 +67,10 @@ async function stop(child) {
 async function pinnedSurreal() {
   const pin = /^surrealdb_server\s*=\s*"([^"]+)"/m.exec(await readFile('versions.toml', 'utf8'))?.[1];
   assert.ok(pin, 'versions.toml has no surrealdb_server pin');
-  const version = execFileSync(SURREAL_BIN, ['version'], { encoding: 'utf8', timeout: 10_000 }).trim();
-  assert.equal(version.split(' ')[0], pin, `Surreal server ${version} does not match the pinned ${pin}`);
+  const { version } = JSON.parse(execFileSync(SURREAL_BIN, ['version', '--json'], {
+    encoding: 'utf8', timeout: 10_000,
+  }));
+  assert.equal(version, pin, `Surreal server ${version} does not match the pinned ${pin}`);
   return version;
 }
 
@@ -117,7 +119,7 @@ async function provision(fx, record, owned, proxy, ttlSecs, surrealVersion) {
   fx.surreal = await launch(SURREAL_BIN, ['start', '--no-banner', '--bind', `127.0.0.1:${fx.ports.surreal}`, `surrealkv://${join(fx.dir, 'store')}`], {
     cwd: fx.dir, env: { PATH: process.env.PATH, HOME: process.env.HOME, SURREAL_USER: 'root', SURREAL_PASS: fx.password },
     log: join(fx.dir, 'surreal.log') });
-  await waitReady(`http://127.0.0.1:${fx.ports.surreal}/health`, fx.surreal);
+  await waitReady(`http://127.0.0.1:${fx.ports.surreal}/ready`, fx.surreal);
   // A fresh server has no namespaces; the store's namespace and database do not exist yet.
   const emptyStore = JSON.parse(surrealSql(fx, 'INFO FOR ROOT;', false));
 

@@ -327,7 +327,7 @@ class Observer:
         need(args == self.render(settings["args"]), "actual Surreal daemon arguments differ from frozen command")
         need(all(row.get("Config", {}).get("Labels", {}).get(key) == value for key, value in self.store_labels().items()),
              "Surreal container lacks exact run/scope/nonce/backend ownership labels")
-        endpoint = next((arg for arg in args if isinstance(arg, str) and arg.startswith(("rocksdb:", "surrealkv:"))), None)
+        endpoint = next((arg for arg in args if isinstance(arg, str) and arg.startswith("surrealkv:")), None)
         need(endpoint is not None and not any(arg in ("memory", "mem://") for arg in args), "Surreal daemon did not select a disk engine")
         container_path = endpoint.split(":", 1)[1]
         mount = next((item for item in row.get("Mounts", []) if item.get("RW") is True

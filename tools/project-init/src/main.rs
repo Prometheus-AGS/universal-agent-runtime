@@ -160,7 +160,10 @@ fn main() -> Result<()> {
     println!();
     println!("Next steps:");
     println!("  1. Review the changes: {}", style("git diff").cyan());
-    println!("  2. Install dependencies: {}", style("bun install").cyan());
+    println!(
+        "  2. Install dependencies: {}",
+        style("pnpm install --frozen-lockfile").cyan()
+    );
     println!("  3. Build the project: {}", style("cargo build").cyan());
     println!("  4. Run the dev server: {}", style("cargo run").cyan());
     println!();

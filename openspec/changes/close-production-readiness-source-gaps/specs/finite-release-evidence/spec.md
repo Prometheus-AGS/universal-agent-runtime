@@ -211,6 +211,40 @@ The Linux amd64 release candidate SHALL retain the existing vulnerability gates 
 - **THEN** the affected dependency paths resolve a patched Glob in the root and standalone frontend lockfiles
 - **AND** coverage includes unexecuted eligible source while respecting exclusions, and Storybook emits metadata for discovered typed props
 
+#### Scenario: The cold Linux toolchain install supplies manpage alternatives
+- **WHEN** the Linux toolchain installs its packages from a fresh Ubuntu base
+- **THEN** dpkg installs the section-one manpages used as xz and compiler alternative targets
+- **AND** the build log is checked with the existing diagnostic policy
+
+#### Scenario: The Linux image builds its Python toolchain from pinned upstream source
+- **WHEN** the Ubuntu toolchain stage fetches the upstream Python 3.13.18 and mpdecimal 4.0.1 source archives
+- **THEN** it verifies both pinned SHA-256 values before extracting and building the archives, and builds Python against the installed mpdecimal library
+- **AND** the installed image's Python aliases resolve to that interpreter and support native extensions, virtual environments and the existing Python component tooling
+
+#### Scenario: The CPython build applies the upstream import warning fix
+- **WHEN** the toolchain builds the verified Python 3.13.18 archive
+- **THEN** it applies upstream GH-127878 to the extracted source before configure with no fuzzy matching
+- **AND** the Linux image build retains compiler warning checks and the installed Python qualification
+
+#### Scenario: The amd64 builder uses the approved Ubuntu archive mirror
+- **WHEN** the amd64 toolchain stage fetches its Noble archive packages
+- **THEN** it uses `us.archive.ubuntu.com` with the existing Ubuntu archive key, suites and components
+- **AND** security updates continue to use the base image's signed security source
+
+#### Scenario: The cold build installs the existing WASM and Node tools
+- **WHEN** the image builds its WASM and Node toolchains from an empty tool cache
+- **THEN** direct upstream archives are pinned and checked before extraction and Cargo source installs select explicit package versions
+- **AND** the installed tools retain their existing command surface, with Javy available offline as the same upstream binary previously selected by its npm wrapper
+- **AND** the standalone ComponentizeJS CLI resolves its Commander and Preview 2 shim runtime dependencies on the installed image
+- **AND** the runtime UID 65532 can compile a JavaScript component offline using its passwd home and writable cache under `/var/lib/uar`
+- **AND** acquisition, compiler and package manager diagnostics remain subject to the existing warning checks
+
+#### Scenario: RC4 resolves the RustSec fixes before rebuilding
+- **WHEN** the release source applies the patched Rust dependency graph and runs the existing Cargo audit
+- **THEN** the locked graph passes without adding advisory exceptions
+- **AND** the runtime and proxy retain explicit RustCrypto provider ownership and fail closed when another provider already owns the process slot
+- **AND** document extraction, governed MCP execution, persistent store recovery, and the Wasmtime component trust boundary retain their existing behavior on the replacement candidate
+
 #### Scenario: A2UI consumers migrate to a patched Zod 4 boundary
 - **WHEN** the shipped UAR renderer or the independent PEM client processes a valid A2UI surface and dispatches a catalog-defined action
 - **THEN** the renderer, catalog and binder exchange Zod 4 schemas through the same compatible core in that consumer, preserving data-model bindings and action forwarding

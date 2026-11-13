@@ -29,7 +29,6 @@ exclude = [
     "node_modules/**",
     "*.lock",
     "Cargo.lock",
-    "bun.lock",
     "package-lock.json",
     ".fastembed_cache/**",
     "playwright-report/**",

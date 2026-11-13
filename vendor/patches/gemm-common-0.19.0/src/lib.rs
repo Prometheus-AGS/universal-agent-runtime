@@ -33,6 +33,9 @@ pub mod microkernel;
 pub mod pack_operands;
 pub mod simd;
 
+#[doc(hidden)]
+pub use pastey::paste as __paste;
+
 pub use pulp;
 
 #[derive(Copy, Clone, Debug)]

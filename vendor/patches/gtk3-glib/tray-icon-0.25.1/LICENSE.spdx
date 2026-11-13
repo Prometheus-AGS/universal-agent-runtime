@@ -1,0 +1,24 @@
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: tray-icon-0.25.1-license-notice
+DocumentNamespace: https://spdx.org/spdxdocs/tray-icon-0.25.1-license-notice-c8ab1952-8af9-5bad-8081-8087cbfbfa43
+Creator: Person: Daniel Thompson-Yvetot
+Creator: Organization: Prometheus AGS
+Created: 2026-11-13T09:31:00Z
+
+PackageName: tray-icon
+SPDXID: SPDXRef-1
+PackageVersion: 0.25.1
+PackageSupplier: Organization: The Tauri Programme in the Commons Conservancy
+PackageHomePage: https://tauri.app
+PackageDownloadLocation: git+https://github.com/tauri-apps/tray-icon.git
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: MIT OR Apache-2.0
+PackageCopyrightText: 2020-2022, The Tauri Programme in the Commons Conservancy
+PackageSummary: <text>Create tray icons for desktop applications.
+                </text>
+PackageSourceInfo: <text>Other upstream Git URLs: git://github.com/tauri-apps/tray-icon and git+ssh://github.com/tauri-apps/tray-icon.git.</text>
+
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-1

@@ -1,0 +1,27 @@
+From 081673801e3d47d931d2e2b6a4a1515e1207d938 Mon Sep 17 00:00:00 2001
+From: "Tomas R." <tomas.roun8@gmail.com>
+Date: Mon, 16 Dec 2024 17:57:18 +0100
+Subject: [PATCH] gh-127864: Fix compiler warning (-Wstringop-truncation)
+ (GH-127878)
+
+---
+ Python/import.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/Python/import.c b/Python/import.c
+index f3511aaf7b80101..a9282dde6339590 100644
+--- a/Python/import.c
++++ b/Python/import.c
+@@ -1176,9 +1176,10 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
+         return NULL;
+     }
+ 
+-    strncpy(key, str1_data, str1_len);
++    memcpy(key, str1_data, str1_len);
+     key[str1_len] = sep;
+-    strncpy(key + str1_len + 1, str2_data, str2_len + 1);
++    memcpy(key + str1_len + 1, str2_data, str2_len);
++    key[size - 1] = '\0';
+     assert(strlen(key) == size - 1);
+     return key;
+ }

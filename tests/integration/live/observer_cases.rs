@@ -291,7 +291,7 @@ fn inbox_has_command(view: &Value, source_command: &str) -> bool {
 #[tokio::test]
 #[serial]
 async fn c07_observers_complete_live_boundary() {
-    assert!(include_str!("../../../versions.toml").contains("surrealdb = \"3.3.0\""));
+    assert!(include_str!("../../../versions.toml").contains("surrealdb = \"4.0.0\""));
     let original_skills = std::env::var_os("UAR_BUILTIN_SKILLS_DIR");
     // SAFETY: this is the sole serial C07 gate and restores the process fixture root.
     unsafe {

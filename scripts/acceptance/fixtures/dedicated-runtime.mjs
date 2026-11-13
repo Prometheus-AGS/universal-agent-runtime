@@ -13,7 +13,7 @@ import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
 // Pinned in versions.toml (`surrealdb_image`).
-const SURREAL_IMAGE = 'surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20';
+const SURREAL_IMAGE = 'surrealdb/surrealdb:v4.0.0@sha256:c35893410644e65fa90aa1bef446ac9cb0a0c2733b9d405ce3eb56754b85c330';
 // flint-forge PostgreSQL 18 data-plane image (Know-Me-Tools/flint-forge images/postgres18).
 const POSTGRES_IMAGE = 'tribehealth/flint-forge-pg:18@sha256:55c12cbf613346315a48a5c465e804c1ca61ccd1be283db4683ca7c690a9069c';
 const UAR_DATABASE_INIT = resolve('scripts/acceptance/fixtures/flint-forge-uar-db.sh');
@@ -103,7 +103,7 @@ async function startSurreal(handle, secrets, port) {
   { env: { PATH: process.env.PATH, HOME: process.env.HOME, SURREAL_USER: 'root', SURREAL_PASS: secrets.database },
     timeout: 300_000, stdio: ['ignore', 'pipe', 'pipe'] });
   handle.containerCreated = true;
-  await waitFor('SurrealDB health', async () => (await fetch(`http://127.0.0.1:${port}/health`)).ok, 60_000);
+  await waitFor('SurrealDB readiness', async () => (await fetch(`http://127.0.0.1:${port}/ready`)).ok, 60_000);
   return {
     persistence: { provider: 'surreal', database_url: `http://127.0.0.1:${port}` },
     env: { UAR_PERSISTENCE__SURREAL_USER: 'root', UAR_PERSISTENCE__SURREAL_PASS: secrets.database },

@@ -921,7 +921,7 @@ macro_rules! __inject_mod {
 #[macro_export]
 macro_rules! __inject_mod_cplx {
     ($module: ident, $ty: ident, $N: expr, $simd: ident) => {
-        paste::paste! {
+        $crate::__paste! {
             mod [<$module _cplx>] {
                 use super::*;
                 use crate::microkernel::$module::$ty::*;

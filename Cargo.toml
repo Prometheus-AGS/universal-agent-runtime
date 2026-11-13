@@ -4,11 +4,32 @@ exclude = [
   "crates/prometheus-skill-system",
   ".claude/worktrees",
   "vendor/crates/esaxx-rs",
+  "vendor/patches/biblatex-0.12.0",
+  "vendor/patches/cel-interpreter-0.10.0",
+  "vendor/patches/rav1e-0.8.1",
+  "vendor/patches/tokenizers-0.22.2",
+  "vendor/patches/tokenizers-0.23.2",
   "vendor/patches/gemm-common-0.19.0",
+  "vendor/patches/pulp-0.22.3",
+  "vendor/patches/gemm-f64-0.19.0",
+  "vendor/patches/gemm-f32-0.19.0",
+  "vendor/patches/gemm-f16-0.19.0",
+  "vendor/patches/gemm-c64-0.19.0",
+  "vendor/patches/gemm-c32-0.19.0",
+  "vendor/patches/gemm-0.19.0",
+  "vendor/patches/heapless-0.7.17",
+  "vendor/patches/indicatif-0.17.11",
+  "vendor/patches/jwt-rustcrypto/jsonwebtoken-10.4.0",
+  "vendor/patches/jwt-rustcrypto/jsonwebtoken-11.1.0",
+  "vendor/patches/sqlx-sqlite-0.9.0",
+  "vendor/patches/wasmtimer-0.4.3",
+  "vendor/patches/surrealmx-1.1.0",
+  "vendor/patches/xberg-security",
   "vendor/patches/surrealdb-lifecycle/surrealdb-4.0.0",
   "vendor/patches/surrealdb-lifecycle/surrealdb-core-4.0.0",
   "vendor/patches/surrealdb-lifecycle/surrealdb-engine-local-4.0.0",
   "vendor/patches/surrealdb-lifecycle/surrealdb-kvs-surrealkv-4.0.0",
+  "vendor/patches/surrealdb-lifecycle/surrealism-verify-0.7.0",
   "vendor/git/prometheus-parking-lot-rs",
   "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-core",
   "vendor/git/prometheus-parking-lot-rs/crates/parking-lot-runtime-tokio",
@@ -29,13 +50,39 @@ exclude = [
 resolver = "2"
 
 [patch.crates-io]
+biblatex = { path = "vendor/patches/biblatex-0.12.0" }
+cel-interpreter = { path = "vendor/patches/cel-interpreter-0.10.0" }
+rav1e = { path = "vendor/patches/rav1e-0.8.1" }
+tokenizers-v022 = { package = "tokenizers", path = "vendor/patches/tokenizers-0.22.2" }
+tokenizers-v023 = { package = "tokenizers", path = "vendor/patches/tokenizers-0.23.2" }
 # AArch64 FP16 assembly helpers must declare their instruction precondition.
 # Keep the 0.19.0 source and runtime dispatch; do not raise the CPU baseline.
 gemm-common = { path = "vendor/patches/gemm-common-0.19.0" }
+gemm = { path = "vendor/patches/gemm-0.19.0" }
+gemm-c32 = { path = "vendor/patches/gemm-c32-0.19.0" }
+gemm-c64 = { path = "vendor/patches/gemm-c64-0.19.0" }
+gemm-f16 = { path = "vendor/patches/gemm-f16-0.19.0" }
+gemm-f32 = { path = "vendor/patches/gemm-f32-0.19.0" }
+gemm-f64 = { path = "vendor/patches/gemm-f64-0.19.0" }
+pulp = { path = "vendor/patches/pulp-0.22.3" }
+# Keep legacy rstar support while switching heapless to maintained atomics.
+heapless = { path = "vendor/patches/heapless-0.7.17" }
+# Backport the maintained unit-prefix dependency without changing progress output.
+indicatif = { path = "vendor/patches/indicatif-0.17.11" }
 # esaxx-rs 0.1.10 forces /MT while the Windows OCR and ONNX dependencies use
 # /MD. The local source copy applies upstream PR #19's one-line runtime fix so
 # the production sidecar links against one MSVC runtime.
 esaxx-rs = { path = "vendor/crates/esaxx-rs" }
+# Coordinated upstream RustCrypto dependency update on both existing JWT
+# API lines. Keep the runtime and proxy provider ownership guards intact.
+jsonwebtoken-v10 = { package = "jsonwebtoken", path = "vendor/patches/jwt-rustcrypto/jsonwebtoken-10.4.0" }
+jsonwebtoken-v11 = { package = "jsonwebtoken", path = "vendor/patches/jwt-rustcrypto/jsonwebtoken-11.1.0" }
+# Backport the upstream SQLite binding range without moving the SQLx family.
+sqlx-sqlite = { path = "vendor/patches/sqlx-sqlite-0.9.0" }
+# Replace the unmaintained pin-utils projections in the browser timer.
+wasmtimer = { path = "vendor/patches/wasmtimer-0.4.3" }
+# Use the maintained codec fork through the same recovery record format.
+surrealmx = { path = "vendor/patches/surrealmx-1.1.0" }
 # The 4.0.0 overlays preserve host-owned admission, explicit remote recovery,
 # worker settlement and durability failure reporting across the SDK boundary.
 surrealdb = { path = "vendor/patches/surrealdb-lifecycle/surrealdb-4.0.0" }
@@ -395,7 +442,7 @@ sycophancy-core = { path = "vendor/git/sycophancy-correction/crates/sycophancy-c
 # Wasm runtime (feature-gated). Bumped from 41.0.3 (CH-security-deps):
 # fixes 2 critical aarch64 Winch-backend sandbox-escape CVEs (need >=42.0.2/
 # >=43.0.2) and a wasmtime-wasi path_open(TRUNCATE) permission bypass (needs
-# >=44.0.2). Took latest (46.x) rather than the exact minimum patched version.
+# >=44.0.2). The 50.0.1 pair also addresses the RC4 component and WASI advisories.
 #
 # These two MUST move together. `wasmtime-wasi` re-exports `wasmtime` types, so
 # a version skew puts two distinct `Linker<T>` types in the same build and
@@ -403,8 +450,8 @@ sycophancy-core = { path = "vendor/git/sycophancy-correction/crates/sycophancy-c
 # wasmtime 46 -> 47 while #220 (the matching wasmtime-wasi bump) sat blocked on
 # a lockfile conflict: `server-full` stopped compiling on main, and the errors
 # named `wasmtime_internal_core` types that appear nowhere in this repo.
-wasmtime = { version = "50", optional = true }
-wasmtime-wasi = { version = "50", optional = true }
+wasmtime = { version = "=50.0.1", optional = true }
+wasmtime-wasi = { version = "=50.0.1", optional = true }
 
 # HTTP client
 reqwest = { version = "=0.13.5", default-features = false, features = [
@@ -423,7 +470,7 @@ reqwest = { version = "=0.13.5", default-features = false, features = [
 # fixes GHSA-89vp-x53w-74fx, a DNS-rebinding vuln in the Streamable HTTP
 # server transport (patched >=1.4.0) -- this project enables
 # transport-streamable-http-server below, so it was directly exposed.
-rmcp = { version = "=3.8.0", features = [
+rmcp = { version = "=3.9.0", features = [
   "client",
   "server",
   "macros",
@@ -541,7 +588,7 @@ text-splitter = { version = "0.33.1", features = ["markdown"] }
 chrono = { version = "0.4.45", features = ["serde"] }
 jiff = "=0.2.38"
 walkdir = "2.5.0"
-serde_yaml = "0.9"
+serde_yaml = { package = "yaml_serde", version = "=0.10.7" }
 jsonwebtoken.workspace = true
 tracing-opentelemetry = { version = "0.34.0", optional = true }
 opentelemetry = { version = "0.33.1", optional = true }
@@ -585,11 +632,11 @@ cap-std = "=4.0.3"
 aes-gcm = "0.11"
 
 # xberg - document intelligence framework (successor to kreuzberg), from the
-# Know-Me-Tools fork at a pinned commit of main (workspace version 1.4.0).
+# Know-Me-Tools fork at a pinned commit of main with the upstream Calamine fix.
 # UAR's `kreuzberg` provider, settings and config names are unchanged.
 # CLI binary is `xberg`: brew install xberg-io/tap/xberg, or build
 # `cargo build --release -p xberg-cli --bin xberg` from the fork.
-xberg = { git = "https://github.com/Know-Me-Tools/xberg.git", rev = "ffb3b1a25b6c14c13858142997dd82a16d5b2f35", optional = true, default-features = false, features = [
+xberg = { path = "vendor/patches/xberg-security", optional = true, default-features = false, features = [
     "tokio-runtime",        # async extract() on the host Tokio runtime
     "office",               # docx, odt, pptx, xlsx, odp, ods, etc. (replaces "formats")
     "excel",                # xlsx/xlsm/xls (replaces "formats")

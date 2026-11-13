@@ -522,3 +522,10 @@ check-cfg = [
     "cfg(storage)",
     "cfg(tokio_unstable)",
 ]
+
+[patch.crates-io]
+heapless = { path = "../../heapless-0.7.17" }
+surrealmx = { path = "../../surrealmx-1.1.0" }
+wasmtimer = { path = "../../wasmtimer-0.4.3" }
+# Keep the archived standalone resolution on the runtime RustCrypto backport.
+jsonwebtoken = { path = "../../jwt-rustcrypto/jsonwebtoken-10.4.0" }

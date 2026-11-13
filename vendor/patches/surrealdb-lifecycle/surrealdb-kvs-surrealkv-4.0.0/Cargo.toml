@@ -133,3 +133,7 @@ check-cfg = [
     "cfg(storage)",
     "cfg(tokio_unstable)",
 ]
+
+[patch.crates-io]
+heapless = { path = "../../heapless-0.7.17" }
+wasmtimer = { path = "../../wasmtimer-0.4.3" }

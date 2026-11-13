@@ -24,6 +24,9 @@ uv sync --locked --extra dev
 uv run sphinx-build -W -b html docs docs/_build/html
 ```
 
+The reference uses Furo on Python 3.11.5 and newer and Sphinx's built-in
+Alabaster theme on earlier supported Python versions.
+
 `pyproject.toml` names the registry project
 `universal-agent-runtime-sdk`. Before using `pip install`, verify the exact
 version, files, integrity, and publisher on PyPI. Local metadata is not proof

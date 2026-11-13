@@ -2770,3 +2770,29 @@ The operator selected an A2UI Zod 4 migration and authorized the exact four-pin 
 2026-11-10 — #465 RC4 exact frontend diagnostic. The operator approved the lazy Mermaid ELK warning at 1,498.98 kB and 465.95 kB gzip for RC4. The four previously approved PGlite diagnostics retain their exact scope. The earlier ELK receipt describes RC3 and remains historical. Other build diagnostics still stop qualification.
 
 2026-11-10 — #465 RC4 registry-backed I19 pins. npm accepted the exact tested Zod 4 core and PEM archives under rc. For the first core publication, npm also assigned latest and rejected the authorized removal with HTTP 403. The operator accepted this specific core tag. PEM's previous latest, alpha and next tags were verified unchanged. The independent fixture now pins the two exact registry versions and retains the verified tarball integrities.
+
+## 2026-11-11 — SurrealDB 4.0 is the active RC4 baseline
+
+The operator selected SurrealDB 4.0 only for the F14 remediation child.
+The embedded SDK and companion server use 4.0.0. Live Compose, Kubernetes,
+Helm, OpenTofu, and qualification fixtures use the same digest-pinned server
+and SurrealKV for persistent stores. The previous 3.x migration receipts
+remain historical. Current qualification uses fresh 4.0 persistence and
+shutdown/reopen without starting a 3.x server.
+
+The registry index is
+`sha256:c35893410644e65fa90aa1bef446ac9cb0a0c2733b9d405ce3eb56754b85c330`.
+The Linux amd64 manifest is
+`sha256:82eb274bae4b1a5cf5f23ec8c059a177e92d2ab0b84c932af6adcfc98fc59e95`.
+Both came from Docker Hub metadata. The complete implementation boundary
+still governs behavior verification. No deployment or product acceptance
+is implied.
+
+## 2026-11-12 — Resolve the GTK3 GLib dependency in the full RC4 source archive
+
+Use the published GTK3 0.19 and GLib 0.22 bindings through the upstream
+GTK3-compatible Tauri family ports. Preserve the native GTK3 event loop
+and WebKitGTK 4.1 system library. The UAR and both Entity Management source
+copies carry their compatible Tauri versions. Preserve each source overlay's
+license and provenance. Linux desktop behavior still requires its own
+evidence. The full archive and recursive OSV rule remain in scope.

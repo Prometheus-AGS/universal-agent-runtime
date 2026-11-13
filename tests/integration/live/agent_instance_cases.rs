@@ -394,8 +394,8 @@ async fn wait_for_cancelled_command(
 #[serial]
 async fn c06_durable_instances_complete_live_boundary() {
     assert!(
-        include_str!("../../../versions.toml").contains("surrealdb = \"3.3.0\""),
-        "C06 gate requires the pinned SurrealDB 3.3.0 SDK"
+        include_str!("../../../versions.toml").contains("surrealdb = \"4.0.0\""),
+        "C06 gate requires the pinned SurrealDB 4.0.0 SDK"
     );
     let original_skill_root = std::env::var_os("UAR_BUILTIN_SKILLS_DIR");
     // SAFETY: this serial integration case restores its process-global fixture root.
@@ -1790,7 +1790,7 @@ async fn c06_durable_instances_complete_live_boundary() {
     }
     let receipt = json!({
         "provider":"SurrealKV",
-        "surrealdbSdk":"3.3.0",
+        "surrealdbSdk":"4.0.0",
         "backendMode":if recorded { "recorded" } else { "live" },
         "workspaceIsolation":true,
         "duplicateReceipt":true,

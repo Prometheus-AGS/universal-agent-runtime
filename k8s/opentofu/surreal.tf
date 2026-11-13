@@ -1,9 +1,9 @@
-# ── SurrealDB 3.0 ───────────────────────────────────────────────────────────
+# ── SurrealDB 4.0 ───────────────────────────────────────────────────────────
 # Single-replica StatefulSet backed by a 20 Gi SSD PVC.
 # Reachable within the cluster at:
 #   ws://surreal-svc.uar.svc.cluster.local:8000
 # The endpoint is exported to the UAR application via the ConfigMap so the
-# memory service connects to this instance instead of the embedded RocksDB.
+# memory service connects to this instance instead of the embedded SurrealKV.
 
 resource "kubernetes_stateful_set" "surreal" {
   metadata {
@@ -39,12 +39,12 @@ resource "kubernetes_stateful_set" "surreal" {
       }
 
       spec {
-        # SurrealDB runs as UID 1000 (user "surreal"). GKE volumes mount
-        # owned by root, so fsGroup causes kubelet to chown /data to GID 1000
-        # before the container starts — eliminating the Permission denied crash.
+        # Match the SurrealDB 4.0 image user and grant it access to the PVC.
         security_context {
-          fs_group    = 1000
-          run_as_user = 1000
+          fs_group        = 65532
+          run_as_user     = 65532
+          run_as_group    = 65532
+          run_as_non_root = true
         }
 
         container {
@@ -58,7 +58,7 @@ resource "kubernetes_stateful_set" "surreal" {
             "--bind", "0.0.0.0:8000",
             "--user", "$(SURREAL_USER)",
             "--pass", "$(SURREAL_PASS)",
-            "rocksdb:/data/memory.db",
+            "surrealkv:/data/memory.db",
           ]
 
           port {
@@ -120,7 +120,7 @@ resource "kubernetes_stateful_set" "surreal" {
 
           readiness_probe {
             http_get {
-              path = "/health"
+              path = "/ready"
               port = 8000
             }
             initial_delay_seconds = 10

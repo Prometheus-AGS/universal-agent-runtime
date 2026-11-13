@@ -129,7 +129,7 @@ resource "kubernetes_persistent_volume_claim" "uar_uploads" {
 }
 
 # ── SurrealDB data ───────────────────────────────────────────────────────────
-# 20 Gi SSD volume for the SurrealDB 3.0 RocksDB storage backend.
+# 20 Gi SSD volume for the SurrealDB 4.0 SurrealKV storage backend.
 resource "kubernetes_persistent_volume_claim" "surreal_data" {
   metadata {
     name      = "surreal-data-pvc"

@@ -519,7 +519,7 @@ function remoteDatabase(w, running) {
     '{"id":{{json .Id}},"image":{{json .Image}},"reference":{{json .Config.Image}},"labels":{{json .Config.Labels}},"running":{{json .State.Running}},"mounts":{{json .Mounts}}}', name], { encoding: 'utf8', timeout: 15_000 }));
   assert.equal(row.labels?.['dev.prometheus.qualification.case'], w.caseId);
   assert.equal(row.running, running);
-  assert.equal(row.reference, 'surrealdb/surrealdb:v3.3.0@sha256:681c6c22c287421b5c7d99e0fde79b6e0d32c36c1ddeaab2762a1661cb04cd20');
+  assert.equal(row.reference, 'surrealdb/surrealdb:v4.0.0@sha256:c35893410644e65fa90aa1bef446ac9cb0a0c2733b9d405ce3eb56754b85c330');
   const volume = process.env.UAR_SURREAL_VOLUME;
   assert.ok(volume?.startsWith(`uar-pr476-${w.caseId}-`));
   const mounts = row.mounts.filter(mount => mount.Type === 'volume' && mount.Name === volume);
