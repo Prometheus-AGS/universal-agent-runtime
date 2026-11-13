@@ -21,6 +21,10 @@ The release SHALL retain the full recursively tracked offline source archive, re
 - **WHEN** the recursive audit evaluates the shipped and standalone Cargo lockfiles
 - **THEN** each tracked ammonia dependency resolves a version fixed for RUSTSEC-2026-0533
 
+#### Scenario: Quinn advisories are cleared across the offline archive
+- **WHEN** the recursive audit evaluates the imported, exported, and standalone Cargo lockfiles
+- **THEN** the locked Quinn protocol and UDP dependencies include the fixes for RUSTSEC-2026-0523, RUSTSEC-2026-0524, and RUSTSEC-2026-0538
+
 #### Scenario: The recursive source scan is evaluated
 - **WHEN** the existing recursive OSV command scans the exact clean candidate
 - **THEN** raw results, scanner version, source SHA, tree and recursive pins are retained
