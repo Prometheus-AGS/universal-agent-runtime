@@ -27,7 +27,7 @@ surreal_memory_server_commit = "9e36b1cd8b83a657366eb1e3ef8cd837178336de"
 # Operator approved UAR main 2cc9a182's exact skill-resource gitlink on 2026-10-11.
 # Effective runtime overrides and migration acceptance are recorded separately.
 prometheus_skill_system_base_commit = "f0df1e0121d176c9467e5c71022737b845af6a20"
-prometheus_skill_system_commit = "0eba0c2885348fe5805f380b36469ac67091ff11"
+prometheus_skill_system_commit = "59ae7c1aa197fc2aa3a6b9738ad4a2e7db131f7c"
 # Active embedded SDK, schema types, and standalone companion server.
 surrealdb = "4.0.0"
 surrealdb_types = "4.0.0"
