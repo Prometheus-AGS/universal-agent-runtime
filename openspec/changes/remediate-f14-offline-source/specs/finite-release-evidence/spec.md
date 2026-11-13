@@ -30,6 +30,17 @@ The release SHALL retain the full recursively tracked offline source archive, re
 - **THEN** raw results, scanner version, source SHA, tree and recursive pins are retained
 - **AND** a nonzero scanner exit prevents child completion and F14 promotion
 
+### Requirement: Qualify the shipped toolchain against the installed image scan
+
+The Linux amd64 release SHALL retain stock Go, TinyGo, npm, pnpm, and Jco as
+working tools. The existing image audit SHALL enforce its high-severity
+threshold on the complete shipped image.
+
+#### Scenario: The affected tools run from the patched image
+- **WHEN** an operator runs the installed tools as the image user without network access
+- **THEN** npm and pnpm report the pinned releases and the native Go, TinyGo WASI P2, and Jco component paths work
+- **AND** the complete image scan passes the existing high-severity threshold
+
 ### Requirement: Use SurrealDB 4.0 for active release inputs
 
 The active embedded SDK and standalone server SHALL use SurrealDB 4.0.

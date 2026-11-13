@@ -20,16 +20,16 @@
 
 # Toolchain pins — bump via a new KBD change so drift is auditable.
 # Rust nightly is dated (matches rust-toolchain.toml at repo root).
-# Go follows the latest stable per go.dev/doc/devel/release.
+# Go follows the patched 1.26 series used by this toolchain.
 ARG RUST_TOOLCHAIN=nightly-2026-07-18
 ARG NODE_VERSION=24.22.2
 ARG PYTHON_VERSION=3.13.18
-ARG GO_VERSION=1.26.3
+ARG GO_VERSION=1.26.11
 # Keep aligned with both Wasmtime packages resolved in Cargo.lock. Plain
 # components are compiled by the runtime for its own engine/features/host target.
 ARG WASMTIME_VERSION=50.0.1
 # TinyGo is the only Go path to WASI P2 / Component Model. Pinned alongside Go.
-ARG TINYGO_VERSION=0.34.0
+ARG TINYGO_VERSION=0.44.0
 
 # -----------------------------------------------------------------------------
 # Stage 1: toolchain - five language toolchains. Cache-friendly; rarely changes.
@@ -166,6 +166,12 @@ RUN set -eu; \
     printf '%s  %s\n' "$node_sha" "/tmp/$node_archive" | sha256sum -c -; \
     tar -xJf "/tmp/$node_archive" -C /usr/local --strip-components=1; \
     rm "/tmp/$node_archive"; \
+    curl --proto '=https' -fsSLo /tmp/npm.tgz "https://registry.npmjs.org/npm/-/npm-11.21.2.tgz"; \
+    printf '%s  %s\n' 8ad8563b81e71b90ef405b140bccf3ba9b5e7884ab210bd49ee4e2f4bc6f61f5 /tmp/npm.tgz | sha256sum -c -; \
+    rm -rf /usr/local/lib/node_modules/npm; \
+    mkdir /usr/local/lib/node_modules/npm; \
+    tar -xzf /tmp/npm.tgz -C /usr/local/lib/node_modules/npm --strip-components=1; \
+    rm /tmp/npm.tgz; \
     javy_archive="javy-${javy_arch}-linux-v3.0.1.gz"; \
     curl --proto '=https' -fsSLo "/tmp/$javy_archive" "https://github.com/bytecodealliance/javy/releases/download/v3.0.1/$javy_archive"; \
     printf '%s  %s\n' "$javy_sha" "/tmp/$javy_archive" | sha256sum -c -; \
@@ -173,7 +179,13 @@ RUN set -eu; \
     chmod 0755 /usr/local/bin/javy; \
     rm "/tmp/$javy_archive"; \
     corepack enable \
-    && corepack prepare pnpm@11.15.0 --activate \
+    && curl --proto '=https' -fsSLo /tmp/pnpm.tgz "https://registry.npmjs.org/pnpm/-/pnpm-11.28.11.tgz" \
+    && printf '%s  %s\n' 503ca17f40400740765635d01f6fa7d932efe533604d6f6fe73bd8b489e73ebb /tmp/pnpm.tgz | sha256sum -c - \
+    && mkdir /usr/local/lib/node_modules/pnpm \
+    && tar -xzf /tmp/pnpm.tgz -C /usr/local/lib/node_modules/pnpm --strip-components=1 \
+    && rm /tmp/pnpm.tgz \
+    && ln -sf ../lib/node_modules/pnpm/bin/pnpm.mjs /usr/local/bin/pnpm \
+    && ln -sf ../lib/node_modules/pnpm/bin/pnpx.mjs /usr/local/bin/pnpx \
     && curl -fsSL https://bun.sh/install | bash \
     && ln -sf /root/.bun/bin/bun /usr/local/bin/bun \
     && npm install -g --no-fund --no-audit \
@@ -187,23 +199,58 @@ RUN set -eu; \
 # Go (stock) — supports GOOS=js and GOOS=wasip1. Multi-arch via TARGETARCH.
 RUN set -eux; \
     case "${TARGETARCH}" in \
-        amd64) GO_ARCH=amd64 ;; \
-        arm64) GO_ARCH=arm64 ;; \
+        amd64) GO_ARCH=amd64; go_sha=9849f4e04ee35303714e34fbc3ac8ab44ea3e448a95aa182f91e3b9b79c710ec ;; \
+        arm64) GO_ARCH=arm64; go_sha=6c2f29b458b5add0835f18b776f69c8881a6d88428f1484a6da55755e620757e ;; \
         *) echo "unsupported TARGETARCH: ${TARGETARCH}"; exit 1 ;; \
     esac; \
-    curl -fsSL "https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" \
-        | tar -C /usr/local -xz
+    curl --proto '=https' -fsSLo /tmp/go.tgz "https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz"; \
+    printf '%s  %s\n' "$go_sha" /tmp/go.tgz | sha256sum -c -; \
+    tar -xzf /tmp/go.tgz -C /usr/local; \
+    rm /tmp/go.tgz
+
+# Jco uses a separate native TypeScript 7.0.2 compiler. Keep that CLI and
+# rebuild its exact source with the patched x/text and stock Go toolchain.
+RUN set -eu; \
+    case "$TARGETARCH" in \
+        amd64) compiler_arch=x64 ;; \
+        arm64) compiler_arch=arm64 ;; \
+        *) echo "Unsupported TypeScript compiler architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    revision=2bd066d87f5bafd315be9f40889d0a60b9e58e0b; \
+    compiler_dir="/usr/local/lib/node_modules/@bytecodealliance/jco/node_modules/@typescript/typescript-linux-${compiler_arch}"; \
+    compiler="$compiler_dir/lib/tsc"; \
+    test -f "$compiler"; \
+    go version -m "$compiler" | grep -F "vcs.revision=$revision"; \
+    test "$(node -p 'require(process.argv[1]).version' "$compiler_dir/package.json")" = 7.0.2; \
+    work="$(mktemp -d)"; \
+    curl --proto '=https' -fsSLo "$work/source.tgz" "https://codeload.github.com/microsoft/typescript-go/tar.gz/$revision"; \
+    printf '%s  %s\n' 5ccb47dbb3f68cd0da58b71e6f445eee36a50bd3e9f9f330cc23a97b88500119 "$work/source.tgz" | sha256sum -c -; \
+    tar -xzf "$work/source.tgz" -C "$work"; \
+    cd "$work/typescript-go-$revision"; \
+    sed -i 's@golang.org/x/text v0.38.0@golang.org/x/text v0.39.0@' go.mod; \
+    printf '%s\n' \
+        'golang.org/x/text v0.39.0 h1:UbZz4pLOvn600D6Oh6GGEI6VAmndrEBLv8/6BEXzyus=' \
+        'golang.org/x/text v0.39.0/go.mod h1:3UwRclnC2g0TU9x8PZiyfOajCd1zaUNHF9cvqcQZ+ZM=' >> go.sum; \
+    CGO_ENABLED=0 GOTOOLCHAIN=local GOMODCACHE="$work/modules" GOCACHE="$work/cache" \
+        go build -mod=readonly -trimpath -buildvcs=false -o "$work/tsc" ./cmd/tsgo; \
+    go version -m "$work/tsc" | grep -F "golang.org/x/text$(printf '\t')v0.39.0"; \
+    install -m 0755 "$work/tsc" "$compiler"; \
+    rm -f "$compiler.sig"; \
+    install -m 0644 LICENSE NOTICE.txt "$compiler_dir/"; \
+    cd /; \
+    rm -rf "$work"
 
 # TinyGo — the only Go path to WASI P2 / Component Model
 # (`tinygo build -target=wasip2 ...`). Ships as a .deb upstream.
 RUN set -eux; \
     case "${TARGETARCH}" in \
-        amd64) TG_ARCH=amd64 ;; \
-        arm64) TG_ARCH=arm64 ;; \
+        amd64) TG_ARCH=amd64; tinygo_sha=8810b20d88236a1353e35641a6a56df1720a7db97006aacc2c6656a3bb090b74 ;; \
+        arm64) TG_ARCH=arm64; tinygo_sha=c2addff1430c7066fc11900e93ee8d6dd14fce343a7b0e1d72da0509a58766ff ;; \
         *) echo "unsupported TARGETARCH: ${TARGETARCH}"; exit 1 ;; \
     esac; \
     curl -fsSL -o /tmp/tinygo.deb \
         "https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VERSION}/tinygo_${TINYGO_VERSION}_${TG_ARCH}.deb" \
+    && printf '%s  %s\n' "$tinygo_sha" /tmp/tinygo.deb | sha256sum -c - \
     && apt-get update && apt-get install -y --no-install-recommends /tmp/tinygo.deb \
     && rm -f /tmp/tinygo.deb && rm -rf /var/lib/apt/lists/*
 
@@ -273,14 +320,19 @@ RUN for input in \
 
 # Frontend: use the same pinned pnpm and immutable frontend lockfile as release
 # validation. The frontend remains an isolated workspace under `frontend/`.
-RUN cd frontend \
+RUN build_tools="$(mktemp -d)" \
+    && mkdir "$build_tools/bin" \
+    && corepack enable --install-directory "$build_tools/bin" pnpm \
+    && export COREPACK_HOME="$build_tools/cache" PATH="$build_tools/bin:$PATH" \
+    && cd frontend \
     && pnpm install --frozen-lockfile \
     && (cd packages/prometheus-entity-management \
         && pnpm install --frozen-lockfile \
         && pnpm --filter @prometheus-ags/entity-graph-core build \
         && pnpm --filter @prometheus-ags/entity-graph-react build \
         && pnpm --filter @prometheus-ags/prometheus-entity-management build) \
-    && pnpm build
+    && pnpm build \
+    && rm -rf "$build_tools"
 
 # Backend: cargo build (Linux drops the `metal` feature; uses surrealkv embedded).
 # The lockfile fetches the pinned xberg sibling crates from a public Git fork.
