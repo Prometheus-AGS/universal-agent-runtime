@@ -31,8 +31,11 @@ dev = [
     "build>=1.2.0",
     "hatchling>=1.27.0",
     "sphinx>=7.0.0",
-    "furo>=2024.8.6",
+    "furo>=2024.8.6; python_full_version >= '3.11.5'",
 ]
+
+[tool.uv]
+constraint-dependencies = ["soupsieve>=4.0"]
 
 [project.urls]
 Homepage = "https://github.com/Prometheus-AGS/universal-agent-runtime"
