@@ -17,6 +17,10 @@ The release SHALL retain the full recursively tracked offline source archive, re
 - **THEN** it parses all twelve notices without a parse error
 - **AND** the declared licenses, copyright, and upstream source references remain in the offline archive
 
+#### Scenario: The sanitizer advisory is cleared across the offline archive
+- **WHEN** the recursive audit evaluates the shipped and standalone Cargo lockfiles
+- **THEN** each tracked ammonia dependency resolves a version fixed for RUSTSEC-2026-0533
+
 #### Scenario: The recursive source scan is evaluated
 - **WHEN** the existing recursive OSV command scans the exact clean candidate
 - **THEN** raw results, scanner version, source SHA, tree and recursive pins are retained
