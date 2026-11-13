@@ -8,6 +8,11 @@ The release SHALL retain the full recursively tracked offline source archive, re
 - **THEN** the documented locked minimal build succeeds using its bundled sources
 - **AND** the archive manifest, digest and source pins identify the exact input
 
+#### Scenario: Vendored desktop notices remain readable to the recursive scanner
+- **WHEN** the unchanged recursive OSV scan reads the vendored GTK3 SPDX notices
+- **THEN** it parses all twelve notices without a parse error
+- **AND** the declared licenses, copyright, and upstream source references remain in the offline archive
+
 #### Scenario: The recursive source scan is evaluated
 - **WHEN** the existing recursive OSV command scans the exact clean candidate
 - **THEN** raw results, scanner version, source SHA, tree and recursive pins are retained

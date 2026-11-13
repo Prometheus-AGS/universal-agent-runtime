@@ -1,19 +1,24 @@
-SPDXVersion: SPDX-2.1
+SPDXVersion: SPDX-2.3
 DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: muda-0.20.0-license-notice
+DocumentNamespace: https://spdx.org/spdxdocs/muda-0.20.0-license-notice-39038fc6-3188-57cb-8232-a2e13eec5fe4
+Creator: Person: Daniel Thompson-Yvetot
+Creator: Organization: Prometheus AGS
+Created: 2026-11-13T09:31:00Z
+
 PackageName: muda
-DataFormat: SPDXRef-1
+SPDXID: SPDXRef-1
+PackageVersion: 0.20.0
 PackageSupplier: Organization: The Tauri Programme in the Commons Conservancy
 PackageHomePage: https://tauri.app
-PackageLicenseDeclared: Apache-2.0
-PackageLicenseDeclared: MIT
+PackageDownloadLocation: git+https://github.com/tauri-apps/muda.git
+FilesAnalyzed: false
+PackageLicenseConcluded: NOASSERTION
+PackageLicenseDeclared: Apache-2.0 OR MIT
 PackageCopyrightText: 2020-2022, The Tauri Programme in the Commons Conservancy
 PackageSummary: <text>Menu Utilities for Desktop Applications.
                 </text>
-PackageComment: <text>The package includes the following libraries; see
-Relationship information.
-                </text>
-Created: 2022-12-05T09:00:00Z
-PackageDownloadLocation: git://github.com/tauri-apps/muda
-PackageDownloadLocation: git+https://github.com/tauri-apps/muda.git
-PackageDownloadLocation: git+ssh://github.com/tauri-apps/muda.git
-Creator: Person: Daniel Thompson-Yvetot
+PackageSourceInfo: <text>Other upstream Git URLs: git://github.com/tauri-apps/muda and git+ssh://github.com/tauri-apps/muda.git.</text>
+
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-1
