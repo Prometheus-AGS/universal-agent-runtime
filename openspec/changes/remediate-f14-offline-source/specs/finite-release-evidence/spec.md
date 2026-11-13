@@ -8,6 +8,10 @@ The release SHALL retain the full recursively tracked offline source archive, re
 - **THEN** the documented locked minimal build succeeds using its bundled sources
 - **AND** the archive manifest, digest and source pins identify the exact input
 
+#### Scenario: The Docker frontend workspace resolves the pinned Entity Management build tool
+- **WHEN** the Linux image builder installs the frontend workspace with its frozen lock
+- **THEN** the Entity Management importer resolves the manifest's pinned tsup 9.0.0 and the existing frontend build completes
+
 #### Scenario: Vendored desktop notices remain readable to the recursive scanner
 - **WHEN** the unchanged recursive OSV scan reads the vendored GTK3 SPDX notices
 - **THEN** it parses all twelve notices without a parse error
