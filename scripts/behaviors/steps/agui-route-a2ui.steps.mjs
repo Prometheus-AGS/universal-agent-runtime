@@ -75,7 +75,9 @@ async function exchange(w, label, { method = 'POST', path = w.route, payload, ru
   const events = frames(raw);
   assert.equal(events[0]?.type, 'RUN_STARTED', label);
   assert.equal(events[0]?.protocolVersion, PROTOCOL_VERSION, label);
-  assert.equal(events.at(-1)?.type, 'RUN_FINISHED', label);
+  const terminal = events.at(-1);
+  const terminalCode = terminal?.type === 'RUN_ERROR' && terminal.code;
+  assert.equal(terminal?.type, 'RUN_FINISHED', terminalCode ? `${label} (${terminalCode})` : label);
   for (const event of events) {
     assert.deepEqual(EventSchema.parse(event), event, `Official AG-UI event shape: ${event.type}`);
     runtime.processAgUiEvent(event);
