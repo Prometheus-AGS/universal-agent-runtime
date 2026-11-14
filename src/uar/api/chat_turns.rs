@@ -1,6 +1,6 @@
 //! Native-chat admission correlation over the existing durable AG-UI binding store.
 //! Reservations suppress duplicate dispatch; a missing run never permits retry.
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use axum::{
     Extension, Json,
@@ -103,7 +103,7 @@ impl NativeChatIntent {
     }
 }
 
-async fn load_native_chat_intent(
+async fn load_native_chat_binding(
     db: &dyn PersistenceLayer,
     intent: &NativeChatIntent,
 ) -> anyhow::Result<Option<AguiRunBinding>> {
@@ -111,18 +111,31 @@ async fn load_native_chat_intent(
         db.supports_durable_agui_runs() && db.durable_store_eligibility().permits_durable_work(),
         "native_chat_recovery_unavailable"
     );
-    let row = db
-        .load_agui_run(
-            &intent.owner,
-            NATIVE_CHAT_AGENT,
-            &intent.thread,
-            &intent.turn_id,
-        )
-        .await?;
-    if let Some(row) = &row {
-        anyhow::ensure!(intent.matches(row), "native_chat_turn_conflict");
-    }
+    db.load_agui_run(
+        &intent.owner,
+        NATIVE_CHAT_AGENT,
+        &intent.thread,
+        &intent.turn_id,
+    )
+    .await
+}
+
+fn verify_native_chat_intent(
+    row: AguiRunBinding,
+    intent: &NativeChatIntent,
+) -> anyhow::Result<AguiRunBinding> {
+    anyhow::ensure!(intent.matches(&row), "native_chat_turn_conflict");
     Ok(row)
+}
+
+async fn load_native_chat_intent(
+    db: &dyn PersistenceLayer,
+    intent: &NativeChatIntent,
+) -> anyhow::Result<Option<AguiRunBinding>> {
+    load_native_chat_binding(db, intent)
+        .await?
+        .map(|row| verify_native_chat_intent(row, intent))
+        .transpose()
 }
 
 /// Read original caller intent before resolving mutable host settings/catalogs.
@@ -190,14 +203,34 @@ pub async fn reserve_native_chat_turn(
         resumed_tool_ids: Vec::new(),
         terminal: None,
     };
-    if db.create_agui_run(&row, None).await? {
-        return Ok(NativeChatReservation::New(row));
+    let create_error = match db.create_agui_run(&row, None).await {
+        Ok(true) => return Ok(NativeChatReservation::New(row)),
+        Ok(false) => None,
+        Err(error) => Some(error),
+    };
+
+    // A concurrent reservation may not yet be visible at the first read.
+    // Wait only for evidence of the original intent, never attempt another write.
+    let mut read_error = None;
+    let mut delay = Duration::from_millis(10);
+    let deadline = tokio::time::Instant::now() + Duration::from_millis(500);
+    while tokio::time::Instant::now() < deadline {
+        match tokio::time::timeout_at(deadline, load_native_chat_binding(db, &intent)).await {
+            Ok(Ok(Some(row))) => {
+                return Ok(NativeChatReservation::Existing(verify_native_chat_intent(
+                    row, &intent,
+                )?));
+            }
+            Ok(Ok(None)) => {}
+            Ok(Err(error)) => read_error = Some(error),
+            Err(_) => break,
+        }
+        tokio::time::sleep_until((tokio::time::Instant::now() + delay).min(deadline)).await;
+        delay = (delay * 2).min(Duration::from_millis(50));
     }
-    // CAS loser reads the winner. No fresh run is dispatched on missing/failed read.
-    let existing = load_native_chat_intent(db, &intent)
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("native_chat_admission_unconfirmed"))?;
-    Ok(NativeChatReservation::Existing(existing))
+    Err(create_error
+        .or(read_error)
+        .unwrap_or_else(|| anyhow::anyhow!("native_chat_admission_unconfirmed")))
 }
 
 #[derive(Deserialize)]
