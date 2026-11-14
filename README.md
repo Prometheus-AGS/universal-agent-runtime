@@ -14,16 +14,16 @@
 
 Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent execution, model routing, typed streaming, tools, retrieval, and declarative agent UI. Its first-party operator interface is React 19 + TypeScript.
 
-UAR is at Rust product source version **1.4.0-rc.4** (release candidate in qualification). SDK/package/schema versions are independent. The first distribution is a Linux amd64 API pilot behind a trusted gateway. Full 1.4.0 qualification is still in progress. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
+The Rust product version is **1.4.0-rc.4**. SDK, package, and schema versions are independent. The signed prerelease covers the selected Linux amd64 container APIs behind a trusted host or gateway. The 1.4.0 GA release and broader platform qualification are outside this release decision. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
 
 The [GitHub Pages documentation portal](https://prometheus-ags.github.io/universal-agent-runtime/) covers installation, architecture, SDKs, skills, deployment, and security; begin with the [introduction](https://prometheus-ags.github.io/universal-agent-runtime/docs/intro). Its live routes are verified by the final documentation publication change.
 
-## Run the RC3 pilot
+## Run the qualified RC4 container
 
-Pull the published RC3 Linux amd64 candidate and follow the [RC3 user guide](docs/releases/v1.4.0-rc.3.md) to configure the gateway, persistence and providers before starting it.
+RC4 qualifies the Linux amd64 UAR APIs behind a trusted host or gateway. Follow the configuration and recovery procedures in the [operator guide](docs/releases/v1.4.0-rc.3.md). See the [signed RC4 release](https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.4.0-rc.4) for the exact test scope, image and downloadable evidence.
 
 ```bash
-docker pull --platform linux/amd64 ghcr.io/prometheus-ags/universal-agent-runtime:v1.4.0-rc.3
+docker pull --platform linux/amd64 ghcr.io/prometheus-ags/universal-agent-runtime@sha256:0b6d94d6a776d7de8abd00085856c68dddd12e12251750f1aab8e1f1dc79780e
 ```
 
 The guide covers [pilot setup](docs/releases/v1.4.0-rc.3.md#pilot-quick-start), [SurrealKV upgrade and compatibility](docs/releases/v1.4.0-rc.3.md#compatibility-and-upgrade), [feature verification](docs/releases/v1.4.0-rc.3.md#runtime-changes-and-how-to-verify-them), and [rollback](docs/releases/v1.4.0-rc.3.md#troubleshooting-and-rollback).

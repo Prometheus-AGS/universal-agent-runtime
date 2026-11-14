@@ -20,3 +20,13 @@ The release capability validator SHALL check the feature gates on the current HT
 - **WHEN** the release capability validator inspects the A2A HTTP routes and supervised gRPC scope
 - **THEN** each binding must have the positive `a2a-transport` feature attribute
 - **AND** the validator fails if either binding is absent or lacks that guard
+
+### Requirement: Link bounded release qualification
+
+The public release and support documentation SHALL identify the source and image of a qualified release candidate and link the signed result. Interface entries SHALL retain their own platform, configuration, and evidence limits.
+
+#### Scenario: Record qualified RC4 API outcomes
+
+- **WHEN** the signed RC4 evidence is published for the selected Linux amd64 container APIs
+- **THEN** the support matrix identifies that source and image and links the qualification record
+- **AND** the matrix distinguishes current installed protocol and recovery evidence from earlier receipts and excluded lanes
