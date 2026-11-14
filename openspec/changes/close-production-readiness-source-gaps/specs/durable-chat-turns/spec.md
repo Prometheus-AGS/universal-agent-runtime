@@ -100,5 +100,5 @@ Chat send/history SHALL retain a durable original turn identity, supported richc
 #### Scenario: Concurrent native submissions recover one original run
 - **WHEN** concurrent native chat submissions carry the same verified owner, workspace, session, turn, message and semantic input
 - **THEN** only the confirmed reservation creator can dispatch
-- **AND** a failed creation can return the original run only after readback confirms that exact durable intent
+- **AND** a failed creation can return the original run only after bounded readback confirms that exact durable intent
 - **AND** a conflicting intent is refused, and missing or unreadable evidence remains unconfirmed without a write retry or provider dispatch

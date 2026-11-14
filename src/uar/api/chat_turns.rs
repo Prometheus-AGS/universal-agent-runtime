@@ -1,6 +1,6 @@
 //! Native-chat admission correlation over the existing durable AG-UI binding store.
 //! Reservations suppress duplicate dispatch; a missing run never permits retry.
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use axum::{
     Extension, Json,
@@ -209,19 +209,28 @@ pub async fn reserve_native_chat_turn(
         Err(error) => Some(error),
     };
 
-    // Contention or a lost write acknowledgement may leave a readable binding.
-    // Readback can reconcile its exact intent, but only a confirmed create can dispatch.
-    let existing = match load_native_chat_binding(db, &intent).await {
-        Ok(Some(row)) => row,
-        Ok(None) => {
-            return Err(create_error
-                .unwrap_or_else(|| anyhow::anyhow!("native_chat_admission_unconfirmed")));
+    // A concurrent reservation may not yet be visible at the first read.
+    // Wait only for evidence of the original intent, never attempt another write.
+    let mut read_error = None;
+    let mut delay = Duration::from_millis(10);
+    let deadline = tokio::time::Instant::now() + Duration::from_millis(500);
+    while tokio::time::Instant::now() < deadline {
+        match tokio::time::timeout_at(deadline, load_native_chat_binding(db, &intent)).await {
+            Ok(Ok(Some(row))) => {
+                return Ok(NativeChatReservation::Existing(verify_native_chat_intent(
+                    row, &intent,
+                )?));
+            }
+            Ok(Ok(None)) => {}
+            Ok(Err(error)) => read_error = Some(error),
+            Err(_) => break,
         }
-        Err(error) => return Err(create_error.unwrap_or(error)),
-    };
-    Ok(NativeChatReservation::Existing(verify_native_chat_intent(
-        existing, &intent,
-    )?))
+        tokio::time::sleep_until((tokio::time::Instant::now() + delay).min(deadline)).await;
+        delay = (delay * 2).min(Duration::from_millis(50));
+    }
+    Err(create_error
+        .or(read_error)
+        .unwrap_or_else(|| anyhow::anyhow!("native_chat_admission_unconfirmed")))
 }
 
 #[derive(Deserialize)]
