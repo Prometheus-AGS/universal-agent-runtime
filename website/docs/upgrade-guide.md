@@ -78,9 +78,9 @@ including a distinct memory path. Check read-back, owner isolation, representati
 writes and clean reopen before cutover. Roll back into a separate restore from
 the verified 3.3 snapshot, and account for accepted writes on the candidate first.
 
-Follow the [embedded upgrade runbook](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/v1.4.0-rc.3/docs/operations/embedded-surrealdb-4-upgrade.md)
+Follow the [embedded upgrade runbook](https://github.com/Prometheus-AGS/universal-agent-runtime/blob/v1.4.0-rc.4/docs/operations/embedded-surrealdb-4-upgrade.md)
 for eligibility and command details. Start with a fresh volume for a first
-[RC3 pilot](./release-candidate.md).
+[RC4 evaluation](./release-candidate.md).
 
 ## Apply the upgrade
 

@@ -38,13 +38,18 @@ A `v1.0.0` tag, a Compose image string, or package version metadata is not by
 itself publication status. Confirm the asset exists, verify its manifest and
 digest, and pin that immutable digest or verified archive.
 
-## Install the RC3 pilot image
+## Install the qualified RC4 container
 
-For a controlled Linux amd64 API pilot, use
-`ghcr.io/prometheus-ags/universal-agent-runtime:v1.4.0-rc.3`. Verify its digest
-and use a fresh owned SurrealKV volume behind the trusted gateway. Follow the
-[RC3 setup and functional checks](./release-candidate.md#install-and-check-the-candidate)
-for the exact image and intended deployment boundary.
+Use the following image for Linux amd64 UAR APIs behind a trusted host or
+gateway. Start with a fresh owned SurrealKV volume. Check the signed release
+manifest and use the immutable image reference for subsequent starts.
+
+```sh
+docker pull --platform linux/amd64 ghcr.io/prometheus-ags/universal-agent-runtime@sha256:0b6d94d6a776d7de8abd00085856c68dddd12e12251750f1aab8e1f1dc79780e
+```
+
+Follow the [RC4 setup guide](./release-candidate.md#install-and-check-the-candidate).
+[Signed RC4 evidence](https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.4.0-rc.4).
 
 ## Source prerequisites
 

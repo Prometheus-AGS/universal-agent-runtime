@@ -195,7 +195,7 @@ UAR can run as a server, container, or supervised local service. BossFang should
 ### Native service quickstart
 
 Native packages for a macOS user LaunchAgent, Linux systemd, and Windows SCM
-live under [`packaging/native/`](packaging/native/). They bind HTTP `1906` and
+live under `packaging/native/`. They bind HTTP `1906` and
 A2A gRPC `50051` to the local machine by default. Build the React bundle before
 the release server:
 

@@ -4,6 +4,11 @@ All notable changes to Universal Agent Runtime are documented here. UAR follows
 Semantic Versioning for Stable HTTP, event, configuration, and artifact
 contracts identified in the product support matrix.
 
+## 1.4.0-rc.4 — qualified Linux amd64 API prerelease
+
+- Qualified the UAR APIs behind a trusted host or gateway, including owned restart and recovery, independent MCP and A2A, document extraction and terminal behavior.
+- Published the recursively audited offline source archive and verified signed checksums, archive bundles, image signature and attestations. PostgreSQL 18 remains restricted Preview. [Signed release](https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.4.0-rc.4) · [Qualification record](https://github.com/Prometheus-AGS/universal-agent-runtime/issues/465#issuecomment-6875246846).
+
 ## 1.4.0-rc.3 — Linux amd64 pilot candidate
 
 - Embedded persistence moves to SurrealDB 4.0 with a separate-destination migration, an immutable source snapshot and an explicit rollback procedure.
