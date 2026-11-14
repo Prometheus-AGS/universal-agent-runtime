@@ -7,7 +7,7 @@ title: Introduction
 
 Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent execution, typed streaming, model routing, tools, retrieval, and declarative agent UI. The first-party interface is React 19 + TypeScript.
 
-The Rust product is **1.4.0-rc.3**, a release candidate. SDK/package/schema versions
+The Rust product is **1.4.0-rc.4**, a release candidate. SDK/package/schema versions
 are independent; private root tooling/frontend/SDK packages currently retain
 1.0.0, the documentation package 0.0.0 and desktop shell 0.1.0. The distributed
 server/sidecar product is `server-full`; the dependency-light `minimal` profile
@@ -15,8 +15,7 @@ is separate. The [support matrix](https://github.com/Prometheus-AGS/universal-ag
 is the public contract. The first selected lane is Linux amd64 container APIs
 behind a trusted host or gateway, with owned-volume embedded SurrealDB 4.0.0
 on SurrealKV by default and a restricted PostgreSQL 18 lane. Use the
-[RC3 user guide](./release-candidate.md) for pilot setup, supported workflows and
-artifact-specific evidence. Whole-release qualification remains open.
+[RC4 user guide](./release-candidate.md) for setup, verification and recovery. The signed prerelease qualifies the selected UAR API lane. [RC4 release evidence](https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.4.0-rc.4).
 
 ## Core contracts
 
@@ -31,8 +30,7 @@ artifact-specific evidence. Whole-release qualification remains open.
 | Tools | MCP-discovered and native tools share schema, Cedar policy, approval, hard-deny, and audit controls. WASM tools are opt-in Preview. |
 
 Catalog filtering describes discovery. The runtime applies capability, policy and
-budget checks to actual dispatch. The RC3 user guide records the scope of the
-controlled dispatch evidence. Adaptive learned routing
+budget checks to actual dispatch. The RC4 user guide links the controlled dispatch evidence and its scope. Adaptive learned routing
 is Experimental. Historical Web maturity does not qualify current browser
 workflows; desktop/native WASM, mobile and other architectures are not selected
 for this first API promotion. Browser arbitrary WASM execution is unsupported.

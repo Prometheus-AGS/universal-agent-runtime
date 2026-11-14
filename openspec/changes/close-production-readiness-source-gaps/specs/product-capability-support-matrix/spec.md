@@ -30,3 +30,9 @@ The public release and support documentation SHALL identify the source and image
 - **WHEN** the signed RC4 evidence is published for the selected Linux amd64 container APIs
 - **THEN** the support matrix identifies that source and image and links the qualification record
 - **AND** the matrix distinguishes current installed protocol and recovery evidence from earlier receipts and excluded lanes
+
+#### Scenario: Keep current publication pointers consistent
+
+- **WHEN** the README, changelog and website identify the current candidate
+- **THEN** they name the product release and point to its signed publication and bounded API scope
+- **AND** independent package versions and historical candidate receipts retain their original identities
