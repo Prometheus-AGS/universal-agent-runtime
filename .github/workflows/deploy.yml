@@ -237,11 +237,46 @@ jobs:
           shared-key: boss-sidecar-${{ matrix.platform }}-${{ matrix.target }}-server-full
           workspaces: ". -> target"
           cache-targets: "true"
+      - name: Select the pinned macOS linker
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sysroot=$(rustc --print sysroot)
+          host=$(rustc -vV | awk '$1 == "host:" { print $2 }')
+          llvm_linker="$sysroot/lib/rustlib/$host/bin/gcc-ld/ld64.lld"
+          test -x "$llvm_linker"
+          cat > "$RUNNER_TEMP/sidecar-ld64" <<EOF
+          #!/bin/bash
+          export DYLD_LIBRARY_PATH="$sysroot/lib"
+          exec "$llvm_linker" "\$@"
+          EOF
+          cat > "$RUNNER_TEMP/sidecar-clang" <<EOF
+          #!/bin/bash
+          exec /usr/bin/clang --ld-path="$RUNNER_TEMP/sidecar-ld64" "\$@"
+          EOF
+          chmod 700 "$RUNNER_TEMP/sidecar-ld64" "$RUNNER_TEMP/sidecar-clang"
+          "$RUNNER_TEMP/sidecar-ld64" --version
+          target=$(printf '%s' '${{ matrix.target }}' | tr '[:lower:]-' '[:upper:]_')
+          printf 'CARGO_TARGET_%s_LINKER=%s\n' "$target" "$RUNNER_TEMP/sidecar-clang" >> "$GITHUB_ENV"
+          printf 'CARGO_PROFILE_RELEASE_OPT_LEVEL=s\n' >> "$GITHUB_ENV"
+          printf 'MACOSX_DEPLOYMENT_TARGET=13.4\n' >> "$GITHUB_ENV"
       - name: Build production sidecar
-        run: >-
-          cargo build --release --locked --no-default-features
-          --features ${{ matrix.platform == 'darwin-x64' && 'server-full,tract-embeddings' || 'server-full' }}
-          --bin uar-sidecar --target ${{ matrix.target }}
+        shell: bash
+        env:
+          CARGO_TERM_COLOR: never
+          UAR_SIDECAR_TARGET: ${{ matrix.target }}
+          UAR_SIDECAR_FEATURES: ${{ matrix.platform == 'darwin-x64' && 'server-full,tract-embeddings' || 'server-full' }}
+        run: |
+          set -euo pipefail
+          log=$(mktemp)
+          trap 'rm -f "$log"' EXIT
+          cargo build --release --locked --no-default-features --features "$UAR_SIDECAR_FEATURES" \
+            --bin uar-sidecar --target "$UAR_SIDECAR_TARGET" 2>&1 | tee "$log"
+          if grep -Eq '^warning(\[[^]]+\])?:' "$log"; then
+            echo "The production sidecar build must finish without compiler or linker warnings." >&2
+            exit 1
+          fi
       - name: Package complete sidecar payload
         env:
           UAR_SIDECAR_FEATURES: ${{ matrix.platform == 'darwin-x64' && 'server-full,tract-embeddings' || 'server-full' }}
