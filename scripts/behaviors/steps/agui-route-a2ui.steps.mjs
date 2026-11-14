@@ -193,6 +193,11 @@ Given("the pinned PEM headless client configured with UAR's catalog ids", async 
   this.messages = [];
 });
 
+function publishedSurfaceCreation(operations, surfaceId) {
+  // Legacy state-patch snapshots can precede the artifact carrying the original dialect.
+  return operations.findLast(operation => operation.createSurface?.surfaceId === surfaceId);
+}
+
 async function publishTicket(legacy) {
   this.surfaceId = `ticket-${randomUUID().slice(0, 8)}`;
   this.heading = `Ticket ${randomUUID().slice(0, 8)}`;
@@ -202,8 +207,9 @@ async function publishTicket(legacy) {
   const result = await exchange(this, 'publish', { payload: { threadId: this.threadId, runId: this.lastRunId, protocolVersion: '1.0',
     messages: [userMessage], tools: [], context: [], state: {}, forwardedProps: { uar: { model: this.model } } } });
   const operations = result.events.flatMap(event => event.content?.a2ui_operations ?? []);
-  const create = operations.find(operation => operation.createSurface?.surfaceId === this.surfaceId);
-  assert.equal(create?.version, legacy ? 'v0.9.1' : '1.0');
+  const create = publishedSurfaceCreation(operations, this.surfaceId);
+  this.surfaceVersion = legacy ? 'v0.9.1' : '1.0';
+  assert.equal(create?.version, this.surfaceVersion);
   if (!legacy) {
     assert.equal(create.createSurface.dataModel.heading, this.heading);
     assert.ok(create.createSurface.components.some(component => component.id === 'confirm'));
@@ -267,6 +273,8 @@ When("a fresh client attaches to the conversation's latest run", async function 
 Then('that client renders the same surface without the agent running again', function () {
   const view = rendered(this.lateRuntime, this.surfaceId);
   assert.ok(view?.texts.includes(this.heading) && view.button, 'The late client renders the surface');
+  const operations = this.late.events.flatMap(event => event.content?.a2ui_operations ?? []);
+  assert.equal(publishedSurfaceCreation(operations, this.surfaceId)?.version, this.surfaceVersion);
   const original = this.evidence.streams['second-click'] ?? this.evidence.streams.publish;
   assert.deepEqual(
     this.late.events.filter(event => event.type === 'TOOL_CALL_START').map(event => event.type),
