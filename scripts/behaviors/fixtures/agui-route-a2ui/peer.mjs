@@ -56,7 +56,7 @@ createServer(async (request, response) => {
           : [{ version, createSurface: { ...createSurface, components, dataModel: { heading, phase: 'initial' } } },
             { version, updateDataModel: { surfaceId, path: '/phase', value: 'updated' } }];
       emit({ role: 'assistant', tool_calls: [{
-        index: 0, id: `fixture_${surfaceId}`, type: 'function',
+        index: 0, id: `fixture_${kind}_${surfaceId}`, type: 'function',
         function: { name: 'a2ui_render', arguments: JSON.stringify({ messages }) },
       }] });
       emit({}, 'tool_calls');
