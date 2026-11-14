@@ -35,6 +35,8 @@ export type { UarLocale, UarDirection, UarMessageKey } from "./i18n";
 // Catalogs.
 export {
   uarBasicCatalog,
+  uarBasicCatalogV1,
+  a2uiBasicCatalogV1,
   uarBasicCatalogComponents,
   UAR_A2UI_CATALOG_ID,
 } from "./catalog/uar-basic-catalog";

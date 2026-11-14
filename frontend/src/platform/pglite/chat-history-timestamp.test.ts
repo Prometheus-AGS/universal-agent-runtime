@@ -110,7 +110,7 @@ describe("canonical history timestamp persistence", () => {
       const content = JSON.stringify([
         { version: A2UI_VERSION, createSurface: { surfaceId: "parcel", catalogId: A2UI_CATALOG_ID } },
         { version: A2UI_VERSION, updateComponents: { surfaceId: "parcel", components: [
-          { id: "heading", component: "Text", text: "Recovered parcel", variant: "h2" },
+          { id: "heading", component: "Text", text: "Recovered parcel", variant: "body" },
           { id: "label", component: "Text", text: "Calculate parcel" },
           { id: "submit", component: "Button", child: "label", action: { event: { name: "calculate" } } },
           { id: "root", component: "Column", children: ["heading", "submit"] },
@@ -216,7 +216,7 @@ describe("canonical history timestamp persistence", () => {
         expect(screen.queryByRole("button", { name: "Calculate parcel", exact: true })).toBeNull();
         expect(unavailable).not.toHaveBeenCalled();
       } else {
-        expect(screen.getByRole("heading", { name: "Recovered parcel" })).toBeVisible();
+        expect(screen.getByText("Recovered parcel", { exact: true })).toBeVisible();
         const button = screen.getByRole("button", { name: "Calculate parcel", exact: true });
         expect(button).toBeDisabled();
         await screen.findByText(variant === "missing-generation"

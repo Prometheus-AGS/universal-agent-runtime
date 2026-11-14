@@ -94,9 +94,9 @@ async function route(w, label, task) {
 function assertSelectedBeforeAnswer(result, expectedRunId, expectedThreadId) {
   assert.equal(result.selections.length, 1, 'Expected one agent-selection event');
   const [event] = result.selections;
-  assert.equal(event.threadId, expectedThreadId);
-  assert.equal(event.runId, expectedRunId);
-  assert.equal(event.agentId, ORCHESTRATOR);
+  assert.equal(event.metadata?.uar?.threadId, expectedThreadId);
+  assert.equal(event.metadata?.uar?.runId, expectedRunId);
+  assert.equal(event.metadata?.uar?.agentId, ORCHESTRATOR);
   assert.equal(event.value.sourceAgentId, ORCHESTRATOR);
   assert.equal(event.value.selectionMethod, 'intent');
   assert.ok(event.value.rosterRevision && event.value.selectedThreadId);

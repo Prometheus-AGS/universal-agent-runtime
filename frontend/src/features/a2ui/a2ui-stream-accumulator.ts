@@ -1,3 +1,4 @@
+import { A2UI_PROFILE, A2UI_VERSION, validateA2uiMessage } from "./a2ui-protocol";
 import {
   MAX_A2UI_COMPONENTS,
   MAX_A2UI_MESSAGES,
@@ -25,7 +26,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function envelopeComponentCount(envelope: Record<string, unknown>): number {
-  const update = envelope.updateComponents;
+  const update = envelope.updateComponents ?? envelope.createSurface;
   return isRecord(update) && Array.isArray(update.components) ? update.components.length : 0;
 }
 
@@ -33,6 +34,7 @@ interface SurfaceAccumulatorState {
   bytes: number;
   components: number;
   displayed: boolean;
+  finalCreateValidated: boolean;
   generation: number;
   messages: Record<string, unknown>[];
   rejected: boolean;
@@ -116,6 +118,7 @@ export class A2uiStreamAccumulator {
         bytes: 0,
         components: 0,
         displayed: false,
+        finalCreateValidated: false,
         generation,
         messages: [],
         rejected: false,
@@ -150,7 +153,10 @@ export class A2uiStreamAccumulator {
     state.bytes = nextBytes;
     state.components = nextComponents;
     state.messages = [...state.messages, envelope];
-    const renderReady = state.messages.some((message) => "updateComponents" in message);
+    if (type === "createSurface" && envelope.version === A2UI_VERSION) {
+      state.finalCreateValidated = validateA2uiMessage(envelope).success;
+    }
+    const renderReady = state.messages.some((message) => "updateComponents" in message || envelopeComponentCount(message) > 0);
     const action = state.displayed ? "update" : renderReady ? "create" : "none";
     if (action === "create") state.displayed = true;
     const result = this.result(state, type, surfaceId, action);
@@ -177,7 +183,7 @@ export class A2uiStreamAccumulator {
       type,
       surfaceId,
       messages: state.messages,
-      profile: typeof profileMessage?.profile === "string" ? profileMessage.profile : "",
+      profile: typeof profileMessage?.profile === "string" ? profileMessage.profile : state.finalCreateValidated ? A2UI_PROFILE : "",
       version: typeof versionMessage?.version === "string" ? versionMessage.version : "",
     };
   }

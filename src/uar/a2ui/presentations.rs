@@ -10,7 +10,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
-use super::protocol::{CATALOG_ID, PROFILE, VERSION, parse_message};
+use super::protocol::{CATALOG_ID, COMPAT_VERSION, PROFILE, VERSION, VERSION_1_0, parse_message};
 
 /// Declarative content for exactly one surface, independent of any run ID.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
@@ -30,10 +30,10 @@ pub struct PresentationTemplate {
 impl Default for PresentationTemplate {
     fn default() -> Self {
         Self {
-            version: VERSION.to_string(),
+            version: VERSION_1_0.to_string(),
             catalog_id: CATALOG_ID.to_string(),
             components: vec![json!({
-                "id": "root", "component": "Text", "text": {"path": "/message"}
+                "id": "root", "component": "Text", "text": {"@path": "/message"}
             })],
             default_data: Map::from_iter([("message".to_string(), json!("Ready"))]),
         }
@@ -47,10 +47,10 @@ impl PresentationTemplate {
     /// Returns an error for unsafe protocol content, missing references,
     /// cycles or components unreachable from `root`.
     pub fn validate(&self) -> Result<(), String> {
-        // Presentation templates target the first-party production profile;
-        // the legacy tool's broader compatibility parser remains unchanged.
-        if self.version != VERSION || self.catalog_id != CATALOG_ID {
-            return Err("Presentations require v0.9.1 and urn:uar:a2ui:catalog:1".into());
+        if !matches!(self.version.as_str(), VERSION_1_0 | VERSION | COMPAT_VERSION)
+            || self.catalog_id != CATALOG_ID
+        {
+            return Err("Presentations require an approved A2UI version and urn:uar:a2ui:catalog:1".into());
         }
         if self.components.is_empty() || self.components.len() > 500 {
             return Err("Presentations require between 1 and 500 components".into());
@@ -60,7 +60,11 @@ impl PresentationTemplate {
         }
         let mut graph = BTreeMap::new();
         for component in &self.components {
-            validate_component(component)?;
+            if self.version == VERSION_1_0 {
+                validate_data(component)?;
+            } else {
+                validate_component(component)?;
+            }
             // The protocol parser above established the component's shape.
             let id = component["id"]
                 .as_str()
@@ -150,6 +154,13 @@ impl PresentationTemplate {
     }
 
     fn messages(&self, surface_id: &str, data: Map<String, Value>) -> Vec<Value> {
+        if self.version == VERSION_1_0 {
+            return vec![json!({
+                "version": self.version,
+                "createSurface": {"surfaceId": surface_id, "catalogId": self.catalog_id,
+                    "dataModel": data, "components": self.components}
+            })];
+        }
         let mut messages = vec![
             json!({
                 "version": self.version, "profile": PROFILE,

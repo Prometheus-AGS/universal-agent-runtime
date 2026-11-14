@@ -9,63 +9,35 @@ import { After, Given, When, Then, setDefaultTimeout } from '@cucumber/cucumber'
 
 setDefaultTimeout(240_000);
 // Keep the consumer outside the pnpm workspace dependency graph.
-const historicalClientDirectory = resolve('scripts/behaviors/clients/a2ui-pem');
-const clientDirectory = process.env.UAR_A2UI_PEM_CLIENT_DIR ?? historicalClientDirectory;
+const defaultClientDirectory = resolve('scripts/behaviors/clients/a2ui-pem');
+const clientDirectory = process.env.UAR_A2UI_PEM_CLIENT_DIR ?? defaultClientDirectory;
 assert.ok(isAbsolute(clientDirectory), 'UAR_A2UI_PEM_CLIENT_DIR must be an absolute path');
 const clientRequire = createRequire(resolve(clientDirectory, 'package.json'));
 const load = specifier => import(pathToFileURL(clientRequire.resolve(specifier)).href);
 
 function clientPackageEvidence() {
-  const lock = JSON.parse(readFileSync(resolve(clientDirectory, 'package-lock.json'), 'utf8'));
-  const migrated = lock.packages?.['node_modules/@prometheus-ags/a2ui-react']?.version === '4.3.1-rc.1';
-  assert.ok(!process.env.UAR_A2UI_PEM_CLIENT_DIR || migrated, 'The staged consumer must use the migrated PEM package');
-  const expected = [
-    ['@prometheus-ags/a2ui-react', '@prometheus-ags/a2ui-react',
-      migrated ? '4.3.1-rc.1' : '4.3.0', '@prometheus-ags/a2ui-react/headless'],
-    ['@a2ui/web_core', migrated ? '@prometheus-ags/a2ui-web-core-zod4' : '@a2ui/web_core',
-      migrated ? '0.14.0-rc.1' : '0.12.0', '@a2ui/web_core/v0_9'],
-  ];
-  const packages = expected.map(([alias, name, version, entrypoint]) => {
-    const path = `node_modules/${alias}`;
+  const root = realpathSync(clientDirectory);
+  const lock = JSON.parse(readFileSync(resolve(root, 'package-lock.json'), 'utf8'));
+  return [
+    ['@prometheus-ags/a2ui-react', '5.0.0', '@prometheus-ags/a2ui-react/headless'],
+    ['@ag-ui/core', '1.0.4', '@ag-ui/core/schemas'],
+  ].map(([name, version, entrypoint]) => {
+    const path = `node_modules/${name}`;
+    const directory = resolve(root, path);
     const record = lock.packages?.[path];
-    const directory = realpathSync(resolve(clientDirectory, path));
-    assert.equal(directory, resolve(realpathSync(clientDirectory), path), `Isolated ${alias} install`);
     const installed = JSON.parse(readFileSync(resolve(directory, 'package.json'), 'utf8'));
-    assert.equal(installed.name, name, `Installed ${alias} package identity`);
-    assert.equal(installed.version, version, `Installed ${alias} package version`);
-    assert.equal(record?.version, version, `Locked ${alias} version`);
+    assert.equal(realpathSync(directory), directory);
+    assert.equal(installed.name, name);
+    assert.equal(installed.version, version);
+    assert.equal(record?.version, version);
     assert.match(record?.integrity ?? '', /^sha512-[A-Za-z0-9+/]+=*$/);
+    assert.equal(new URL(record.resolved).origin, 'https://registry.npmjs.org');
     assert.ok(realpathSync(clientRequire.resolve(entrypoint)).startsWith(`${directory}/`));
-    const origin = record.resolved?.startsWith('file:') ? 'local-tarball' : 'npm-registry';
-    if (origin === 'local-tarball') {
-      assert.ok(migrated && record.resolved.endsWith('.tgz'), 'Local candidate must be a packed tarball');
-    } else {
-      const url = new URL(record.resolved);
-      assert.ok(url.origin === 'https://registry.npmjs.org' && !url.username && !url.password);
-    }
-    return { alias, name, version, origin, integrity: record.integrity };
+    return { name, version, integrity: record.integrity };
   });
-  assert.equal(packages[0].origin, packages[1].origin, 'Use one origin for both candidate packages');
-  const pemRequire = createRequire(clientRequire.resolve('@prometheus-ags/a2ui-react/headless'));
-  const coreEntrypoint = '@a2ui/web_core/v0_9';
-  const corePath = realpathSync(clientRequire.resolve(coreEntrypoint));
-  assert.equal(realpathSync(pemRequire.resolve(coreEntrypoint)), corePath,
-    'PEM and the independent binder must share the same installed core');
-  if (migrated) {
-    const zodPath = realpathSync(pemRequire.resolve('zod'));
-    assert.equal(realpathSync(createRequire(corePath).resolve('zod')), zodPath,
-      'PEM and the core must share the same installed Zod');
-    assert.ok(zodPath.startsWith(`${realpathSync(clientDirectory)}/node_modules/zod/`));
-    const zod = lock.packages?.['node_modules/zod'];
-    const installed = JSON.parse(readFileSync(resolve(clientDirectory, 'node_modules/zod/package.json'), 'utf8'));
-    assert.equal(zod?.version, '4.6.7');
-    assert.equal(installed.version, zod.version);
-    assert.match(zod.integrity, /^sha512-[A-Za-z0-9+/]+=*$/);
-    packages.push({ alias: 'zod', name: 'zod', version: zod.version, origin: 'npm-registry', integrity: zod.integrity });
-  }
-  return { packages, migrated };
 }
-const UAR_CATALOGS = ['https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json', 'urn:uar:a2ui:catalog:1'];
+const UAR_V1_CATALOG = 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json';
+const UAR_LEGACY_CATALOG = 'https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json';
 const NOTE_PATH = '/form/note';
 
 async function request(w, method, path, payload, expected = [200]) {
@@ -89,6 +61,8 @@ const frames = raw => raw.split(/\r?\n\r?\n/).flatMap(block => {
 // One AG-UI exchange. Events feed the PEM runtime; assistant text and activity
 // messages are kept as a real AG-UI client keeps its message list.
 async function exchange(w, label, { method = 'POST', path = w.route, payload, runtime = w.runtime, expected = 200 }) {
+  const { EventSchema, PROTOCOL_VERSION, RunAgentInputSchema } = await load('@ag-ui/core/schemas');
+  if (method === 'POST') RunAgentInputSchema.parse(payload);
   const res = await fetch(new URL(path, w.base), {
     method, redirect: 'error', signal: AbortSignal.timeout(200_000),
     headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream', 'x-uar-workspace-id': w.workspace },
@@ -99,7 +73,13 @@ async function exchange(w, label, { method = 'POST', path = w.route, payload, ru
   assert.equal(res.status, expected, `${label}: ${res.status}: ${raw.slice(0, 600)}`);
   if (expected !== 200) return { events: [], text: '' };
   const events = frames(raw);
-  for (const event of events) runtime.processAgUiEvent(event);
+  assert.equal(events[0]?.type, 'RUN_STARTED', label);
+  assert.equal(events[0]?.protocolVersion, PROTOCOL_VERSION, label);
+  assert.equal(events.at(-1)?.type, 'RUN_FINISHED', label);
+  for (const event of events) {
+    assert.deepEqual(EventSchema.parse(event), event, `Official AG-UI event shape: ${event.type}`);
+    runtime.processAgUiEvent(event);
+  }
   const text = events.filter(e => e.type === 'TEXT_MESSAGE_CONTENT').map(e => e.delta ?? '').join('')
     .replace(/<think>[\s\S]*?<\/think>/g, '').replace(/<think>[\s\S]*$/, '').trim();
   Object.assign(w.evidence.streams[label], { types: [...new Set(events.map(e => e.type))], answer: text.slice(0, 1000),
@@ -118,11 +98,13 @@ function remember(w, events, text) {
 
 async function createRuntime(w) {
   const { createPrometheusA2uiHeadlessRuntime, createPrometheusA2uiHeadlessCatalog } = await load('@prometheus-ags/a2ui-react/headless');
-  w.envelopes = [];
   return createPrometheusA2uiHeadlessRuntime({
-    catalogs: UAR_CATALOGS.map(id => createPrometheusA2uiHeadlessCatalog({ id })),
+    catalogs: [
+      createPrometheusA2uiHeadlessCatalog({ id: UAR_LEGACY_CATALOG }),
+      createPrometheusA2uiHeadlessCatalog({ id: UAR_V1_CATALOG, protocolVersion: '1.0' }),
+    ],
     actionPolicy: { handle: async action => ({ status: 'executed', action, result: null }) },
-    onActionEnvelope: envelope => { w.envelopes.push(envelope); w.envelopeWaiter?.(envelope); },
+    onRendererMessage: envelope => { w.rendererMessages?.push(envelope); },
   });
 }
 
@@ -130,37 +112,36 @@ function rendered(runtime, surfaceId) {
   const surface = runtime.getSurface(surfaceId);
   if (!surface) return null;
   const components = [...surface.componentsModel.getAll().values()];
-  const textOf = c => c?.properties?.text;
+  const textOf = c => {
+    const text = c?.properties?.text;
+    return text?.['@path'] || text?.path ? surface.dataModel.get(text['@path'] ?? text.path) : text;
+  };
   const button = components.find(c => c.type === 'Button' && textOf(surface.componentsModel.get(c.properties?.child)) === 'Confirm');
   return { surface, components, texts: components.filter(c => c.type === 'Text').map(textOf), button };
 }
 
-// A real press: the user's note goes into the data model, and web_core's binder
-// resolves the button's declared context and dispatches through PEM.
 async function press(w, note) {
-  const { ComponentContext, GenericBinder } = await load('@a2ui/web_core/v0_9');
-  const { ButtonApi } = await load('@a2ui/web_core/v0_9/basic_catalog');
   const view = rendered(w.runtime, w.surfaceId);
   assert.ok(view?.button, 'The Confirm button is rendered');
   view.surface.dataModel.set(NOTE_PATH, note);
-  const envelope = new Promise((done, fail) => {
-    w.envelopeWaiter = done;
-    setTimeout(() => fail(new Error('PEM produced no action envelope')), 10_000);
-  });
-  const binder = new GenericBinder(new ComponentContext(view.surface, view.button.id), ButtonApi.schema);
-  binder.snapshot.action();
+  w.rendererMessages = [];
+  await view.surface.dispatchAction({ event: { name: 'confirmTicket', context: { note } } }, view.button.id);
+  assert.equal(w.rendererMessages.length, 1, 'The PEM runtime emits one renderer message');
+  const [envelope] = w.rendererMessages;
+  assert.equal(envelope.version, '1.0');
+  assert.equal(envelope.action?.context?.note, note);
   return envelope;
 }
 
 async function clickRun(w, label, envelope) {
-  const forwarded = structuredClone(envelope.forwardedProps);
+  const forwarded = { a2uiAction: structuredClone(envelope) };
   const snapshot = [...w.messages].reverse().find(message => message.role === 'activity'
     && message.content?.a2ui_operations?.some(operation => operation.createSurface?.surfaceId === w.surfaceId));
   assert.equal(typeof snapshot?.content?.surface_generation, 'string', 'Server publishes an authoritative surface generation');
   forwarded.a2uiAction.interaction_id = randomUUID();
   forwarded.a2uiAction.surface_generation = snapshot.content.surface_generation;
   const payload = { threadId: w.threadId, runId: randomUUID(), parentRunId: w.lastRunId, protocolVersion: '1.0',
-    messages: w.messages, tools: [], context: [], forwardedProps: forwarded };
+    messages: w.messages, tools: [], context: [], state: {}, forwardedProps: forwarded };
   w.actionPayloads ??= {};
   w.actionPayloads[label] = structuredClone(payload);
   const result = await exchange(w, label, { payload });
@@ -187,12 +168,12 @@ Given('a disposable agent on the dedicated AG-UI route that publishes a ticket s
   agent.metadata = { ...agent.metadata, title: 'Disposable AG-UI ticket agent', tags: ['disposable', 'verification'] };
   agent.runtime.entry = 'default';
   agent.prompt = { system: [
-    'When asked for a ticket surface, call the a2ui_render tool exactly once with these A2UI v0.9 messages, using the basic catalog',
-    '(https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json), the requested surfaceId, and the requested heading:',
-    '1. createSurface. 2. updateComponents with components: {"id":"root","component":"Column","children":["heading","note","confirm"]},',
-    '{"id":"heading","component":"Text","text":"<the requested heading>"},',
-    `{"id":"note","component":"TextField","label":"Note","value":{"path":"${NOTE_PATH}"}},`,
-    `{"id":"confirm","component":"Button","child":"confirmLabel","action":{"event":{"name":"confirmTicket","context":{"note":{"path":"${NOTE_PATH}"}}}}},`,
+    'When asked for a ticket surface, call the a2ui_render tool exactly once with an A2UI 1.0 createSurface message.',
+    `Use the basic catalog (${UAR_V1_CATALOG}), the requested surfaceId, and initial dataModel { heading: requested heading }.`,
+    'Inline components: {"id":"root","component":"Column","children":["heading","note","confirm"]},',
+    '{"id":"heading","component":"Text","text":{"@path":"/heading"}},',
+    `{"id":"note","component":"TextField","label":"Note","value":{"@path":"${NOTE_PATH}"}},`,
+    `{"id":"confirm","component":"Button","child":"confirmLabel","action":{"event":{"name":"confirmTicket","context":{"note":{"@path":"${NOTE_PATH}"}}}}},`,
     '{"id":"confirmLabel","component":"Text","text":"Confirm"}. After the tool succeeds, reply with one short sentence.',
     'When your input is a JSON object with "type":"a2ui.user_action", do not call any tool; reply exactly: NOTE: <interaction.context.note>',
   ].join(' '), instructions: [] };
@@ -210,15 +191,31 @@ Given("the pinned PEM headless client configured with UAR's catalog ids", async 
   this.messages = [];
 });
 
-When('the client asks for a fresh ticket surface', async function () {
+async function publishTicket(legacy) {
   this.surfaceId = `ticket-${randomUUID().slice(0, 8)}`;
   this.heading = `Ticket ${randomUUID().slice(0, 8)}`;
-  const userMessage = { id: randomUUID(), role: 'user', content: `Publish a ticket surface with surfaceId ${this.surfaceId} and heading "${this.heading}".` };
+  const userMessage = { id: randomUUID(), role: 'user', content: `Publish a ${legacy ? 'legacy ' : ''}ticket surface with surfaceId ${this.surfaceId} and heading "${this.heading}".` };
   this.messages.push(userMessage);
   this.lastRunId = randomUUID();
   const result = await exchange(this, 'publish', { payload: { threadId: this.threadId, runId: this.lastRunId, protocolVersion: '1.0',
-    messages: [userMessage], tools: [], context: [], forwardedProps: { uar: { model: this.model } } } });
+    messages: [userMessage], tools: [], context: [], state: {}, forwardedProps: { uar: { model: this.model } } } });
+  const operations = result.events.flatMap(event => event.content?.a2ui_operations ?? []);
+  const create = operations.find(operation => operation.createSurface?.surfaceId === this.surfaceId);
+  assert.equal(create?.version, legacy ? 'v0.9.1' : '1.0');
+  if (!legacy) {
+    assert.equal(create.createSurface.dataModel.heading, this.heading);
+    assert.ok(create.createSurface.components.some(component => component.id === 'confirm'));
+    assert.ok(operations.some(operation => operation.updateDataModel?.path === '/phase'));
+    assert.equal(this.runtime.getSurface(this.surfaceId)?.dataModel.get('/phase'), 'updated');
+  }
   remember(this, result.events, result.text);
+}
+
+When('the client asks for a fresh ticket surface', async function () {
+  await publishTicket.call(this, false);
+});
+When('the client asks for a legacy ticket surface', async function () {
+  await publishTicket.call(this, true);
 });
 
 Then('the client renders the surface with the requested heading and a Confirm button', function () {
@@ -237,6 +234,17 @@ When('the user enters a note and presses Confirm', async function () {
 
 Then('the agent answers in a new run on the same conversation and its answer contains that note', function () {
   assert.ok(this.firstClick.text.includes(this.firstNote), `Answer: ${this.firstClick.text}`);
+  const reasoning = this.firstClick.events.filter(event => event.type.startsWith('REASONING_'));
+  assert.deepEqual(reasoning.map(event => event.type), [
+    'REASONING_START', 'REASONING_MESSAGE_START', 'REASONING_MESSAGE_CONTENT',
+    'REASONING_MESSAGE_END', 'REASONING_END',
+  ]);
+  assert.equal(reasoning[2].delta, 'Synthetic public reasoning.');
+  assert.equal(reasoning[1].messageId, reasoning[3].messageId);
+  assert.equal(reasoning[0].messageId, reasoning[4].messageId);
+  assert.ok(this.firstClick.events.indexOf(reasoning[4]) <
+    this.firstClick.events.findIndex(event => event.type === 'TEXT_MESSAGE_START'));
+
 });
 
 When('the user enters a different note and presses Confirm again', async function () {
@@ -257,15 +265,20 @@ When("a fresh client attaches to the conversation's latest run", async function 
 Then('that client renders the same surface without the agent running again', function () {
   const view = rendered(this.lateRuntime, this.surfaceId);
   assert.ok(view?.texts.includes(this.heading) && view.button, 'The late client renders the surface');
-  assert.ok(!this.late.events.some(e => e.type === 'TOOL_CALL_START'), 'Attaching runs nothing');
+  const original = this.evidence.streams['second-click'] ?? this.evidence.streams.publish;
+  assert.deepEqual(
+    this.late.events.filter(event => event.type === 'TOOL_CALL_START').map(event => event.type),
+    original.types.includes('TOOL_CALL_START') ? ['TOOL_CALL_START'] : [],
+    'Attaching can only replay the retained tool call',
+  );
 });
 
 Then('an action naming a button the surface never declared is refused', async function () {
   const forged = structuredClone(this.actionPayloads['first-click'].forwardedProps);
   forged.a2uiAction.interaction_id = randomUUID();
-  forged.a2uiAction.userAction.name = 'doesNotExist';
+  forged.a2uiAction.action.name = 'doesNotExist';
   await exchange(this, 'forged', { expected: 422, payload: { threadId: this.threadId, runId: randomUUID(), parentRunId: this.lastRunId,
-    protocolVersion: '1.0', messages: this.messages, tools: [], context: [], forwardedProps: forged } });
+    protocolVersion: '1.0', messages: this.messages, tools: [], context: [], state: {}, forwardedProps: forged } });
   this.evidence.result = 'VERIFIED';
 });
 
@@ -289,8 +302,51 @@ Then('a lost-response retry with a fresh wire id reuses the original admitted cl
 Then('reusing that interaction identity with changed semantic input is refused', async function () {
   const changed = structuredClone(this.actionPayloads['first-click']);
   changed.runId = randomUUID();
-  changed.forwardedProps.a2uiAction.userAction.context = { changed: 'conflicting-intent' };
+  changed.forwardedProps.a2uiAction.action.context = { changed: 'conflicting-intent' };
   await exchange(this, 'logical-conflict', { payload: changed, expected: 409 });
+});
+
+Then('an agent function call from the renderer is explicitly refused', async function () {
+  const original = this.actionPayloads['first-click'];
+  const payload = { ...structuredClone(original), runId: randomUUID(), parentRunId: this.lastRunId };
+  payload.forwardedProps.a2uiAction = {
+    version: '1.0',
+    callAgentFunction: {
+      surfaceId: this.surfaceId, functionCallId: randomUUID(),
+      callFunction: { '@call': 'confirmTicket', catalogId: UAR_V1_CATALOG, args: {} },
+    },
+  };
+  const res = await fetch(new URL(this.route, this.base), {
+    method: 'POST', redirect: 'error', signal: AbortSignal.timeout(60_000),
+    headers: { 'Content-Type': 'application/json', 'x-uar-workspace-id': this.workspace },
+    body: JSON.stringify(payload),
+  });
+  assert.equal(res.status, 422);
+  const refusal = await res.json();
+  assert.equal(refusal.code ?? refusal.error?.code ?? refusal.error, 'a2ui_functions_unsupported');
+});
+
+When('the agent deletes the surface', async function () {
+  const runId = randomUUID();
+  const payload = {
+    threadId: this.threadId, runId, parentRunId: this.lastRunId, protocolVersion: '1.0',
+    messages: [...this.messages, { id: randomUUID(), role: 'user', content: `Delete the ticket surface ${this.surfaceId}.` }],
+    tools: [], context: [], state: {}, forwardedProps: {},
+  };
+  const result = await exchange(this, 'delete', { payload });
+  assert.ok(result.events.flatMap(event => event.content?.a2ui_operations ?? [])
+    .some(operation => operation.version === '1.0' && operation.deleteSurface?.surfaceId === this.surfaceId));
+  assert.equal(this.runtime.getSurface(this.surfaceId), undefined);
+  this.lastRunId = runId;
+});
+
+Then('a fresh client replays the deletion without dispatch', async function () {
+  const runtime = await createRuntime({});
+  const replay = await exchange(this, 'delete-replay', { method: 'GET', runtime,
+    path: `${this.route}/threads/${this.threadId}/runs/${this.lastRunId}/stream` });
+  assert.ok(replay.events.flatMap(event => event.content?.a2ui_operations ?? [])
+    .some(operation => operation.deleteSurface?.surfaceId === this.surfaceId));
+  assert.equal(runtime.getSurface(this.surfaceId), undefined);
 });
 
 After(async function ({ result }) {

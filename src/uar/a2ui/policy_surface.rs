@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 
 use crate::uar::domain::policy::{EffectiveResourceSelection, EffectiveRunPolicy};
 
-use super::protocol::{CATALOG_ID, VERSION};
+use super::protocol::{CATALOG_ID, VERSION_1_0};
 
 fn label<T: Serialize>(value: &T) -> String {
     // Two serde shapes reach here, and only one is a bare string.
@@ -43,7 +43,7 @@ fn resource_summary(name: &str, selection: &EffectiveResourceSelection) -> Strin
     )
 }
 
-/// Build a current-production A2UI v0.9.1 message sequence for the run policy.
+/// Build a current-production A2UI 1.0 surface for the run policy.
 ///
 /// The projection intentionally summarizes large capability sets. Their full
 /// identifiers remain in the immutable run record; the chat surface presents
@@ -68,55 +68,42 @@ pub(crate) fn effective_policy_surface(run_id: &str, policy: &EffectiveRunPolicy
 
     json!([
         {
-            "version": VERSION,
+            "version": VERSION_1_0,
             "createSurface": {
                 "surfaceId": surface_id,
-                "catalogId": CATALOG_ID
-            }
-        },
-        {
-            "version": VERSION,
-            "updateComponents": {
-                "surfaceId": surface_id,
+                "catalogId": CATALOG_ID,
                 "components": [
-                    { "id": "title", "component": "Text", "text": { "path": "/title" }, "variant": "h2" },
-                    { "id": "subtitle", "component": "Text", "text": { "path": "/subtitle" }, "variant": "caption" },
-                    { "id": "overview-heading", "component": "Text", "text": "Execution", "variant": "h3" },
-                    { "id": "chat-mode", "component": "Text", "text": { "path": "/chatMode" }, "variant": "body" },
-                    { "id": "model", "component": "Text", "text": { "path": "/model" }, "variant": "body" },
-                    { "id": "agent", "component": "Text", "text": { "path": "/agent" }, "variant": "body" },
-                    { "id": "overview-column", "component": "Column", "children": ["overview-heading", "chat-mode", "model", "agent"] },
-                    { "id": "overview-card", "component": "Card", "child": "overview-column" },
-                    { "id": "capabilities-heading", "component": "Text", "text": "Available capabilities", "variant": "h3" },
-                    { "id": "skills", "component": "Text", "text": { "path": "/skills" }, "variant": "body" },
-                    { "id": "tools", "component": "Text", "text": { "path": "/tools" }, "variant": "body" },
-                    { "id": "mcp-servers", "component": "Text", "text": { "path": "/mcpServers" }, "variant": "body" },
-                    { "id": "knowledge-bases", "component": "Text", "text": { "path": "/knowledgeBases" }, "variant": "body" },
-                    { "id": "capabilities-column", "component": "Column", "children": ["capabilities-heading", "skills", "tools", "mcp-servers", "knowledge-bases"] },
-                    { "id": "capabilities-card", "component": "Card", "child": "capabilities-column" },
-                    { "id": "runtime-heading", "component": "Text", "text": "Runtime controls", "variant": "h3" },
-                    { "id": "memory", "component": "Text", "text": { "path": "/memory" }, "variant": "body" },
-                    { "id": "prompt-caching", "component": "Text", "text": { "path": "/promptCaching" }, "variant": "body" },
-                    { "id": "context", "component": "Text", "text": { "path": "/context" }, "variant": "body" },
-                    { "id": "approval", "component": "Text", "text": { "path": "/approval" }, "variant": "body" },
-                    { "id": "runtime-column", "component": "Column", "children": ["runtime-heading", "memory", "prompt-caching", "context", "approval"] },
-                    { "id": "runtime-card", "component": "Card", "child": "runtime-column" },
-                    { "id": "warnings-heading", "component": "Text", "text": { "path": "/warningsHeading" }, "variant": "h3" },
-                    { "id": "warnings", "component": "Text", "text": { "path": "/warnings" }, "variant": "body" },
-                    { "id": "warnings-column", "component": "Column", "children": ["warnings-heading", "warnings"] },
-                    { "id": "warnings-card", "component": "Card", "child": "warnings-column" },
-                    { "id": "root", "component": "Column", "children": ["title", "subtitle", "overview-card", "capabilities-card", "runtime-card", "warnings-card"] }
-                ]
-            }
-        },
-        {
-            "version": VERSION,
-            "updateDataModel": {
-                "surfaceId": surface_id,
-                "path": "/",
-                "value": {
+                    { "id": "title", "component": "Text", "text": { "@path": "/title" }, "variant": "body" },
+                    { "id": "subtitle", "component": "Text", "text": { "@path": "/subtitle" }, "variant": "caption" },
+                    { "id": "overview_heading", "component": "Text", "text": "Execution", "variant": "body" },
+                    { "id": "chat_mode", "component": "Text", "text": { "@path": "/chatMode" }, "variant": "body" },
+                    { "id": "model", "component": "Text", "text": { "@path": "/model" }, "variant": "body" },
+                    { "id": "agent", "component": "Text", "text": { "@path": "/agent" }, "variant": "body" },
+                    { "id": "overview_column", "component": "Column", "children": ["overview_heading", "chat_mode", "model", "agent"] },
+                    { "id": "overview_card", "component": "Card", "child": "overview_column" },
+                    { "id": "capabilities_heading", "component": "Text", "text": "Available capabilities", "variant": "body" },
+                    { "id": "skills", "component": "Text", "text": { "@path": "/skills" }, "variant": "body" },
+                    { "id": "tools", "component": "Text", "text": { "@path": "/tools" }, "variant": "body" },
+                    { "id": "mcp_servers", "component": "Text", "text": { "@path": "/mcpServers" }, "variant": "body" },
+                    { "id": "knowledge_bases", "component": "Text", "text": { "@path": "/knowledgeBases" }, "variant": "body" },
+                    { "id": "capabilities_column", "component": "Column", "children": ["capabilities_heading", "skills", "tools", "mcp_servers", "knowledge_bases"] },
+                    { "id": "capabilities_card", "component": "Card", "child": "capabilities_column" },
+                    { "id": "runtime_heading", "component": "Text", "text": "Runtime controls", "variant": "body" },
+                    { "id": "memory", "component": "Text", "text": { "@path": "/memory" }, "variant": "body" },
+                    { "id": "prompt_caching", "component": "Text", "text": { "@path": "/promptCaching" }, "variant": "body" },
+                    { "id": "context", "component": "Text", "text": { "@path": "/context" }, "variant": "body" },
+                    { "id": "approval", "component": "Text", "text": { "@path": "/approval" }, "variant": "body" },
+                    { "id": "runtime_column", "component": "Column", "children": ["runtime_heading", "memory", "prompt_caching", "context", "approval"] },
+                    { "id": "runtime_card", "component": "Card", "child": "runtime_column" },
+                    { "id": "warnings_heading", "component": "Text", "text": { "@path": "/warningsHeading" }, "variant": "body" },
+                    { "id": "warnings", "component": "Text", "text": { "@path": "/warnings" }, "variant": "body" },
+                    { "id": "warnings_column", "component": "Column", "children": ["warnings_heading", "warnings"] },
+                    { "id": "warnings_card", "component": "Card", "child": "warnings_column" },
+                    { "id": "root", "component": "Column", "children": ["title", "subtitle", "overview_card", "capabilities_card", "runtime_card", "warnings_card"] }
+                ],
+                "dataModel": {
                     "title": "Effective run policy",
-                    "subtitle": format!("Resolved policy v{} · A2UI {}", policy.version, VERSION),
+                    "subtitle": format!("Resolved policy v{} · A2UI {}", policy.version, VERSION_1_0),
                     "chatMode": format!("Chat mode · {}", label(&policy.chat_mode)),
                     "model": format!("Model · {model}"),
                     "agent": format!("Agent · {agent}"),
@@ -154,16 +141,15 @@ mod tests {
         let surface = effective_policy_surface("run-1", &policy);
         let messages = surface.as_array().expect("surface messages");
 
-        assert_eq!(messages.len(), 3);
-        assert_eq!(messages[0]["version"], "v0.9.1");
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0]["version"], "1.0");
         assert_eq!(
             messages[0]["createSurface"]["catalogId"],
             "urn:uar:a2ui:catalog:1"
         );
-        assert!(messages[1].get("updateComponents").is_some());
-        assert!(messages[2].get("updateDataModel").is_some());
+        assert!(messages[0]["createSurface"]["components"].is_array());
         assert_eq!(
-            messages[2]["updateDataModel"]["value"]["tools"],
+            messages[0]["createSurface"]["dataModel"]["tools"],
             "Tools · auto · 2 available · legacy scope"
         );
         assert!(!surface.to_string().contains("web_fetch"));

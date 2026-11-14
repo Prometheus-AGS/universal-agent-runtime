@@ -8,10 +8,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import type { A2uiComponent } from "@/features/a2ui/a2ui-protocol";
+import type { A2uiSurfaceComponent } from "@/features/a2ui/a2ui-protocol";
 
 interface A2uiSurfaceRendererProps {
-  components: A2uiComponent[];
+  components: A2uiSurfaceComponent[];
   data: Record<string, unknown>;
   onDataChange: (path: string, value: unknown) => void;
   onAction: (name: string, context: Record<string, unknown>) => void;
@@ -21,25 +21,24 @@ interface A2uiSurfaceRendererProps {
 }
 
 function resolvePath(data: Record<string, unknown>, path: string): unknown {
+  if (path === "" || path === "/") return data;
   if (!path.startsWith("/")) return undefined;
   return path.slice(1).split("/").reduce<unknown>((current, part) => {
     if (!current || typeof current !== "object") return undefined;
     const key = part.replaceAll("~1", "/").replaceAll("~0", "~");
-    return (current as Record<string, unknown>)[key];
+    return Object.hasOwn(current, key) ? (current as Record<string, unknown>)[key] : undefined;
   }, data);
 }
 
 function dynamicValue(value: unknown, data: Record<string, unknown>): unknown {
-  if (value && typeof value === "object" && "path" in value) {
-    return resolvePath(data, String((value as { path: unknown }).path));
-  }
-  return value;
+  const path = bindingPath(value);
+  return path === null ? value : resolvePath(data, path);
 }
 
 function bindingPath(value: unknown): string | null {
-  return value && typeof value === "object" && "path" in value
-    ? String((value as { path: unknown }).path)
-    : null;
+  if (!value || typeof value !== "object") return null;
+  if ("@path" in value && typeof value["@path"] === "string") return value["@path"];
+  return "path" in value && typeof value.path === "string" ? value.path : null;
 }
 
 /** Pure projection of a validated A2UI surface onto UAR-owned React controls. */
@@ -99,7 +98,7 @@ export function A2uiSurfaceRenderer({
           <Textarea
             id={`${idPrefix}${component.id}`}
             value={value}
-            placeholder={component.placeholder}
+            placeholder={String(dynamicValue(component.placeholder, data) ?? "")}
             disabled={actionPending || !path}
             rows={5}
             onChange={(event) => path && onDataChange(path, event.target.value)}
@@ -107,14 +106,14 @@ export function A2uiSurfaceRenderer({
         ) : (
           <Input
             id={`${idPrefix}${component.id}`}
-            type={component.variant === "email" ? "email" : component.variant === "number" ? "number" : "text"}
+            type={component.variant === "email" ? "email" : component.variant === "number" ? "number" : component.variant === "obscured" ? "password" : "text"}
             value={value}
-            placeholder={component.placeholder}
+            placeholder={String(dynamicValue(component.placeholder, data) ?? "")}
             disabled={actionPending || !path}
             onChange={(event) => path && onDataChange(path, event.target.value)}
           />
         );
-        return <div className="space-y-1.5"><Label htmlFor={`${idPrefix}${component.id}`}>{component.label}</Label>{field}</div>;
+        return <div className="space-y-1.5"><Label htmlFor={`${idPrefix}${component.id}`}>{String(dynamicValue(component.label, data) ?? "")}</Label>{field}</div>;
       }
       case "CheckBox": {
         const path = bindingPath(component.value);
@@ -126,7 +125,7 @@ export function A2uiSurfaceRenderer({
               disabled={actionPending || !path}
               onCheckedChange={(checked) => path && onDataChange(path, checked === true)}
             />
-            <Label htmlFor={`${idPrefix}${component.id}`}>{component.label}</Label>
+            <Label htmlFor={`${idPrefix}${component.id}`}>{String(dynamicValue(component.label, data) ?? "")}</Label>
           </div>
         );
       }
@@ -134,10 +133,11 @@ export function A2uiSurfaceRenderer({
         const path = bindingPath(component.value);
         const selected = dynamicValue(component.value, data);
         const values = Array.isArray(selected) ? selected.map(String) : [];
-        if (component.variant === "mutuallyExclusive") {
+        const label = String(dynamicValue(component.label, data) ?? "");
+        if (component.variant !== "multipleSelection") {
           return (
             <fieldset className="space-y-2">
-              <legend className="text-sm font-medium text-foreground">{component.label}</legend>
+              {label ? <legend className="text-sm font-medium text-foreground">{label}</legend> : null}
               <RadioGroup
                 value={values[0] ?? ""}
                 disabled={actionPending || !path}
@@ -146,7 +146,7 @@ export function A2uiSurfaceRenderer({
                 {component.options.map((option) => (
                   <div key={option.value} className="flex min-h-11 items-center gap-2">
                     <RadioGroupItem id={`${idPrefix}${component.id}-${option.value}`} value={option.value} />
-                    <Label htmlFor={`${idPrefix}${component.id}-${option.value}`}>{option.label}</Label>
+                    <Label htmlFor={`${idPrefix}${component.id}-${option.value}`}>{String(dynamicValue(option.label, data) ?? "")}</Label>
                   </div>
                 ))}
               </RadioGroup>
@@ -155,7 +155,7 @@ export function A2uiSurfaceRenderer({
         }
         return (
           <fieldset className="space-y-2">
-            <legend className="text-sm font-medium text-foreground">{component.label}</legend>
+            {label ? <legend className="text-sm font-medium text-foreground">{label}</legend> : null}
             {component.options.map((option) => (
               <div key={option.value} className="flex min-h-11 items-center gap-2">
                 <Checkbox
@@ -167,7 +167,7 @@ export function A2uiSurfaceRenderer({
                     onDataChange(path, checked ? [...values, option.value] : values.filter((value) => value !== option.value));
                   }}
                 />
-                <Label htmlFor={`${idPrefix}${component.id}-${option.value}`}>{option.label}</Label>
+                <Label htmlFor={`${idPrefix}${component.id}-${option.value}`}>{String(dynamicValue(option.label, data) ?? "")}</Label>
               </div>
             ))}
           </fieldset>

@@ -206,6 +206,22 @@ describe("run trace projection", () => {
     ])).toThrow(/executable/i);
   });
 
+  test("replays inline final surfaces, root replacement, nested null deletion and surface removal", () => {
+    const path = "/a2ui/surfaces/client~1form";
+    const patches = [
+      { op: "add", path, value: {
+        version: "1.0", surfaceId: "client/form", catalogId: "urn:uar:a2ui:catalog:1",
+        components: [{ id: "root", component: "Text", text: { "@path": "/message" } }],
+        dataModel: { message: "First" },
+      } },
+      { op: "replace", path: `${path}/dataModel`, value: { version: "1.0", value: { message: "Updated", expired: true } } },
+      { op: "replace", path: `${path}/dataModel`, value: { version: "1.0", path: "/expired", value: null } },
+    ];
+    expect(projectA2uiReplay(patches).state.surfaces["client/form"]).toMatchObject({ version: "1.0", ready: true, data: { message: "Updated" } });
+    expect(projectA2uiReplay(patches).state.surfaces["client/form"].data).toEqual({ message: "Updated" });
+    expect(projectA2uiReplay([...patches, { op: "remove", path, value: { version: "1.0", surfaceId: "client/form" } }]).state.surfaces).toEqual({});
+  });
+
   test("projects a deterministic 500-event trace within twenty milliseconds", () => {
     const events = Array.from({ length: 500 }, (_, index) => event(
       index,

@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-FF6A3D" /></a>
-  <img alt="Version: 1.4.0-rc.4" src="https://img.shields.io/badge/version-1.4.0--rc.4-141C26" />
+  <img alt="Version: 1.4.0-rc.5" src="https://img.shields.io/badge/version-1.4.0--rc.5-141C26" />
   <a href="https://prometheus-ags.github.io/universal-agent-runtime/"><img alt="Documentation portal" src="https://img.shields.io/badge/docs-portal-2563EB" /></a>
 </p>
 
@@ -14,7 +14,7 @@
 
 Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent execution, model routing, typed streaming, tools, retrieval, and declarative agent UI. Its first-party operator interface is React 19 + TypeScript.
 
-The Rust product version is **1.4.0-rc.4**. SDK, package, and schema versions are independent. The signed prerelease covers the selected Linux amd64 container APIs behind a trusted host or gateway. The 1.4.0 GA release and broader platform qualification are outside this release decision. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
+The Rust product version is **1.4.0-rc.5**. SDK, package, and schema versions are independent. The signed RC4 prerelease covers the selected Linux amd64 container APIs behind a trusted host or gateway. The 1.4.0 GA release and broader platform qualification are outside this release decision. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
 
 The [GitHub Pages documentation portal](https://prometheus-ags.github.io/universal-agent-runtime/) covers installation, architecture, SDKs, skills, deployment, and security; begin with the [introduction](https://prometheus-ags.github.io/universal-agent-runtime/docs/intro). Its live routes are verified by the final documentation publication change.
 
@@ -156,6 +156,11 @@ Routine development checks run locally before a change is committed. GitHub
 Actions are reserved for deployment execution and deployment validation. The
 repository's tiered verification rules keep fast checks close to each edit and
 defer the full integration profile until phase completion.
+
+RC5 targets AG-UI 1.0 on the dedicated agent API and A2UI 1.0 for the existing
+UAR renderer and governed actions. Its dependency line is Prometheus Entity
+Management 5.0.0. Existing A2UI v0.9 and v0.9.1 history remains readable.
+See the [RC5 protocol migration guide](docs/protocols/rc5-protocol-migration.md).
 
 Read [the system architecture](docs/ARCHITECTURE.md), [frontend ownership rules](docs/frontend-architecture.md), the [AG-UI](docs/protocols/ag-ui-profile.md) and [A2UI](docs/protocols/a2ui-profile.md) profiles, and the [architecture decision records](docs/adr/index.md).
 
@@ -324,7 +329,7 @@ Release evidence includes source-bound security-audit results and signed supply-
 
 ## License
 
-The Rust product source version is 1.4.0-rc.4; supported deployment and recovery claims follow the evidence-scoped [support matrix](docs/product-support-matrix.md).
+The Rust product source version is 1.4.0-rc.5; supported deployment and recovery claims follow the evidence-scoped [support matrix](docs/product-support-matrix.md).
 
 - **Code** — the runtime server, the SDKs (`sdks/python`, `sdks/rust`, `sdks/typescript`), and everything else in this repository: `MIT`. See [LICENSE](LICENSE).
 - **Documentation** (`docs/`, and Markdown elsewhere not covered by a more specific license): `CC-BY-4.0`. See [LICENSE-CC-BY-4.0.md](LICENSE-CC-BY-4.0.md).

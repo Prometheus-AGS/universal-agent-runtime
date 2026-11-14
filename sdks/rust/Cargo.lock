@@ -9052,7 +9052,7 @@ checksum = "81e544489bf3d8ef66c953931f56617f423cd4b5494be343d9b9d3dda037b9a3"
 
 [[package]]
 name = "universal-agent-runtime"
-version = "1.4.0-rc.4"
+version = "1.4.0-rc.5"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -9114,6 +9114,7 @@ dependencies = [
  "tracing",
  "tracing-error",
  "tracing-subscriber",
+ "unicode-ident",
  "url",
  "utoipa",
  "uuid",

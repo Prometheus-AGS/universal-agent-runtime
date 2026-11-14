@@ -4,8 +4,9 @@ import type { UarComponentProps } from "../react/types";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { resolvedText } from "../lib/resolved";
+import { useUarI18n } from "../i18n";
 
-type TextFieldProps = UarComponentProps<typeof TextFieldApi>;
+type TextFieldProps = UarComponentProps<typeof TextFieldApi> & { placeholder?: string };
 
 const HTML_TYPE: Record<string, string> = {
   longText: "text",
@@ -23,6 +24,8 @@ export const UarTextField: FC<{ props: TextFieldProps }> = ({ props }) => {
   const id = useId();
   const descriptionId = `${id}-description`;
   const errorId = `${id}-error`;
+  const { t } = useUarI18n();
+  const label = typeof props.label === "string" && props.label.trim() ? props.label : t("field");
   const describedBy = [props.accessibility?.description ? descriptionId : null, props.validationErrors?.length ? errorId : null].filter(Boolean).join(" ") || undefined;
   const isLongText = props.variant === "longText";
   const sharedProps = {
@@ -32,12 +35,13 @@ export const UarTextField: FC<{ props: TextFieldProps }> = ({ props }) => {
       props.setValue(e.target.value),
     "aria-invalid": props.isValid === false || undefined,
     "aria-describedby": describedBy,
+    placeholder: props.placeholder,
     pattern: props.validationRegexp,
   };
 
   return (
     <div data-a2ui-component="TextField" className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{props.label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       {isLongText ? (
         <textarea
           {...sharedProps}

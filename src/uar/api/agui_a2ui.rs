@@ -5,7 +5,7 @@
 //! Inbound: a `forwardedProps.a2uiAction` click is checked against the
 //! conversation's live surfaces and becomes the run input. Everything here is
 //! pure except `thread_record`; the trusted host still owns admission.
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::{HashMap, HashSet}};
 
 use axum::http::StatusCode;
 use serde::Deserialize;
@@ -14,6 +14,7 @@ use sha2::{Digest, Sha256};
 
 use super::routes::RunApiState;
 use crate::uar::{
+    a2ui::protocol::{VERSION_1_0, parse_message},
     domain::events::NormalizedEvent, persistence::agui_runs::AguiRunBinding,
     runtime::manager::StreamEvent,
 };
@@ -35,6 +36,10 @@ impl Rejection {
     const INVALID: Self = Self {
         status: StatusCode::BAD_REQUEST,
         code: "invalid_a2ui_action",
+    };
+    const FUNCTIONS_UNSUPPORTED: Self = Self {
+        status: StatusCode::UNPROCESSABLE_ENTITY,
+        code: "a2ui_functions_unsupported",
     };
     const NOT_DECLARED: Self = Self {
         status: StatusCode::UNPROCESSABLE_ENTITY,
@@ -77,38 +82,45 @@ const SURFACE_KEYS: [(&str, OpKind); 4] = [
 ];
 
 /// Parse newline-joined raw A2UI messages (`a2ui_output.rs` publication).
-/// Lines that are not JSON objects with a surface id are skipped.
+/// Modern messages must satisfy the supported profile before they affect replay
+/// or authority. Legacy artifacts retain their historical read semantics.
 pub(crate) fn parse_batch(content: &str) -> Vec<SurfaceOp> {
     content
         .lines()
         .filter(|line| !line.trim().is_empty())
         .filter_map(|line| {
-            let mut message: Value = serde_json::from_str(line).ok()?;
-            let object = message.as_object_mut()?;
-            object.remove("profile");
-            let (surface_id, kind) = SURFACE_KEYS.iter().find_map(|(key, kind)| {
-                object
-                    .get(*key)?
-                    .get("surfaceId")?
-                    .as_str()
-                    .map(|id| (id.to_owned(), *kind))
-            })?;
-            Some(SurfaceOp {
-                surface_id,
-                kind,
-                message,
-            })
+            let message: Value = serde_json::from_str(line).ok()?;
+            match message.get("version") {
+                Some(version) if version == VERSION_1_0 => {
+                    parse_message(message.clone()).ok()?;
+                }
+                Some(version) if !matches!(version.as_str(), Some("v0.9" | "v0.9.1")) => return None,
+                _ => {}
+            }
+            surface_op(message)
         })
         .collect()
 }
 
+fn surface_op(mut message: Value) -> Option<SurfaceOp> {
+    let object = message.as_object_mut()?;
+    object.remove("profile");
+    let (surface_id, kind) = SURFACE_KEYS.iter().find_map(|(key, kind)| {
+        let surface = object.get(*key)?.get("surfaceId")?.as_str()?;
+        Some((surface.to_owned(), *kind))
+    })?;
+    Some(SurfaceOp { surface_id, kind, message })
+}
+
 fn same_operation(left: &SurfaceOp, right: &SurfaceOp) -> bool {
-    left.surface_id == right.surface_id
-        && left.kind == right.kind
+    left.surface_id == right.surface_id && left.kind == right.kind
+        && same_wire_operation(&left.message, &right.message)
+}
+
+fn same_wire_operation(left: &Value, right: &Value) -> bool {
+    (left["version"] == VERSION_1_0) == (right["version"] == VERSION_1_0)
         && SURFACE_KEYS.iter().any(|(key, _)| {
-            left.message
-                .get(*key)
-                .is_some_and(|payload| right.message.get(*key) == Some(payload))
+            left.get(*key).is_some_and(|payload| right.get(*key) == Some(payload))
         })
 }
 
@@ -116,7 +128,7 @@ fn same_operation(left: &SurfaceOp, right: &SurfaceOp) -> bool {
 /// strings or arbitrary JSON-Patch paths as action declarations.
 fn surface_patch(operation: &crate::uar::domain::events::StatePatchOp) -> Option<SurfaceOp> {
     let message = crate::uar::a2ui::protocol::surface_patch_message(operation)?;
-    parse_batch(&message.raw.to_string()).into_iter().next()
+    surface_op(message.raw)
 }
 
 /// `a2ui:` plus the first 32 hex digits of SHA-256(thread, NUL, surface).
@@ -152,6 +164,15 @@ struct SurfaceEntry {
     source_run_id: String,
     operations: Vec<Value>,
     deleted: bool,
+    modern: bool,
+}
+
+#[derive(Debug, Clone)]
+struct ObservedPatch {
+    run_id: String,
+    cursor: u64,
+    operation: SurfaceOp,
+    applied: bool,
 }
 
 /// A conversation's live surfaces in first-created order, each with its
@@ -163,7 +184,8 @@ pub(crate) struct SurfaceRecord {
     next_test_cursor: u64,
     incomplete: Option<&'static str>,
     /// Only the latest bounded patch suffix is needed to collapse paired observations.
-    pending_live: Vec<(String, u64, SurfaceOp)>,
+    pending_live: Vec<ObservedPatch>,
+    pending_deletions: Vec<(u64, SurfaceEntry)>,
 }
 
 impl SurfaceRecord {
@@ -173,10 +195,19 @@ impl SurfaceRecord {
     fn apply(&mut self, source_run_id: &str, ops: Vec<SurfaceOp>, generations: &Value) -> Vec<String> {
         let mut touched: Vec<String> = Vec::new();
         for op in ops {
-            let index = self
-                .surfaces
-                .iter()
-                .position(|entry| entry.surface_id == op.surface_id)
+            let modern = op.message["version"] == VERSION_1_0;
+            let existing = self.surfaces.iter().position(|entry| entry.surface_id == op.surface_id);
+            let live = existing.and_then(|index| self.surfaces.get(index))
+                .filter(|entry| !entry.deleted && !entry.operations.is_empty());
+            if (modern || live.is_some_and(|entry| entry.modern))
+                && match op.kind {
+                    OpKind::Create => live.is_some(),
+                    _ => !live.is_some_and(|entry| entry.modern == modern),
+                }
+            {
+                continue;
+            }
+            let index = existing
                 .unwrap_or_else(|| {
                     self.surfaces.push(SurfaceEntry {
                         generation: String::new(),
@@ -184,6 +215,7 @@ impl SurfaceRecord {
                         source_run_id: source_run_id.to_owned(),
                         operations: Vec::new(),
                         deleted: false,
+                        modern,
                     });
                     self.surfaces.len() - 1
                 });
@@ -191,6 +223,7 @@ impl SurfaceRecord {
             if op.kind == OpKind::Create {
                 entry.operations.clear();
                 entry.deleted = false;
+                entry.modern = modern;
             }
             if op.kind == OpKind::Delete {
                 entry.deleted = true;
@@ -220,20 +253,48 @@ impl SurfaceRecord {
         let operations = parse_batch(content);
         let generations = artifact_generations(source_run_id, cursor, &operations, metadata);
         let oldest = cursor.saturating_sub(crate::uar::runtime::manager::EVENT_HISTORY_LIMIT as u64);
-        self.pending_live.retain(|(run, id, _)| run == source_run_id && *id > oldest);
+        self.pending_live.retain(|patch| patch.run_id == source_run_id && patch.cursor > oldest);
         let suffix = self.pending_live.len().checked_sub(operations.len());
-        if suffix.is_some_and(|start| self.pending_live[start..].iter().zip(&operations)
-            .all(|((_, _, left), right)| same_operation(left, right))) {
-            // Live patches already applied this exact suffix. Undo only those
-            // observations before applying their artifact's publication stamp.
-            for operation in operations.iter().rev() {
-                if let Some(entry) = self.surfaces.iter_mut().find(|entry| entry.surface_id == operation.surface_id) {
-                    entry.operations.pop();
+        let pending = std::mem::take(&mut self.pending_live);
+        let deletions = std::mem::take(&mut self.pending_deletions);
+        let touched = if let Some(start) = suffix.filter(|start| {
+            pending[*start..].iter().zip(&operations)
+                .all(|(patch, operation)| same_operation(&patch.operation, operation))
+        }) {
+            // The exact patch suffix already changed the tree. Publish its
+            // artifact generation without replaying creations or data updates.
+            let mut touched = Vec::new();
+            for patch in &pending[start..] {
+                let surface = &patch.operation.surface_id;
+                if !patch.applied || touched.contains(surface) {
+                    continue;
                 }
+                if !self.surfaces.iter().any(|entry| &entry.surface_id == surface)
+                    && let Some((_, entry)) = deletions.iter().rev().find(|(id, entry)| {
+                        *id >= patch.cursor && entry.source_run_id == source_run_id && &entry.surface_id == surface
+                    })
+                {
+                    self.surfaces.push(entry.clone());
+                }
+                if let Some(entry) = self.surfaces.iter_mut().find(|entry| &entry.surface_id == surface) {
+                    entry.generation = generations.get(surface).and_then(Value::as_str)
+                        .unwrap_or_default().to_owned();
+                    let original = operations.iter().rev().filter(|operation| &operation.surface_id == surface);
+                    for (retained, original) in entry.operations.iter_mut().rev().zip(original) {
+                        if !same_wire_operation(retained, &original.message) {
+                            break;
+                        }
+                        // The original artifact preserves the legacy v0.9.1
+                        // version, which historical state patches could not carry.
+                        *retained = original.message.clone();
+                    }
+                }
+                touched.push(surface.clone());
             }
-        }
-        self.pending_live.clear();
-        let touched = self.apply(source_run_id, operations, &generations);
+            touched
+        } else {
+            self.apply(source_run_id, operations, &generations)
+        };
         let frames = touched
             .iter()
             .filter_map(|id| self.surfaces.iter().find(|entry| &entry.surface_id == id))
@@ -258,12 +319,22 @@ impl SurfaceRecord {
             }
         }
         let oldest = cursor.saturating_sub(crate::uar::runtime::manager::EVENT_HISTORY_LIMIT as u64);
-        self.pending_live.retain(|(run, id, _)| run == run_id && *id > oldest);
-        self.pending_live.extend(operations.iter().cloned().map(|operation| (run_id.to_owned(), cursor, operation)));
-        let touched = self.apply(run_id, operations, &Value::Object(generations));
+        self.pending_live.retain(|patch| patch.run_id == run_id && patch.cursor > oldest);
+        self.pending_deletions.retain(|(id, entry)| entry.source_run_id == run_id && *id > oldest);
+        let touched = self.apply(run_id, operations.clone(), &Value::Object(generations));
+        self.pending_live.extend(operations.into_iter().map(|operation| {
+            let applied = touched.contains(&operation.surface_id);
+            ObservedPatch { run_id: run_id.to_owned(), cursor, operation, applied }
+        }));
         let frames = touched.iter().filter_map(|id| self.surfaces.iter().find(|entry| &entry.surface_id == id))
             .map(|entry| snapshot(thread_id, entry)).collect();
-        self.surfaces.retain(|entry| !entry.deleted);
+        let pending_deletions = &mut self.pending_deletions;
+        self.surfaces.retain(|entry| {
+            if entry.deleted {
+                pending_deletions.push((cursor, entry.clone()));
+            }
+            !entry.deleted
+        });
         frames
     }
 
@@ -343,12 +414,13 @@ impl SurfaceRecord {
             "surfaces":self.surfaces.iter().take(MAX_RESTATED_SURFACES).map(|entry|json!({"surface_id":entry.surface_id,
                 "surface_generation":entry.generation,"source_run_id":entry.source_run_id})).collect::<Vec<_>>()})
     }
-    pub(crate) fn declared(
+    fn declared(
         &self,
         surface: &str,
         component: &str,
         name: &str,
         generation: Option<&str>,
+        modern: bool,
     ) -> Result<(String, String), Rejection> {
         if self.authority_status() != "complete" {
             return Err(Rejection {
@@ -360,9 +432,10 @@ impl SurfaceRecord {
             .iter()
             .find(|entry| {
                 entry.surface_id == surface
+                    && entry.modern == modern
                     && !entry.generation.is_empty()
                     && generation.is_none_or(|generation| generation == entry.generation)
-                    && declares_button(&entry.operations, component, name)
+                    && declares_button(&entry.operations, component, name, modern)
             })
             .map(|entry| (entry.source_run_id.clone(), entry.generation.clone()))
             .ok_or(Rejection::NOT_DECLARED)
@@ -471,6 +544,8 @@ pub(crate) async fn thread_record(
 #[serde(rename_all = "camelCase")]
 pub(crate) struct A2uiAction {
     user_action: UserAction,
+    #[serde(skip)]
+    modern: bool,
     #[serde(default, alias = "interaction_id")]
     pub(crate) interaction_id: Option<String>,
     #[serde(default, alias = "surface_generation")]
@@ -494,6 +569,17 @@ struct UserAction {
     user_message: Option<Value>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct StandardAction {
+    name: String,
+    surface_id: String,
+    source_component_id: String,
+    context: serde_json::Map<String, Value>,
+    timestamp: String,
+    user_message: Option<String>,
+}
+
 /// Read top-level `forwardedProps.a2uiAction`. Unknown fields are tolerated.
 pub(crate) fn parse_action(
     forwarded_props: Option<&Value>,
@@ -501,7 +587,36 @@ pub(crate) fn parse_action(
     let Some(raw) = forwarded_props.and_then(|props| props.get("a2uiAction")) else {
         return Ok(None);
     };
-    let action: A2uiAction = serde_json::from_value(raw.clone()).map_err(|_| Rejection::INVALID)?;
+    if ["callAgentFunction", "rendererFunctionResponse", "callRendererFunction", "agentFunctionResponse"]
+        .iter().any(|field| raw.get(*field).is_some())
+    {
+        return Err(Rejection::FUNCTIONS_UNSUPPORTED);
+    }
+    let mut converted = raw.clone();
+    let fields = converted.as_object_mut().ok_or(Rejection::INVALID)?;
+    let modern = match fields.remove("version") {
+        Some(version) if version == VERSION_1_0 => true,
+        Some(version) if matches!(version.as_str(), Some("v0.9" | "v0.9.1")) => false,
+        Some(_) => return Err(Rejection::INVALID),
+        None => false,
+    };
+    if modern {
+        if fields.contains_key("userAction") {
+            return Err(Rejection::INVALID);
+        }
+        let event = fields.remove("action").ok_or(Rejection::INVALID)?;
+        let StandardAction { name, surface_id, source_component_id, context, timestamp, user_message } =
+            serde_json::from_value(event).map_err(|_| Rejection::INVALID)?;
+        chrono::DateTime::parse_from_rfc3339(&timestamp).map_err(|_| Rejection::INVALID)?;
+        fields.insert("userAction".into(), json!({
+            "name":name,"surfaceId":surface_id,"sourceComponentId":source_component_id,
+            "context":context,"timestamp":timestamp,"userMessage":user_message
+        }));
+    } else if fields.contains_key("action") {
+        return Err(Rejection::INVALID);
+    }
+    let mut action: A2uiAction = serde_json::from_value(converted).map_err(|_| Rejection::INVALID)?;
+    action.modern = modern;
     let user = &action.user_action;
     if action
         .interaction_id
@@ -512,6 +627,9 @@ pub(crate) fn parse_action(
                 !crate::uar::persistence::a2ui_actions::valid_id(generation)
             }))
     {
+        return Err(Rejection::INVALID);
+    }
+    if modern && action.interaction_id.is_none() {
         return Err(Rejection::INVALID);
     }
     if [&user.name, &user.surface_id, &user.source_component_id]
@@ -525,29 +643,54 @@ pub(crate) fn parse_action(
 
 /// The newest definition of `component_id` on the surface must be a `Button`
 /// whose `action.event.name` is `name`.
-fn declares_button(operations: &[Value], component_id: &str, name: &str) -> bool {
-    let mut newest: Option<&Value> = None;
+fn declares_button(operations: &[Value], component_id: &str, name: &str, modern: bool) -> bool {
+    let mut definitions = HashMap::new();
     for operation in operations {
         let Some(components) = operation
             .pointer("/updateComponents/components")
+            .or_else(|| operation.pointer("/createSurface/components"))
             .and_then(Value::as_array)
         else {
             continue;
         };
-        for component in components
-            .iter()
-            .filter(|c| c.get("id").and_then(Value::as_str) == Some(component_id))
-        {
-            newest = Some(component);
+        for component in components {
+            if let Some(id) = component.get("id").and_then(Value::as_str) {
+                definitions.insert(id, component);
+            }
         }
     }
-    newest.is_some_and(|c| {
+    let declared = definitions.get(component_id).is_some_and(|c| {
         c["component"] == "Button"
             && c.pointer("/action/event/name").and_then(Value::as_str) == Some(name)
-    })
+    });
+    if !declared || !modern {
+        return declared;
+    }
+    let mut pending = vec!["root"];
+    let mut visited = HashSet::new();
+    while let Some(id) = pending.pop() {
+        // A second path to a component is either a cycle or a shared
+        // subtree. Both violate the rooted tree that the renderer admits.
+        if !visited.insert(id) {
+            return false;
+        }
+        let Some(component) = definitions.get(id) else {
+            return false;
+        };
+        pending.extend(component.get("child").and_then(Value::as_str));
+        if let Some(children) = component.get("children").and_then(Value::as_array) {
+            pending.extend(children.iter().filter_map(Value::as_str));
+        }
+    }
+    visited.contains(component_id)
 }
 
 impl A2uiAction {
+    pub(crate) fn identity_fields(&self) -> (&str, &str, &str) {
+        let user = &self.user_action;
+        (&user.surface_id, &user.source_component_id, &user.name)
+    }
+
     pub(crate) fn declared_identity(
         &self,
         record: &SurfaceRecord,
@@ -558,13 +701,18 @@ impl A2uiAction {
             &user.source_component_id,
             &user.name,
             self.surface_generation.as_deref(),
+            self.modern,
         )
     }
     pub(crate) fn semantic_digest(&self) -> String {
         let user = &self.user_action;
-        crate::uar::persistence::a2ui_actions::digest(&json!({"surface":user.surface_id,
+        let mut intent = json!({"surface":user.surface_id,
             "generation":self.surface_generation,"component":user.source_component_id,"name":user.name,
-            "context":user.context,"data_model":self.data_model,"catalog":user.catalog_id,"user_message":user.user_message}))
+            "context":user.context,"data_model":self.data_model,"catalog":user.catalog_id,"user_message":user.user_message});
+        if self.modern {
+            intent["version"] = json!(VERSION_1_0);
+        }
+        crate::uar::persistence::a2ui_actions::digest(&intent)
     }
     pub(crate) fn receipt(
         &self,
@@ -591,11 +739,21 @@ impl A2uiAction {
 
     /// The run input, shaped like UAR's REST action path.
     pub(crate) fn run_input(&self, source_run_id: &str) -> String {
+        json!({"type":"a2ui.user_action","sourceRunId":source_run_id,"interaction":self.interaction()})
+            .to_string()
+    }
+
+    pub(crate) fn interaction(&self) -> Value {
         let user = &self.user_action;
-        json!({"type":"a2ui.user_action","sourceRunId":source_run_id,"interaction":{
+        let mut interaction = json!({
             "surfaceId":user.surface_id,"name":user.name,"sourceComponentId":user.source_component_id,
             "timestamp":user.timestamp,"context":user.context,"catalogId":user.catalog_id,
-            "userMessage":user.user_message,"a2uiClientDataModel":self.data_model}}).to_string()
+            "userMessage":user.user_message,"a2uiClientDataModel":self.data_model
+        });
+        if self.modern {
+            interaction["version"] = json!(VERSION_1_0);
+        }
+        interaction
     }
 }
 
@@ -650,32 +808,32 @@ mod logical_action_tests {
         let mut record = SurfaceRecord::default();
         record.publish("thread", "source", &surface());
         let (_, generation) = record
-            .declared("ticket", "confirm", "confirm", None)
+            .declared("ticket", "confirm", "confirm", None, false)
             .unwrap_or_else(|error| panic!("{error:?}"));
         assert!(
             record
-                .declared("ticket", "other", "confirm", Some(&generation))
+                .declared("ticket", "other", "confirm", Some(&generation), false)
                 .is_err()
         );
         assert!(
             record
-                .declared("ticket", "confirm", "foreign", Some(&generation))
+                .declared("ticket", "confirm", "foreign", Some(&generation), false)
                 .is_err()
         );
         assert!(
             record
-                .declared("ticket", "confirm", "confirm", Some("stale"))
+                .declared("ticket", "confirm", "confirm", Some("stale"), false)
                 .is_err()
         );
         record.publish("thread","source",&json!({"updateComponents":{"surfaceId":"ticket","components":[{"id":"confirm","component":"Text","text":"confirm"}]}}).to_string());
         assert!(
             record
-                .declared("ticket", "confirm", "confirm", Some(&generation))
+                .declared("ticket", "confirm", "confirm", Some(&generation), false)
                 .is_err()
         );
         record.publish("thread", "source", &surface());
         let (_, next_generation) = record
-            .declared("ticket", "confirm", "confirm", None)
+            .declared("ticket", "confirm", "confirm", None, false)
             .unwrap_or_else(|error| panic!("{error:?}"));
         assert_ne!(generation, next_generation);
         record.publish(
@@ -685,7 +843,7 @@ mod logical_action_tests {
         );
         assert!(
             record
-                .declared("ticket", "confirm", "confirm", Some(&next_generation))
+                .declared("ticket", "confirm", "confirm", Some(&next_generation), false)
                 .is_err()
         );
     }
@@ -705,7 +863,7 @@ mod logical_action_tests {
         assert_eq!(record.authority()["authoritative"], false);
         record.mark_incomplete("unavailable");
         assert_eq!(record.authority_status(), "unavailable");
-        assert!(record.declared("s-0", "button", "action", None).is_err());
+        assert!(record.declared("s-0", "button", "action", None, false).is_err());
     }
 
     #[test]
@@ -741,6 +899,75 @@ mod logical_action_tests {
                 .unwrap_or_else(|| panic!("missing action"))
                 .semantic_digest()
         );
+    }
+
+    #[test]
+    fn modern_inline_action_uses_the_durable_generation_and_restates_ordered_updates() {
+        let mut record = SurfaceRecord::default();
+        let create = json!({"version":"1.0","createSurface":{
+            "surfaceId":"ticket","catalogId":"urn:uar:a2ui:catalog:1",
+            "dataModel":{"label":"Confirm"},
+            "components":[
+                {"id":"root","component":"Button","child":"label","action":{"event":{"name":"confirm"}}},
+                {"id":"label","component":"Text","text":{"@path":"/label"}}
+            ]
+        }});
+        record.publish("thread", "source", &create.to_string());
+        let generation = record.authority()["surfaces"][0]["surface_generation"].clone();
+        let mut request = json!({"a2uiAction":{"version":"1.0","interaction_id":"intent",
+            "surface_generation":generation,"action":{"name":"confirm","surfaceId":"ticket",
+                "sourceComponentId":"root","timestamp":"2026-11-14T12:00:00Z","context":{}}}});
+        let action = parse_action(Some(&request)).unwrap().unwrap();
+        assert!(action.declared_identity(&record).is_ok());
+        request["a2uiAction"]["action"]["timestamp"] = json!("2026-11-14T12:00:01Z");
+        assert_eq!(
+            parse_action(Some(&request)).unwrap().unwrap().semantic_digest(),
+            action.semantic_digest(),
+        );
+        let update = json!({"version":"1.0","updateDataModel":{"surfaceId":"ticket","value":{"label":"Proceed"}}});
+        let patch = parse_message(update.clone()).unwrap().state_patch();
+        let mut event = NormalizedEvent::StatePatch { run_id: "source".into(), patch: vec![patch] };
+        crate::uar::a2ui::protocol::stamp_surface_publication("source", 2, &mut event);
+        let NormalizedEvent::StatePatch { patch, .. } = event else { unreachable!() };
+        record.publish_patch("thread", "source", 2, &patch);
+        record.next_test_cursor = 2;
+        let frames = record.publish("thread", "source", &update.to_string());
+        assert_eq!(frames[0]["content"]["a2ui_operations"], json!([create, update]));
+        assert!(action.declared_identity(&record).is_err());
+
+        // A current generation and declared root button cannot authorize a
+        // surface with a missing descendant, a cycle or a shared subtree.
+        let update_components = |components: Value| json!({"version":"1.0","updateComponents":{
+            "surfaceId":"ticket","components":components
+        }});
+        for components in [
+            json!([{"id":"label","component":"Card","child":"missing"}]),
+            json!([{"id":"label","component":"Card","child":"root"}]),
+            json!([
+                {"id":"label","component":"Column","children":["left","right"]},
+                {"id":"left","component":"Card","child":"shared"},
+                {"id":"right","component":"Card","child":"shared"},
+                {"id":"shared","component":"Text","text":"Shared"},
+            ]),
+        ] {
+            let broken = update_components(components);
+            record.publish("thread", "source", &broken.to_string());
+            request["a2uiAction"]["surface_generation"] =
+                record.authority()["surfaces"][0]["surface_generation"].clone();
+            let action = parse_action(Some(&request)).unwrap().unwrap();
+            assert_eq!(action.declared_identity(&record), Err(Rejection::NOT_DECLARED));
+        }
+        let repaired = update_components(json!([{"id":"label","component":"Text","text":"Proceed"}]));
+        record.publish("thread", "source", &repaired.to_string());
+        request["a2uiAction"]["surface_generation"] =
+            record.authority()["surfaces"][0]["surface_generation"].clone();
+        let action = parse_action(Some(&request)).unwrap().unwrap();
+        assert!(action.declared_identity(&record).is_ok());
+
+        let deletion = json!({"version":"1.0","deleteSurface":{"surfaceId":"ticket"}});
+        let frames = record.publish("thread", "source", &deletion.to_string());
+        assert_eq!(frames[0]["content"]["a2ui_operations"].as_array().unwrap().last(), Some(&deletion));
+        assert!(record.restatement("thread").is_empty());
     }
     #[test]
     fn trusted_patch_and_matching_artifact_fold_once_and_standalone_delete_remains() {
@@ -807,26 +1034,26 @@ mod logical_action_tests {
     fn same_ids_data_model_cross_run_delete_recreate_advance_publication_identity() {
         let mut record = SurfaceRecord::default();
         record.publish("thread", "source", &surface());
-        let first = record.declared("ticket", "confirm", "confirm", None).unwrap().1;
+        let first = record.declared("ticket", "confirm", "confirm", None, false).unwrap().1;
         // Same component/action IDs with changed content are a new publication.
         record.publish("thread", "source", &json!({"updateComponents":{"surfaceId":"ticket","components":[
             {"id":"confirm","component":"Button","action":{"event":{"name":"confirm"}}},
             {"id":"label","component":"Text","text":"changed"}
         ]}}).to_string());
-        let second = record.declared("ticket", "confirm", "confirm", None).unwrap().1;
+        let second = record.declared("ticket", "confirm", "confirm", None, false).unwrap().1;
         assert_ne!(first, second);
-        assert!(record.declared("ticket", "confirm", "confirm", Some(&first)).is_err());
+        assert!(record.declared("ticket", "confirm", "confirm", Some(&first), false).is_err());
         record.publish("thread", "source", &json!({"updateDataModel":{"surfaceId":"ticket","path":"/answer","value":"new"}}).to_string());
-        let third = record.declared("ticket", "confirm", "confirm", None).unwrap().1;
+        let third = record.declared("ticket", "confirm", "confirm", None, false).unwrap().1;
         assert_ne!(second, third);
         record.publish("thread", "next-source", &json!({"updateDataModel":{"surfaceId":"ticket","path":"/answer","value":"cross-run"}}).to_string());
-        let (source, fourth) = record.declared("ticket", "confirm", "confirm", None).unwrap();
+        let (source, fourth) = record.declared("ticket", "confirm", "confirm", None, false).unwrap();
         assert_eq!(source, "next-source");
         assert_ne!(third, fourth);
         record.publish("thread", "next-source", &json!({"deleteSurface":{"surfaceId":"ticket"}}).to_string());
-        assert!(record.declared("ticket", "confirm", "confirm", Some(&fourth)).is_err());
+        assert!(record.declared("ticket", "confirm", "confirm", Some(&fourth), false).is_err());
         record.publish("thread", "next-source", &surface());
-        assert_ne!(fourth, record.declared("ticket", "confirm", "confirm", None).unwrap().1);
+        assert_ne!(fourth, record.declared("ticket", "confirm", "confirm", None, false).unwrap().1);
     }
 
     #[test]
@@ -836,10 +1063,10 @@ mod logical_action_tests {
         assert_eq!(frames[0]["content"]["surface_generation"], "");
         assert_eq!(record.authority_status(), "unavailable");
         assert_eq!(record.authority()["authoritative"], false);
-        assert!(record.declared("ticket", "confirm", "confirm", None).is_err());
+        assert!(record.declared("ticket", "confirm", "confirm", None, false).is_err());
         let forged = json!({"surface_generations":{"ticket":"producer-claimed-latest"}});
         record.publish_artifact("thread", "source", &surface(), 8, &forged);
-        assert!(record.declared("ticket", "confirm", "confirm", None).is_err());
+        assert!(record.declared("ticket", "confirm", "confirm", None, false).is_err());
     }
 
     #[test]
@@ -888,7 +1115,7 @@ mod logical_action_tests {
         assert_eq!(final_frames[0]["content"]["a2ui_operations"].as_array().unwrap().len(), 2);
         let NormalizedEvent::ArtifactDisplay { artifact, .. } = &events[2].event else { unreachable!() };
         let native_generation = artifact.metadata["surface_generations"]["ticket"].as_str().unwrap();
-        assert_eq!(live.declared("ticket", "confirm", "confirm", Some(native_generation)).unwrap().1, native_generation);
+        assert_eq!(live.declared("ticket", "confirm", "confirm", Some(native_generation), false).unwrap().1, native_generation);
         assert_eq!(final_frames[0]["content"]["surface_generation"], native_generation);
 
         let mut update = StreamEvent { id: 4, event: NormalizedEvent::StatePatch {
@@ -903,7 +1130,7 @@ mod logical_action_tests {
         replay.fold_events("source", 3, 4, &[update]);
         assert_eq!(live.authority(), replay.authority());
         assert_eq!(update_frames, replay.restatement("thread"));
-        assert!(live.declared("ticket", "confirm", "confirm", Some(native_generation)).is_err());
+        assert!(live.declared("ticket", "confirm", "confirm", Some(native_generation), false).is_err());
     }
 
 }

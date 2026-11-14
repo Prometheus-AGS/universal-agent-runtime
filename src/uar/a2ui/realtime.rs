@@ -43,7 +43,7 @@ use serde_json::Value;
 
 use crate::uar::domain::events::StatePatchOp;
 
-/// The 4 A2UI v0.9 wire-message kinds, per `docs/protocols/a2ui-profile.md`
+/// The four supported A2UI surface operations, per `docs/protocols/a2ui-profile.md`
 /// and `super::protocol`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum A2uiWireKind {

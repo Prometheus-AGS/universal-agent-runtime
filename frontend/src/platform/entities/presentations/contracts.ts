@@ -3,7 +3,9 @@ import {
   A2UI_CATALOG_ID,
   A2UI_PROFILE,
   A2UI_VERSION,
+  LEGACY_A2UI_VERSION,
   a2uiComponentSchema,
+  finalA2uiComponentSchema,
   validateA2uiMessage,
 } from "@/platform/a2ui/protocol";
 
@@ -11,12 +13,22 @@ export const PRESENTATION_ENTITY = "Presentation";
 export const PRESENTATION_DRAFT_ENTITY = "PresentationDraft";
 export const PRESENTATION_CATALOG_ENTITY = "PresentationCatalog";
 
-export const presentationTemplateSchema = z.object({
-  version: z.literal(A2UI_VERSION),
+const templateFields = {
   catalog_id: z.literal(A2UI_CATALOG_ID),
-  components: z.array(a2uiComponentSchema).min(1).max(500),
   default_data: z.record(z.string(), z.unknown()).default({}),
-}).strict();
+};
+export const presentationTemplateSchema = z.discriminatedUnion("version", [
+  z.object({
+    ...templateFields,
+    version: z.enum(["v0.9", LEGACY_A2UI_VERSION]),
+    components: z.array(a2uiComponentSchema).min(1).max(500),
+  }).strict(),
+  z.object({
+    ...templateFields,
+    version: z.literal(A2UI_VERSION),
+    components: z.array(finalA2uiComponentSchema).min(1).max(500),
+  }).strict(),
+]);
 
 const presentationContentSchema = z.object({
   title: z.string().refine((value) => value.trim().length > 0, "Enter a title."),
@@ -73,7 +85,7 @@ export interface PresentationCatalog extends Record<string, unknown> {
 export const STARTER_PRESENTATION_SOURCE = JSON.stringify({
   version: A2UI_VERSION,
   catalog_id: A2UI_CATALOG_ID,
-  components: [{ id: "root", component: "Text", text: { path: "/message" } }],
+  components: [{ id: "root", component: "Text", text: { "@path": "/message" } }],
   default_data: { message: "Ready" },
 }, null, 2);
 
@@ -103,16 +115,17 @@ export function parsePresentationSource(source: string):
       return { template: null, error: `${issue?.path.join(".") || "Template"}: ${issue?.message ?? "Invalid template"}. See supported components below.` };
     }
     const template = result.data;
+    const modern = template.version === A2UI_VERSION;
     const validation = validateA2uiMessage({
-      version: A2UI_VERSION,
-      profile: A2UI_PROFILE,
+      version: template.version,
+      ...(modern ? {} : { profile: A2UI_PROFILE }),
       updateComponents: { surfaceId: "presentation-preview", components: template.components },
     });
     if (!validation.success) throw new Error(validation.error);
     for (const [key, value] of Object.entries(template.default_data)) {
       const data = validateA2uiMessage({
-        version: A2UI_VERSION,
-        profile: A2UI_PROFILE,
+        version: template.version,
+        ...(modern ? {} : { profile: A2UI_PROFILE }),
         updateDataModel: {
           surfaceId: "presentation-preview",
           path: `/${key.replaceAll("~", "~0").replaceAll("/", "~1")}`,

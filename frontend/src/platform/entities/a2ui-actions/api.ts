@@ -1,3 +1,5 @@
+import { ActionMessageSchema } from "@prometheus-ags/a2ui-core/v1_0";
+import { A2UI_VERSION } from "@/platform/a2ui/protocol";
 import type { A2uiActionInput, A2uiSurfaceAuthority } from "./contracts";
 
 export class A2uiActionError extends Error {
@@ -17,10 +19,21 @@ export async function inspectActionSource(runId: string): Promise<string> {
 }
 
 export async function postA2uiAction(runId: string, input: A2uiActionInput): Promise<string> {
+  const { version, interaction_id, surface_generation, a2uiClientDataModel, userMessage, name, surfaceId, sourceComponentId, timestamp, context } = input;
+  const action = { name, surfaceId, sourceComponentId, timestamp, context };
+  const identity = { interaction_id, surface_generation, a2uiClientDataModel };
+  let body;
+  if (version === A2UI_VERSION) {
+    const parsed = ActionMessageSchema.safeParse({ version, action: { ...action, userMessage } });
+    if (!parsed.success) throw new A2uiActionError(false);
+    body = { ...identity, ...parsed.data };
+  } else {
+    body = { ...identity, ...action };
+  }
   let response: Response;
   try {
     response = await fetch(`/api/uar/runs/${encodeURIComponent(runId)}/a2ui/actions`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
   } catch { throw new A2uiActionError(true); }
   // These statuses trace to authentication/source lookup or declared-action

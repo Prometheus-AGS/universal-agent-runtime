@@ -659,14 +659,21 @@ fn extend_current_contracts(spec: &mut serde_json::Value) {
             }
         },
         "A2uiAction": {
-            "type":"object","required":["surfaceId","name","sourceComponentId"],
-            "description":"Existing camelCase fields; interactionId and surfaceGeneration also accept snake_case aliases. Protected actions require both logical ID and string generation. Reuse original immutable payload/ID/generation for uncertain intent; a new click gets a new ID. Legacy absent-ID requests explicitly lack retry protection. Existing host-resource/approval/policy requirements remain.",
+            "type":"object",
+            "description":"A2UI 1.0 requires version=1.0, action, a logical interaction ID and publication generation. Legacy v0.9/v0.9.1 clients supply flat surfaceId, name and sourceComponentId. Exact retries reuse the same original intent and generation.",
             "properties":{
                 "surfaceId":{"type":"string"},"name":{"type":"string"},"sourceComponentId":{"type":"string"},
                 "interactionId":{"type":["string","null"]},"surfaceGeneration":{"type":["string","null"]},
                 "interaction_id":{"type":["string","null"],"description":"Alias of interactionId"},
                 "surface_generation":{"type":["string","null"],"description":"Alias of surfaceGeneration"},
-                "timestamp":{"type":["string","null"]},"context":json_value.clone(),"a2uiClientDataModel":json_value
+                "timestamp":{"type":["string","null"]},"context":json_value.clone(),"a2uiClientDataModel":json_value,
+                "version":{"type":"string","enum":["1.0","v0.9","v0.9.1"]},
+                "action":{"type":"object","required":["name","surfaceId","sourceComponentId","timestamp","context"],
+                    "properties":{
+                        "name":{"type":"string"},"surfaceId":{"type":"string"},"sourceComponentId":{"type":"string"},
+                        "timestamp":{"type":"string","format":"date-time"},"context":{"type":"object"},
+                        "userMessage":{"type":"string"}
+                    }}
             }
         },
         "A2uiContinuationReceipt": {
@@ -740,11 +747,11 @@ fn extend_current_contracts(spec: &mut serde_json::Value) {
             "responses":{"200":{"description":"Original attempt correlation and retained reservation disposition","content":{"application/json":{"schema":{"$ref":"#/components/schemas/TeamAttemptReconciliation"}}}},"401":{"description":"Verified owner required"},"403":{"description":"Owner/workspace authority refused"},"404":{"description":"Attempt unavailable in owner/workspace scope"},"409":{"description":"Current revision/ownership conflict"},"422":{"description":"Invalid team/workspace request"},"503":{"description":"Team capability unsupported or catalog storage unavailable"}}
         }},
         "/api/uar/runs/{run_id}/a2ui/actions":{"post":{
-            "summary":"Submit declared A2UI action with optional protected intent", "tags":["runs"],"security":[{"bearerAuth":[]}],
+            "summary":"Submit declared A2UI action", "tags":["runs"],"security":[{"bearerAuth":[]}],
             "description":"Protected logical ID/generation is durably reserved before native continuation. Exact retry returns original receipt; changed semantics conflict. Existing latest declaration, policy, approval and host-resource checks remain. Single owned host only, no distributed multiwriter ordering or global exactly-once claim.",
             "parameters":[{"name":"run_id","in":"path","required":true,"schema":{"type":"string"}}],
             "requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/A2uiAction"}}}},
-            "responses":{"202":{"description":"Continuation acknowledgement, protected or explicit legacy unprotected","content":{"application/json":{"schema":{"$ref":"#/components/schemas/A2uiContinuationReceipt"}}}},"401":{"description":"Verified owner required for protected action"},"403":{"description":"Current authority denied"},"404":{"description":"Source unavailable to owner"},"409":{"description":"Intent/generation/authority conflict"},"422":{"description":"Invalid or undeclared action"},"503":{"description":"Durable action recovery unavailable"}}
+            "responses":{"202":{"description":"Continuation acknowledgement, protected or explicit legacy unprotected","content":{"application/json":{"schema":{"$ref":"#/components/schemas/A2uiContinuationReceipt"}}}},"400":{"description":"Malformed action or missing A2UI 1.0 interaction identity"},"401":{"description":"Verified owner required for protected action"},"403":{"description":"Current authority denied"},"404":{"description":"Source unavailable to owner"},"409":{"description":"Intent/generation/authority conflict"},"422":{"description":"Undeclared action or unsupported function message"},"503":{"description":"Durable action recovery unavailable"}}
         }},
         "/api/uar/runs/{run_id}/a2ui/actions/{interaction_id}":{"get":{
             "summary":"Read original A2UI intent receipt", "tags":["runs"],"security":[{"bearerAuth":[]}],

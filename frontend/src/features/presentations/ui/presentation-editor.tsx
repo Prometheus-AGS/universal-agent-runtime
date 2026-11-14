@@ -73,7 +73,7 @@ function SourceField() {
         <div className="space-y-3 pt-2 text-sm text-muted-foreground">
           <p>Text, Button, TextField, CheckBox, ChoicePicker, Row, Column, Card and Divider.</p>
           <p>Start with one component named <code className="font-mono">root</code>. Row and Column use <code className="font-mono">children</code>; Card and Button use <code className="font-mono">child</code>. Every other component needs exactly one parent.</p>
-          <pre className="overflow-x-auto rounded-md bg-background p-3 font-mono text-xs">{'"text": { "path": "/message" }\n"default_data": { "message": "Ready" }'}</pre>
+          <pre className="overflow-x-auto rounded-md bg-background p-3 font-mono text-xs">{'"text": { "@path": "/message" }\n"default_data": { "message": "Ready" }'}</pre>
           <p>Button actions use an event name and optional context object. They are inert in this preview. Keep the starter version and catalog identifiers unchanged.</p>
         </div>
       </details>

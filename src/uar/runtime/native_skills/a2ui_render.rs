@@ -1,6 +1,8 @@
 //! Native tool that lets an agent emit a validated interactive A2UI surface.
 
-use crate::uar::a2ui::protocol::{BASIC_CATALOG_ID, CATALOG_ID, parse_message};
+use crate::uar::a2ui::protocol::{
+    BASIC_CATALOG_ID, BASIC_CATALOG_ID_1_0, CATALOG_ID, VERSION_1_0, parse_messages,
+};
 use crate::uar::runtime::native_skill::NativeSkill;
 use crate::uar::tools::descriptor::{ToolEffect, ToolSource};
 
@@ -14,7 +16,7 @@ impl NativeSkill for A2uiRenderSkill {
     }
 
     fn description(&self) -> &str {
-        "Render a safe interactive A2UI v0.9 surface in chat. Send canonical messages with top-level createSurface, updateComponents, or updateDataModel objects. Every message needs version; never use generic event/data or type/data envelopes."
+        "Render a safe interactive A2UI 1.0 surface in chat. Use the exact version 1.0, an approved catalog, and @path bindings. Initialize the data model and component tree with inline createSurface fields."
     }
 
     fn parameters_schema(&self) -> serde_json::Value {
@@ -25,115 +27,22 @@ impl NativeSkill for A2uiRenderSkill {
                 "messages": {
                     "type": "array",
                     "minItems": 1,
-                    "description": "Ordered canonical A2UI messages. Start with createSurface, then updateComponents, and optionally updateDataModel.",
-                    "items": {
-                        "oneOf": [
-                            {
-                                "type": "object",
-                                "required": ["version", "createSurface"],
-                                "properties": {
-                                    "version": { "type": "string", "enum": ["v0.9", "v0.9.1"] },
-                                    "createSurface": {
-                                        "type": "object",
-                                        "required": ["surfaceId", "catalogId"],
-                                        "properties": {
-                                            "surfaceId": { "type": "string" },
-                                            "catalogId": { "type": "string", "enum": [CATALOG_ID, BASIC_CATALOG_ID] }
-                                        },
-                                        "additionalProperties": false
-                                    }
-                                },
-                                "additionalProperties": false
-                            },
-                            {
-                                "type": "object",
-                                "required": ["version", "updateComponents"],
-                                "properties": {
-                                    "version": { "type": "string", "enum": ["v0.9", "v0.9.1"] },
-                                    "updateComponents": {
-                                        "type": "object",
-                                        "required": ["surfaceId", "components"],
-                                        "properties": {
-                                            "surfaceId": { "type": "string" },
-                                            "components": {
-                                                "type": "array",
-                                                "minItems": 1,
-                                                "description": "Component graph. Exactly one component must have id `root`; it is the rendered surface root.",
-                                                "contains": {
-                                                    "type": "object",
-                                                    "required": ["id"],
-                                                    "properties": { "id": { "const": "root" } }
-                                                },
-                                                "items": {
-                                                    "type": "object",
-                                                    "required": ["id", "component"],
-                                                    "properties": {
-                                                        "id": { "type": "string" },
-                                                        "component": { "type": "string", "enum": ["Text", "Button", "TextField", "CheckBox", "ChoicePicker", "Row", "Column", "Card", "Divider"] },
-                                                        "child": { "type": "string" },
-                                                        "children": { "type": "array", "items": { "type": "string" } },
-                                                        "text": {},
-                                                        "variant": { "type": "string" },
-                                                        "label": { "type": "string" },
-                                                        "placeholder": { "type": "string" },
-                                                        "value": {},
-                                                        "options": { "type": "array", "items": { "type": "object" } },
-                                                        "action": {
-                                                            "type": "object",
-                                                            "required": ["event"],
-                                                            "properties": {
-                                                                "event": {
-                                                                    "type": "object",
-                                                                    "required": ["name"],
-                                                                    "properties": {
-                                                                        "name": { "type": "string" },
-                                                                        "context": { "type": "object" }
-                                                                    },
-                                                                    "additionalProperties": false
-                                                                }
-                                                            },
-                                                            "additionalProperties": false
-                                                        }
-                                                    },
-                                                    "additionalProperties": false
-                                                }
-                                            }
-                                        },
-                                        "additionalProperties": false
-                                    }
-                                },
-                                "additionalProperties": false
-                            },
-                            {
-                                "type": "object",
-                                "required": ["version", "updateDataModel"],
-                                "properties": {
-                                    "version": { "type": "string", "enum": ["v0.9", "v0.9.1"] },
-                                    "updateDataModel": {
-                                        "type": "object",
-                                        "required": ["surfaceId", "path", "value"],
-                                        "properties": {
-                                            "surfaceId": { "type": "string" },
-                                            "path": { "type": "string" },
-                                            "value": {}
-                                        },
-                                        "additionalProperties": false
-                                    }
-                                },
-                                "additionalProperties": false
-                            }
-                        ]
-                    },
-                    "examples": [[
-                        { "version": "v0.9", "createSurface": { "surfaceId": "demo", "catalogId": "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json" } },
-                        { "version": "v0.9", "updateComponents": { "surfaceId": "demo", "components": [
-                            { "id": "root", "component": "Card", "child": "body" },
-                            { "id": "body", "component": "Column", "children": ["message", "continue"] },
-                            { "id": "message", "component": "Text", "text": "Ready" },
-                            { "id": "continue", "component": "Button", "child": "continueLabel", "action": { "event": { "name": "continueDemo", "context": {} } } },
-                            { "id": "continueLabel", "component": "Text", "text": "Continue" }
-                        ] } }
-                    ]]
+                    "description": "Ordered A2UI 1.0 messages. Create a new surface before updating it. Use id root for the root component. Updates can address fewer components. Functions are unavailable.",
+                    "items": {"anyOf": [modern_message_schema(), legacy_message_schema()]},
+                    "examples": [[{
+                        "version": VERSION_1_0,
+                        "createSurface": {
+                            "surfaceId": "demo", "catalogId": CATALOG_ID,
+                            "dataModel": {"status": "Ready"},
+                            "components": [
+                                {"id": "root", "component": "Column", "children": ["status", "continue"]},
+                                {"id": "status", "component": "Text", "text": {"@path": "/status"}},
+                                {"id": "continue", "component": "Button", "child": "continueLabel",
+                                    "action": {"event": {"name": "continueDemo", "context": {"status": {"@path": "/status"}}}}},
+                                {"id": "continueLabel", "component": "Text", "text": "Continue"}
+                            ]
+                        }
+                    }]]
                 }
             },
             "additionalProperties": false
@@ -163,12 +72,7 @@ impl NativeSkill for A2uiRenderSkill {
             .get("messages")
             .and_then(serde_json::Value::as_array)
             .ok_or_else(|| anyhow::anyhow!("messages must be a non-empty array"))?;
-        if messages.is_empty() {
-            anyhow::bail!("messages must be a non-empty array");
-        }
-        for message in messages {
-            parse_message(message.clone()).map_err(anyhow::Error::msg)?;
-        }
+        parse_messages(messages.iter().cloned()).map_err(anyhow::Error::msg)?;
         Ok(serde_json::json!({
             "status": "prepared",
             "terminal": true,
@@ -176,6 +80,201 @@ impl NativeSkill for A2uiRenderSkill {
             "a2uiMessages": messages
         }))
     }
+}
+
+fn modern_message_schema() -> serde_json::Value {
+    serde_json::json!({
+        "type": "object",
+        "required": ["version"],
+        "properties": {
+            "version": {"type": "string", "const": VERSION_1_0},
+            "createSurface": {
+                "type": "object",
+                "required": ["surfaceId", "catalogId"],
+                "properties": {
+                    "surfaceId": {"type": "string"},
+                    "catalogId": {"type": "string", "enum": [CATALOG_ID, BASIC_CATALOG_ID_1_0]},
+                    "dataModel": {"type": "object"},
+                    "components": {"type": "array", "minItems": 1, "items": component_schema()}
+                },
+                "additionalProperties": false
+            },
+            "updateComponents": {
+                "type": "object",
+                "required": ["surfaceId", "components"],
+                "properties": {
+                    "surfaceId": {"type": "string"},
+                    "components": {"type": "array", "minItems": 1, "items": component_schema()}
+                },
+                "additionalProperties": false
+            },
+            "updateDataModel": {
+                "type": "object",
+                "required": ["surfaceId", "value"],
+                "properties": {
+                    "surfaceId": {"type": "string"},
+                    "path": {"type": "string", "description": "JSON pointer. Omit or use / for the root."},
+            "value": {"description": "A JSON value. Use null to delete the addressed value."}
+                },
+                "additionalProperties": false
+            },
+            "deleteSurface": {
+                "type": "object",
+                "required": ["surfaceId"],
+                "properties": {"surfaceId": {"type": "string"}},
+                "additionalProperties": false
+            }
+        },
+        "oneOf": [
+            {"required": ["createSurface"]},
+            {"required": ["updateComponents"]},
+            {"required": ["updateDataModel"]},
+            {"required": ["deleteSurface"]}
+        ],
+        "additionalProperties": false
+    })
+}
+
+fn legacy_message_schema() -> serde_json::Value {
+    serde_json::json!({
+        "oneOf": [
+            {
+                "type": "object",
+                "required": ["version", "createSurface"],
+                "properties": {
+                    "version": { "type": "string", "enum": ["v0.9", "v0.9.1"] },
+                    "createSurface": {
+                        "type": "object",
+                        "required": ["surfaceId", "catalogId"],
+                        "properties": {
+                            "surfaceId": { "type": "string" },
+                            "catalogId": { "type": "string", "enum": [CATALOG_ID, BASIC_CATALOG_ID] }
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false
+            },
+            {
+                "type": "object",
+                "required": ["version", "updateComponents"],
+                "properties": {
+                    "version": { "type": "string", "enum": ["v0.9", "v0.9.1"] },
+                    "updateComponents": {
+                        "type": "object",
+                        "required": ["surfaceId", "components"],
+                        "properties": {
+                            "surfaceId": { "type": "string" },
+                            "components": {
+                                "type": "array",
+                                "minItems": 1,
+                                "description": "Component graph. Exactly one component must have id `root`; it is the rendered surface root.",
+                                "contains": {
+                                    "type": "object",
+                                    "required": ["id"],
+                                    "properties": { "id": { "const": "root" } }
+                                },
+                                "items": {
+                                    "type": "object",
+                                    "required": ["id", "component"],
+                                    "properties": {
+                                        "id": { "type": "string" },
+                                        "component": { "type": "string", "enum": ["Text", "Button", "TextField", "CheckBox", "ChoicePicker", "Row", "Column", "Card", "Divider"] },
+                                        "child": { "type": "string" },
+                                        "children": { "type": "array", "items": { "type": "string" } },
+                                        "text": {},
+                                        "variant": { "type": "string" },
+                                        "label": { "type": "string" },
+                                        "placeholder": { "type": "string" },
+                                        "value": {},
+                                        "options": { "type": "array", "items": { "type": "object" } },
+                                        "action": {
+                                            "type": "object",
+                                            "required": ["event"],
+                                            "properties": {
+                                                "event": {
+                                                    "type": "object",
+                                                    "required": ["name"],
+                                                    "properties": {
+                                                        "name": { "type": "string" },
+                                                        "context": { "type": "object" }
+                                                    },
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            }
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false
+            },
+            {
+                "type": "object",
+                "required": ["version", "updateDataModel"],
+                "properties": {
+                    "version": { "type": "string", "enum": ["v0.9", "v0.9.1"] },
+                    "updateDataModel": {
+                        "type": "object",
+                        "required": ["surfaceId", "path", "value"],
+                        "properties": {
+                            "surfaceId": { "type": "string" },
+                            "path": { "type": "string" },
+                            "value": {}
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false
+            }
+        ]
+    })
+}
+
+fn component_schema() -> serde_json::Value {
+    serde_json::json!({
+        "type": "object",
+        "required": ["id", "component"],
+        "properties": {
+            "id": {"type": "string"},
+            "component": {"type": "string", "enum": ["Text", "Button", "TextField", "CheckBox", "ChoicePicker", "Row", "Column", "Card", "Divider"]},
+            "@catalogId": {"type": "string", "enum": [CATALOG_ID, BASIC_CATALOG_ID_1_0]},
+            "child": {"type": "string"},
+            "children": {"type": "array", "items": {"type": "string"}},
+            "text": {"description": "A string or {@path: JSON pointer}."},
+            "variant": {"type": "string"},
+            "label": {"description": "A string or {@path: JSON pointer}."},
+            "placeholder": {"description": "A string or {@path: JSON pointer}."},
+            "value": {"description": "A component-specific literal or {@path: JSON pointer}."},
+            "options": {"type": "array", "items": {"type": "object"}},
+            "axis": {"enum": ["horizontal", "vertical"]},
+            "align": {"enum": ["start", "center", "end", "stretch"]},
+            "justify": {"enum": ["start", "center", "end", "spaceBetween", "spaceAround", "spaceEvenly", "stretch"]},
+            "action": {
+                "type": "object",
+                "required": ["event"],
+                "properties": {
+                    "event": {
+                        "type": "object",
+                        "required": ["name"],
+                        "properties": {
+                            "name": {"type": "string"},
+                            "context": {"type": "object"},
+                            "userMessage": {"description": "A string or {@path: JSON pointer}."}
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "additionalProperties": false
+            }
+        },
+        "additionalProperties": false
+    })
 }
 
 #[cfg(test)]

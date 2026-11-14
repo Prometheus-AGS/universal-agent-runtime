@@ -1,4 +1,4 @@
-import { A2UI_PROFILE, A2UI_VERSION, validateA2uiMessage } from "@/features/a2ui/a2ui-protocol";
+import { LEGACY_A2UI_VERSION } from "@/features/a2ui/a2ui-protocol";
 import {
   EMPTY_A2UI_PROCESSOR_STATE,
   reduceA2uiMessage,
@@ -312,30 +312,36 @@ export function projectRunTrace(input: RunTraceProjectionInput): RunTraceProject
 function replayEnvelope(operation: RunReplayPatchOperation): unknown {
   const match = SURFACE_PATH.exec(operation.path);
   if (!match) throw new Error(`Invalid A2UI replay path: ${operation.path}`);
-  const surfaceId = match[1];
+  const surfaceId = match[1].replaceAll("~1", "/").replaceAll("~0", "~");
   const suffix = match[2];
-  const base = { version: A2UI_VERSION, profile: A2UI_PROFILE };
+  const raw = operation.value;
+  if (raw !== undefined && (!raw || typeof raw !== "object" || Array.isArray(raw))) {
+    throw new Error(`Invalid A2UI replay payload: ${operation.path}`);
+  }
+  const { version = LEGACY_A2UI_VERSION, surfaceId: payloadId, ...value } = (raw ?? {}) as Record<string, unknown>;
+  if (payloadId !== undefined && payloadId !== surfaceId) throw new Error(`A2UI replay surface mismatch: ${operation.path}`);
+  const payload = { ...value, surfaceId };
 
   if (operation.op === "add" && suffix === undefined) {
     return {
-      ...base,
-      createSurface: { surfaceId, ...(operation.value as Record<string, unknown>) },
+      version,
+      createSurface: payload,
     };
   }
   if (operation.op === "replace" && suffix === "components") {
     return {
-      ...base,
-      updateComponents: { surfaceId, ...(operation.value as Record<string, unknown>) },
+      version,
+      updateComponents: payload,
     };
   }
   if (operation.op === "replace" && suffix === "dataModel") {
     return {
-      ...base,
-      updateDataModel: { surfaceId, ...(operation.value as Record<string, unknown>) },
+      version,
+      updateDataModel: payload,
     };
   }
   if (operation.op === "remove" && suffix === undefined) {
-    return { ...base, deleteSurface: { surfaceId } };
+    return { version, deleteSurface: payload };
   }
   throw new Error(`Unsupported A2UI replay operation: ${operation.op} ${operation.path}`);
 }
@@ -344,14 +350,13 @@ export function projectA2uiReplay(
   operations: RunReplayPatchOperation[],
 ): RunReplayProjection {
   let state = EMPTY_A2UI_PROCESSOR_STATE;
+  let appliedOperations = 0;
   for (const [index, operation] of operations.entries()) {
+    if (operation.path.startsWith("/a2ui/surface_generations/")) continue;
     const envelope = replayEnvelope(operation);
-    const validation = validateA2uiMessage(envelope);
-    if (!validation.success) {
-      throw new Error(`Invalid A2UI replay operation ${index}: ${validation.error}`);
-    }
-    state = reduceA2uiMessage(state, validation.data);
+    state = reduceA2uiMessage(state, envelope);
     if (state.error) throw new Error(`Invalid A2UI replay operation ${index}: ${state.error}`);
+    appliedOperations += 1;
   }
-  return { state, appliedOperations: operations.length };
+  return { state, appliedOperations };
 }

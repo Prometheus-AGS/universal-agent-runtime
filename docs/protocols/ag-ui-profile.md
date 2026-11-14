@@ -1,17 +1,36 @@
-# UAR AG-UI profile (`uar.agui/1`)
+# UAR AG-UI profiles
 
-Status: stable for UAR 1.0  
-Upstream vocabulary pin: AG-UI core events as documented 2026-07-11  
-Wire selection: `stream_mode: "agui_spec"`
+## Dedicated AG-UI 1.0 endpoint
 
-The stability label names this profile's historical compatibility contract,
-not current Linux-container conformance. Use the [canonical recovery table](../product-support-matrix.md#execution-and-recovery-guarantees)
-for interface-specific durable admission, bounded cursors/gaps and uncertain
-effects; [chat](../operations/chat-turn-recovery.md) and
-[A2UI interaction](../operations/a2ui-interaction-recovery.md) intent receipts
-remain separate from event replay. Current pinned-peer acceptance is unverified.
+RC5 targets final AG-UI 1.0 through POST /api/uar/ag-ui/agents/{agent_id}.
+Reconnect through GET /api/uar/ag-ui/agents/{agent_id}/threads/{thread_id}/runs/{run_id}/stream
+using the original identities. Resume from a retained SSE ID using Last-Event-ID.
+The reconnect route and cursor are UAR extensions to the AG-UI HTTP transport.
+RC5 uses a new cursor epoch for the final wire representation. If a reconnect
+returns 409 event_cursor_projection_changed for a pre-RC5 cursor, discard that
+cursor and reopen the retained run without Last-Event-ID. This refreshes the
+projection without admitting another execution.
+RUN_STARTED declares protocolVersion "1.0". The trusted host owns admission,
+interrupt settlement, and durable replay. Terminal events report the outcome
+UAR can prove, including failure and unconfirmed cleanup. Public provider
+reasoning uses the standard reasoning events with a closed span and message
+before text, tools, or terminal completion.
 
-UAR implements the official AG-UI event model through a versioned compatibility profile. AG-UI itself remains pre-1.0, so the profile pins a dated vocabulary rather than claiming conformance to an upstream semantic version that does not exist. The authoritative upstream references are the [event vocabulary](https://docs.ag-ui.com/concepts/events), [architecture](https://docs.ag-ui.com/concepts/architecture), and [serialization/replay rules](https://docs.ag-ui.com/concepts/serialization).
+The dedicated route handles text-oriented user, assistant, and tool history.
+It accepts standard activity and reasoning messages for client round-tripping.
+They provide neither model input nor host authorization. Media inputs,
+subagent events, and the protobuf binding are outside this profile.
+
+Use AG-UI 1.0.4 for JavaScript wire types. The final
+[AG-UI 1.0 schema](https://github.com/ag-ui-protocol/ag-ui/blob/a1a30759aeaf8de31488a81115d74e70af28afb9/spec/1.0/schema.json)
+defines the fields. See the [A2UI profile](a2ui-profile.md) for the supported
+surface operations and standard action messages carried on this route.
+
+## Compatibility stream
+
+The remaining sections describe the historical uar.agui/1 stream_mode
+"agui_spec" profile. It retains existing event IDs, sequence fields, and custom
+events on the native run and chat-compatible routes.
 
 ## Transport and envelope
 
@@ -77,7 +96,7 @@ Custom values are typed, JSON-serializable, and must not contain secrets. Consum
 
 ## Compatibility
 
-- `agui_spec` is the only conformant UAR mode.
+- `agui_spec` selects the historical UAR compatibility stream.
 - `agui` is the deprecated legacy lower-case dialect and is not `uar.agui/1`.
 - `dual` combines legacy `agui.*` and OpenAI chunks; it is not conformant.
 - `openai` remains the default OpenAI-compatible streaming mode.

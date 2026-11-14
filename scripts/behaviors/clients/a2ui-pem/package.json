@@ -4,7 +4,8 @@
   "description": "Independent registry-installed AG-UI A2UI client for the I19 behavior scenario.",
   "type": "module",
   "dependencies": {
-    "@a2ui/web_core": "npm:@prometheus-ags/a2ui-web-core-zod4@0.14.0-rc.1",
-    "@prometheus-ags/a2ui-react": "4.3.1-rc.1"
+    "@ag-ui/core": "1.0.4",
+    "@prometheus-ags/a2ui-react": "5.0.0",
+    "zod": "4.6.7"
   }
 }

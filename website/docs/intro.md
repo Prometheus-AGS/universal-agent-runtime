@@ -7,7 +7,7 @@ title: Introduction
 
 Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent execution, typed streaming, model routing, tools, retrieval, and declarative agent UI. The first-party interface is React 19 + TypeScript.
 
-The Rust product is **1.4.0-rc.4**, a release candidate. SDK/package/schema versions
+The Rust product is **1.4.0-rc.5**, a release candidate. SDK/package/schema versions
 are independent; private root tooling/frontend/SDK packages currently retain
 1.0.0, the documentation package 0.0.0 and desktop shell 0.1.0. The distributed
 server/sidecar product is `server-full`; the dependency-light `minimal` profile
@@ -15,7 +15,7 @@ is separate. The [support matrix](https://github.com/Prometheus-AGS/universal-ag
 is the public contract. The first selected lane is Linux amd64 container APIs
 behind a trusted host or gateway, with owned-volume embedded SurrealDB 4.0.0
 on SurrealKV by default and a restricted PostgreSQL 18 lane. Use the
-[RC4 user guide](./release-candidate.md) for setup, verification and recovery. The signed prerelease qualifies the selected UAR API lane. [RC4 release evidence](https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.4.0-rc.4).
+[RC4 user guide](./release-candidate.md) for setup, verification and recovery. The signed RC4 prerelease qualifies the selected UAR API lane. [RC4 release evidence](https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.4.0-rc.4).
 
 ## Core contracts
 
@@ -23,8 +23,8 @@ on SurrealKV by default and a restricted PostgreSQL 18 lane. Use the
 |---|---|
 | Runtime | Axum REST and SSE APIs listen on configurable port `1906` by default. |
 | Frontend | React components call hooks, hooks expose stores, stores call typed services. |
-| Streaming | AG-UI is the normalized event transport vocabulary. |
-| Artifacts | A2UI validates declarative artifacts and renders an approved React component catalog; it executes no model-provided code. |
+| Streaming | RC5 targets final AG-UI 1.0 through the dedicated agent API. |
+| Artifacts | RC5 targets final A2UI 1.0 surfaces and governed actions. Existing v0.9 and v0.9.1 history remains readable. |
 | Persistence | SurrealDB is the Stable server authority; PGlite is a local cache reconciled through versioned events. |
 | Providers | The pinned Liter provider map is discovery metadata; derive counts from that map. Historical named capability evidence and current qualification are separate. |
 | Tools | MCP-discovered and native tools share schema, Cedar policy, approval, hard-deny, and audit controls. WASM tools are opt-in Preview. |

@@ -370,6 +370,19 @@ mod recovery_routes {
         let (status, retry) = response(&app, "POST", "/runs/source/a2ui/actions", Some(intent())).await;
         assert_eq!(status, StatusCode::ACCEPTED);
         assert_eq!(retry, ack);
+        for (field, expected) in [
+            ("version", StatusCode::BAD_REQUEST),
+            ("action", StatusCode::BAD_REQUEST),
+            ("callAgentFunction", StatusCode::UNPROCESSABLE_ENTITY),
+            ("rendererFunctionResponse", StatusCode::UNPROCESSABLE_ENTITY),
+            ("callRendererFunction", StatusCode::UNPROCESSABLE_ENTITY),
+            ("agentFunctionResponse", StatusCode::UNPROCESSABLE_ENTITY),
+        ] {
+            let mut invalid = intent();
+            invalid[field] = Value::Null;
+            let (status, _) = response(&app, "POST", "/runs/source/a2ui/actions", Some(invalid)).await;
+            assert_eq!(status, expected, "explicit null in {field}");
+        }
         let mut changed = intent();
         changed["context"]["value"] = json!(2);
         assert_eq!(response(&app, "POST", "/runs/source/a2ui/actions", Some(changed)).await.0, StatusCode::CONFLICT);

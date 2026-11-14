@@ -9,6 +9,7 @@ import { useThreadTitleStore } from "@/stores/thread-title-store";
 import type { RichMessage, ContentBlock } from "@/types/chat-content";
 import { CHUNK_BUBBLE_VISIBLE, type Chunk } from "@/features/chat/model/chunk";
 import { toChunks } from "@/features/chat/model/to-chunks";
+import { A2uiPublicationProjection } from "@/features/chat/model/a2ui-publication-projection";
 import { a2uiUserActionLabel } from "@/shared/content/a2ui-user-action";
 import { useAttachmentManager } from "./use-attachment-manager";
 import type { AttachmentManager } from "./use-attachment-manager";
@@ -18,7 +19,7 @@ import { useAgentSession, pendingChatTurns, reconcileChatTurn } from "@/platform
 
 export type { AttachmentManager };
 
-function richMessageToThreadMessageLike(msg: RichMessage): ThreadMessageLike {
+function richMessageToThreadMessageLike(msg: RichMessage, a2ui: A2uiPublicationProjection): ThreadMessageLike {
   const baseMetadata = { custom: {} };
   const toDate = (d: Date | string): Date => (d instanceof Date ? d : new Date(d));
 
@@ -39,7 +40,7 @@ function richMessageToThreadMessageLike(msg: RichMessage): ThreadMessageLike {
     if (chunk.kind === "text") parts.push({ type: "text", text: chunk.text });
     else if (chunk.kind === "markdown") parts.push({ type: "text", text: chunk.source });
     else if (chunk.kind === "reasoning" || chunk.kind === "thinking") parts.push({ type: "reasoning", text: chunk.text });
-    else if (CHUNK_BUBBLE_VISIBLE[chunk.kind]) parts.push({ type: "data", name: chunk.kind, data: chunk });
+    else if (CHUNK_BUBBLE_VISIBLE[chunk.kind]) parts.push({ type: "data", name: chunk.kind, data: chunk.kind === "a2ui-display" ? a2ui.project(chunk) : chunk });
   }
   if (parts.length === 0) parts.push({ type: "text", text: "" });
 
@@ -202,7 +203,10 @@ export function useChatRuntime(threadId: string): {
     }, { onComplete: () => { void afterStreamComplete(pending); } });
   }, [threadId, consumePendingPrompt, startStream, afterStreamComplete, memoryEnabled, effectiveAgentId]);
 
-  const threadMessageLikes = useMemo(() => messages.map(richMessageToThreadMessageLike), [messages]);
+  const threadMessageLikes = useMemo(() => {
+    const a2ui = new A2uiPublicationProjection();
+    return messages.map((message) => richMessageToThreadMessageLike(message, a2ui));
+  }, [messages]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const runtime = useExternalStoreRuntime({ messages: threadMessageLikes, isRunning: isStreaming, onNew, onCancel } as any);

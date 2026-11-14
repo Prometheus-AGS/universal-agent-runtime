@@ -27,6 +27,14 @@
       "types": "./src/v0_9-basic-catalog.ts",
       "default": "./src/v0_9-basic-catalog.ts"
     },
+    "./v1_0": {
+      "types": "./src/v1_0.ts",
+      "default": "./src/v1_0.ts"
+    },
+    "./renderer-v1": {
+      "types": "./src/renderer-v1.ts",
+      "default": "./src/renderer-v1.ts"
+    },
     "./semantic-dom": {
       "types": "./src/semantic-dom.ts",
       "default": "./src/semantic-dom.ts"
@@ -40,7 +48,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@a2ui/web_core": "workspace:@prometheus-ags/a2ui-web-core-zod4@0.14.0-rc.1"
+    "@a2ui/web_core": "workspace:@prometheus-ags/a2ui-web-core-zod4@0.14.0-rc.1",
+    "@a2ui/web-core-v1": "npm:@a2ui/web_core@0.15.0"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
