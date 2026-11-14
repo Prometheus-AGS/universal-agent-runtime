@@ -28,3 +28,12 @@ The source used to build the Windows sidecar SHALL allow Git for Windows to chec
 
 - **WHEN** the Windows sidecar runner checks out the release commit
 - **THEN** the historical alias has a Windows-compatible filename and still refers to its original history directory
+
+### Requirement: Desktop sidecar releases require a clean production build
+
+The release job SHALL reject compiler and linker warnings before packaging the sidecar. For macOS, it SHALL use the Mach-O linker supplied by the pinned toolchain and the size-optimized release profile.
+
+#### Scenario: The default Apple linker reports oversized unwind data
+
+- **WHEN** the macOS sidecar release is built
+- **THEN** the job uses the pinned Mach-O linker and checks the unfiltered Cargo diagnostics before publishing the archive
