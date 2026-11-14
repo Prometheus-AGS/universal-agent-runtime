@@ -260,7 +260,7 @@ jobs:
           target=$(printf '%s' '${{ matrix.target }}' | tr '[:lower:]-' '[:upper:]_')
           printf 'CARGO_TARGET_%s_LINKER=%s\n' "$target" "$RUNNER_TEMP/sidecar-clang" >> "$GITHUB_ENV"
           printf 'CARGO_PROFILE_RELEASE_OPT_LEVEL=s\n' >> "$GITHUB_ENV"
-          printf 'MACOSX_DEPLOYMENT_TARGET=13.0\n' >> "$GITHUB_ENV"
+          printf 'MACOSX_DEPLOYMENT_TARGET=13.4\n' >> "$GITHUB_ENV"
       - name: Build production sidecar
         shell: bash
         env:

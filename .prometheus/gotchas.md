@@ -2272,3 +2272,12 @@ The RC4 desktop release checkout rejected the historical phase symlink named
 even though the checkout excluded `.kbd-orchestrator/`. The alias now uses
 `--` where the old filesystem name used `::`. It still points to the original
 phase directory. Leave historical phase identifiers and archived receipts intact.
+
+## 2026-11-14 — The RC4 Mac sidecar inherits the ONNX deployment floor
+
+LLVM surfaced two minimum-OS mismatches in RC4’s local embedding build.
+The initially unpinned Tesseract shim used the runner OS; setting the Mac
+deployment target fixed that. A target of 13.0 still fell below the 13.4
+minimum in the shipped ONNX Runtime library. Both the installed RC4 sidecar
+and the locally verified 2.2.48 sidecar already report 13.4 in
+`LC_BUILD_VERSION`. Compile Rust and native dependencies at that same floor.

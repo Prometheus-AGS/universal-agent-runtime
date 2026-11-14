@@ -31,7 +31,7 @@ The source used to build the Windows sidecar SHALL allow Git for Windows to chec
 
 ### Requirement: Desktop sidecar releases require a clean production build
 
-The release job SHALL reject compiler and linker warnings before packaging the sidecar. For macOS, it SHALL use the Mach-O linker supplied by the pinned toolchain, the size-optimized release profile, and The Boss application’s macOS 13.0 deployment target for both the Rust linker and native dependency builds.
+The release job SHALL reject compiler and linker warnings before packaging the sidecar. For macOS, it SHALL use the Mach-O linker supplied by the pinned toolchain, the size-optimized release profile, and the previously shipped UAR sidecar’s macOS 13.4 deployment target for both the Rust linker and native dependency builds.
 
 #### Scenario: The default Apple linker reports oversized unwind data
 
