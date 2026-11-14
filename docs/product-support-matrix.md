@@ -3,7 +3,7 @@
 This is UAR's public release contract. The canonical source data is
 [`product-support-matrix.json`](product-support-matrix.json); its schema is
 [`product-support-matrix.schema.json`](product-support-matrix.schema.json).
-“Cataloged” never means “certified.” Maturity labels and historical gate names do not certify a new source tree or artifact. The matrix contract revision remains `1.0.0`; the Rust product is **1.4.0-rc.4**, and SDK/package/schema versions are independent. `verified_at` retains the historical inventory date; the November 2 source claim update is not verification. The [signed RC4 release](https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.4.0-rc.4) records the bounded candidate qualification. Tracker #476 continues to own issue-level evidence and exclusions.
+“Cataloged” never means “certified.” Maturity labels and historical gate names do not certify a new source tree or artifact. The matrix contract revision remains `1.0.0`; the Rust product is **1.4.0-rc.5**, and SDK/package/schema versions are independent. `verified_at` retains the historical inventory date; the November 2 source claim update is not verification. The [signed RC4 release](https://github.com/Prometheus-AGS/universal-agent-runtime/releases/tag/v1.4.0-rc.4) records the bounded candidate qualification. Tracker #476 continues to own issue-level evidence and exclusions.
 
 The first selected production contract is **Linux amd64 container APIs**, with embedded SurrealDB 4.0.0 on owned SurrealKV volumes by default and a restricted PostgreSQL 18 lane. The [embedded upgrade qualification](operations/embedded-surrealdb-4-upgrade.md#qualification-scope) covers a specific candidate and a pinned 3.3.0 migration baseline. #465 is complete for RC4 source `eaf82c935887ef5fe1c77379f36246a19b6075a8` and image `sha256:0b6d94d6a776d7de8abd00085856c68dddd12e12251750f1aab8e1f1dc79780e`. Browser and application UI, native archives, other architectures and governed WASM/AOT execution remain outside the qualified scope. PostgreSQL 18 remains restricted Preview with earlier profile-specific evidence. The migration and PostgreSQL receipts retain their original artifact identities. [Qualification record](https://github.com/Prometheus-AGS/universal-agent-runtime/issues/465#issuecomment-6875246846).
 
@@ -74,6 +74,14 @@ Browser-side WASM execution is Unsupported; browsers render validated,
 declarative A2UI artifacts and do not execute arbitrary artifact code.
 Linux amd64 container APIs are the selected qualification lane. Native archives, ARM64, Windows and mobile remain unqualified unless separately selected; they are not mandatory gates for this first contract. Bundled WASM toolchains are not AOT execution evidence (#467). Historical browser/desktop maturity does not qualify their workflows for the new API-only promotion.
 
+## RC5 protocol scope
+
+The Linux amd64 trusted-host release targets the dedicated
+[AG-UI 1.0 endpoint](protocols/ag-ui-profile.md) and the supported
+[A2UI 1.0 surface lifecycle and governed actions](protocols/a2ui-profile.md)
+with PEM 5.0.0. Compatibility covers retained A2UI v0.9 and v0.9.1 history.
+RC5 evidence for these changes will accompany the signed release.
+
 ## Execution and recovery guarantees
 
 Contract revision **2026-11-02**. This is the canonical interface table; the JSON
@@ -110,7 +118,7 @@ results and unknown effects remain explicit until authoritative disposition.
 
 ## Version, telemetry and publication evidence
 
-`Cargo.toml` defines the Rust product at `1.4.0-rc.4`; `versions.toml` defines
+`Cargo.toml` defines the Rust product at `1.4.0-rc.5`; `versions.toml` defines
 dependency decisions/pins. The JSON `version_inventory` records actual independent
 packages: private root tooling/frontend/SDKs `1.0.0`, documentation package
 `0.0.0`, desktop shell `0.1.0`. These are not product support or compatibility

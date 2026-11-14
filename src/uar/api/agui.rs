@@ -162,18 +162,89 @@ fn caller_tool_definitions(tools: &[Value]) -> Result<Vec<Value>, Response> {
 }
 
 fn caller_history(messages: &[Value]) -> Result<Vec<Value>, Response> {
-    messages.iter().map(|message| {
+    messages.iter().filter(|message| !is_display_message(message)).map(|message| {
         let role = message.get("role").and_then(Value::as_str).unwrap_or("");
-        if !matches!(role,"user"|"assistant"|"tool")
-            || (!message.get("content").is_some_and(Value::is_string)
-                && !(role == "assistant" && message.get("toolCalls").is_some_and(Value::is_array))) {
+        if !matches!(role,"user"|"assistant"|"tool") {
             return Err(failure(StatusCode::BAD_REQUEST,"unsupported_history_message"));
         }
         let mut value = json!({"role":role,"content":message.get("content").cloned().unwrap_or_else(||json!(""))});
-        if let Some(calls) = message.get("toolCalls") { value["tool_calls"] = calls.clone(); }
-        if let Some(id) = message.get("toolCallId") { value["tool_call_id"] = id.clone(); }
+        if role == "assistant"
+            && let Some(calls) = message.get("toolCalls").and_then(Value::as_array)
+            && !calls.is_empty()
+        {
+            value["tool_calls"] = Value::Array(calls.iter().map(|call| {
+                json!({
+                    "id": call["id"], "type": call["type"],
+                    "function": {
+                        "name": call["function"]["name"],
+                        "arguments": call["function"]["arguments"],
+                    },
+                })
+            }).collect());
+        }
+        if role == "tool" {
+            value["tool_call_id"] = message["toolCallId"].clone();
+        }
         Ok(value)
     }).collect()
+}
+
+fn is_display_message(message: &Value) -> bool {
+    matches!(message["role"].as_str(), Some("reasoning" | "activity"))
+}
+
+fn last_conversation_role(messages: &[Value]) -> Option<&str> {
+    messages
+        .iter()
+        .rfind(|message| !is_display_message(message))
+        .and_then(|message| message["role"].as_str())
+}
+
+fn validate_messages(messages: &[Value]) -> Result<(), Response> {
+    for message in messages {
+        let role = message.get("role").and_then(Value::as_str).unwrap_or_default();
+        let content = message.get("content");
+        let valid = match role {
+            "user" => content.is_some_and(Value::is_string),
+            "assistant" => content.is_none_or(Value::is_string)
+                && message.get("toolCalls").is_none_or(|calls| {
+                    calls.as_array().is_some_and(|calls| {
+                        calls.iter().all(|call| {
+                            call.get("id").is_some_and(Value::is_string)
+                                && call.get("type").and_then(Value::as_str) == Some("function")
+                                && call.pointer("/function/name").is_some_and(Value::is_string)
+                                && call.pointer("/function/arguments").is_some_and(Value::is_string)
+                                && call.get("metadata").is_none_or(Value::is_object)
+                                && call.get("encryptedValue").is_none_or(Value::is_string)
+                        })
+                    })
+                }),
+            "tool" => content.is_some_and(Value::is_string)
+                && message.get("toolCallId").is_some_and(Value::is_string)
+                && message.get("error").is_none_or(Value::is_string)
+                && message.get("encryptedValue").is_none_or(Value::is_string),
+            // The wire can round-trip public reasoning. This host history
+            // adapter has no provider-native reasoning role or opaque state.
+            "reasoning" => content.is_some_and(Value::is_string)
+                && message.get("encryptedValue").is_none_or(Value::is_string),
+            // A replayed snapshot is display data. Only the host's retained
+            // publication establishes surface state or action authority.
+            "activity" => content.is_some_and(Value::is_object)
+                && message.get("activityType").is_some_and(Value::is_string),
+            _ => false,
+        };
+        if !valid {
+            return Err(failure(StatusCode::BAD_REQUEST, "unsupported_history_message"));
+        }
+        if !message.get("id").is_some_and(Value::is_string)
+            || !message.get("metadata").is_none_or(Value::is_object)
+            || !message.get("name").is_none_or(Value::is_string)
+            || !message.get("subagentRunId").is_none_or(Value::is_string)
+        {
+            return Err(failure(StatusCode::BAD_REQUEST, "invalid_run_agent_input"));
+        }
+    }
+    Ok(())
 }
 
 async fn prepare_frontend_continuation(
@@ -360,6 +431,25 @@ async fn action_receipt(
 fn valid_id(id: &str) -> bool {
     !id.is_empty() && id.len() <= 512 && id.trim() == id && !id.chars().any(char::is_control)
 }
+
+const PROTOCOL_VERSION: &str = "1.0";
+
+fn supported_protocol_version(version: &str) -> bool {
+    if version == PROTOCOL_VERSION {
+        return true;
+    }
+    match version.split_once('.').and_then(|(major, minor)| {
+        Some((major.parse::<u32>().ok()?, minor.parse::<u32>().ok()?))
+    }) {
+        Some((1, _)) | None => {
+            tracing::warn!(peer_version = ?version, protocol_version = PROTOCOL_VERSION,
+                "AG-UI peer declared a newer or unrecognized version");
+            true
+        }
+        Some(_) => false,
+    }
+}
+
 fn validate_resume(input: &RunAgentInput) -> Result<(), Response> {
     let mut seen = HashSet::new();
     for entry in &input.resume {
@@ -410,7 +500,7 @@ async fn run(
         || input
             .protocol_version
             .as_deref()
-            .is_some_and(|version| version != "1.0")
+            .is_some_and(|version| !supported_protocol_version(version))
     {
         return failure(
             StatusCode::BAD_REQUEST,
@@ -423,11 +513,6 @@ async fn run(
     if input.context.iter().any(|value| {
         !value.get("description").is_some_and(Value::is_string)
             || !value.get("value").is_some_and(Value::is_string)
-    }) || input.messages.iter().any(|value| {
-        !value.get("id").is_some_and(Value::is_string)
-            || value
-                .get("metadata")
-                .is_some_and(|metadata| !metadata.is_object())
     }) || raw
         .get("resume")
         .and_then(Value::as_array)
@@ -485,6 +570,12 @@ async fn run(
         Err(_) => return unavailable(),
         Ok(None) => {}
     }
+    if ["protocolVersion", "parentRunId", "state"]
+        .into_iter()
+        .any(|field| raw.get(field).is_some_and(Value::is_null))
+    {
+        return failure(StatusCode::BAD_REQUEST, "invalid_run_agent_input");
+    }
     // Logical interaction replay precedes latest-parent validation: a retry
     // may allocate a fresh wire id after the original continuation settled.
     let logical_action = match agui_a2ui::parse_action(input.forwarded_props.as_ref()) {
@@ -493,6 +584,9 @@ async fn run(
     };
     if logical_action.is_some() && !input.resume.is_empty() {
         return failure(StatusCode::BAD_REQUEST, "a2ui_action_with_resume");
+    }
+    if let Err(response) = validate_messages(&input.messages) {
+        return response;
     }
     if let Some(action) = &logical_action
         && let Some(interaction) = &action.interaction_id
@@ -539,12 +633,7 @@ async fn run(
     // contender already admitted the continuation. Resolve its completed
     // caller batch before enforcing the latest-run rule for new execution.
     if input.resume.is_empty()
-        && input
-            .messages
-            .last()
-            .and_then(|message| message.get("role"))
-            .and_then(Value::as_str)
-            == Some("tool")
+        && last_conversation_role(&input.messages) == Some("tool")
         && let Some(parent) = &input.parent_run_id
     {
         let predecessor = match db
@@ -666,14 +755,7 @@ async fn run(
     let mut caller_claim = None;
     let mut caller_continuation = None;
     if frontend_pending {
-        if resuming
-            || input
-                .messages
-                .last()
-                .and_then(|message| message.get("role"))
-                .and_then(Value::as_str)
-                != Some("tool")
-        {
+        if resuming || last_conversation_role(&input.messages) != Some("tool") {
             return failure(StatusCode::CONFLICT, "caller_tool_results_required");
         }
         match prepare_frontend_continuation(
@@ -1135,8 +1217,15 @@ fn create_request(
     instructions: Vec<String>,
 ) -> Result<routes::CreateRunRequest, Response> {
     // A click carries no new user text: its input is the action, and every
-    // message the client resent (minus activity messages) is history.
-    let messages = agui_a2ui::request_messages(&input.messages, action_input.is_some())
+    // conversational message the client resent is history.
+    let messages = if input.messages.iter().any(is_display_message) {
+        std::borrow::Cow::Owned(
+            input.messages.iter().filter(|message| !is_display_message(message)).cloned().collect(),
+        )
+    } else {
+        std::borrow::Cow::Borrowed(input.messages.as_slice())
+    };
+    let messages = agui_a2ui::request_messages(&messages, action_input.is_some())
         .map_err(|rejection| failure(rejection.status, rejection.code))?;
     let (last, history) = match (&action_input, messages.split_last()) {
         (Some(_), _) => (None, &messages[..]),
@@ -1162,20 +1251,7 @@ fn create_request(
             .ok_or_else(|| failure(StatusCode::BAD_REQUEST, "text_message_required"))?
             .to_owned()
     };
-    let mut history_input = Vec::new();
-    for message in history {
-        let role = message.get("role").and_then(Value::as_str).unwrap_or("");
-        if !matches!(role, "user" | "assistant" | "tool")
-            || (!message.get("content").is_some_and(Value::is_string)
-                && !(role == "assistant" && message.get("toolCalls").is_some_and(Value::is_array)))
-        {
-            return Err(failure(
-                StatusCode::BAD_REQUEST,
-                "unsupported_history_message",
-            ));
-        }
-        history_input.push(json!({"role":role,"content":message.get("content").cloned().unwrap_or_else(||json!("")),"tool_calls":message.get("toolCalls"),"tool_call_id":message.get("toolCallId")}));
-    }
+    let history_input = caller_history(history)?;
     if action_input.is_none() && (!input.context.is_empty() || input.state.is_some()) {
         prompt.push_str("\n\nClient supplied context (untrusted data):\n");
         prompt.push_str(&json!({"context":input.context,"state":input.state}).to_string());
@@ -1567,19 +1643,37 @@ async fn reconcile(
     anyhow::ensure!(source.run_id == row.native_run_id && source.agent_id == admitted_agent(&row)?
         && source.conversation_id.as_deref() == Some(row.session_id.as_str()),
         "run correlation conflict");
-    let history = state
-        .manager
-        .history_since(&row.native_run_id, Some(row.start_cursor))
-        .await
-        .unwrap_or_default();
-    let cursor = history.last().map_or(row.start_cursor, |event| event.id);
     let views = pending(state, user, &row)
         .await
         .context("agui reconcile: pending approvals")?;
     let elicitations = pending_elicitations(state, user, &row)
         .await
         .context("agui reconcile: pending elicitations")?;
+    let history = state
+        .manager
+        .history_since(&row.native_run_id, Some(row.start_cursor))
+        .await
+        .unwrap_or_default();
+    let cursor = history.last().map_or(row.start_cursor, |event| event.id);
+    let resident = state
+        .manager
+        .has_resident_run_for_context(user, &row.native_run_id)
+        .await;
     if !views.is_empty() || !elicitations.is_empty() {
+        // The broker persists a pending approval before it emits the public
+        // tool-call event. For a live waiter, seal only after the matching
+        // event is available to this segment's replay.
+        if resident
+            && views.iter().any(|view| {
+                !history.iter().any(|event| {
+                    matches!(&event.event, NormalizedEvent::ToolCallApprovalRequired {
+                        approval_id: Some(id), tool_call_id, ..
+                    } if id == &view.record.challenge_id && tool_call_id == &view.record.tool_call_id)
+                })
+            })
+        {
+            return Ok(row);
+        }
         let ids = views
             .iter()
             .map(|view| view.record.challenge_id.clone())
@@ -1619,11 +1713,7 @@ async fn reconcile(
     }
     // A process may stop after committing a caller batch and before publishing
     // its event. Recover that exact handoff, without submitting another run.
-    if let Some(source) = state
-        .manager
-        .get_run_for_context(user, &row.native_run_id)
-        .await
-    {
+    if db.supports_durable_client_tools() {
         let principal = CredentialPrincipal::from_verified_context(user)?;
         let session_owner = user.session_owner_key()?;
         if let Some(pending) = db
@@ -1661,7 +1751,7 @@ async fn reconcile(
                 .context("agui reconcile: recover caller-tool handoff");
         }
     }
-    if !state.manager.has_resident_run_for_context(user, &row.native_run_id).await {
+    if !resident {
         return reconcile_historical_terminal(state, user, &row).await;
     }
     let terminal_observed = history.iter().any(|event| {
@@ -1814,9 +1904,15 @@ async fn observe(state: Arc<RunApiState>, user: UserContext, row: AguiRunBinding
 #[derive(Default)]
 struct Projector {
     text: bool,
+    reasoning_start: Option<u64>,
     tools: HashSet<String>,
     surfaces: agui_a2ui::SurfaceRecord,
 }
+
+fn assistant_message_id(row: &AguiRunBinding) -> String {
+    format!("{}:assistant", row.wire_run_id)
+}
+
 impl Projector {
     /// Seed with the surfaces earlier runs published, so this run's snapshots stay cumulative.
     fn seeded(surfaces: agui_a2ui::SurfaceRecord) -> Self {
@@ -1826,22 +1922,41 @@ impl Projector {
         }
     }
     fn caller_tools(&mut self, row: &AguiRunBinding, calls: &[crate::llm::ToolCall]) -> Vec<Value> {
-        calls.iter().filter_map(|call| {
-            if row.resumed_tool_ids.contains(&call.id) || !self.tools.insert(call.id.clone()) { return None; }
-            Some(vec![json!({"type":"TOOL_CALL_START","toolCallId":call.id,"toolCallName":call.function.name}),json!({"type":"TOOL_CALL_ARGS","toolCallId":call.id,"delta":call.function.arguments}),json!({"type":"TOOL_CALL_END","toolCallId":call.id})])
-        }).flatten().collect()
+        // The AG-UI reference reducer materializes a missing assistant parent
+        // on the first tool start (covered by tool-call-metadata-lands-on-the-call).
+        // Use the same id for the whole batch so tool-only turns round-trip as
+        // the single assistant message expected by the saved continuation.
+        let parent = assistant_message_id(row);
+        calls
+            .iter()
+            .filter(|call| !row.resumed_tool_ids.contains(&call.id) && self.tools.insert(call.id.clone()))
+            .flat_map(|call| [
+                json!({"type":"TOOL_CALL_START","toolCallId":call.id,"toolCallName":call.function.name,"parentMessageId":parent}),
+                json!({"type":"TOOL_CALL_ARGS","toolCallId":call.id,"delta":call.function.arguments}),
+                json!({"type":"TOOL_CALL_END","toolCallId":call.id}),
+            ])
+            .collect()
     }
     fn project(&mut self, row: &AguiRunBinding, cursor: u64, event: &NormalizedEvent) -> Vec<Value> {
-        let message = format!("{}:assistant", row.wire_run_id);
-        match event {
+        let mut boundary = match event {
+            NormalizedEvent::ChatDelta { text_delta, .. } if !text_delta.is_empty() =>
+                self.close_reasoning(row),
+            NormalizedEvent::ToolStart { .. }
+            | NormalizedEvent::ToolEnd { .. }
+            | NormalizedEvent::ToolCallApprovalRequired { .. }
+            | NormalizedEvent::ClientToolsRequested { .. } => self.close_reasoning(row),
+            _ => Vec::new(),
+        };
+        let frames = match event {
             NormalizedEvent::PresentationDiagnostic { run_id, code, message }
                 if run_id == &row.native_run_id => vec![json!({
                     "type":"CUSTOM","name":"uar.presentation.diagnostic",
-                    "threadId":row.thread_id,"runId":row.wire_run_id,
                     "value":{"code":code,"message":message},
-                    "metadata":{"uar":{"nativeRunId":run_id,"nativeCursor":cursor,"nativeEvent":event}}
+                    "metadata":{"uar":{"threadId":row.thread_id,"runId":row.wire_run_id,
+                        "nativeRunId":run_id,"nativeCursor":cursor,"nativeEvent":event}}
                 })],
             NormalizedEvent::ChatDelta { text_delta, .. } if !text_delta.is_empty() => {
+                let message = assistant_message_id(row);
                 let mut events = Vec::new();
                 if !self.text {
                     self.text = true;
@@ -1852,6 +1967,19 @@ impl Projector {
                 events.push(
                     json!({"type":"TEXT_MESSAGE_CONTENT","messageId":message,"delta":text_delta}),
                 );
+                events
+            }
+            NormalizedEvent::ReasoningDelta { text_delta, .. } if !text_delta.is_empty() => {
+                let open = self.reasoning_start.is_none();
+                let start = *self.reasoning_start.get_or_insert(cursor);
+                let message_id = format!("{}:reasoning:{start}", row.wire_run_id);
+                let mut events = Vec::new();
+                if open {
+                    let span_id = format!("{}:reasoning-span:{start}", row.wire_run_id);
+                    events.push(json!({"type":"REASONING_START","messageId":span_id}));
+                    events.push(json!({"type":"REASONING_MESSAGE_START","messageId":message_id,"role":"reasoning"}));
+                }
+                events.push(json!({"type":"REASONING_MESSAGE_CONTENT","messageId":message_id,"delta":text_delta}));
                 events
             }
             NormalizedEvent::ToolStart {
@@ -1873,7 +2001,8 @@ impl Projector {
                 name,
                 arguments_json,
                 ..
-            } if self.tools.insert(tool_call_id.clone()) => vec![
+            } if !row.resumed_tool_ids.contains(tool_call_id)
+                && self.tools.insert(tool_call_id.clone()) => vec![
                 json!({"type":"TOOL_CALL_START","toolCallId":tool_call_id,"toolCallName":name}),
                 json!({"type":"TOOL_CALL_ARGS","toolCallId":tool_call_id,"delta":arguments_json}),
                 json!({"type":"TOOL_CALL_END","toolCallId":tool_call_id}),
@@ -1881,24 +2010,28 @@ impl Projector {
             NormalizedEvent::ClientToolsRequested { calls, .. } => self.caller_tools(row, calls),
             NormalizedEvent::ToolEnd {
                 tool_call_id,
+                tool,
                 output,
+                ok,
                 ..
             } if self.tools.contains(tool_call_id)
                 || row.resumed_tool_ids.contains(tool_call_id) =>
             {
                 vec![
-                    json!({"type":"TOOL_CALL_RESULT","messageId":format!("{}:result:{}",row.wire_run_id,tool_call_id),"toolCallId":tool_call_id,"role":"tool","content":output.to_string()}),
+                    json!({"type":"TOOL_CALL_RESULT","messageId":format!("{}:result:{}",row.wire_run_id,tool_call_id),
+                        "toolCallId":tool_call_id,"role":"tool",
+                        "content":output.as_str().map_or_else(|| output.to_string(), str::to_owned),
+                        "metadata":{"uar":{"toolCallName":tool,"isError":!*ok}}}),
                 ]
             }
-            // Mirrors adapters.rs:134 (`uar.skill.activated`): same CUSTOM `name` and `value` shape. The adapter's closure is not callable
-            // here, and its `runId`/`threadId` carry the native run id, whereas this stream's identity is the wire thread/run (as RUN_STARTED).
             NormalizedEvent::SkillActivated {
                 skill_id,
                 title,
                 selection_method,
                 ..
             } => vec![
-                json!({"type":"CUSTOM","name":"uar.skill.activated","value":{"skill":{"id":skill_id,"title":title},"selectionMethod":selection_method},"threadId":row.thread_id,"runId":row.wire_run_id,"agentId":row.agent_id}),
+                json!({"type":"CUSTOM","name":"uar.skill.activated","value":{"skill":{"id":skill_id,"title":title},"selectionMethod":selection_method},
+                    "metadata":{"uar":{"threadId":row.thread_id,"runId":row.wire_run_id,"agentId":row.agent_id}}}),
             ],
             NormalizedEvent::AgentSelected {
                 source_agent_id,
@@ -1909,7 +2042,8 @@ impl Projector {
                 roster_revision,
                 ..
             } => vec![
-                json!({"type":"CUSTOM","name":"uar.agent.selected","value":{"sourceAgentId":source_agent_id,"agent":{"id":selected_agent_id,"title":selected_agent_name},"selectedThreadId":selected_thread_id,"selectionMethod":selection_method,"rosterRevision":roster_revision},"threadId":row.thread_id,"runId":row.wire_run_id,"agentId":row.agent_id}),
+                json!({"type":"CUSTOM","name":"uar.agent.selected","value":{"sourceAgentId":source_agent_id,"agent":{"id":selected_agent_id,"title":selected_agent_name},"selectedThreadId":selected_thread_id,"selectionMethod":selection_method,"rosterRevision":roster_revision},
+                    "metadata":{"uar":{"threadId":row.thread_id,"runId":row.wire_run_id,"agentId":row.agent_id}}}),
             ],
             NormalizedEvent::StatePatch { patch, .. } => {
                 self.surfaces.publish_patch(&row.thread_id, &row.native_run_id, cursor, patch)
@@ -1921,21 +2055,71 @@ impl Projector {
                     .publish_artifact(&row.thread_id, &row.native_run_id, &artifact.content, cursor, &artifact.metadata)
             }
             _ => Vec::new(),
-        }
+        };
+        boundary.extend(frames);
+        boundary
+    }
+    fn close_reasoning(&mut self, row: &AguiRunBinding) -> Vec<Value> {
+        let Some(start) = self.reasoning_start.take() else {
+            return Vec::new();
+        };
+        vec![
+            json!({"type":"REASONING_MESSAGE_END","messageId":format!("{}:reasoning:{start}", row.wire_run_id)}),
+            json!({"type":"REASONING_END","messageId":format!("{}:reasoning-span:{start}", row.wire_run_id)}),
+        ]
     }
     fn close(&mut self, row: &AguiRunBinding) -> Option<Value> {
         if !self.text {
             return None;
         }
         self.text = false;
-        Some(json!({"type":"TEXT_MESSAGE_END","messageId":format!("{}:assistant",row.wire_run_id)}))
+        Some(json!({"type":"TEXT_MESSAGE_END","messageId":assistant_message_id(row)}))
     }
 }
+// RC5 adds reasoning frames at existing native cursors, changing the
+// interpretation of RC4 ordinals without changing durable native history.
+const STREAM_CURSOR_VERSION: &str = "v2";
+
 fn frame(row: &AguiRunBinding, cursor: u64, index: usize, value: Value) -> Event {
     Event::default()
-        .id(format!("{}:{cursor}:{index}", row.storage_key()))
+        .id(format!("{}:{STREAM_CURSOR_VERSION}:{cursor}:{index}", row.storage_key()))
         .data(value.to_string())
 }
+
+fn history_unavailable(
+    row: &AguiRunBinding,
+    after: Option<(u64, usize)>,
+    cursor: u64,
+    last_index: usize,
+) -> Event {
+    let value = json!({
+        "type":"RUN_ERROR","code":"stream_history_unavailable",
+        "message":"The requested stream prefix is no longer retained"
+    });
+    let index = (last_index + 1).max(99);
+    if after.is_some_and(|after| (cursor, index) <= after) {
+        // The prefix ended before the caller's anchor. Report the error without
+        // moving the browser's cursor backwards or inventing a replay position.
+        Event::default().data(value.to_string())
+    } else {
+        frame(row, cursor, index, value)
+    }
+}
+
+fn stream_error(
+    row: &AguiRunBinding,
+    after: Option<(u64, usize)>,
+    cursor: u64,
+    last_index: usize,
+    code: &str,
+    message: &str,
+) -> Option<Event> {
+    let index = (last_index + 1).max(99);
+    after.is_none_or(|after| (cursor, index) > after).then(|| {
+        frame(row, cursor, index, json!({"type":"RUN_ERROR","code":code,"message":message}))
+    })
+}
+
 async fn stream(
     state: Arc<RunApiState>,
     user: UserContext,
@@ -1949,15 +2133,23 @@ async fn stream(
             else {
                 return failure(StatusCode::BAD_REQUEST, "invalid_event_cursor");
             };
-            let Some((cursor, index)) = tail.split_once(':').and_then(|(cursor, index)| {
-                Some((cursor.parse::<u64>().ok()?, index.parse::<usize>().ok()?))
-            }) else {
-                return failure(StatusCode::BAD_REQUEST, "invalid_event_cursor");
-            };
             if key != row.storage_key() {
                 return failure(StatusCode::BAD_REQUEST, "event_cursor_run_mismatch");
             }
-            Some((cursor, index))
+            let parse_position = |position: &str| {
+                let (cursor, index) = position.split_once(':')?;
+                Some((cursor.parse::<u64>().ok()?, index.parse::<usize>().ok()?))
+            };
+            match tail.split_once(':') {
+                Some((STREAM_CURSOR_VERSION, position)) => match parse_position(position) {
+                    Some(position) => Some(position),
+                    None => return failure(StatusCode::BAD_REQUEST, "invalid_event_cursor"),
+                },
+                _ if parse_position(tail).is_some() => {
+                    return failure(StatusCode::CONFLICT, "event_cursor_projection_changed");
+                }
+                _ => return failure(StatusCode::BAD_REQUEST, "invalid_event_cursor"),
+            }
         }
     };
     let body = async_stream::stream! {
@@ -1968,7 +2160,7 @@ async fn stream(
         let mut committed_work = state.manager.subscribe_committed_work();
         let shutdown = state.manager.root_cancellation_token();
         let cursor = row.start_cursor;
-        if after.is_none() { yield Ok::<Event,Infallible>(frame(&row,cursor,0,json!({"type":"RUN_STARTED","threadId":row.thread_id,"runId":row.wire_run_id,"protocolVersion":"1.0"}))); }
+        if after.is_none() { yield Ok::<Event,Infallible>(frame(&row,cursor,0,json!({"type":"RUN_STARTED","threadId":row.thread_id,"runId":row.wire_run_id,"protocolVersion":PROTOCOL_VERSION}))); }
         // Surfaces belong to the conversation: restate the earlier runs' live ones, then seed the projector.
         let record = agui_a2ui::thread_record(&state,&user,&row).await.unwrap_or_else(|| {
             let mut record = agui_a2ui::SurfaceRecord::default(); record.mark_incomplete("unavailable"); record
@@ -1984,44 +2176,97 @@ async fn stream(
         }
         let mut projector = Projector::seeded(record);
         let mut cursor = cursor;
+        // The prefix uses indices through 50. Source events reset the index
+        // because their native cursors strictly increase.
+        let mut last_index = 50;
         loop {
-            row = match reconcile(&state,&user,row.clone()).await { Ok(row) => row, Err(error) => { tracing::warn!(error = %format!("{error:#}"), native_run_id = %row.native_run_id, cursor, "AG-UI stream projection read failed"); yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"projection_unavailable","message":"Durable stream projection is unavailable"}))); break; } };
-            let history = state.manager.history_since(&row.native_run_id,Some(cursor)).await;
-            if let Some(history) = history {
-                if history.first().is_some_and(|event|event.id > cursor.saturating_add(1)) {
-                    yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"stream_history_unavailable","message":"The requested stream prefix is no longer retained"}))); break;
+            // A warm successor can publish to the same native run only after
+            // this segment is sealed. Read the history before reconciling, so
+            // reconciliation sees that seal before we project its successor.
+            let mut history = state.manager.history_since(&row.native_run_id, Some(cursor)).await;
+            row = match reconcile(&state,&user,row.clone()).await {
+                Ok(row) => row,
+                Err(error) => {
+                    tracing::warn!(error = %format!("{error:#}"), native_run_id = %row.native_run_id, cursor, "AG-UI stream projection read failed");
+                    if let Some(error) = stream_error(&row, after, cursor, last_index,
+                        "projection_unavailable", "Durable stream projection is unavailable") {
+                        yield Ok(error);
+                    }
+                    break;
                 }
+            };
+            if row.terminal.as_ref().is_some_and(|terminal| {
+                terminal.source_cursor > history.as_ref()
+                    .and_then(|events| events.last())
+                    .map_or(cursor, |event| event.id)
+            }) {
+                // Reconciliation can join the producer and seal a terminal
+                // beyond the first snapshot. Pick up that final prefix.
+                history = state.manager.history_since(&row.native_run_id, Some(cursor)).await;
+            }
+            if let Some(history) = history {
                 for event in history {
                     if row.terminal.as_ref().is_some_and(|terminal| event.id > terminal.source_cursor) { break; }
+                    if event.id != cursor.saturating_add(1) {
+                        yield Ok(history_unavailable(&row, after, cursor, last_index));
+                        return;
+                    }
                     cursor = event.id;
+                    last_index = 0;
                     for (index,value) in projector.project(&row,event.id,&event.event).into_iter().enumerate() {
-                        if after.is_none_or(|after|(cursor,index+1)>after) { yield Ok(frame(&row,cursor,index+1,value)); }
+                        last_index = index + 1;
+                        if after.is_none_or(|after|(cursor,last_index)>after) { yield Ok(frame(&row,cursor,last_index,value)); }
                     }
                 }
             } else if row.terminal.is_none() {
-                yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"execution_status_unconfirmed","message":"The reserved execution is not available; retrying this run will not replay it"}))); break;
+                if let Some(error) = stream_error(&row, after, cursor, last_index,
+                    "execution_status_unconfirmed", "The reserved execution is not available; retrying this run will not replay it") {
+                    yield Ok(error);
+                }
+                break;
             }
             if let Some(terminal) = &row.terminal {
-                let cursor = terminal.source_cursor;
+                if terminal.source_cursor != cursor {
+                    yield Ok(history_unavailable(&row, after, cursor, last_index));
+                    break;
+                }
                 let mut terminal_index = 100;
                 if let Some(calls) = terminal.event.pointer("/metadata/uar/clientToolCalls") {
                     let calls = match serde_json::from_value::<Vec<crate::llm::ToolCall>>(calls.clone()) {
                         Ok(calls) => calls,
-                        Err(_) => { yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"caller_tool_projection_unavailable","message":"The durable caller-tool projection is unavailable"}))); break; }
+                        Err(_) => {
+                            if let Some(error) = stream_error(&row, after, cursor, last_index,
+                                "caller_tool_projection_unavailable", "The durable caller-tool projection is unavailable") {
+                                yield Ok(error);
+                            }
+                            break;
+                        }
                     };
                     terminal_index = calls.len().saturating_mul(3).saturating_add(100);
-                    for (index,value) in projector.caller_tools(&row,&calls).into_iter().enumerate() {
-                        if after.is_none_or(|after|(cursor,index+1)>after) { yield Ok(frame(&row,cursor,index+1,value)); }
+                    let mut frames = projector.close_reasoning(&row);
+                    frames.extend(projector.caller_tools(&row,&calls));
+                    for value in frames {
+                        last_index += 1;
+                        if after.is_none_or(|after|(cursor,last_index)>after) { yield Ok(frame(&row,cursor,last_index,value)); }
                     }
                 }
-                if let Some(value) = projector.close(&row) {
-                    if after.is_none_or(|after|(cursor,terminal_index-10)>after) { yield Ok(frame(&row,cursor,terminal_index-10,value)); }
+                let mut closing = projector.close_reasoning(&row);
+                closing.extend(projector.close(&row));
+                let mut close_index = terminal_index - 10 - closing.len().saturating_sub(1);
+                for value in closing {
+                    last_index = close_index.max(last_index + 1);
+                    if after.is_none_or(|after|(cursor,last_index)>after) { yield Ok(frame(&row,cursor,last_index,value)); }
+                    close_index += 1;
                 }
+                terminal_index = terminal_index.max(last_index + 1);
                 if after.is_none_or(|after|(cursor,terminal_index)>after) { yield Ok(frame(&row,cursor,terminal_index,terminal.event.clone())); }
                 break;
             }
             let Some(events) = events.as_mut() else {
-                yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"execution_status_unconfirmed","message":"The reserved execution has no live event source"})));
+                if let Some(error) = stream_error(&row, after, cursor, last_index,
+                    "execution_status_unconfirmed", "The reserved execution has no live event source") {
+                    yield Ok(error);
+                }
                 break;
             };
             tokio::select! {
@@ -2029,13 +2274,19 @@ async fn stream(
                 event = events.recv() => match event {
                     Ok(_) | Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {},
                     Err(tokio::sync::broadcast::error::RecvError::Closed) => {
-                        yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"execution_status_unconfirmed","message":"The reserved execution event source closed"})));
+                        if let Some(error) = stream_error(&row, after, cursor, last_index,
+                            "execution_status_unconfirmed", "The reserved execution event source closed") {
+                            yield Ok(error);
+                        }
                         break;
                     }
                 },
                 changed = committed_work.changed() => {
                     if changed.is_err() {
-                        yield Ok(frame(&row,cursor,99,json!({"type":"RUN_ERROR","code":"projection_unavailable","message":"The durable projection event source closed"})));
+                        if let Some(error) = stream_error(&row, after, cursor, last_index,
+                            "projection_unavailable", "The durable projection event source closed") {
+                            yield Ok(error);
+                        }
                         break;
                     }
                 },

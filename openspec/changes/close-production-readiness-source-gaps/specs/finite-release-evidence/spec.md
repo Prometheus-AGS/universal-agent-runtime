@@ -273,3 +273,9 @@ The release workflow SHALL bind platform claims to the exact published image ind
 - **WHEN** an RC4 or later evidence bundle omits its digest-bound image index, or the producer receives mismatched source, image, archive or repository receipts
 - **THEN** verification refuses the incomplete bundle and the producer refuses mismatched receipts before requesting signatures
 - **AND** preparation reports success only after verifying the image signature and both attestations against the approved identity and issuer
+
+#### Scenario: RC5 publishes the locally verified Linux amd64 UAR image
+- **WHEN** RC5 incorporates the native chat concurrency repair from main
+- **THEN** the two original mounted concurrency examples qualify the exact Linux amd64 image before the release tag is signed or the image is promoted
+- **AND** the tag-triggered multi-architecture workflow leaves the RC5 image alias to the local release process
+- **AND** the release evidence identifies the exact image, signed source tag and selected UAR API scope

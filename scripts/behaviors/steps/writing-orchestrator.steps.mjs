@@ -146,9 +146,9 @@ Then('intent classification selects the writing agent instead of the mathematics
   assert.equal(selections.length, 1, 'Expected one agent-selection event');
   const event = selections[0];
   this.selection = event.value;
-  assert.equal(event.threadId, this.threadId);
-  assert.equal(event.runId, this.runId);
-  assert.equal(event.agentId, 'orchestrator-agent');
+  assert.equal(event.metadata?.uar?.threadId, this.threadId);
+  assert.equal(event.metadata?.uar?.runId, this.runId);
+  assert.equal(event.metadata?.uar?.agentId, 'orchestrator-agent');
   assert.equal(this.selection.sourceAgentId, 'orchestrator-agent');
   assert.equal(this.selection.selectionMethod, 'intent');
   assert.equal(this.selection.agent.id, this.writerId);

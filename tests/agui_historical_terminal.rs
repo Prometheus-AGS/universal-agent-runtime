@@ -60,6 +60,9 @@ impl LlmDriver for NoDispatch {
         self.2.lock().unwrap().push(request.messages);
         use universal_agent_runtime::normalized::NormalizedEvent as ProviderEvent;
         Ok(Box::pin(futures::stream::iter(vec![
+            Ok(ProviderEvent::ThinkingDelta { text: "Legacy thinking stays off this wire".into() }),
+            Ok(ProviderEvent::ReasoningDelta { text: "Checking the successor. ".into() }),
+            Ok(ProviderEvent::ReasoningDelta { text: "Continuing.".into() }),
             Ok(ProviderEvent::MessageDelta { text: "Successor controlled driver input confirmed".into() }),
             Ok(ProviderEvent::Done),
         ])))
@@ -172,6 +175,198 @@ fn terminals(body: &str) -> Vec<Value> {
         .collect()
 }
 
+fn official_frames(body: &str) -> Vec<(&str, Value)> {
+    static SCHEMA: std::sync::LazyLock<jsonschema::Validator> = std::sync::LazyLock::new(|| {
+        // AG-UI 1.0 freeze a1a30759aeaf8de31488a81115d74e70af28afb9.
+        let schema: Value = serde_json::from_str(include_str!("../schemas/ag-ui-1.0.schema.json"))
+            .expect("official AG-UI schema is JSON");
+        jsonschema::validator_for(&schema).expect("AG-UI 1.0 schema compiles")
+    });
+    let mut id = None;
+    body.lines().filter_map(|line| {
+        if let Some(value) = line.strip_prefix("id: ") {
+            id = Some(value);
+        }
+        let data = line.strip_prefix("data: ")?;
+        let event = serde_json::from_str::<Value>(data).expect("AG-UI SSE data is JSON");
+        if let Err(error) = SCHEMA.validate(&event) {
+            panic!("invalid AG-UI 1.0 event {event}: {error}");
+        }
+        Some((id.take().expect("UAR replay cursor"), event))
+    }).collect()
+}
+
+#[tokio::test]
+async fn mounted_agui_retained_projection_matches_final_schema_and_replays_frame_suffix() {
+    let user = external_identity_host::user("a2ui-recovery", false, "a2ui-owner").await;
+    let directory = tempfile::tempdir().unwrap();
+    let endpoint = format!("surrealkv://{}", directory.path().join("agui-wire.db").display());
+    let store = Arc::new(SurrealDbProvider::new(&endpoint, None, None, None, None).await.unwrap());
+    let row = binding(&user, "final-wire");
+    let run_id = row.native_run_id.clone();
+    seed(&store, &user, &row, RunStatus::Done, None, &row.agent_id, &row.session_id).await;
+    let events = [
+        NormalizedEvent::ChatDelta { run_id: run_id.clone(), text_delta: "Checking…".into() },
+        NormalizedEvent::SkillActivated {
+            run_id: run_id.clone(), skill_id: "lookup".into(), title: "Lookup".into(),
+            selection_method: "keyword".into(),
+        },
+        NormalizedEvent::AgentSelected {
+            run_id: run_id.clone(), source_agent_id: row.agent_id.clone(),
+            selected_agent_id: "lookup-agent".into(), selected_agent_name: "Lookup agent".into(),
+            selected_thread_id: "lookup-thread".into(), selection_method: "intent".into(),
+            roster_revision: "1".into(),
+        },
+        NormalizedEvent::ToolStart {
+            run_id: run_id.clone(), call_index: 0, tool_call_id: "call-lookup".into(),
+            tool: "lookup".into(), input: json!({"query":"released"}),
+        },
+        NormalizedEvent::ToolEnd {
+            run_id: run_id.clone(), call_index: 0, tool_call_id: "call-lookup".into(),
+            tool: "lookup".into(), output: json!("Lookup failed"), ok: false,
+        },
+        NormalizedEvent::PresentationDiagnostic {
+            run_id: run_id.clone(), code: "surface_rejected".into(), message: "Surface rejected".into(),
+        },
+        NormalizedEvent::ArtifactDisplay {
+            run_id: run_id.clone(),
+            artifact: universal_agent_runtime::uar::domain::events::ArtifactPayload {
+                artifact_id: "surface-legacy".into(), artifact_type: "a2ui".into(),
+                title: "Legacy surface".into(), language: None, metadata: json!({}),
+                content: json!({"version":"v0.9","createSurface":{
+                    "surfaceId":"legacy-ticket","catalogId":"urn:uar:a2ui:catalog:1"
+                }}).to_string(),
+            },
+        },
+        NormalizedEvent::ReasoningDelta {
+            run_id: run_id.clone(), text_delta: "Retained public reasoning".into(),
+        },
+        NormalizedEvent::RunDone { run_id },
+    ];
+    for (index, event) in events.into_iter().enumerate() {
+        store.append_run_history_event(&RunHistoryEvent {
+            run_id: row.native_run_id.clone(), event_id: index as u64 + 1,
+            event: serde_json::to_value(event).unwrap(),
+        }).await.unwrap();
+    }
+    let driver = Arc::new(NoDispatch::default());
+    let manager = manager(store.clone(), driver.clone()).await;
+    let app = router(manager.clone(), &user);
+    let unsupported = json!({
+        "threadId": row.thread_id,
+        "runId": "unsupported-role",
+        "protocolVersion": "1.0",
+        "messages": [{"id":"privileged","role":"developer","content":"Untrusted developer text"}]
+    });
+    let rejected = app.clone().oneshot(Request::builder().method("POST").uri("/agents/agent")
+        .header("content-type", "application/json")
+        .body(Body::from(unsupported.to_string())).unwrap()).await.unwrap();
+    assert_eq!(rejected.status(), StatusCode::BAD_REQUEST);
+    let rejected = to_bytes(rejected.into_body(), 128 * 1024).await.unwrap();
+    assert_eq!(serde_json::from_slice::<Value>(&rejected).unwrap()["code"], "unsupported_history_message");
+    assert!(store.load_agui_run(&row.owner, &row.agent_id, &row.thread_id, "unsupported-role")
+        .await.unwrap().is_none());
+
+    let (status, body) = reconnect(&app, &row, None).await;
+    assert_eq!(status, StatusCode::OK);
+    let frames = official_frames(&body);
+    let kinds: Vec<_> = frames.iter().map(|(_, event)| event["type"].as_str().unwrap()).collect();
+    assert_eq!(kinds, [
+        "RUN_STARTED", "CUSTOM", "CUSTOM", "TEXT_MESSAGE_START", "TEXT_MESSAGE_CONTENT",
+        "CUSTOM", "CUSTOM", "TOOL_CALL_START", "TOOL_CALL_ARGS", "TOOL_CALL_END",
+        "TOOL_CALL_RESULT", "CUSTOM", "ACTIVITY_SNAPSHOT", "REASONING_START",
+        "REASONING_MESSAGE_START", "REASONING_MESSAGE_CONTENT", "REASONING_MESSAGE_END",
+        "REASONING_END", "TEXT_MESSAGE_END", "RUN_ERROR",
+    ]);
+    assert_eq!(frames[0].1["protocolVersion"], "1.0");
+    assert_eq!(frames[5].1["metadata"]["uar"]["runId"], row.wire_run_id);
+    assert_eq!(frames[10].1["content"], "Lookup failed");
+    assert_eq!(frames[10].1["metadata"]["uar"]["isError"], true);
+    assert_eq!(frames[12].1["activityType"], "a2ui-surface");
+    assert_eq!(frames[13].1["messageId"], frames[17].1["messageId"]);
+    assert_eq!(frames[14].1["messageId"], frames[16].1["messageId"]);
+    assert_eq!(frames[15].1["delta"], "Retained public reasoning");
+    assert_eq!(frames[19].1["code"], "host_cleanup_unconfirmed");
+    let (_, suffix) = reconnect(&app, &row, Some(frames[8].0)).await;
+    assert_eq!(official_frames(&suffix), frames[9..]);
+
+    // The official tool-call-metadata-lands-on-the-call fixture introduces
+    // an assistant parent solely by reference from TOOL_CALL_START.
+    let tool_only = binding(&user, "tool-only-wire");
+    seed(&store, &user, &tool_only, RunStatus::Done, None,
+        &tool_only.agent_id, &tool_only.session_id).await;
+    let calls = json!([
+        {"id":"call-one","type":"function","function":{"name":"lookup","arguments":"{}"}},
+        {"id":"call-two","type":"function","function":{"name":"lookup","arguments":"{}"}}
+    ]);
+    let mut sealed = tool_only.clone();
+    sealed.revision += 1;
+    sealed.terminal = Some(AguiTerminal {
+        source_cursor: tool_only.start_cursor,
+        event: json!({
+            "type":"RUN_FINISHED","threadId":tool_only.thread_id,"runId":tool_only.wire_run_id,
+            "outcome":{"type":"success","pendingToolCallIds":["call-one","call-two"]},
+            "metadata":{"uar":{"clientToolCalls":calls}}
+        }),
+        interrupt_ids: Vec::new(),
+    });
+    assert!(store.compare_and_swap_agui_run(&tool_only, &sealed).await.unwrap());
+    let (status, body) = reconnect(&app, &tool_only, None).await;
+    assert_eq!(status, StatusCode::OK);
+    let frames = official_frames(&body);
+    let kinds: Vec<_> = frames.iter().map(|(_, event)| event["type"].as_str().unwrap()).collect();
+    assert_eq!(kinds, [
+        "RUN_STARTED", "CUSTOM", "CUSTOM",
+        "TOOL_CALL_START", "TOOL_CALL_ARGS", "TOOL_CALL_END",
+        "TOOL_CALL_START", "TOOL_CALL_ARGS", "TOOL_CALL_END", "RUN_FINISHED",
+    ]);
+    assert_eq!(frames[3].1["parentMessageId"], "wire-run:assistant");
+    assert_eq!(frames[6].1["parentMessageId"], frames[3].1["parentMessageId"]);
+    assert_eq!(frames[9].1["outcome"]["pendingToolCallIds"], json!(["call-one", "call-two"]));
+    let (_, suffix) = reconnect(&app, &tool_only, Some(frames[4].0)).await;
+    assert_eq!(official_frames(&suffix), frames[5..]);
+
+    let incomplete = binding(&user, "incomplete-wire");
+    seed(&store, &user, &incomplete, RunStatus::Done, Some(NormalizedEvent::ChatDelta {
+        run_id: incomplete.native_run_id.clone(), text_delta: "Retained prefix".into(),
+    }), &incomplete.agent_id, &incomplete.session_id).await;
+    let mut sealed = incomplete.clone();
+    sealed.revision += 1;
+    sealed.terminal = Some(AguiTerminal {
+        source_cursor: 2,
+        event: json!({
+            "type":"RUN_FINISHED","threadId":incomplete.thread_id,"runId":incomplete.wire_run_id,
+            "outcome":{"type":"success"}
+        }),
+        interrupt_ids: Vec::new(),
+    });
+    assert!(store.compare_and_swap_agui_run(&incomplete, &sealed).await.unwrap());
+    let (status, body) = reconnect(&app, &incomplete, None).await;
+    assert_eq!(status, StatusCode::OK);
+    let events = official_frames(&body);
+    assert!(events.iter().any(|(_, event)| event["delta"] == "Retained prefix"));
+    let endings = terminals(&body);
+    assert_eq!(endings.len(), 1);
+    assert_eq!(endings[0]["type"], "RUN_ERROR");
+    assert_eq!(endings[0]["code"], "stream_history_unavailable");
+    let old_anchor = format!("{}:v2:2:100", incomplete.storage_key());
+    let (status, body) = reconnect(&app, &incomplete, Some(&old_anchor)).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(terminals(&body), endings);
+    assert!(!body.lines().any(|line| line.starts_with("id:")));
+    assert_eq!(retained(&store, &incomplete).await, sealed);
+    assert_eq!(driver.0.load(Ordering::SeqCst), 0);
+    assert_eq!(driver.1.load(Ordering::SeqCst), 0);
+
+    drop(app);
+    manager.shutdown_graph_roots().await.unwrap();
+    manager.shutdown_terminals().await.unwrap();
+    manager.shutdown_sandboxes().await.unwrap();
+    manager.shutdown_run_history().await.unwrap();
+    drop(manager);
+    assert!(store.close_scope().await.engine_close_acknowledged);
+}
+
 async fn retained(store: &SurrealDbProvider, row: &AguiRunBinding) -> AguiRunBinding {
     store.load_agui_run(&row.owner, &row.agent_id, &row.thread_id, &row.wire_run_id)
         .await.unwrap().unwrap()
@@ -190,6 +385,9 @@ async fn reopened_unsealed_native_outcomes_close_truthfully_once_without_dispatc
     agent.id = "agent".into();
     agent.policy.skills.max_active = 0;
     agent.policy.tools.allow.clear();
+    agent.extensions.insert("uar.run_policy".into(), json!({
+        "version": 1, "skills": {"mode": "none"}, "tools": {"mode": "none"}
+    }));
     agent.memory.kb.enabled = false;
     universal_agent_runtime::uar::domain::agent_store::upsert_agent(&store, &agent).await.unwrap();
     let mut originals = Vec::new();
@@ -282,9 +480,13 @@ async fn reopened_unsealed_native_outcomes_close_truthfully_once_without_dispatc
         assert_eq!(evidence.len(), terminal_cursor as usize + usize::from(status == RunStatus::Error));
         assert_eq!(terminals(&first.1), vec![terminal.event.clone()]);
         assert_eq!(terminals(&second.1), vec![terminal.event.clone()]);
-        let cursor = format!("{}:{terminal_cursor}:100", original.storage_key());
+        let cursor = format!("{}:v2:{terminal_cursor}:100", original.storage_key());
         assert!(first.1.contains(&format!("id: {cursor}")));
         assert!(terminals(&reconnect(&app, &original, Some(&cursor)).await.1).is_empty());
+        let legacy_cursor = format!("{}:{terminal_cursor}:100", original.storage_key());
+        let (status, body) = reconnect(&app, &original, Some(&legacy_cursor)).await;
+        assert_eq!(status, StatusCode::CONFLICT);
+        assert_eq!(serde_json::from_str::<Value>(&body).unwrap()["code"], "event_cursor_projection_changed");
         assert_eq!(retained(&store, &original).await, sealed);
         let retry = app.clone().oneshot(Request::builder().method("POST").uri("/agents/agent")
             .header("content-type", "application/json")
@@ -305,8 +507,13 @@ async fn reopened_unsealed_native_outcomes_close_truthfully_once_without_dispatc
 
         let successor_input = format!("R022 deliberate successor for {}", original.native_run_id);
         let successor = json!({"threadId":original.thread_id,"runId":"next-wire-run",
-            "parentRunId":original.wire_run_id,"messages":[{
+            "protocolVersion":"1.1","parentRunId":original.wire_run_id,"messages":[{
+                "id":"prior-surface","role":"activity","activityType":"a2ui-surface",
+                "content":{"a2ui_operations":[{"createSurface":{"surfaceId":"display-only-surface"}}]}
+            },{
                 "id":"successor-user-message","role":"user","content":successor_input
+            },{
+                "id":"retained-reasoning","role":"reasoning","content":"Prior display reasoning"
             }]});
         let mut wrong_parent = successor.clone();
         wrong_parent["parentRunId"] = json!("wrong-predecessor");
@@ -329,6 +536,25 @@ async fn reopened_unsealed_native_outcomes_close_truthfully_once_without_dispatc
         assert_eq!(accepted.status(), StatusCode::OK);
         let accepted = to_bytes(accepted.into_body(), 128 * 1024).await.unwrap();
         let accepted = std::str::from_utf8(&accepted).unwrap();
+        let frames = official_frames(accepted);
+        assert_eq!(frames[0].1["protocolVersion"], "1.0");
+        assert_eq!(frames[frames.len() - 2].1["type"], "TEXT_MESSAGE_END", "{accepted}");
+        let reasoning: Vec<_> = frames.iter().filter(|(_, event)| {
+            event["type"].as_str().is_some_and(|kind| kind.starts_with("REASONING_"))
+        }).map(|(_, event)| event).collect();
+        assert_eq!(reasoning.len(), 6, "{accepted}");
+        assert_eq!(reasoning[0]["type"], "REASONING_START");
+        assert_eq!(reasoning[1]["type"], "REASONING_MESSAGE_START");
+        assert_eq!(reasoning[2]["delta"], "Checking the successor. ");
+        assert_eq!(reasoning[3]["delta"], "Continuing.");
+        assert_eq!(reasoning[4]["type"], "REASONING_MESSAGE_END");
+        assert_eq!(reasoning[5]["type"], "REASONING_END");
+        assert_eq!(reasoning[0]["messageId"], reasoning[5]["messageId"]);
+        assert_eq!(reasoning[1]["messageId"], reasoning[4]["messageId"]);
+        let span_end = frames.iter().position(|(_, event)| event["type"] == "REASONING_END").unwrap();
+        let text_start = frames.iter().position(|(_, event)| event["type"] == "TEXT_MESSAGE_START").unwrap();
+        assert!(span_end < text_start);
+        assert!(!accepted.contains("Legacy thinking stays off this wire"));
         let successor_terminals = terminals(accepted);
         assert_eq!(successor_terminals.len(), 1, "{accepted}");
         assert_eq!(successor_terminals[0]["type"], "RUN_FINISHED", "{accepted}");
@@ -351,6 +577,8 @@ async fn reopened_unsealed_native_outcomes_close_truthfully_once_without_dispatc
         assert_eq!(driver.0.load(Ordering::SeqCst), 0, "original still never dispatches");
         let captures = driver.2.lock().unwrap();
         let latest = captures.last().unwrap();
+        assert!(!latest.iter().any(|message| message["content"] == "Prior display reasoning"));
+        assert!(!latest.iter().any(|message| message.to_string().contains("display-only-surface")));
         assert_eq!(latest.iter().rev().find(|message| message["role"] == "user").unwrap()["content"],
             successor_input, "controlled driver input belongs to the new native request");
         drop(captures);
@@ -536,7 +764,12 @@ impl LlmDriver for HeldCancellation {
             prompt_tokens: 7, completion_tokens: 3, total_tokens: 10,
             cached_tokens: None, uncached_input_tokens: None, cache_creation_tokens: None,
         };
-        Ok(Box::pin(futures::stream::iter(vec![Ok(usage)]).chain(futures::stream::poll_fn(move |_| {
+        // The driver opening buffer holds usage until a semantic delta. Once
+        // this prefix crosses it, the run can observe usage before we cancel.
+        let delta = universal_agent_runtime::normalized::NormalizedEvent::MessageDelta {
+            text: "Partial cancellation fixture reply".into(),
+        };
+        Ok(Box::pin(futures::stream::iter(vec![Ok(usage), Ok(delta)]).chain(futures::stream::poll_fn(move |_| {
             if !announced { entered.notify_one(); announced = true; }
             std::task::Poll::Pending
         }))))
@@ -563,12 +796,18 @@ async fn resident_cancellation_selects_final_cursor_and_refuses_conflicting_evid
         artifact.id = "agent".into();
         artifact.policy.skills.max_active = 0;
         artifact.policy.tools.allow.clear();
+        artifact.extensions.insert("uar.run_policy".into(), json!({
+            "version": 1, "skills": {"mode": "none"}, "tools": {"mode": "none"}
+        }));
         artifact.memory.kb.enabled = false;
         let mut request = RunExecutionRequest::new(artifact, "hold cancellation producer".into())
             .with_user_context(&user).unwrap();
         request.session_id = Some(row.session_id.clone());
         row.native_run_id = manager.execute_request(request).await;
-        tokio::time::timeout(std::time::Duration::from_secs(30), driver.entered.notified()).await.unwrap();
+        if tokio::time::timeout(std::time::Duration::from_secs(30), driver.entered.notified()).await.is_err() {
+            let history = manager.history_since(&row.native_run_id, None).await.unwrap();
+            panic!("held driver did not reach its cancellation barrier; native history: {history:?}");
+        }
         let diagnostic_run = if matches!(name, "foreign-diagnostic" | "foreign-host-diagnostic") {
             "foreign-native".into()
         } else { row.native_run_id.clone() };
@@ -639,9 +878,11 @@ async fn resident_cancellation_selects_final_cursor_and_refuses_conflicting_evid
                     | NormalizedEvent::PresentationDiagnostic { .. } | NormalizedEvent::Cancelled { .. }))
                 .map(|event| json!({"cursor":event.id,"event":event.event})).collect();
             assert_eq!(evidence, &expected);
-            assert_eq!(evidence.iter().filter(|event| event["event"]["code"] == "session_persist_failed").count(),
+            assert_eq!(evidence.iter().filter(|event| event["event"]["data"]["code"] == "session_persist_failed").count(),
                 if name == "multiple" { 2 } else { 1 });
-            assert_eq!(evidence[0]["event"]["code"], "session_persist_failed");
+            assert_eq!(evidence[0]["event"]["data"]["code"], "session_persist_failed");
+            assert_eq!(evidence[0]["event"]["type"],
+                if name == "host-diagnostic" { "PresentationDiagnostic" } else { "Error" });
             if name == "host-diagnostic" {
                 let frames: Vec<Value> = result.1.lines().filter_map(|line| line.strip_prefix("data: "))
                     .filter_map(|data| serde_json::from_str(data).ok()).collect();
@@ -797,26 +1038,27 @@ async fn public_bound_admission_captures_native_artifact_and_preserves_successor
     manifest["lock"] = json!([]);
     finalize_fixture(&mut manifest);
     let owner = user.session_owner_key().unwrap();
-    let installed = catalog.install_package(&owner, PackageSourceRequest {
+    let catalog_owner = universal_agent_runtime::uar::api::user_settings::principal_storage_key(&user).unwrap();
+    let installed = catalog.install_package(&catalog_owner, PackageSourceRequest {
         command_id: "r026-package".into(), expected_catalog_revision: None,
         manifest: serde_json::to_string_pretty(&manifest).unwrap(),
         files: [("agent-definition.json".into(), source)].into_iter().collect(),
     }).await.unwrap();
     let mut binding: Value = serde_json::from_str(include_str!("fixtures/collaboration/deployment-binding.json")).unwrap();
     binding["id"] = json!("r026-binding");
-    binding["ownerId"] = json!(owner);
+    binding["ownerId"] = json!(catalog_owner);
     binding["workspaceId"] = json!("workspace:r026");
     binding["package"] = serde_json::to_value(installed.preflight.package).unwrap();
     binding["skillBindings"] = json!([]);
     binding["representationGrantRefs"] = json!([]);
-    binding["modelBindings"] = json!([{"requestedAlias":"local-default","providerId":"openai","modelId":"gpt-4o"}]);
+    binding["modelBindings"][0]["modelId"] = json!("gpt-4o");
     finalize_fixture(&mut binding);
-    let installed = catalog.install_binding(&owner, "workspace:r026", BindingCommandRequest {
+    let installed = catalog.install_binding(&catalog_owner, "workspace:r026", BindingCommandRequest {
         command_id: "r026-binding".into(), expected_revision: Some(0), binding,
     }).await.unwrap();
     assert!(installed.preflight.activation_supported, "{:?}", installed.preflight);
     let target = universal_agent_runtime::uar::api::targets::agent_target_id("r026-binding");
-    let resolved = catalog.resolve_bound_agent_run(&owner, "workspace:r026", "r026-binding").await.unwrap();
+    let resolved = catalog.resolve_bound_agent_run(&catalog_owner, "workspace:r026", "r026-binding").await.unwrap();
     assert_ne!(target, resolved.artifact.id);
     let driver = Arc::new(NoDispatch::default());
     *driver.3.lock().unwrap() = Some((store.clone(), owner.clone(), target.clone(),
@@ -829,15 +1071,19 @@ async fn public_bound_admission_captures_native_artifact_and_preserves_successor
     })).layer(Extension(user.clone()));
     let mut original: Option<AguiRunBinding> = None;
     for (wire_id, parent) in [("wire-bound", None), ("wire-successor", Some("wire-bound"))] {
-        let input = json!({"threadId":"bound-thread","runId":wire_id,"parentRunId":parent,
+        let mut input = json!({"threadId":"bound-thread","runId":wire_id,
             "messages":[{"id":format!("message-{wire_id}"),"role":"user",
                 "content":"R022 deliberate successor for native-bound"}]});
+        if let Some(parent) = parent {
+            input["parentRunId"] = json!(parent);
+        }
         let response = app.clone().oneshot(Request::post(format!("/agents/{target}"))
             .header("content-type", "application/json").header("x-uar-workspace-id", "workspace:r026")
             .body(Body::from(input.to_string())).unwrap()).await.unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
+        let status = response.status();
         let body = to_bytes(response.into_body(), 128 * 1024).await.unwrap();
         let body = std::str::from_utf8(&body).unwrap();
+        assert_eq!(status, StatusCode::OK, "{body}");
         assert_eq!(terminals(body)[0]["outcome"]["type"], "success", "{body}");
         let row = store.load_agui_run(&owner, &target, "bound-thread", wire_id).await.unwrap().unwrap();
         assert_eq!(row.agent_id, target);
@@ -1050,6 +1296,9 @@ async fn actual_cancelled_session_save_fault_is_nonterminal_on_public_native_and
         artifact.id = "agent".into();
         artifact.policy.skills.max_active = 0;
         artifact.policy.tools.allow.clear();
+        artifact.extensions.insert("uar.run_policy".into(), json!({
+            "version": 1, "skills": {"mode": "none"}, "tools": {"mode": "none"}
+        }));
         artifact.memory.kb.enabled = false;
         let mut request = RunExecutionRequest::new(artifact, "R027 actual terminal save fault".into())
             .with_user_context(&user).unwrap();
@@ -1057,7 +1306,10 @@ async fn actual_cancelled_session_save_fault_is_nonterminal_on_public_native_and
         row.native_run_id = manager.execute_request(request).await;
         let mut observed = manager.subscribe(&row.native_run_id).await.unwrap();
         if cancelled {
-            tokio::time::timeout(std::time::Duration::from_secs(30), held.entered.notified()).await.unwrap();
+            if tokio::time::timeout(std::time::Duration::from_secs(30), held.entered.notified()).await.is_err() {
+                let history = manager.history_since(&row.native_run_id, None).await.unwrap();
+                panic!("held driver did not reach its cancellation barrier; native history: {history:?}");
+            }
             fault.armed.store(true, Ordering::SeqCst);
             assert!(manager.cancel_run_for_context(&user, &row.native_run_id).await);
         }
@@ -1295,12 +1547,14 @@ async fn actual_graph_cancel_save_fault_preserves_cancelled_but_cleanup_fault_re
             let result = reconnect(&router(manager.clone(), &user), &row, None).await;
             assert_eq!(result.0, StatusCode::OK);
             let sealed = retained(&store, &row).await;
-            let terminal = sealed.terminal.unwrap();
+            let terminal = sealed.terminal.unwrap_or_else(|| panic!("missing AG-UI seal: {}", result.1));
             assert_eq!(terminal.event["outcome"]["type"], "cancelled");
             assert_eq!(terminal.source_cursor, history.iter().find(|event|
                 matches!(&event.event, NormalizedEvent::Cancelled { .. })).unwrap().id);
             assert!(terminal.event["metadata"]["uar"]["nativeTerminalEvidence"].as_array().unwrap().iter()
-                .any(|event| event["cursor"] == diagnostic.id && event["event"]["code"] == "session_persist_failed"));
+                .any(|event| event["cursor"] == diagnostic.id
+                    && event["event"]["type"] == "PresentationDiagnostic"
+                    && event["event"]["data"]["code"] == "session_persist_failed"));
         }
         assert_eq!(driver.0.load(Ordering::SeqCst), 0);
         assert_eq!(driver.1.load(Ordering::SeqCst), 0);

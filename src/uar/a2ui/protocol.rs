@@ -1,4 +1,4 @@
-//! Validated UAR production profile for A2UI v0.9.1 messages.
+//! Validated UAR production profile for A2UI 1.0 and retained v0.9/v0.9.1 messages.
 
 #![expect(
     dead_code,
@@ -6,22 +6,29 @@
 )]
 
 use serde::Deserialize;
+use serde_json::{Value, json};
 
 use super::realtime::A2uiWireKind;
 
 pub(crate) const PROFILE: &str = "uar.a2ui/1";
 pub(crate) const VERSION: &str = "v0.9.1";
 pub(crate) const COMPAT_VERSION: &str = "v0.9";
+pub(crate) const VERSION_1_0: &str = "1.0";
 pub(crate) const CATALOG_ID: &str = "urn:uar:a2ui:catalog:1";
 pub(crate) const BASIC_CATALOG_ID: &str =
     "https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json";
+pub(crate) const BASIC_CATALOG_ID_1_0: &str =
+    "https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json";
+
+mod v1;
 
 /// Identity of one surface at the trusted host's original publication boundary.
 pub(crate) fn surface_generation(run_id: &str, cursor: u64, surface_id: &str) -> String {
     use sha2::{Digest, Sha256};
     let digest = Sha256::digest(
-        serde_json::json!(["uar.a2ui.publication/1", run_id, cursor, surface_id])
-            .to_string().as_bytes(),
+        json!(["uar.a2ui.publication/1", run_id, cursor, surface_id])
+            .to_string()
+            .as_bytes(),
     );
     digest.iter().map(|byte| format!("{byte:02x}")).collect()
 }
@@ -53,7 +60,8 @@ pub(crate) fn surface_patch_message(
         return None;
     }
     object.insert("surfaceId".to_owned(), serde_json::json!(surface));
-    let mut wire = serde_json::json!({"version":COMPAT_VERSION});
+    let version = object.remove("version").unwrap_or_else(|| json!(COMPAT_VERSION));
+    let mut wire = json!({"version":version});
     wire[key] = payload;
     parse_message(wire).ok()
 }
@@ -69,10 +77,20 @@ pub(crate) fn stamp_surface_publication(
         NormalizedEvent::ArtifactDisplay { artifact, .. } if artifact.artifact_type == "a2ui" => {
             let mut generations = serde_json::Map::new();
             for line in artifact.content.lines() {
-                let Ok(message) = serde_json::from_str::<serde_json::Value>(line) else { continue };
+                let Ok(message) = serde_json::from_str::<Value>(line) else {
+                    continue;
+                };
+                if message["version"] == VERSION_1_0 {
+                    if let Ok(message) = parse_message(message) {
+                        let surface = message.surface_id;
+                        let generation = surface_generation(run_id, cursor, &surface);
+                        generations.insert(surface, json!(generation));
+                    }
+                    continue;
+                }
                 for key in ["createSurface", "updateComponents", "updateDataModel", "deleteSurface"] {
-                    if let Some(surface) = message.get(key).and_then(|payload| payload.get("surfaceId")).and_then(serde_json::Value::as_str) {
-                        generations.insert(surface.to_owned(), serde_json::json!(surface_generation(run_id, cursor, surface)));
+                    if let Some(surface) = message.get(key).and_then(|payload| payload.get("surfaceId")).and_then(Value::as_str) {
+                        generations.insert(surface.to_owned(), json!(surface_generation(run_id, cursor, surface)));
                     }
                 }
             }
@@ -102,6 +120,26 @@ pub(crate) struct ValidatedA2uiMessage {
     pub kind: A2uiWireKind,
     pub payload: serde_json::Value,
     pub raw: serde_json::Value,
+}
+
+impl ValidatedA2uiMessage {
+    pub(crate) fn state_patch(&self) -> crate::uar::domain::events::StatePatchOp {
+        let mut payload = self.payload.clone();
+        let modern = self.raw["version"] == VERSION_1_0;
+        if modern {
+            payload["version"] = Value::String(VERSION_1_0.into());
+        }
+        if modern && self.kind == A2uiWireKind::DeleteSurface {
+            let mut patch = super::realtime::surface_message_to_state_patch(
+                &self.surface_id,
+                self.kind,
+                Value::Null,
+            );
+            patch.value = Some(payload);
+            return patch;
+        }
+        super::realtime::surface_message_to_state_patch(&self.surface_id, self.kind, payload)
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -307,6 +345,12 @@ pub(crate) struct DeleteSurface {
 }
 
 pub(crate) fn parse_message(value: serde_json::Value) -> Result<ValidatedA2uiMessage, String> {
+    if ["callRendererFunction", "agentFunctionResponse", "callAgentFunction", "rendererFunctionResponse"]
+        .iter()
+        .any(|field| value.get(*field).is_some())
+    {
+        return Err(v1::FUNCTIONS_UNSUPPORTED.into());
+    }
     fn contains_executable(value: &serde_json::Value) -> bool {
         match value {
             serde_json::Value::String(value) => {
@@ -324,6 +368,9 @@ pub(crate) fn parse_message(value: serde_json::Value) -> Result<ValidatedA2uiMes
     }
     if contains_executable(&value) {
         return Err("executable HTML or JavaScript is not allowed in A2UI data".to_string());
+    }
+    if value["version"] == VERSION_1_0 {
+        return v1::parse(value);
     }
     let message: A2uiMessage =
         serde_json::from_value(value.clone()).map_err(|error| error.to_string())?;
@@ -405,6 +452,17 @@ pub(crate) fn parse_message(value: serde_json::Value) -> Result<ValidatedA2uiMes
         payload,
         raw: value,
     })
+}
+
+pub(crate) fn parse_messages(
+    values: impl IntoIterator<Item = Value>,
+) -> Result<Vec<ValidatedA2uiMessage>, String> {
+    let messages = values.into_iter().map(parse_message).collect::<Result<Vec<_>, _>>()?;
+    if messages.is_empty() {
+        return Err("at least one A2UI message is required".into());
+    }
+    v1::validate_sequence(&messages)?;
+    Ok(messages)
 }
 
 #[cfg(test)]

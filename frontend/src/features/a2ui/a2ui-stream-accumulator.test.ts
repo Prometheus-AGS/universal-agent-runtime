@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { A2UI_CATALOG_ID, A2UI_PROFILE, A2UI_VERSION } from "./a2ui-protocol";
+import { A2UI_CATALOG_ID, A2UI_PROFILE, A2UI_VERSION, LEGACY_A2UI_VERSION } from "./a2ui-protocol";
 import {
   MAX_A2UI_COMPONENTS,
   MAX_A2UI_MESSAGES,
@@ -10,22 +10,29 @@ import {
 import { A2uiStreamAccumulator } from "./a2ui-stream-accumulator";
 
 describe("A2uiStreamAccumulator", () => {
+  test("displays final inline create immediately with the initial data intact", () => {
+    const accumulator = new A2uiStreamAccumulator();
+    const inline = { version: A2UI_VERSION, createSurface: { surfaceId: "ready", catalogId: A2UI_CATALOG_ID,
+      components: [{ id: "root", component: "Text", text: { "@path": "/status" } }], dataModel: { status: "Ready" } } };
+    expect(accumulator.advance(inline)).toMatchObject({ action: "create", profile: A2UI_PROFILE, version: A2UI_VERSION, messages: [inline] });
+  });
+
   test("retains one ordered surface sequence across separate AG-UI frames", () => {
     const accumulator = new A2uiStreamAccumulator();
     const create = accumulator.advance({
-      version: A2UI_VERSION,
+      version: LEGACY_A2UI_VERSION,
       profile: A2UI_PROFILE,
       createSurface: { surfaceId: "policy", catalogId: A2UI_CATALOG_ID },
     });
     const components = accumulator.advance({
-      version: A2UI_VERSION,
+      version: LEGACY_A2UI_VERSION,
       updateComponents: {
         surfaceId: "policy",
         components: [{ id: "root", component: "Text", text: "Ready" }],
       },
     });
     const data = accumulator.advance({
-      version: A2UI_VERSION,
+      version: LEGACY_A2UI_VERSION,
       updateDataModel: { surfaceId: "policy", path: "/", value: { ready: true } },
     });
 
@@ -34,7 +41,7 @@ describe("A2uiStreamAccumulator", () => {
       action: "create",
       displayed: true,
       profile: A2UI_PROFILE,
-      version: A2UI_VERSION,
+      version: LEGACY_A2UI_VERSION,
     });
     expect(components?.messages).toHaveLength(2);
     expect(data).toMatchObject({ action: "update", surfaceId: "policy" });

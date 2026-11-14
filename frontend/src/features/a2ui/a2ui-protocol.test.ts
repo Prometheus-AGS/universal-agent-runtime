@@ -1,8 +1,29 @@
 import { describe, expect, test } from "vitest";
 
-import { A2UI_CATALOG_ID, a2uiMessageSchema, validateA2uiMessage } from "@/features/a2ui/a2ui-protocol";
+import { A2UI_BASIC_CATALOG_ID, A2UI_CATALOG_ID, a2uiMessageSchema, validateA2uiMessage } from "@/features/a2ui/a2ui-protocol";
 
 describe("UAR A2UI production profile", () => {
+  test("validates final inline messages and rejects candidate and executable directives", () => {
+    const valid = {
+      version: "1.0",
+      createSurface: {
+        surfaceId: "modern surface",
+        catalogId: A2UI_BASIC_CATALOG_ID,
+        dataModel: { text: "Ready", "@call": "plain data" },
+        components: [
+          { id: "root", component: "Column", children: ["état"] },
+          { id: "état", component: "Text", "@catalogId": A2UI_CATALOG_ID, text: { "@path": "/text" } },
+        ],
+      },
+    };
+    expect(validateA2uiMessage(valid)).toMatchObject({ success: true });
+    expect(validateA2uiMessage({ ...valid, version: "v1.0" })).toMatchObject({ success: false });
+    expect(validateA2uiMessage({ version: "1.0", callRendererFunction: { callFunction: { "@call": "openUrl" } } })).toMatchObject({ success: false });
+    expect(validateA2uiMessage({ version: "1.0", updateComponents: {
+      surfaceId: valid.createSurface.surfaceId,
+      components: [{ id: "root", component: "Text", text: { "@path": "/constructor" } }],
+    } })).toMatchObject({ success: false });
+  });
   test("accepts v0.9.1 messages using the approved catalog", () => {
     expect(a2uiMessageSchema.safeParse({
       version: "v0.9.1",

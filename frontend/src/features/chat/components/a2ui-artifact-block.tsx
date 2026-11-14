@@ -1,20 +1,13 @@
 import { CheckCircle2Icon, Loader2Icon, PanelTopOpenIcon } from "lucide-react";
 import { type FC, useEffect, useMemo, useRef, useState } from "react";
-import { A2uiMessageSchema, MessageProcessor } from "@prometheus-ags/a2ui-core/v0_9";
-import { UarSurface, uarBasicCatalog, type UarComponentImplementation } from "@prometheus-ags/a2ui-uar";
+import { UarSurface } from "@prometheus-ags/a2ui-uar";
 
 import {
   A2UI_PROFILE,
-  A2UI_VERSION,
-  validateA2uiMessage,
   type A2uiComponent,
 } from "@/features/a2ui/a2ui-protocol";
-import {
-  MAX_A2UI_COMPONENTS,
-  MAX_A2UI_MESSAGES,
-  MAX_A2UI_SOURCE_BYTES,
-  MAX_A2UI_SURFACES,
-} from "@/features/a2ui/a2ui-rendering-limits";
+import { MAX_A2UI_SOURCE_BYTES } from "@/features/a2ui/a2ui-rendering-limits";
+import { processA2uiDisplayContent, type StandardSurface } from "@/features/a2ui/a2ui-display-content";
 import { A2uiSurfaceRenderer } from "@/features/a2ui/a2ui-surface-renderer";
 import { JsonSource } from "@/features/chat/ui/chunks/chunk-surface";
 import { useA2uiActionStatus, useA2uiActionContinuation, useA2uiActionIntent, useA2uiSurfaceAuthority, useA2uiActionRecovery } from "@/platform/entities";
@@ -210,30 +203,6 @@ interface A2uiDisplayBlockProps {
   validationError?: string;
 }
 
-function parseMessageSource(content: string): unknown[] {
-  if (new TextEncoder().encode(content).byteLength > MAX_A2UI_SOURCE_BYTES) {
-    throw new Error(`A2UI source exceeds the ${MAX_A2UI_SOURCE_BYTES / 1024} KiB rendering limit.`);
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    const lines = content.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-    if (lines.length === 0) throw new Error("The artifact contains no A2UI messages.");
-    parsed = lines.map((line) => JSON.parse(line) as unknown);
-  }
-
-  const messages = Array.isArray(parsed)
-    ? parsed
-    : isRecord(parsed) && Array.isArray(parsed.messages)
-      ? parsed.messages
-      : [parsed];
-  if (messages.length > MAX_A2UI_MESSAGES) {
-    throw new Error(`A2UI source exceeds the ${MAX_A2UI_MESSAGES}-message rendering limit.`);
-  }
-  return messages;
-}
-
 function boundedDiagnosticSource(content: string): string {
   const encoder = new TextEncoder();
   const sourceBytes = encoder.encode(content);
@@ -245,58 +214,8 @@ function boundedDiagnosticSource(content: string): string {
   return `${new TextDecoder().decode(excerptBytes)}${notice}`;
 }
 
-function validateMessage(raw: unknown) {
-  if (!isRecord(raw)) throw new Error("Each A2UI message must be a JSON object.");
-  const { profile, ...message } = raw;
-  if (profile !== undefined && profile !== A2UI_PROFILE) {
-    throw new Error(`Unsupported A2UI profile: ${String(profile)}`);
-  }
-  if (message.version !== A2UI_VERSION) {
-    throw new Error(`Unsupported A2UI version: ${String(message.version ?? "missing")}. Expected ${A2UI_VERSION}.`);
-  }
-  const validated = validateA2uiMessage({ ...message, profile: A2UI_PROFILE });
-  if (!validated.success) throw new Error(validated.error);
-  const { profile: validatedProfile, ...canonical } = validated.data;
-  void validatedProfile;
-  const parsed = A2uiMessageSchema.parse(canonical);
-  if ("updateComponents" in parsed) {
-    for (const component of parsed.updateComponents.components) {
-      if (component.component && !uarBasicCatalog.components.has(component.component)) {
-        throw new Error(`Unapproved A2UI component: ${component.component}`);
-      }
-    }
-  }
-  return parsed;
-}
-
-function processA2uiDisplayContent(content: string) {
-  const processor = new MessageProcessor<UarComponentImplementation>(
-    [uarBasicCatalog],
-  );
-  const messages = parseMessageSource(content).map(validateMessage);
-  if (messages.length === 0) throw new Error("The artifact contains no A2UI messages.");
-  const componentCount = messages.reduce((count, message) => (
-    "updateComponents" in message
-      ? count + message.updateComponents.components.length
-      : count
-  ), 0);
-  if (componentCount > MAX_A2UI_COMPONENTS) {
-    throw new Error(`A2UI source exceeds the ${MAX_A2UI_COMPONENTS}-component rendering limit.`);
-  }
-  processor.processMessages(messages);
-  const surfaces = [...processor.model.surfacesMap.values()];
-  if (surfaces.length > MAX_A2UI_SURFACES) {
-    throw new Error(`A2UI source exceeds the ${MAX_A2UI_SURFACES}-surface rendering limit.`);
-  }
-  const deleted = surfaces.length === 0 && messages.some((message) => "deleteSurface" in message);
-  if (surfaces.length === 0 && !deleted) throw new Error("The artifact did not create an A2UI surface.");
-  return { surfaces, deleted };
-}
-
-type StandardSurfaceModel = ReturnType<typeof processA2uiDisplayContent>["surfaces"][number];
-
-function StandardActionSurface({ runId, surface, generation, theme, resetKey }: {
-  runId: string; surface: StandardSurfaceModel; generation?: string; theme: "light" | "dark" | "high-contrast"; resetKey: string;
+function StandardActionSurface({ runId, surface, version, generation, theme, resetKey }: StandardSurface & {
+  runId: string; generation?: string; theme: "light" | "dark" | "high-contrast"; resetKey: string;
 }) {
   const status = useA2uiActionStatus(runId, surface.id);
   const continuation = useA2uiActionContinuation(runId, surface.id);
@@ -321,14 +240,14 @@ function StandardActionSurface({ runId, surface, generation, theme, resetKey }: 
       setLocalMessage(null);
       try {
         // Snapshot before the first await; later typing cannot mutate the sent action.
-        await submit(runId, { ...action, surface_generation: generation, context: structuredClone(action.context),
+        await submit(runId, { ...action, version, surface_generation: generation, context: structuredClone(action.context),
           a2uiClientDataModel: { [surface.id]: structuredClone(surface.dataModel.get("/")) } });
       } catch (error) {
         if (current) setLocalMessage(error instanceof Error ? error.message : "Action outcome is unconfirmed. Do not submit again.");
       } finally { submitting.current = false; }
     });
     return () => { current = false; subscription.unsubscribe(); };
-  }, [runId, surface, generation, submit, actionable]);
+  }, [runId, surface, version, generation, submit, actionable]);
   const authorityMessage = !runId ? "Actions unavailable: this surface is not linked to a run."
     : !generation ? "This surface has no publication identity. Request a fresh surface before acting."
     : !actionable ? authority?.status === "complete" && authority.authoritative
@@ -402,7 +321,7 @@ export const A2uiDisplayBlock: FC<A2uiDisplayBlockProps> = ({
         <PanelTopOpenIcon size={14} className="text-primary" aria-hidden="true" />
         <span className="eyebrow">Artifact</span>
         <span className="ml-auto truncate font-mono text-[10px] text-fg-faint">
-          {renderedSuccessfully ? `A2UI ${A2UI_VERSION} · ${rendered.deleted ? "removed" : "rendered"}` : "Invalid surface"}
+          {renderedSuccessfully ? `A2UI ${rendered.versions.join(", ")} · ${rendered.deleted ? "removed" : "rendered"}` : "Invalid surface"}
           {artifactType ? ` · ${artifactType}` : ""}
           {language && language !== "a2ui" ? ` · ${language}` : ""}
         </span>
@@ -411,11 +330,12 @@ export const A2uiDisplayBlock: FC<A2uiDisplayBlockProps> = ({
         <p className="rounded-lg bg-surface px-3 py-3 text-sm text-fg-sub" role="status">Surface removed.</p>
       ) : renderedSuccessfully ? (
         <div className="space-y-3">
-          {rendered.surfaces.map((surface) => (
+          {rendered.surfaces.map(({ surface, version }) => (
             <StandardActionSurface
               key={`${runId ?? "unbound"}:${surface.id}:${String(surfaceGenerations?.[surface.id] ?? "unidentified")}`}
               runId={runId ?? ""}
               surface={surface}
+              version={version}
               generation={typeof surfaceGenerations?.[surface.id] === "string" ? String(surfaceGenerations[surface.id]) : undefined}
               theme={theme}
               resetKey={`${surface.id}:${content.length}`}

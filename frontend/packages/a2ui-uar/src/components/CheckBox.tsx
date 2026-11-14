@@ -3,6 +3,7 @@ import type { CheckBoxApi } from "@prometheus-ags/a2ui-core/v0_9/basic_catalog";
 import type { UarComponentProps } from "../react/types";
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
+import { useUarI18n } from "../i18n";
 
 type CheckBoxProps = UarComponentProps<typeof CheckBoxApi>;
 
@@ -10,6 +11,8 @@ type CheckBoxProps = UarComponentProps<typeof CheckBoxApi>;
 export const UarCheckBox: FC<{ props: CheckBoxProps }> = ({ props }) => {
   const id = useId();
   const errorId = `${id}-error`;
+  const { t } = useUarI18n();
+  const label = typeof props.label === "string" && props.label.trim() ? props.label : t("field");
   return (
     <div data-a2ui-component="CheckBox" className="flex flex-wrap items-center gap-x-2 gap-y-1">
       <Checkbox
@@ -19,7 +22,7 @@ export const UarCheckBox: FC<{ props: CheckBoxProps }> = ({ props }) => {
         aria-invalid={props.isValid === false || undefined}
         aria-describedby={props.validationErrors?.length ? errorId : undefined}
       />
-      <Label htmlFor={id}>{props.label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       {props.validationErrors?.length ? (
         <span id={errorId} role="alert" className="basis-full ps-6 text-xs text-destructive">
           {props.validationErrors.join(" ")}

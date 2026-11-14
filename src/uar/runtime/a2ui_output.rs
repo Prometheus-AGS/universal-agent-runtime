@@ -1,4 +1,5 @@
-use crate::uar::a2ui::realtime::{A2uiReplayBackbone, surface_message_to_state_patch};
+use crate::uar::a2ui::protocol::parse_messages;
+use crate::uar::a2ui::realtime::A2uiReplayBackbone;
 use crate::uar::domain::events::{ArtifactPayload, NormalizedEvent, RuntimeEventSink};
 
 /// Last host event boundary for UI projections, including non-tool producers.
@@ -131,12 +132,7 @@ pub(crate) async fn publish_tool_output(
             .ok_or_else(|| {
                 anyhow::anyhow!("Renderer output must contain a nonempty a2uiMessages array")
             })?;
-        let messages = messages
-            .iter()
-            .cloned()
-            .map(crate::uar::a2ui::protocol::parse_message)
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(anyhow::Error::msg)?;
+        let messages = parse_messages(messages.iter().cloned()).map_err(anyhow::Error::msg)?;
         Ok((identity, messages))
     })();
     let (identity, messages) = match admitted {
@@ -162,7 +158,7 @@ pub(crate) async fn publish_tool_output(
         if !surface_ids.contains(&message.surface_id) {
             surface_ids.push(message.surface_id.clone());
         }
-        let op = surface_message_to_state_patch(&message.surface_id, message.kind, message.payload);
+        let op = message.state_patch();
         backbone.publish(run_id, op.clone());
         events
             .emit(NormalizedEvent::StatePatch {

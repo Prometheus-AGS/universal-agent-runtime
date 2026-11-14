@@ -18,14 +18,14 @@ vi.mock("@/platform/entities", () => ({
   useA2uiActionRecovery: () => vi.fn(),
 }));
 const surface = JSON.stringify([
-  { version: A2UI_VERSION, createSurface: { surfaceId: "parcel", catalogId: A2UI_CATALOG_ID } },
-  { version: A2UI_VERSION, updateComponents: { surfaceId: "parcel", components: [
-    { id: "value", component: "TextField", label: "Parcel number", value: { path: "/parcel" }, variant: "shortText" },
+  { version: A2UI_VERSION, createSurface: { surfaceId: "parcel", catalogId: A2UI_CATALOG_ID, dataModel: { parcel: "" }, components: [
+    { id: "value", component: "TextField", label: "Parcel number", value: { "@path": "/parcel" }, variant: "shortText" },
     { id: "label", component: "Text", text: "Calculate parcel" },
-    { id: "submit", component: "Button", child: "label", action: { event: { name: "calculate" } } },
+    { id: "submit", component: "Button", child: "label", action: { event: { name: "calculate", userMessage: { "@path": "/parcel" }, context: {
+      parcel: { "@path": "/parcel" }, literal: { path: "a literal path", call: "display only", "@@path": "also literal" },
+    } } } },
     { id: "root", component: "Column", children: ["value", "submit"] },
   ] } },
-  { version: A2UI_VERSION, updateDataModel: { surfaceId: "parcel", path: "/", value: { parcel: "" } } },
 ]);
 
 describe("actual pinned standard renderer action binding", () => {
@@ -39,6 +39,7 @@ describe("actual pinned standard renderer action binding", () => {
     await waitFor(() => expect(intent).toHaveBeenCalledTimes(1));
     expect(intent.mock.calls[0]).toEqual(["native-source", expect.objectContaining({
       name: "calculate", surfaceId: "parcel", sourceComponentId: "submit", surface_generation: generation,
+      version: A2UI_VERSION, userMessage: "137", context: { parcel: "137", literal: { path: "a literal path", call: "display only", "@path": "also literal" } },
       a2uiClientDataModel: { parcel: { parcel: "137" } },
     })]);
     fireEvent.change(screen.getByRole("textbox", { name: "Parcel number" }), { target: { value: "999" } });

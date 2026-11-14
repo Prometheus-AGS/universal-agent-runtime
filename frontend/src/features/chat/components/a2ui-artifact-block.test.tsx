@@ -8,19 +8,19 @@ import { bindA2uiActionPersistence } from "@/platform/entities/a2ui-actions/dura
 import { latestActionReceipt } from "@/platform/entities/a2ui-actions/domain";
 import { A2UI_ACTION_ENTITY, A2UI_AUTHORITY_ENTITY, type A2uiActionReceipt } from "@/platform/entities/a2ui-actions/contracts";
 
-import { A2UI_CATALOG_ID, A2UI_PROFILE, A2UI_VERSION } from "@/features/a2ui/a2ui-protocol";
+import { A2UI_CATALOG_ID, A2UI_PROFILE, A2UI_VERSION, LEGACY_A2UI_VERSION } from "@/features/a2ui/a2ui-protocol";
 import { MAX_A2UI_SOURCE_BYTES } from "@/features/a2ui/a2ui-rendering-limits";
 
 import { A2uiDisplayBlock } from "./a2ui-artifact-block";
 
-function policySurface(component = "Text") {
+function policySurface(component = "Text", version: "v0.9" | typeof LEGACY_A2UI_VERSION = LEGACY_A2UI_VERSION) {
   return JSON.stringify([
     {
-      version: A2UI_VERSION,
+      version,
       createSurface: { surfaceId: "policy", catalogId: A2UI_CATALOG_ID },
     },
     {
-      version: A2UI_VERSION,
+      version,
       updateComponents: {
         surfaceId: "policy",
         components: [
@@ -31,7 +31,7 @@ function policySurface(component = "Text") {
       },
     },
     {
-      version: A2UI_VERSION,
+      version,
       updateDataModel: {
         surfaceId: "policy",
         path: "/",
@@ -45,8 +45,8 @@ function policySurface(component = "Text") {
 }
 
 describe("A2uiDisplayBlock", () => {
-  test("renders current-production messages through the canonical UAR surface", () => {
-    const source = policySurface();
+  test.each(["v0.9", LEGACY_A2UI_VERSION] as const)("renders retained %s messages through the canonical UAR surface", (version) => {
+    const source = policySurface("Text", version);
     render(
       <A2uiDisplayBlock
         artifactType="effective_run_policy"
@@ -59,7 +59,7 @@ describe("A2uiDisplayBlock", () => {
 
     expect(screen.getByRole("heading", { name: "Effective run policy" })).toBeInTheDocument();
     expect(screen.getByText("Tools · all · 12 available")).toBeInTheDocument();
-    expect(screen.getByText(`A2UI ${A2UI_VERSION} · rendered · effective_run_policy`)).toBeInTheDocument();
+    expect(screen.getByText(`A2UI ${version} · rendered · effective_run_policy`)).toBeInTheDocument();
     expect(screen.queryByText(source)).not.toBeInTheDocument();
   });
 
@@ -212,8 +212,9 @@ describe("publication identity through restored chunks and canonical controls", 
     const posts = request.mock.calls.filter((call) => call[1]?.method === "POST");
     expect(posts).toHaveLength(1);
     expect(String(posts[0][0])).toContain(`/runs/${runId}/a2ui/actions`);
-    expect(JSON.parse(String(posts[0][1]?.body))).toMatchObject({ surface_generation: "G1", surfaceId: "parcel",
-      sourceComponentId: "submit", name: "calculate", interaction_id: latestActionReceipt(runId, "parcel")?.interaction_id });
+    expect(JSON.parse(String(posts[0][1]?.body))).toMatchObject({ version: A2UI_VERSION, surface_generation: "G1",
+      action: { surfaceId: "parcel", sourceComponentId: "submit", name: "calculate" },
+      interaction_id: latestActionReceipt(runId, "parcel")?.interaction_id });
     expect(latestActionReceipt(runId, "parcel")?.input?.surface_generation).toBe("G1");
   });
   test("a still-rendered G1 button cannot be relabeled by G2 admission authority with the same IDs", async () => {

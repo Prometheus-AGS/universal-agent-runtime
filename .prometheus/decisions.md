@@ -2796,3 +2796,7 @@ and WebKitGTK 4.1 system library. The UAR and both Entity Management source
 copies carry their compatible Tauri versions. Preserve each source overlay's
 license and provenance. Linux desktop behavior still requires its own
 evidence. The full archive and recursive OSV rule remain in scope.
+
+## 2026-11-14 — RC5 protocol boundary
+
+RC5 upgrades the dedicated AG-UI endpoint and supported A2UI surface and action lifecycle. UAR retains its custom renderer and trusted-host admission and adopts PEM 5.0.0 for entity state. Existing A2UI v0.9 and v0.9.1 history stays readable. Remote functions and external framework qualification remain outside scope. The historical agui_spec compatibility transport keeps its profile.

@@ -19,24 +19,26 @@ import type { BuildChild, UarComponentImplementation, UarComponentProps } from "
  * with this factory and one built with `@a2ui/react`'s factory resolve the
  * same wire payload into the same prop shape.
  */
-export function createUarComponentImplementation<Api extends ComponentApi>(
+export function createUarComponentImplementation<Api extends ComponentApi, RuntimeSchema extends ComponentApi["schema"] = Api["schema"]>(
   api: Api,
   RenderComponent: FC<{
     props: UarComponentProps<Api>;
     buildChild: BuildChild;
     context: ComponentContext;
   }>,
-): UarComponentImplementation<Api> {
+  runtimeSchema?: RuntimeSchema,
+): UarComponentImplementation<ComponentApi<Api["schema"] | RuntimeSchema>> {
+  const schema = runtimeSchema ?? api.schema;
   const Render: FC<{
     context: ComponentContext;
     buildChild: BuildChild;
   }> = ({ context, buildChild }) => {
-    const props = useA2uiProps<UarComponentProps<Api>>(context, api.schema);
+    const props = useA2uiProps<UarComponentProps<Api>>(context, schema);
     return <RenderComponent props={props} buildChild={buildChild} context={context} />;
   };
   Render.displayName = `A2uiUar(${api.name})`;
 
-  return { name: api.name, schema: api.schema, render: Render };
+  return { name: api.name, schema, render: Render };
 }
 
 /**

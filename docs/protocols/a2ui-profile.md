@@ -1,43 +1,30 @@
 # UAR A2UI profile
 
-UAR's historical **A2UI v0.9.1** compatibility profile is `uar.a2ui/1`, with
-`application/a2ui+json` and these message types:
+RC5 targets final **A2UI 1.0** for the UAR API and bundled renderer. The dedicated
+AG-UI route delivers ordered surface operations in ACTIVITY_SNAPSHOT events.
 
-- `createSurface`
-- `updateComponents`
-- `updateDataModel`
-- `deleteSurface`
+| Version field | Supported behavior |
+| --- | --- |
+| "1.0" | Inline components and initial data, component and data-model updates, deletion, and governed user actions |
+| "v0.9", "v0.9.1" | Compatibility operations and retained history |
+| "v1.0" | Release-candidate dialect refused |
 
-That profile identity does not certify the current container or every upstream
-extension. The [canonical recovery table](../product-support-matrix.md#execution-and-recovery-guarantees)
-and [logical action contract](../operations/a2ui-interaction-recovery.md) govern
-durable interaction identity, bounded surface authority, retry reconciliation and
-uncertain effects. A fresh wire run ID is not a new user intent; a legacy action
-without protected interaction identity can execute again if retried.
+For 1.0, use an approved catalog ID and {"@path":"/field"} for data bindings.
+Inline initial data is available when components first bind. The supported Basic
+Catalog ID is https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json.
+UAR's custom catalog is urn:uar:a2ui:catalog:1. Both use UAR's approved component
+subset. Remote function execution and agent-supplied catalogs are excluded.
 
-The supported catalog is UAR-owned and maps declarative A2UI components to
-local React components. Agent messages cannot supply React code, HTML,
-JavaScript, CSS, event handlers, or component module URLs. Unknown components,
-properties, bindings, references, and actions are rejected before rendering.
+Send the standard renderer version and action envelope in forwardedProps.a2uiAction.
+For 1.0 actions, supply interaction_id and the host-published surface_generation
+and keep both stable across
+transport retries. The [logical action contract](../operations/a2ui-interaction-recovery.md)
+defines receipt lookup, reconciliation, and refusal.
 
-The initial approved catalog is `Text`, `Button`, `TextField`, `CheckBox`,
-`ChoicePicker`, `Row`, `Column`, `Card`, and `Divider`. It deliberately excludes
-remote media and arbitrary rich-content components until their URL, content,
-privacy, and accessibility policies are separately certified.
-
-## Version policy
-
-| Protocol | UAR status | Compatibility |
-|---|---|---|
-| A2UI v0.9.1 | GA via `uar.a2ui/1` | Covered by the UAR 1.x compatibility promise |
-| A2UI v1.0 | Experimental candidate | Explicit opt-in only; no UAR 1.x stability guarantee |
-| Legacy UAR artifact forms | Transitional | Accepted while callers migrate to the shared renderer |
-
-The v1.0 candidate adds client-to-server `actionResponse`, action IDs, and
-renames theme configuration to `surfaceProperties`. UAR does not infer those
-semantics for a v0.9.1 surface. Candidate messages must declare their version
-and use an experimental profile so a future upstream change cannot silently
-change production behavior.
+UAR uses PEM 5.0.0 for entity state. Node consumers can read the wire through
+@prometheus-ags/a2ui-react/headless from 5.0.0. Flutter consumers use
+entity_graph_flutter 5.0.0. RC5 qualification covers the UAR wire and its
+Linux amd64 API deployment.
 
 ## Security boundary
 
@@ -51,6 +38,7 @@ authorization, and server-side validation.
 ## Upstream references
 
 - [A2UI specification versions](https://a2ui.org/)
+- [Final 1.0 protocol](https://github.com/a2ui-project/a2ui/blob/d56f84f92a8478220d652af6ed7dd7abe5bfa14c/specification/v1_0/docs/a2ui_protocol.md)
 - [v0.9.1 protocol family](https://a2ui.org/specification/v0.9-a2ui/)
 - [Concepts and message lifecycle](https://a2ui.org/concepts/overview/)
 - [Renderer development guide](https://a2ui.org/guides/renderer-development/)

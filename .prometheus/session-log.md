@@ -7365,3 +7365,7 @@ Surrealism verifier crypto update. All 1,069 historical Cargo findings
 point to retired 3.3 paths or versions absent from their original paths.
 The old findings comparison is source evidence. Clean recursive pins,
 exact-tree VLBV, and fresh OSV remain pending.
+
+## 2026-11-14 — RC5 protocol migration
+
+The previous #469-only release chain was stopped before publication after the scope expanded. RC5 now includes the final AG-UI and A2UI 1.0 protocol support and PEM 5.0.0. KBD execution lives in .kbd-orchestrator/phases/rc5-agui-a2ui-1. Earlier package version and workflow exclusions were preserved. Local verification starts after all implementation lanes hand off and the exact source inventory is recorded.

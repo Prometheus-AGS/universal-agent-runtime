@@ -26,7 +26,7 @@ use super::design_systems::{
     store::SharedDesignSystemStore,
     types::{Component as LibraryComponent, Renderers},
 };
-use super::protocol::parse_message;
+use super::protocol::parse_messages;
 use super::realtime::{
     A2uiReplayBackbone, A2uiWireKind, InMemoryReplayBackbone, surface_message_to_state_patch,
 };
@@ -103,11 +103,12 @@ pub struct A2uiActionPayload {
     pub interaction_id: Option<String>,
     #[serde(default, alias = "surface_generation")]
     pub surface_generation: Option<String>,
-    pub surface_id: String,
-    pub name: String,
-    pub source_component_id: String,
+    pub surface_id: Option<String>,
+    pub name: Option<String>,
+    pub source_component_id: Option<String>,
     #[serde(default)]
     pub timestamp: Option<String>,
+    pub user_message: Option<String>,
     #[serde(default)]
     pub context: serde_json::Value,
     #[serde(default)]
@@ -198,6 +199,7 @@ pub struct TestTriggerPayload {
 pub struct SurfaceTestTriggerPayload {
     pub surface_id: String,
     pub kind: String,
+    pub version: Option<String>,
     #[serde(default)]
     pub payload: serde_json::Value,
 }
@@ -1003,17 +1005,14 @@ async fn publish_messages(
     if values.is_empty() {
         return Err("at least one A2UI message is required".to_string());
     }
-    let validated = values
-        .into_iter()
-        .map(parse_message)
-        .collect::<Result<Vec<_>, _>>()?;
+    let validated = parse_messages(values)?;
     let mut surface_ids = Vec::new();
     let mut source_lines = Vec::new();
     for message in validated {
         if !surface_ids.contains(&message.surface_id) {
             surface_ids.push(message.surface_id.clone());
         }
-        let op = surface_message_to_state_patch(&message.surface_id, message.kind, message.payload);
+        let op = message.state_patch();
         state.realtime_backbone.publish(run_id, op.clone());
         state
             .run_manager
@@ -1101,8 +1100,12 @@ async fn submit_action(
     State(state): State<A2uiApiState>,
     Extension(user): Extension<UserContext>,
     Path(run_id): Path<String>,
-    Json(payload): Json<A2uiActionPayload>,
+    Json(raw): Json<serde_json::Value>,
 ) -> impl IntoResponse {
+    let payload: A2uiActionPayload = match serde_json::from_value(raw.clone()) {
+        Ok(payload) => payload,
+        Err(_) => return action_error(StatusCode::BAD_REQUEST, "invalid_a2ui_action"),
+    };
     // Durable identity permits reconciliation only. A new claim still needs
     // the original live presentation capture below, before any dispatch.
     let Some(run) = state.run_manager.get_run_for_context(&user, &run_id).await else {
@@ -1121,12 +1124,34 @@ async fn submit_action(
         Ok(guard) => guard,
         Err(response) => return response,
     };
-    let forwarded = serde_json::json!({"a2uiAction":{"interaction_id":payload.interaction_id,"surface_generation":payload.surface_generation,
-        "userAction":{"surfaceId":payload.surface_id,"name":payload.name,"sourceComponentId":payload.source_component_id,
-            "context":payload.context,"timestamp":payload.timestamp},"dataModel":payload.a2ui_client_data_model}});
+    let mut envelope = serde_json::json!({"interaction_id":payload.interaction_id,
+        "surface_generation":payload.surface_generation,"dataModel":payload.a2ui_client_data_model});
+    // The shared action parser distinguishes omitted keys from explicit null:
+    // a supplied version must be valid and function markers always refuse.
+    for field in [
+        "version",
+        "action",
+        "callAgentFunction",
+        "rendererFunctionResponse",
+        "callRendererFunction",
+        "agentFunctionResponse",
+    ] {
+        if let Some(value) = raw.get(field) {
+            envelope[field] = value.clone();
+        }
+    }
+    if raw.get("action").is_none() || payload.surface_id.is_some() || payload.name.is_some()
+        || payload.source_component_id.is_some()
+    {
+        envelope["userAction"] = serde_json::json!({"surfaceId":payload.surface_id,
+            "name":payload.name,"sourceComponentId":payload.source_component_id,
+            "context":payload.context,"timestamp":payload.timestamp,"userMessage":payload.user_message});
+    }
+    let forwarded = serde_json::json!({"a2uiAction":envelope});
     let action = match agui_a2ui::parse_action(Some(&forwarded)) {
         Ok(Some(action)) => action,
-        _ => return action_error(StatusCode::BAD_REQUEST, "invalid_a2ui_action"),
+        Err(rejection) => return action_error(rejection.status, rejection.code),
+        Ok(None) => return action_error(StatusCode::BAD_REQUEST, "invalid_a2ui_action"),
     };
     let db = state.run_manager.persistence.as_ref();
     if let Some(interaction) = &payload.interaction_id {
@@ -1173,9 +1198,9 @@ async fn submit_action(
         Ok(identity) => identity,
         Err(rejection) => return action_error(rejection.status, rejection.code),
     };
-    let interaction = serde_json::json!({"surfaceId":payload.surface_id,"surfaceGeneration":generation,
-        "interactionId":payload.interaction_id,"name":payload.name,"sourceComponentId":payload.source_component_id,
-        "timestamp":payload.timestamp,"context":payload.context,"a2uiClientDataModel":payload.a2ui_client_data_model});
+    let mut interaction = action.interaction();
+    interaction["surfaceGeneration"] = serde_json::json!(generation);
+    interaction["interactionId"] = serde_json::json!(payload.interaction_id);
     let request =
         match prepare_action_continuation(&state, &run, interaction.clone(), &user, payload.host)
             .await
@@ -1185,16 +1210,17 @@ async fn submit_action(
         };
     let continuation = uuid::Uuid::new_v4().to_string();
     if let Some(interaction_id) = payload.interaction_id {
+        let (surface_id, component_id, action_name) = action.identity_fields();
         let receipt = A2uiActionReceipt {
             owner,
             agent_id: run.agent_id.clone(),
             thread_id: thread.to_owned(),
             interaction_id,
             source_run_id: run_id,
-            surface_id: payload.surface_id,
+            surface_id: surface_id.to_owned(),
             surface_generation: generation,
-            component_id: payload.source_component_id,
-            action_name: payload.name,
+            component_id: component_id.to_owned(),
+            action_name: action_name.to_owned(),
             semantic_digest: action.semantic_digest(),
             continuation_run_id: continuation.clone(),
             wire_binding: None,
@@ -1360,14 +1386,11 @@ fn parse_component_source(
         .map(|line| {
             serde_json::from_str::<serde_json::Value>(line).map_err(|error| error.to_string())
         })
-        .collect::<Result<Vec<_>, _>>()?
-        .into_iter()
-        .map(parse_message)
         .collect::<Result<Vec<_>, _>>()?;
     if values.is_empty() {
         return Err("A2UI source is empty".to_string());
     }
-    Ok(values)
+    parse_messages(values)
 }
 
 fn component_slug(title: &str) -> String {
@@ -1710,7 +1733,24 @@ async fn surface_test_trigger(
         }
     };
 
-    let op = surface_message_to_state_patch(&payload.surface_id, kind, payload.payload);
+    let op = if let Some(version) = payload.version {
+        let mut wire = serde_json::json!({"version":version});
+        let mut data = payload.payload;
+        if data.is_null() {
+            data = serde_json::json!({});
+        }
+        let Some(fields) = data.as_object_mut() else {
+            return action_error(StatusCode::BAD_REQUEST, "invalid_a2ui_payload");
+        };
+        fields.insert("surfaceId".into(), serde_json::json!(payload.surface_id));
+        wire[payload.kind.as_str()] = data;
+        match super::protocol::parse_message(wire) {
+            Ok(message) => message.state_patch(),
+            Err(error) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({"error":error}))).into_response(),
+        }
+    } else {
+        surface_message_to_state_patch(&payload.surface_id, kind, payload.payload)
+    };
 
     state.realtime_backbone.publish(&run.run_id, op.clone());
 

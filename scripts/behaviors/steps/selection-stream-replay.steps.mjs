@@ -37,7 +37,9 @@ async function sse(w, label, { method, path, payload, cursor }) {
     const data = lines.filter(line => line.startsWith('data:')).map(line => line.slice(5).replace(/^ /, '')).join('\n');
     return data && data !== '[DONE]' ? [{ id, event: JSON.parse(data) }] : [];
   });
-  w.evidence.streams[label] = frames.map(f => ({ id: f.id, type: f.event.type, name: f.event.name, runId: f.event.runId }));
+  w.evidence.streams[label] = frames.map(({ id, event }) => ({
+    id, type: event.type, name: event.name, runId: event.runId ?? event.metadata?.uar?.runId,
+  }));
   return frames;
 }
 
@@ -138,7 +140,10 @@ Then('both replays preserve the run and selection identity and no second dispatc
   assert.ok(sameFrames(this.reconnected, suffix), 'The reconnect replays exactly the frames after the selection cursor');
   assert.ok(sameFrames(this.replayed, this.original.frames), 'The identical request replays the original frames and identities');
   for (const frames of [this.reconnected, this.replayed]) {
-    assert.ok(frames.every(f => f.event.runId === undefined || f.event.runId === this.original.runId));
+    assert.ok(frames.every(({ event }) => {
+      const runId = event.runId ?? event.metadata?.uar?.runId;
+      return runId === undefined || runId === this.original.runId;
+    }));
   }
   const after = await dispatches(this);
   this.evidence.dispatches_after_replays = after;
@@ -155,7 +160,7 @@ Then('the next turn performs a fresh selection with its own dispatch and a corre
   assert.equal(this.next.selections.length, 1, 'Expected a fresh selection event');
   const selection = this.next.selections[0];
   assert.notEqual(this.next.runId, this.original.runId);
-  assert.equal(selection.event.runId, this.next.runId);
+  assert.equal(selection.event.metadata?.uar?.runId, this.next.runId);
   assert.notEqual(selection.id, this.original.selections[0].id);
   assert.equal(selection.event.value.agent.id, MATH_ID);
   assert.equal(this.next.done[0]?.event.outcome?.type, 'success');

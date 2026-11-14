@@ -1,6 +1,9 @@
+import type { A2uiVersion } from "@/platform/a2ui/protocol";
+
 export const A2UI_ACTION_ENTITY = "A2uiActionReceipt";
 
 export interface A2uiActionInput {
+  version?: A2uiVersion;
   interaction_id?: string;
   /** Exact rendered publication identity. Missing legacy publications are read-only. */
   surface_generation?: string;
@@ -9,6 +12,7 @@ export interface A2uiActionInput {
   sourceComponentId: string;
   timestamp: string;
   context: Record<string, unknown>;
+  userMessage?: string;
   a2uiClientDataModel: unknown;
 }
 

@@ -5,6 +5,17 @@ const action = { name: "calculate", surfaceId: "parcel", sourceComponentId: "sub
 afterEach(() => vi.unstubAllGlobals());
 
 describe("standard A2UI action admission classification", () => {
+  test("sends final A2UI action with the durable host identity and data model", async () => {
+    const request = vi.fn<typeof fetch>(async () => Response.json({ run_id: "source", continuation_run_id: "child", status: "continued",
+      interaction_id: "stable", retry_protected: true }, { status: 202 }));
+    vi.stubGlobal("fetch", request);
+    const { a2uiClientDataModel, ...payload } = action;
+    expect(await postA2uiAction("source", { ...action, version: "1.0", interaction_id: "stable", surface_generation: "generation", userMessage: "Calculate parcel" })).toBe("child");
+    expect(JSON.parse(String(request.mock.calls[0][1]?.body))).toEqual({
+      version: "1.0", action: { ...payload, userMessage: "Calculate parcel" },
+      interaction_id: "stable", surface_generation: "generation", a2uiClientDataModel,
+    });
+  });
   test("retains the actual source-bound continuation and current model", async () => {
     const request = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ run_id: "source", continuation_run_id: "child", status: "continued" }), { status: 202 }));
     vi.stubGlobal("fetch", request);

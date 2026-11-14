@@ -5352,7 +5352,7 @@ impl RunManager {
                     metadata: if presentation_snapshot.selection().allows_surfaces() {
                         serde_json::json!({
                             "profile": protocol::PROFILE,
-                            "protocol_version": protocol::VERSION,
+                            "protocol_version": protocol::VERSION_1_0,
                             "catalog_id": protocol::CATALOG_ID,
                             "version": effective_policy.version,
                             "warnings": effective_policy.warnings,
