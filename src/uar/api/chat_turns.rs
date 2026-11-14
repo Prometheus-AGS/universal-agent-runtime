@@ -103,7 +103,7 @@ impl NativeChatIntent {
     }
 }
 
-async fn load_native_chat_intent(
+async fn load_native_chat_binding(
     db: &dyn PersistenceLayer,
     intent: &NativeChatIntent,
 ) -> anyhow::Result<Option<AguiRunBinding>> {
@@ -111,18 +111,31 @@ async fn load_native_chat_intent(
         db.supports_durable_agui_runs() && db.durable_store_eligibility().permits_durable_work(),
         "native_chat_recovery_unavailable"
     );
-    let row = db
-        .load_agui_run(
-            &intent.owner,
-            NATIVE_CHAT_AGENT,
-            &intent.thread,
-            &intent.turn_id,
-        )
-        .await?;
-    if let Some(row) = &row {
-        anyhow::ensure!(intent.matches(row), "native_chat_turn_conflict");
-    }
+    db.load_agui_run(
+        &intent.owner,
+        NATIVE_CHAT_AGENT,
+        &intent.thread,
+        &intent.turn_id,
+    )
+    .await
+}
+
+fn verify_native_chat_intent(
+    row: AguiRunBinding,
+    intent: &NativeChatIntent,
+) -> anyhow::Result<AguiRunBinding> {
+    anyhow::ensure!(intent.matches(&row), "native_chat_turn_conflict");
     Ok(row)
+}
+
+async fn load_native_chat_intent(
+    db: &dyn PersistenceLayer,
+    intent: &NativeChatIntent,
+) -> anyhow::Result<Option<AguiRunBinding>> {
+    load_native_chat_binding(db, intent)
+        .await?
+        .map(|row| verify_native_chat_intent(row, intent))
+        .transpose()
 }
 
 /// Read original caller intent before resolving mutable host settings/catalogs.
@@ -190,14 +203,25 @@ pub async fn reserve_native_chat_turn(
         resumed_tool_ids: Vec::new(),
         terminal: None,
     };
-    if db.create_agui_run(&row, None).await? {
-        return Ok(NativeChatReservation::New(row));
-    }
-    // CAS loser reads the winner. No fresh run is dispatched on missing/failed read.
-    let existing = load_native_chat_intent(db, &intent)
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("native_chat_admission_unconfirmed"))?;
-    Ok(NativeChatReservation::Existing(existing))
+    let create_error = match db.create_agui_run(&row, None).await {
+        Ok(true) => return Ok(NativeChatReservation::New(row)),
+        Ok(false) => None,
+        Err(error) => Some(error),
+    };
+
+    // Contention or a lost write acknowledgement may leave a readable binding.
+    // Readback can reconcile its exact intent, but only a confirmed create can dispatch.
+    let existing = match load_native_chat_binding(db, &intent).await {
+        Ok(Some(row)) => row,
+        Ok(None) => {
+            return Err(create_error
+                .unwrap_or_else(|| anyhow::anyhow!("native_chat_admission_unconfirmed")));
+        }
+        Err(error) => return Err(create_error.unwrap_or(error)),
+    };
+    Ok(NativeChatReservation::Existing(verify_native_chat_intent(
+        existing, &intent,
+    )?))
 }
 
 #[derive(Deserialize)]

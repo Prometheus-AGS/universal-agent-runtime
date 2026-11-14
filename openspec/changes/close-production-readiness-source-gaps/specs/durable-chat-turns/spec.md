@@ -96,3 +96,9 @@ Chat send/history SHALL retain a durable original turn identity, supported richc
 - **WHEN** A schema-full embedded store is opened through UAR's normal migrations and run history is written with an optional conversation ID
 - **THEN** An owned conversation read after reopen includes its durable history and bounded legacy candidates without a conversation ID
 - **AND** Records explicitly belonging to another conversation or owner are excluded
+
+#### Scenario: Concurrent native submissions recover one original run
+- **WHEN** concurrent native chat submissions carry the same verified owner, workspace, session, turn, message and semantic input
+- **THEN** only the confirmed reservation creator can dispatch
+- **AND** a failed creation can return the original run only after readback confirms that exact durable intent
+- **AND** a conflicting intent is refused, and missing or unreadable evidence remains unconfirmed without a write retry or provider dispatch
