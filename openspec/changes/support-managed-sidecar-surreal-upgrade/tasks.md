@@ -9,3 +9,4 @@
 
 - [x] 2.1 Carry the Windows service call forward to the current server signature so native RC4 builds share one source.
 - [ ] 2.2 Publish the three desktop sidecar payloads from the same source revision.
+- [x] 2.3 Rename the historical phase alias that prevented Windows checkout, preserving its target and the archived evidence.

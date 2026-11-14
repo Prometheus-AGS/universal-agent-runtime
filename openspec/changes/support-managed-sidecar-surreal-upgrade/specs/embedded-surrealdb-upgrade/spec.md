@@ -19,3 +19,12 @@ The desktop sidecar SHALL expose explicit process modes for a supervisor to hold
 - **AND** the helper SHALL open the stage with the embedded SDK's explicit upgrade option, close it, reopen it with ordinary settings and close it again
 - **AND** the helper SHALL flush `MIGRATION_COMPLETE` only after the current manifest format and clean reopen are confirmed
 - **AND** the host SHALL retain the untouched original as an independently recoverable copy
+
+### Requirement: Desktop sidecar source is checkout-compatible on Windows
+
+The source used to build the Windows sidecar SHALL allow Git for Windows to check out the release commit before building.
+
+#### Scenario: Historical orchestration alias is carried in the source tree
+
+- **WHEN** the Windows sidecar runner checks out the release commit
+- **THEN** the historical alias has a Windows-compatible filename and still refers to its original history directory
