@@ -11,3 +11,4 @@
 - [ ] 2.2 Publish the three desktop sidecar payloads from the same source revision.
 - [x] 2.3 Rename the historical phase alias that prevented Windows checkout, preserving its target and the archived evidence.
 - [x] 2.4 Use the bundled LLVM Mach-O linker on macOS and gate release packaging on warning-free compiler output.
+- [x] 2.5 Fix the MSVC C++ standard option and remove the superseded Windows-only server wrapper after observing warnings in the native release build.
