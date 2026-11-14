@@ -2264,3 +2264,20 @@ The operator said a PR was merged. I closed five issues claiming a merge commit,
 2026-11-01 #476 shared matching source root cause (repair UNVERIFIED): persisted RunManager constructs SettingsManager. Absent skills.matching.engine defaults to Service, while RunManager::new has no SkillService, so capture.matchingNone triggers skill_service_resource_required, surfaced as skill_matching_unavailable. TF-IDF classifier defaults do not override the selected owner, and this error precedes any embedding call; do not blame UnavailableEmbeddingBackend without that trace. Embedded persisted fixtures must bind actual selected Service/Keyword and same service registry (or explicitly select another supported owner through real configuration). Preserve missing-resource failure, no automatic production fallback. Gate014 proved earlier-stage failure, not pending or graph execution.
 
 - 2026-11-06: Installed child gate 027 reached API assembly but exited 1 before readiness. Utoipa 6 requires a `type` key to deserialize plain schemas. Empty A2UI action schemas and the description-only AG-UI snapshot payload schema must explicitly use the parser's AnyValue representation (`"type": null`), which is omitted in the served document. A release compile did not exercise this startup path. Gate 025 and 026 separately exposed missing operator settings for the admin key and writable ingestion path.
+
+## 2026-11-14 — A tracked path can block Windows sparse checkout
+
+The RC4 desktop release checkout rejected the historical phase symlink named
+`uar-verification-simplification::agent-team-concurrency-repair` before compilation,
+even though the checkout excluded `.kbd-orchestrator/`. The alias now uses
+`--` where the old filesystem name used `::`. It still points to the original
+phase directory. Leave historical phase identifiers and archived receipts intact.
+
+## 2026-11-14 — The RC4 Mac sidecar inherits the ONNX deployment floor
+
+LLVM surfaced two minimum-OS mismatches in RC4’s local embedding build.
+The initially unpinned Tesseract shim used the runner OS; setting the Mac
+deployment target fixed that. A target of 13.0 still fell below the 13.4
+minimum in the shipped ONNX Runtime library. Both the installed RC4 sidecar
+and the locally verified 2.2.48 sidecar already report 13.4 in
+`LC_BUILD_VERSION`. Compile Rust and native dependencies at that same floor.

@@ -285,27 +285,6 @@ pub async fn start_server(config_manager: Arc<ConfigManager>) -> anyhow::Result<
     .await
 }
 
-#[cfg(windows)]
-pub(crate) async fn start_server_with_shutdown(
-    config_manager: Arc<ConfigManager>,
-    process_shutdown: tokio_util::sync::CancellationToken,
-) -> anyhow::Result<()> {
-    start_server_with_listener(
-        config_manager,
-        None,
-        None,
-        None,
-        None,
-        None,
-        Some(process_shutdown),
-        true,
-        None,
-        None,
-        None,
-    )
-    .await
-}
-
 async fn start_server_with_listener(
     config_manager: Arc<ConfigManager>,
     listener: Option<tokio::net::TcpListener>,

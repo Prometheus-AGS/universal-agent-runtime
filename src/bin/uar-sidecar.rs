@@ -33,6 +33,8 @@ use std::io::Write as _;
 mod control;
 #[path = "uar-sidecar/inherited_input.rs"]
 mod inherited_input;
+#[path = "uar-sidecar/embedded_upgrade.rs"]
+mod embedded_upgrade;
 
 use clap::Parser as _;
 use dotenvy::dotenv;
@@ -303,6 +305,10 @@ fn prepare_sidecar_process() -> anyhow::Result<SidecarBootstrap> {
 }
 
 fn main() -> std::process::ExitCode {
+    if let Some(exit) = embedded_upgrade::dispatch() {
+        return exit;
+    }
+
     #[cfg(feature = "tract-embeddings")]
     ort::set_api(ort_tract::api());
 
