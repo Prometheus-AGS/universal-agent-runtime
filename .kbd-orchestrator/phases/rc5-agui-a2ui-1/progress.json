@@ -1,0 +1,17 @@
+{
+  "phase": "rc5-agui-a2ui-1",
+  "last_updated": "2026-11-15",
+  "last_updated_by": "codex",
+  "changes": {
+    "rc5-agui-a2ui-1": {
+      "status": "DONE",
+      "tasks_total": 6,
+      "tasks_done": 6,
+      "last_task_completed": "Verified the signed published RC5 tag, image and receipts",
+      "next_task_pending": null,
+      "started_by": "codex",
+      "completed_by": "codex",
+      "blockers": []
+    }
+  }
+}
