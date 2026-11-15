@@ -15,3 +15,9 @@ UAR SHALL accept and publish final A2UI 1.0 messages for approved catalogs and t
 
 - **WHEN** a caller submits a remote function or the v1.0 release-candidate dialect
 - **THEN** UAR refuses it before dispatch and advertises neither capability
+
+#### Scenario: The RC5 source build uses the security-maintained PEM pin
+
+- **WHEN** an operator builds or verifies UAR from the RC5 source tag
+- **THEN** the recursive checkout resolves the reviewed PEM 5.0.0 successor that passes the existing source security audit
+- **AND** client interoperability continues to use the published PEM 5.0.0 packages
