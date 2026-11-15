@@ -6,6 +6,6 @@
 
 ## 2. Qualification and release
 
-- [ ] 2.1 Freeze implementation inventory and pass serial source gates.
-- [ ] 2.2 Build exact main Linux amd64 image and pass installed protocol and native chat scenarios.
-- [ ] 2.3 Pass unchanged release audit, sign the tag, and verify the published image and evidence.
+- [x] 2.1 Freeze implementation inventory and pass serial source gates.
+- [x] 2.2 Build exact main Linux amd64 image and pass installed protocol and native chat scenarios.
+- [x] 2.3 Pass unchanged release audit, sign the tag, and verify the published image and evidence.
