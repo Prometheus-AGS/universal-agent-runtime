@@ -14,6 +14,8 @@ Implement all lanes before verification. Record the exact source inventory. Run 
 
 The operator approved this implementation and bounded qualification in the RC5 release chat. The previous narrower RC5 job was stopped before it could publish. Release and verification scope is UAR. RC3 and RC4 are excluded.
 
+Recursive OSV blocked the first fully mounted candidate on the PEM 5.0.0 source checkout. The operator approved a security-only successor to that source pin. Restore the reusable RC4 security repairs, resolve the dependencies for PEM 5.0.0, and keep the released npm and Flutter packages at 5.0.0. Run an early recursive source audit after the dependency implementation is complete, then rebuild from main and repeat the exact-image gates. The full recursive tree stays in the audit.
+
 ## Exit evidence
 
 - Official final JSON event schema and SDK validation cover the dedicated AG-UI stream. Public provider reasoning closes before user-visible text and terminal. Reconnect preserves the retained cursor and does not dispatch.

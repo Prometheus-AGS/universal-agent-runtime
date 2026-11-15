@@ -32,6 +32,10 @@ browser. Flutter consumers use entity_graph_flutter 5.0.0. The Linux amd64
 acceptance exercises UAR itself and checks emitted messages with the headless
 reader.
 
+For source builds, use the PEM commit pinned by UAR's RC5 Git tag. That pin
+includes dependency security fixes applied after the PEM 5.0.0 source release.
+Client package versions remain 5.0.0.
+
 - [UAR AG-UI profile](ag-ui-profile.md)
 - [UAR A2UI profile](a2ui-profile.md)
 - [A2UI action recovery](../operations/a2ui-interaction-recovery.md)
