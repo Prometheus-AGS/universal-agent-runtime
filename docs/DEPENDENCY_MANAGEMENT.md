@@ -24,7 +24,7 @@ Most git dependencies are **pinned to a specific commit SHA** via `rev = "..."` 
 
 ```toml
 rmcp          = "=3.9.0"
-surreal-memory = curated snapshot "432eaa1ebbef66fc02b9bb1a1e63cc2fdb2149e8"
+surreal-memory = curated snapshot "dfae3099b0fe723538927abf6a6cbd46cac5c138"
 liter-llm     = gitlink "c5c6caac617eb931cd5009146a70831422ec236c" (1.18.2)
 xberg         = path "vendor/patches/xberg-security" (Know-Me-Tools/xberg 1.4.0 at ffb3b1a2 plus Calamine fix)
 prometheus_parking_lot = rev "ebb7c3ce02f7b925bc2e1b45c87ce8abf402b1f0"

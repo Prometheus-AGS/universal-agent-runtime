@@ -20,10 +20,13 @@ loro_crdt = "1.13.9"
 # prepared streaming bodies for UAR accounting. Qualification remains required.
 liter_llm = "2.3.0"
 liter_llm_commit = "0c0376ba4c2be77703fb295dd5ca42f95b5e4c20"
-# Surreal Memory is pinned to the exact dependency commit rebased on the
-# reviewed documentation and native-MLX remote head.
-surreal_memory_server_base_commit = "e5f48916048a8e26d3ace83c44746b8105f0696c"
-surreal_memory_server_commit = "9e36b1cd8b83a657366eb1e3ef8cd837178336de"
+# Surreal Memory is a curated export of upstream main at this commit, merged
+# with UAR's host-managed lifecycle and provider additions (vendor/git/README.md).
+# The base is the upstream commit used as the three-way merge base; the previous
+# export was recorded as 9e36b1cd8b83a657366eb1e3ef8cd837178336de, which is not
+# on the upstream remote.
+surreal_memory_server_base_commit = "6fe1a1a8decfa6e3703a821e5f60f5678f54465a"
+surreal_memory_server_commit = "dfae3099b0fe723538927abf6a6cbd46cac5c138"
 # Operator approved UAR main 2cc9a182's exact skill-resource gitlink on 2026-10-11.
 # Effective runtime overrides and migration acceptance are recorded separately.
 prometheus_skill_system_base_commit = "f0df1e0121d176c9467e5c71022737b845af6a20"

@@ -4,8 +4,15 @@ use anyhow::Result;
 use async_trait::async_trait;
 use std::any::Any;
 
+pub mod auth;
 pub mod migrations;
+pub mod page;
 pub mod surreal;
+
+pub use page::{
+    DEFAULT_MEMORY_PAGE_SIZE, MAX_MEMORY_PAGE_SIZE, MAX_MEMORY_PAGE_SIZE_WITH_EMBEDDINGS,
+    MEMORY_PAGE_BYTE_BUDGET, MemoryPage, MemoryPageRequest,
+};
 
 use crate::entity::{Entity, KnowledgeGraph, Relation, SemanticSearchResult};
 use crate::memory::{Memory, MemoryHistory};
@@ -13,10 +20,54 @@ use crate::mindmap::{MindMap, MindMapEdge, MindMapNode};
 use crate::task_step::{TaskStep, TaskStepStatus};
 use crate::task_stream::{ContextWindow, TaskStream};
 
+/// Outcome of re-keying unattributed records to an explicit `agent_id`.
+///
+/// Unattributed means `agent_id` is absent (NONE), NULL, or the empty string
+/// (`DbTaskStream` stores an absent id as `""` since migration v18).
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct RekeyReport {
+    pub dry_run: bool,
+    pub to_agent_id: String,
+    pub user_id: Option<String>,
+    /// Memories matched (dry run) or re-keyed.
+    pub memories: u64,
+    /// Task streams matched (dry run) or re-keyed.
+    pub task_streams: u64,
+    /// Task streams left unchanged because a stream with the same
+    /// (agent_id, user_id, name) already exists under the target id.
+    pub task_stream_conflicts: u64,
+}
+
 /// The unified storage interface for the surreal-memory platform.
 ///
 /// Implemented by `SurrealStorage`. All methods are `async` and return
 /// `anyhow::Result<T>` for ergonomic error propagation.
+/// What one TTL sweep pass did. Only `removed` counts deletions that actually
+/// happened.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SweepReport {
+    /// Expired rows found this pass (at most one batch).
+    pub selected: u64,
+    /// Rows this pass confirmed deleted.
+    pub removed: u64,
+    /// Rows that were renewed or already gone by the time they were deleted.
+    pub skipped: u64,
+    /// Rows whose deletion failed; they stay (hidden from normal reads) and are
+    /// retried by the next pass.
+    pub failed: u64,
+}
+
+/// Returned (inside the `anyhow::Error`) by `expire_stale_memories` when some
+/// deletions failed, so callers can still read the partial progress by
+/// downcasting.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("TTL sweep removed {removed} of {selected} expired memories; {failed} deletions failed")]
+pub struct SweepIncomplete {
+    pub selected: u64,
+    pub removed: u64,
+    pub failed: u64,
+}
+
 #[async_trait]
 pub trait MemoryStorage: Send + Sync {
     // ── Knowledge Graph ──────────────────────────────────────────────────────
@@ -50,18 +101,60 @@ pub trait MemoryStorage: Send + Sync {
     async fn get_memory(&self, id: &str) -> Result<Option<Memory>>;
     async fn update_memory(&self, id: &str, content: String) -> Result<Memory>;
     async fn delete_memory(&self, id: &str) -> Result<()>;
+    /// Update a memory only if it belongs to `owner_user_id`. A missing memory
+    /// and one owned by someone else are indistinguishable ("not found").
+    ///
+    /// The default checks ownership with a read and then updates, which is not
+    /// atomic. `SurrealStorage` overrides it with an in-transaction check;
+    /// other implementations that serve restricted callers must do the same.
+    async fn update_memory_owned(
+        &self,
+        id: &str,
+        owner_user_id: &str,
+        content: String,
+    ) -> Result<Memory> {
+        match self.get_memory(id).await? {
+            Some(memory) if memory.user_id.as_deref() == Some(owner_user_id) => {
+                self.update_memory(id, content).await
+            }
+            _ => anyhow::bail!("Memory '{id}' not found"),
+        }
+    }
+    /// Delete a memory only if it belongs to `owner_user_id`. See
+    /// [`MemoryStorage::update_memory_owned`] for the atomicity contract.
+    async fn delete_memory_owned(&self, id: &str, owner_user_id: &str) -> Result<()> {
+        match self.get_memory(id).await? {
+            Some(memory) if memory.user_id.as_deref() == Some(owner_user_id) => {
+                self.delete_memory(id).await
+            }
+            _ => anyhow::bail!("Memory '{id}' not found"),
+        }
+    }
     async fn delete_all_memories(
         &self,
         user_id: Option<&str>,
         agent_id: Option<&str>,
         session_id: Option<&str>,
     ) -> Result<u64>;
+    /// Legacy complete listing: every live memory in the scope, embeddings
+    /// included, or an error (never a partial list). Memory use grows with the
+    /// scope; new callers should use
+    /// [`list_memories_page`](Self::list_memories_page) instead.
     async fn get_all_memories(
         &self,
         user_id: Option<&str>,
         agent_id: Option<&str>,
         session_id: Option<&str>,
     ) -> Result<Vec<Memory>>;
+    /// One bounded page of live memories matching the request's owner filters.
+    /// See [`MemoryPageRequest`] for the limits and consistency rules.
+    ///
+    /// The default fails closed: a backend that has not implemented paging
+    /// returns an error rather than falling back to an unbounded listing.
+    async fn list_memories_page(&self, request: MemoryPageRequest) -> Result<MemoryPage> {
+        let _ = request;
+        anyhow::bail!("memory pagination is not supported by this storage backend")
+    }
     async fn search_memories(
         &self,
         query: &str,
@@ -82,10 +175,22 @@ pub trait MemoryStorage: Send + Sync {
         user_id: Option<&str>,
         agent_id: Option<&str>,
         session_id: Option<&str>,
+        categories: Option<&[String]>,
         limit: usize,
         vector_weight: f32,
         bm25_weight: f32,
     ) -> Result<Vec<Memory>>;
+
+    /// Re-key memories and task streams whose `agent_id` is unattributed
+    /// (NONE, NULL or "") to `to_agent_id`, optionally limited to one
+    /// `user_id`. With `dry_run` nothing is written and the counts report what
+    /// would change.
+    async fn rekey_unattributed_agent_id(
+        &self,
+        to_agent_id: &str,
+        user_id: Option<&str>,
+        dry_run: bool,
+    ) -> Result<RekeyReport>;
 
     /// Compress memories older than `older_than_days` into a single summary.
     async fn compress_memories(
@@ -106,8 +211,28 @@ pub trait MemoryStorage: Send + Sync {
         session_id: Option<&str>,
     ) -> Result<Vec<Memory>>;
 
-    /// Mark memories with `valid_until < now()` as expired. Returns count.
+    /// Physically delete memories whose `valid_until` is before the cutoff
+    /// (equality is still live), writing a `deleted` history row for each.
+    /// Returns the number actually removed.
+    ///
+    /// If any deletion failed this returns an `Err` wrapping
+    /// [`SweepIncomplete`] (downcast it to read the partial progress); those
+    /// rows stay and are retried by the next pass. Expired memories are already
+    /// hidden from normal reads before a sweep runs, so a delayed or failing
+    /// sweep never makes them visible.
     async fn expire_stale_memories(&self) -> Result<u64>;
+
+    /// Like [`expire_stale_memories`](Self::expire_stale_memories) but returns
+    /// the partial progress as a value instead of an error. The default
+    /// delegates, so implementors that predate it keep compiling.
+    async fn expire_stale_memories_report(&self) -> Result<SweepReport> {
+        let removed = self.expire_stale_memories().await?;
+        Ok(SweepReport {
+            selected: removed,
+            removed,
+            ..SweepReport::default()
+        })
+    }
 
     // ── TaskStreams ───────────────────────────────────────────────────────────
 

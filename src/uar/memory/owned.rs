@@ -196,6 +196,7 @@ impl OwnedMemory<'_> {
                 Some(&self.owner_key()),
                 agent,
                 session,
+                None,
                 limit,
                 vector_weight,
                 bm25_weight,

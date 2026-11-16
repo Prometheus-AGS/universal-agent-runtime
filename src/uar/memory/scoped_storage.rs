@@ -14,7 +14,7 @@ use surreal_memory::{
     Memory, MemoryHistory,
     entity::{Entity, KnowledgeGraph, Relation, SemanticSearchResult},
     mindmap::{MindMap, MindMapEdge, MindMapNode},
-    storage::MemoryStorage,
+    storage::{MemoryPage, MemoryPageRequest, MemoryStorage, RekeyReport, SweepReport},
     task_step::{TaskStep, TaskStepStatus},
     task_stream::{ContextWindow, TaskStream},
 };
@@ -112,6 +112,7 @@ fn read_only_memory_operation(name: &str) -> bool {
     matches!(name,
         "get_entity" | "search_entities" | "get_relations" | "get_graph" |
         "semantic_search" | "get_memory" | "get_all_memories" |
+        "list_memories_page" |
         "search_memories" | "get_memory_history" | "hybrid_search_memories" |
         "get_task_stream" | "get_context_for_task" | "list_task_streams" |
         "get_task_steps" | "get_current_step" | "get_mindmap" |
@@ -238,6 +239,22 @@ impl MemoryStorage for ScopedMemoryStorage {
         }).await
     }
 
+    async fn update_memory_owned(&self, id: &str, owner_user_id: &str, content: String) -> Result<Memory> {
+        let id = id.to_string();
+        let owner_user_id = owner_user_id.to_string();
+        self.dispatch("update_memory_owned", move |inner| async move {
+            inner.update_memory_owned(&id, &owner_user_id, content).await
+        }).await
+    }
+
+    async fn delete_memory_owned(&self, id: &str, owner_user_id: &str) -> Result<()> {
+        let id = id.to_string();
+        let owner_user_id = owner_user_id.to_string();
+        self.dispatch("delete_memory_owned", move |inner| async move {
+            inner.delete_memory_owned(&id, &owner_user_id).await
+        }).await
+    }
+
     async fn delete_all_memories(&self, user_id: Option<&str>, agent_id: Option<&str>, session_id: Option<&str>) -> Result<u64> {
         let user_id = user_id.map(str::to_owned);
         let agent_id = agent_id.map(str::to_owned);
@@ -253,6 +270,12 @@ impl MemoryStorage for ScopedMemoryStorage {
         let session_id = session_id.map(str::to_owned);
         self.dispatch("get_all_memories", move |inner| async move {
             inner.get_all_memories(user_id.as_deref(), agent_id.as_deref(), session_id.as_deref()).await
+        }).await
+    }
+
+    async fn list_memories_page(&self, request: MemoryPageRequest) -> Result<MemoryPage> {
+        self.dispatch("list_memories_page", move |inner| async move {
+            inner.list_memories_page(request).await
         }).await
     }
 
@@ -274,13 +297,22 @@ impl MemoryStorage for ScopedMemoryStorage {
         }).await
     }
 
-    async fn hybrid_search_memories(&self, query: &str, user_id: Option<&str>, agent_id: Option<&str>, session_id: Option<&str>, limit: usize, vector_weight: f32, bm25_weight: f32) -> Result<Vec<Memory>> {
+    async fn hybrid_search_memories(&self, query: &str, user_id: Option<&str>, agent_id: Option<&str>, session_id: Option<&str>, categories: Option<&[String]>, limit: usize, vector_weight: f32, bm25_weight: f32) -> Result<Vec<Memory>> {
         let query = query.to_owned();
         let user_id = user_id.map(str::to_owned);
         let agent_id = agent_id.map(str::to_owned);
         let session_id = session_id.map(str::to_owned);
+        let categories = categories.map(<[String]>::to_vec);
         self.dispatch("hybrid_search_memories", move |inner| async move {
-            inner.hybrid_search_memories(&query, user_id.as_deref(), agent_id.as_deref(), session_id.as_deref(), limit, vector_weight, bm25_weight).await
+            inner.hybrid_search_memories(&query, user_id.as_deref(), agent_id.as_deref(), session_id.as_deref(), categories.as_deref(), limit, vector_weight, bm25_weight).await
+        }).await
+    }
+
+    async fn rekey_unattributed_agent_id(&self, to_agent_id: &str, user_id: Option<&str>, dry_run: bool) -> Result<RekeyReport> {
+        let to_agent_id = to_agent_id.to_string();
+        let user_id = user_id.map(str::to_string);
+        self.dispatch("rekey_unattributed_agent_id", move |inner| async move {
+            inner.rekey_unattributed_agent_id(&to_agent_id, user_id.as_deref(), dry_run).await
         }).await
     }
 
@@ -305,6 +337,12 @@ impl MemoryStorage for ScopedMemoryStorage {
     async fn expire_stale_memories(&self) -> Result<u64> {
         self.dispatch("expire_stale_memories", move |inner| async move {
             inner.expire_stale_memories().await
+        }).await
+    }
+
+    async fn expire_stale_memories_report(&self) -> Result<SweepReport> {
+        self.dispatch("expire_stale_memories_report", move |inner| async move {
+            inner.expire_stale_memories_report().await
         }).await
     }
 
@@ -539,3 +577,100 @@ impl MemoryStorage for ScopedMemoryStorage {
     }
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::BTreeSet;
+    use surreal_memory::{EmbeddingService, SurrealStorage};
+
+    const TEST_DIMENSIONS: usize = 8;
+    const SEEDED: usize = 5;
+    const PAGE_SIZE: usize = 2;
+
+    /// One orthogonal vector per seed index, so the library's similarity
+    /// deduplication keeps every seeded memory as its own row.
+    struct IndexEmbeddings;
+
+    fn one_hot(text: &str) -> Vec<f32> {
+        let index = text
+            .split_whitespace()
+            .nth(2)
+            .and_then(|word| word.parse::<usize>().ok())
+            .unwrap_or(TEST_DIMENSIONS - 1);
+        let mut vector = vec![0.0; TEST_DIMENSIONS];
+        vector[index % TEST_DIMENSIONS] = 1.0;
+        vector
+    }
+
+    #[async_trait]
+    impl EmbeddingService for IndexEmbeddings {
+        async fn embed(&self, text: &str) -> Result<Vec<f32>> {
+            Ok(one_hot(text))
+        }
+
+        async fn embed_batch(&self, texts: Vec<String>) -> Result<Vec<Vec<f32>>> {
+            Ok(texts.iter().map(|text| one_hot(text)).collect())
+        }
+
+        fn dimensions(&self) -> usize {
+            TEST_DIMENSIONS
+        }
+    }
+
+    /// The wrapper must reach the backend's paging, not the trait's
+    /// fail-closed default.
+    #[tokio::test]
+    async fn list_memories_page_is_forwarded_and_enumerates_every_memory_once() {
+        let backend = SurrealStorage::new_mem(Arc::new(IndexEmbeddings)).await.unwrap();
+        let storage = ScopedMemoryStorage::new(
+            Arc::new(backend),
+            ResourceScope::standalone("paging-test-storage", "paging-test"),
+        );
+        let mut stored = BTreeSet::new();
+        for index in 0..SEEDED {
+            let memory = Memory::new(
+                format!("paged memory {index} {}", uuid::Uuid::new_v4()),
+                Some("page-user".to_string()),
+                None,
+                None,
+                vec![],
+            );
+            let saved = storage.add_memory(memory).await.unwrap();
+            stored.insert(format!("{:?}", saved.id.unwrap().key));
+        }
+
+        let mut seen = BTreeSet::new();
+        let mut cursor = None;
+        let mut pages = 0;
+        loop {
+            let page = storage
+                .list_memories_page(MemoryPageRequest {
+                    user_id: Some("page-user".to_string()),
+                    agent_id: None,
+                    session_id: None,
+                    limit: Some(PAGE_SIZE),
+                    cursor: cursor.take(),
+                    include_embeddings: false,
+                })
+                .await
+                .unwrap();
+            pages += 1;
+            assert!(page.memories.len() <= PAGE_SIZE);
+            for memory in page.memories {
+                assert!(memory.embedding.is_none());
+                assert!(seen.insert(format!("{:?}", memory.id.unwrap().key)));
+            }
+            if !page.has_more {
+                assert!(page.next_cursor.is_none());
+                break;
+            }
+            cursor = page.next_cursor;
+            assert!(cursor.is_some());
+        }
+
+        assert_eq!(stored.len(), SEEDED);
+        assert_eq!(seen, stored);
+        assert_eq!(pages, SEEDED.div_ceil(PAGE_SIZE));
+    }
+}

@@ -1,6 +1,6 @@
 //! SurrealDB-backed implementation of `MemoryStorage`.
 
-use super::MemoryStorage;
+use super::{MemoryStorage, RekeyReport};
 #[cfg(feature = "palace")]
 use crate::palace::{HitSource, PalaceContext, PalaceStatus, PalaceStorage, UnifiedHit};
 use crate::{
@@ -17,12 +17,13 @@ use arc_swap::ArcSwap;
 use async_trait::async_trait;
 use serde::Deserialize;
 use serde::{Serialize, de::DeserializeOwned};
-use std::{cmp::Ordering, sync::Arc};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering as AtomicOrdering};
+use std::{cmp::Ordering, collections::HashMap, sync::Arc};
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
-use surrealdb::opt::auth::Root;
 use surrealdb::types::{Datetime, RecordId, RecordIdKey};
-use surrealdb_types::{SurrealValue, Value};
+use surrealdb_types::{QueryError, SurrealValue, Value};
+use unicode_normalization::UnicodeNormalization;
 use uuid::Uuid;
 
 /// Token budget constants per model family. Extend via config in Phase 3.
@@ -37,9 +38,11 @@ const MINDMAP_UPDATE_TIMEOUT: &str = "30s";
 
 /// SurrealDB-backed memory storage.
 ///
-/// `Surreal<Any>` is internally `Arc`-wrapped and `Clone`-safe; the SDK
-/// multiplexes concurrent queries over a single physical connection
-/// (WebSocket in server mode, in-process for embedded). The connection
+/// One `Surreal<Any>` handle, and so one server-side session, is shared by
+/// every operation: the SDK multiplexes concurrent queries over a single
+/// physical connection (WebSocket in server mode, in-process for embedded).
+/// It is held as `Arc<Surreal<Any>>` because in SDK 3.x `Surreal::clone()`
+/// opens a new session (attach, replayed signin, `use`). The connection
 /// lifecycle (Connected/Reconnecting/Failed) is published via an atomic
 /// `ArcSwap` cell: hot-path readers do a single atomic load (no lock),
 /// reconnects do a single atomic store. This replaces the previous
@@ -58,19 +61,126 @@ pub struct SurrealStorage {
     /// "serialization failure" into honest backpressure. `None` in
     /// server mode (the remote SurrealDB handles its own scheduling).
     embedded_semaphore: Option<Arc<tokio::sync::Semaphore>>,
+    /// Bounded cache of query embeddings. Only `search_memories` reads or
+    /// fills it; every write path embeds directly.
+    query_embed_cache: QueryEmbedCache,
+    /// Summarizer, limits and clock for evidence-backed compression.
+    compression: crate::compression::CompressionRuntime,
     #[cfg(feature = "palace")]
     palace: tokio::sync::OnceCell<PalaceContext>,
+}
+
+/// A memory is *live* when it is active (not archived into a summary or
+/// otherwise retired; NONE means active, so legacy rows need no backfill) and
+/// unexpired at the operation's cutoff. Needs `$now` bound.
+///
+/// Expired means `valid_until < $now`, so a memory whose `valid_until` equals
+/// the cutoff is still live (the rule the TTL sweep has always used). The
+/// predicate sits in the SQL `WHERE`, before any top-k or `LIMIT`, so expired
+/// rows can never take a slot from live ones.
+const LIVE_MEMORY_SQL: &str = "(status IS NONE OR status = 'active') \
+     AND (valid_until IS NONE OR valid_until >= $now)";
+
+/// Environment variable holding the query-embedding cache capacity.
+pub const QUERY_EMBED_CACHE_ENV: &str = "SURREAL_MEMORY_QUERY_EMBED_CACHE";
+/// Default number of cached query embeddings.
+const DEFAULT_QUERY_EMBED_CACHE_CAPACITY: usize = 512;
+
+/// Point-in-time counters of the query-embedding cache.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub struct QueryEmbedCacheStats {
+    /// Configured capacity; 0 means the cache is disabled.
+    pub capacity: usize,
+    /// Entries currently cached.
+    pub entries: usize,
+    /// Successful query-embedding reuse, including coalesced waiters that did
+    /// not invoke the embedding producer. Independent of later search success.
+    pub hits: u64,
+    /// Query-embedding producer attempts begun, including failures and attempts
+    /// cancelled after they began. Provider-internal retries are not counted.
+    pub misses: u64,
+}
+
+/// Bounded query-embedding cache with hit/miss counters. `cache` is `None`
+/// when the capacity is 0.
+struct QueryEmbedCache {
+    capacity: usize,
+    identity: std::sync::OnceLock<(String, usize)>,
+    cache: Option<quick_cache::sync::Cache<String, Vec<f32>>>,
+    hits: AtomicU64,
+    misses: AtomicU64,
+}
+
+impl QueryEmbedCache {
+    fn new(capacity: usize) -> Self {
+        Self {
+            capacity,
+            identity: std::sync::OnceLock::new(),
+            cache: (capacity > 0).then(|| quick_cache::sync::Cache::new(capacity)),
+            hits: AtomicU64::new(0),
+            misses: AtomicU64::new(0),
+        }
+    }
+
+    fn from_env() -> Self {
+        let capacity = std::env::var(QUERY_EMBED_CACHE_ENV)
+            .ok()
+            .and_then(|value| value.trim().parse::<usize>().ok())
+            .unwrap_or(DEFAULT_QUERY_EMBED_CACHE_CAPACITY);
+        Self::new(capacity)
+    }
+
+    fn stats(&self) -> QueryEmbedCacheStats {
+        QueryEmbedCacheStats {
+            capacity: self.capacity,
+            entries: self.cache.as_ref().map_or(0, |cache| cache.len()),
+            hits: self.hits.load(AtomicOrdering::Relaxed),
+            misses: self.misses.load(AtomicOrdering::Relaxed),
+        }
+    }
+
+    /// Freeze the first known provider identity for this cache's lifetime.
+    /// Unknown or changing providers bypass it; dimensions alone never identify
+    /// a model. Namespace length framing prevents delimiter collisions.
+    fn key(&self, service: &dyn EmbeddingService, query: &str) -> Option<String> {
+        let namespace = service
+            .cache_namespace()
+            .filter(|value| !value.is_empty())?;
+        let dimensions = service.dimensions();
+        let identity = self
+            .identity
+            .get_or_init(|| (namespace.to_owned(), dimensions));
+        if identity.0 != namespace || identity.1 != dimensions {
+            return None;
+        }
+        let normalised: String = query.nfc().collect();
+        let collapsed = normalised.split_whitespace().collect::<Vec<_>>().join(" ");
+        Some(format!(
+            "{}:{namespace}{dimensions}\u{1f}{collapsed}",
+            namespace.len()
+        ))
+    }
 }
 
 // ── Retry Configuration ───────────────────────────────────────────────────────
 
 use std::time::Duration;
 
+mod derivation;
+mod enumeration;
+mod expiry;
+mod owned;
+
 /// Number of connect attempts allowed when reconnecting from inside an
 /// operation retry. Deliberately small — the operation deadline, not this
 /// count, is the real bound; the larger `max_connect_retries` is reserved for
 /// the initial startup connect where a longer wait is acceptable.
 const OPERATION_RECONNECT_ATTEMPTS: u32 = 2;
+
+/// Lower bound for the HNSW search width (`EF`) in `search_memories`. The
+/// search width must be at least `K`; below this floor small `K` values lose
+/// recall.
+const KNN_MIN_EF: usize = 40;
 
 /// Default in-flight concurrency cap for embedded mode. Matches RocksDB's
 /// PointLockManager default of 16 stripes per column family — beyond this,
@@ -91,6 +201,62 @@ const MAX_TRANSACTION_CONFLICT_RETRIES: u32 = 16;
 fn transaction_conflict_backoff(attempt: u32) -> Duration {
     let millis = 1u64 << attempt.min(6);
     Duration::from_millis(millis.min(100))
+}
+
+/// A write the database rejected with `QueryError::TransactionConflict`
+/// ("This transaction can be retried"). SurrealDB 3.3 raises this on tables
+/// with an HNSW index when a write collides with the index's background
+/// maintenance, even without a concurrent writer.
+pub(crate) fn is_retryable_conflict(err: &surrealdb::Error) -> bool {
+    err.query_details() == Some(&QueryError::TransactionConflict)
+}
+
+fn is_not_executed(err: &surrealdb::Error) -> bool {
+    err.query_details() == Some(&QueryError::NotExecuted)
+}
+
+/// Pick the error that represents a failed multi-statement response.
+///
+/// When a `BEGIN…COMMIT` loses a conflict, SurrealDB 3.3 marks every statement
+/// `NotExecuted` and reports `TransactionConflict` on a separate COMMIT row;
+/// `IndexedResults::check()` returns the lowest-index error, which is the
+/// placeholder, not the cause. A response is a definite abort (nothing was
+/// applied, safe to resubmit) only when every error is a conflict or a
+/// placeholder and at least one is a conflict; then the conflict is returned.
+/// Otherwise the first real error wins, and if every error is a placeholder
+/// the highest index (the COMMIT row, which carries the cause) is returned.
+fn select_statement_error(errors: HashMap<usize, surrealdb::Error>) -> Option<surrealdb::Error> {
+    let mut errors: Vec<(usize, surrealdb::Error)> = errors.into_iter().collect();
+    errors.sort_by_key(|(index, _)| *index);
+    let definite_abort = errors.iter().any(|(_, e)| is_retryable_conflict(e))
+        && errors
+            .iter()
+            .all(|(_, e)| is_retryable_conflict(e) || is_not_executed(e));
+    if definite_abort {
+        return errors
+            .into_iter()
+            .map(|(_, e)| e)
+            .find(is_retryable_conflict);
+    }
+    if let Some(position) = errors
+        .iter()
+        .position(|(_, e)| !is_not_executed(e) && !is_retryable_conflict(e))
+    {
+        return Some(errors.swap_remove(position).1);
+    }
+    errors.pop().map(|(_, e)| e)
+}
+
+/// Drop-in replacement for `IndexedResults::check()` that inspects every
+/// statement error, so a transaction conflict is not hidden behind the
+/// `NotExecuted` placeholders of the statements it aborted.
+pub(crate) fn check_statements(
+    mut response: surrealdb::IndexedResults,
+) -> Result<surrealdb::IndexedResults, surrealdb::Error> {
+    match select_statement_error(response.take_errors()) {
+        Some(error) => Err(error),
+        None => Ok(response),
+    }
 }
 
 /// Build the embedded-mode in-flight semaphore from the active config. Returns
@@ -131,6 +297,9 @@ enum RetryAction {
 /// Discriminate a typed `surrealdb::Error` into a `RetryAction`. Kept as a
 /// free function so it can be unit-tested without a live storage handle.
 fn classify_surreal_error(err: &surrealdb::Error) -> RetryAction {
+    if is_retryable_conflict(err) {
+        return RetryAction::Retry;
+    }
     // The exact variant set is SDK-version-specific; match on the
     // stringified Display form scoped to the typed error (much narrower
     // than matching on a fully-wrapped anyhow chain).
@@ -238,7 +407,11 @@ struct ConnectionInfo {
 #[derive(Clone)]
 pub(crate) enum ConnectionCell {
     /// Active connection, ready to use.
-    Connected(Surreal<Any>),
+    ///
+    /// Held behind an `Arc` and shared, never cloned per call: in the 3.x SDK
+    /// `Surreal::clone()` opens a new server-side session (attach, signin,
+    /// use) and dropping it detaches that session.
+    Connected(Arc<Surreal<Any>>),
     /// Mid-reconnect; callers should fail fast and let the retry layer
     /// observe the new state on its next attempt.
     Reconnecting,
@@ -520,6 +693,11 @@ struct DbMemory {
     version: u32,
     created_at: Datetime,
     updated_at: Datetime,
+    /// Lifecycle state written by compression (NONE and `active` are eligible).
+    /// Not part of the public `Memory`; reads filter on it in SQL.
+    status: Option<String>,
+    /// The derivation this memory was archived into, if it was summarized.
+    derived_into: Option<RecordId>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, SurrealValue)]
@@ -532,7 +710,7 @@ struct SchemaMetadataRecord {
 #[derive(Clone, Debug, Deserialize, SurrealValue)]
 struct EmbeddingDimensionRecord {
     id: Option<RecordId>,
-    embedding: Option<Vec<f32>>,
+    dimension: Option<i64>,
 }
 
 impl From<Memory> for DbMemory {
@@ -557,6 +735,8 @@ impl From<Memory> for DbMemory {
             version: memory.version,
             created_at: memory.created_at,
             updated_at: memory.updated_at,
+            status: None,
+            derived_into: None,
         }
     }
 }
@@ -633,6 +813,7 @@ pub enum SurrealLifecycleMode {
 
 #[derive(Debug, Clone)]
 pub struct SurrealConfig {
+    pub auth_level: super::auth::SurrealAuthLevel,
     pub mode: SurrealMode,
     pub endpoint: Option<String>,
     pub embedded_path: Option<String>,
@@ -647,6 +828,7 @@ pub struct SurrealConfig {
 impl Default for SurrealConfig {
     fn default() -> Self {
         Self {
+            auth_level: super::auth::SurrealAuthLevel::Root,
             mode: SurrealMode::Embedded,
             endpoint: None,
             embedded_path: None,
@@ -690,11 +872,15 @@ impl SurrealStorage {
         let embedded_semaphore = make_embedded_semaphore(&connection_info.config);
 
         Ok(Self {
-            connection: Arc::new(ArcSwap::new(Arc::new(ConnectionCell::Connected(db)))),
+            connection: Arc::new(ArcSwap::new(Arc::new(ConnectionCell::Connected(Arc::new(
+                db,
+            ))))),
             connection_info,
             lifecycle_mode: config.lifecycle_mode,
             embedding_service,
             embedded_semaphore,
+            query_embed_cache: QueryEmbedCache::from_env(),
+            compression: crate::compression::CompressionRuntime::default(),
             #[cfg(feature = "palace")]
             palace: tokio::sync::OnceCell::new(),
         })
@@ -721,13 +907,17 @@ impl SurrealStorage {
         Self::ensure_embedding_indexes(&db, embedding_service.dimensions()).await?;
 
         Ok(Self {
-            connection: Arc::new(ArcSwap::new(Arc::new(ConnectionCell::Connected(db)))),
+            connection: Arc::new(ArcSwap::new(Arc::new(ConnectionCell::Connected(Arc::new(
+                db,
+            ))))),
             connection_info: ConnectionInfo {
                 config: config.clone(),
             },
             lifecycle_mode: SurrealLifecycleMode::HostManaged,
             embedding_service,
             embedded_semaphore: make_embedded_semaphore(config),
+            query_embed_cache: QueryEmbedCache::from_env(),
+            compression: crate::compression::CompressionRuntime::default(),
             #[cfg(feature = "palace")]
             palace: tokio::sync::OnceCell::new(),
         })
@@ -785,7 +975,13 @@ impl SurrealStorage {
     async fn connect_with_config(config: &SurrealConfig) -> Result<Surreal<Any>> {
         let sdk_config = surrealdb::opt::Config::default()
             .query_timeout(Duration::from_millis(config.retry.query_timeout_ms));
+        Self::connect_with_sdk_config(config, sdk_config).await
+    }
 
+    async fn connect_with_sdk_config(
+        config: &SurrealConfig,
+        sdk_config: surrealdb::opt::Config,
+    ) -> Result<Surreal<Any>> {
         let db = match &config.mode {
             SurrealMode::Embedded => {
                 let path = config
@@ -793,7 +989,8 @@ impl SurrealStorage {
                     .as_ref()
                     .context("Embedded path required for embedded mode")?;
                 tracing::info!("Connecting to embedded SurrealDB at: {}", path);
-                surrealdb::engine::any::connect((format!("surrealkv://{}", path), sdk_config)).await?
+                surrealdb::engine::any::connect((format!("surrealkv://{}", path), sdk_config))
+                    .await?
             }
             SurrealMode::Server => {
                 let endpoint = config
@@ -805,14 +1002,7 @@ impl SurrealStorage {
             }
         };
 
-        if let (Some(username), Some(password)) = (&config.username, &config.password) {
-            db.signin(Root {
-                username: username.clone(),
-                password: password.clone(),
-            })
-            .await
-            .context("Failed to sign in to SurrealDB")?;
-        }
+        config.authenticate(&db).await?;
 
         db.use_ns(&config.namespace)
             .use_db(&config.database)
@@ -870,11 +1060,7 @@ impl SurrealStorage {
         table: &str,
         expected_dimension: usize,
     ) -> Result<()> {
-        let query = match table {
-            "entity" => "SELECT id, embedding FROM entity WHERE embedding IS NOT NONE",
-            "memory" => "SELECT id, embedding FROM memory WHERE embedding IS NOT NONE",
-            _ => anyhow::bail!("Unsupported embedding table: {}", table),
-        };
+        let query = Self::embedding_dimension_query(table)?;
 
         let rows: Vec<EmbeddingDimensionRecord> = db
             .query(query)
@@ -884,11 +1070,10 @@ impl SurrealStorage {
             .unwrap_or_default();
 
         for row in rows {
-            let Some(embedding) = row.embedding else {
+            let Some(actual_dimension) = row.dimension else {
                 continue;
             };
-            let actual_dimension = embedding.len();
-            if actual_dimension != expected_dimension {
+            if actual_dimension != expected_dimension as i64 {
                 let record_id = row
                     .id
                     .as_ref()
@@ -905,6 +1090,18 @@ impl SurrealStorage {
         }
 
         Ok(())
+    }
+
+    fn embedding_dimension_query(table: &str) -> Result<&'static str> {
+        match table {
+            "entity" => Ok(
+                "SELECT id, array::len(embedding) AS dimension FROM entity WHERE embedding IS NOT NONE",
+            ),
+            "memory" => Ok(
+                "SELECT id, array::len(embedding) AS dimension FROM memory WHERE embedding IS NOT NONE",
+            ),
+            _ => anyhow::bail!("Unsupported embedding table: {}", table),
+        }
     }
 
     async fn rebuild_embedding_indexes(db: &Surreal<Any>, dimension: usize) -> Result<()> {
@@ -943,15 +1140,16 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
         Ok(())
     }
 
-    /// Hot-path accessor for the live `Surreal<Any>` handle.
+    /// Hot-path accessor for the shared `Surreal<Any>` handle.
     ///
-    /// One atomic load, one `Arc::clone` of the inner SDK handle. No lock,
-    /// no contention, safe to call across `.await`. Every storage method
-    /// goes through here.
-    pub(crate) fn live_db(&self) -> Result<Surreal<Any>> {
+    /// One atomic load and one `Arc::clone`. It deliberately does not call
+    /// `Surreal::clone()`, which in the 3.x SDK opens a new server-side
+    /// session per call. Every storage method shares the session established
+    /// at connect time.
+    pub(crate) fn live_db(&self) -> Result<Arc<Surreal<Any>>> {
         let cell = self.connection.load();
         match &**cell {
-            ConnectionCell::Connected(db) => Ok(db.clone()),
+            ConnectionCell::Connected(db) => Ok(Arc::clone(db)),
             ConnectionCell::Reconnecting => {
                 anyhow::bail!("Connection is currently reconnecting, please retry later")
             }
@@ -971,12 +1169,30 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
             .context("SurrealDB health check failed")
     }
 
-    /// Clone the live `Surreal<Any>` handle for shared use by subsystems
-    /// (e.g. `PalaceAdapter`). `Surreal<Any>` is internally `Arc`-wrapped,
-    /// so this is cheap. Returns `Err` if the connection is in
-    /// `Reconnecting` or `Failed` state.
+    /// Clone the live `Surreal<Any>` handle for use outside this crate.
+    ///
+    /// Each call opens a new server-side session (the 3.x SDK's
+    /// `Surreal::clone()` attaches a session and replays signin and `use`), so
+    /// callers should hold the returned handle rather than call this per
+    /// operation. Returns `Err` if the connection is in `Reconnecting` or
+    /// `Failed` state.
     pub fn db(&self) -> Result<Surreal<Any>> {
-        self.live_db()
+        self.live_db().map(|db| (*db).clone())
+    }
+
+    /// Return a connection for the durable operation ledger.
+    ///
+    /// Server mode opens an independent transport so cancelling a ledger query
+    /// cannot strand unrelated storage work on the same WebSocket. Embedded
+    /// mode clones the in-process SDK handle because RocksDB cannot be opened a
+    /// second time at the same path.
+    pub async fn operation_ledger_connection(&self) -> Result<Surreal<Any>> {
+        match self.connection_info.config.mode {
+            SurrealMode::Embedded => self.live_db().map(|db| (*db).clone()),
+            SurrealMode::Server => {
+                Self::connect_with_attempts(&self.connection_info.config, 0).await
+            }
+        }
     }
 
     /// Replace a failed host-managed client after the host has completed its
@@ -992,7 +1208,7 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
             );
         }
         self.connection
-            .store(Arc::new(ConnectionCell::Connected(db)));
+            .store(Arc::new(ConnectionCell::Connected(Arc::new(db))));
         Ok(())
     }
 
@@ -1054,25 +1270,29 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
         memory.version = 1;
         let payload = DbMemory::from(memory);
         let db = self.live_db()?;
-        let response = db
-            .query(
-                "BEGIN TRANSACTION;\n\
-                 CREATE type::record('memory', $key) CONTENT $memory;\n\
-                 CREATE type::record('memory_history', $history_key) CONTENT { memory_id: type::record('memory', $key), version: 1, old_content: NONE, new_content: $content, changed_at: $now, change_type: 'created' };\n\
-                 COMMIT TRANSACTION;",
-            )
-            .bind(("key", record_key.to_owned()))
-            .bind(("memory", payload.clone()))
-            .bind(("history_key", format!("operation-{record_key}")))
-            .bind(("content", payload.content.clone()))
-            .bind(("now", now))
-            .await
-            .context("store_indexed_memory transaction failed")?;
-        if let Err(error) = response.check() {
+        let committed = self
+            .write_retrying_conflicts("store_indexed_memory", || async {
+                check_statements(
+                    db.query(
+                        "BEGIN TRANSACTION;\n\
+                         CREATE type::record('memory', $key) CONTENT $memory;\n\
+                         CREATE type::record('memory_history', $history_key) CONTENT { memory_id: type::record('memory', $key), version: 1, old_content: NONE, new_content: $content, changed_at: $now, change_type: 'created' };\n\
+                         COMMIT TRANSACTION;",
+                    )
+                    .bind(("key", record_key.to_owned()))
+                    .bind(("memory", payload.clone()))
+                    .bind(("history_key", format!("operation-{record_key}")))
+                    .bind(("content", payload.content.clone()))
+                    .bind(("now", now))
+                    .await?,
+                )
+            })
+            .await;
+        if let Err(error) = committed {
             if let Some(existing) = self.get_memory(record_key).await? {
                 return Ok(existing);
             }
-            return Err(error.into());
+            return Err(error);
         }
         self.get_memory(record_key)
             .await?
@@ -1163,7 +1383,7 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
             Ok(db) => {
                 guard.disarm();
                 self.connection
-                    .store(Arc::new(ConnectionCell::Connected(db)));
+                    .store(Arc::new(ConnectionCell::Connected(Arc::new(db))));
                 tracing::info!("Reconnection successful");
                 Ok(())
             }
@@ -1178,6 +1398,48 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
         }
     }
 
+    /// Resubmit one write request while the database reports a definite
+    /// transaction-conflict abort (nothing applied, so resubmitting the same
+    /// request is safe even for non-idempotent statements).
+    ///
+    /// `attempt` must send exactly one request: a single statement, one
+    /// `BEGIN…COMMIT`, or several statements that are each idempotent. It must
+    /// not embed or call other storage methods. Attempts are bounded by
+    /// `MAX_TRANSACTION_CONFLICT_RETRIES` and by `operation_deadline_ms`,
+    /// checked between attempts so an in-flight write is never cancelled.
+    async fn write_retrying_conflicts<T, F, Fut>(&self, op: &str, mut attempt: F) -> Result<T>
+    where
+        F: FnMut() -> Fut,
+        Fut: std::future::Future<Output = std::result::Result<T, surrealdb::Error>>,
+    {
+        let deadline = tokio::time::Instant::now()
+            + Duration::from_millis(self.connection_info.config.retry.operation_deadline_ms);
+        let mut conflicts: u32 = 0;
+        loop {
+            match attempt().await {
+                Ok(value) => return Ok(value),
+                Err(error) if is_retryable_conflict(&error) => {
+                    conflicts += 1;
+                    let backoff = transaction_conflict_backoff(conflicts);
+                    if conflicts >= MAX_TRANSACTION_CONFLICT_RETRIES
+                        || tokio::time::Instant::now() + backoff > deadline
+                    {
+                        return Err(anyhow::Error::new(error)).with_context(|| {
+                            format!("{op}: still conflicting after {conflicts} attempts")
+                        });
+                    }
+                    tracing::debug!(
+                        operation = op,
+                        attempt = conflicts,
+                        "retrying write after transaction conflict"
+                    );
+                    tokio::time::sleep(backoff).await;
+                }
+                Err(error) => return Err(anyhow::Error::new(error).context(op.to_owned())),
+            }
+        }
+    }
+
     /// Generic retry wrapper for database operations.
     ///
     /// Handles connection extraction, error classification, reconnection, and
@@ -1187,7 +1449,7 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
     /// `retry × reconnect × connect_with_retry` amplification.
     async fn retry_operation<F, R, Fut>(&self, op_name: &str, op: F) -> Result<R>
     where
-        F: Fn(Surreal<Any>) -> Fut,
+        F: Fn(Arc<Surreal<Any>>) -> Fut,
         Fut: std::future::Future<Output = Result<R>>,
     {
         if self.lifecycle_mode == SurrealLifecycleMode::HostManaged {
@@ -1251,7 +1513,7 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
     /// established by `retry_operation`.
     async fn retry_operation_inner<F, R, Fut>(&self, op_name: &str, op: F) -> Result<R>
     where
-        F: Fn(Surreal<Any>) -> Fut,
+        F: Fn(Arc<Surreal<Any>>) -> Fut,
         Fut: std::future::Future<Output = Result<R>>,
     {
         let max_retries = self.connection_info.config.retry.max_operation_retries;
@@ -1319,6 +1581,139 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
 
     async fn embed_text(&self, text: &str) -> Result<Vec<f32>> {
         self.embedding_service.embed(text).await
+    }
+
+    /// Embed a search query through the bounded cache. Concurrent identical
+    /// cacheable queries share a successful embedding; a failed or cancelled
+    /// producer leaves no cached value and a waiter may become the next producer.
+    /// Used only by `search_memories`.
+    async fn embed_query(&self, query: &str) -> Result<Vec<f32>> {
+        let cache = &self.query_embed_cache;
+        let Some((store, key)) = cache.cache.as_ref().and_then(|store| {
+            cache
+                .key(self.embedding_service.as_ref(), query)
+                .map(|key| (store, key))
+        }) else {
+            cache.misses.fetch_add(1, AtomicOrdering::Relaxed);
+            return self.embed_text(query).await;
+        };
+        let attempted = AtomicBool::new(false);
+        let embedding = store
+            // This future is polled only by the caller holding the insertion
+            // guard. Count before awaiting so errors and cancellation retain
+            // their attempt; quick_cache inserts only successful values.
+            .get_or_insert_async(&key, async {
+                attempted.store(true, AtomicOrdering::Relaxed);
+                cache.misses.fetch_add(1, AtomicOrdering::Relaxed);
+                self.embed_text(query).await
+            })
+            .await?;
+        if !attempted.load(AtomicOrdering::Relaxed) {
+            cache.hits.fetch_add(1, AtomicOrdering::Relaxed);
+        }
+        Ok(embedding)
+    }
+
+    /// Nearest-neighbour search for an embedding the caller already has. The
+    /// write paths' duplicate checks use this with the content embedding they
+    /// just computed, so they neither embed twice nor touch the query cache.
+    async fn search_memories_with_embedding(
+        &self,
+        query_emb: Vec<f32>,
+        user_id: Option<&str>,
+        agent_id: Option<&str>,
+        session_id: Option<&str>,
+        categories: Option<&[String]>,
+        limit: usize,
+    ) -> Result<Vec<Memory>> {
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+        let categories = categories.filter(|list| !list.is_empty());
+
+        // Nearest neighbours come from the HNSW index with the scope conditions
+        // applied during the search, so only `limit` rows cross the wire.
+        // Fetching the whole scope and ranking here made the response grow
+        // with the table until it passed the SDK's 64 MiB WebSocket message
+        // limit, which drops the socket and fails every in-flight request.
+        let mut parts: Vec<&str> = vec![];
+        if user_id.is_some() {
+            parts.push("user_id = $user_id");
+        }
+        if agent_id.is_some() {
+            parts.push("agent_id = $agent_id");
+        }
+        if session_id.is_some() {
+            parts.push("session_id = $session_id");
+        }
+        if categories.is_some() {
+            parts.push("categories CONTAINSANY $categories");
+        }
+        // Archived (summarized) sources are not current knowledge; the summary
+        // that replaced them is.
+        parts.push(LIVE_MEMORY_SQL);
+        let knn = format!(
+            "embedding <|{limit},{ef}|> $query_emb",
+            ef = limit.max(KNN_MIN_EF)
+        );
+        parts.push(&knn);
+        let sql = format!("SELECT * FROM memory WHERE {}", parts.join(" AND "));
+
+        let db = self.live_db()?;
+        let mut q = db
+            .query(sql)
+            .bind(("query_emb", query_emb.clone()))
+            .bind(("now", self.cutoff()));
+        if let Some(v) = user_id {
+            q = q.bind(("user_id", v.to_string()));
+        }
+        if let Some(v) = agent_id {
+            q = q.bind(("agent_id", v.to_string()));
+        }
+        if let Some(v) = session_id {
+            q = q.bind(("session_id", v.to_string()));
+        }
+        if let Some(list) = categories {
+            q = q.bind(("categories", list.to_vec()));
+        }
+        let candidates = Self::decode_memories(q.await?.take(0)?)?;
+
+        let mut scored: Vec<(f32, Memory)> = candidates
+            .into_iter()
+            .filter_map(|m| {
+                let emb = m.embedding.as_deref()?;
+                let sim = Self::cosine_similarity(&query_emb, emb);
+                Some((sim, m))
+            })
+            .collect();
+
+        scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(Ordering::Equal));
+        scored.truncate(limit);
+        Ok(scored.into_iter().map(|(_, m)| m).collect())
+    }
+
+    /// Replace the query-embedding cache with one of `capacity` entries
+    /// (0 disables it). Intended for construction time; the cache starts empty.
+    #[must_use]
+    /// Replace the compression runtime (summarizer, limits, clock).
+    pub fn with_compression(mut self, runtime: crate::compression::CompressionRuntime) -> Self {
+        self.compression = runtime;
+        self
+    }
+
+    /// The compression runtime, e.g. to inject a fault in tests.
+    pub fn compression(&self) -> &crate::compression::CompressionRuntime {
+        &self.compression
+    }
+
+    pub fn with_query_embed_cache_capacity(mut self, capacity: usize) -> Self {
+        self.query_embed_cache = QueryEmbedCache::new(capacity);
+        self
+    }
+
+    /// Hit/miss counters of the query-embedding cache.
+    pub fn query_embed_cache_stats(&self) -> QueryEmbedCacheStats {
+        self.query_embed_cache.stats()
     }
 
     fn sanitize_explicit_record_content<P>(data: P) -> Value
@@ -1402,7 +1797,7 @@ DEFINE INDEX IF NOT EXISTS memory_embedding_hnsw
     /// when no step with that key exists. Backs the idempotency checks in
     /// `add_task_step` and `complete_step`.
     async fn find_task_step_by_key(&self, idempotency_key: &str) -> Result<Option<TaskStep>> {
-        let db = self.db()?;
+        let db = self.live_db()?;
         let steps: Vec<DbTaskStep> = db
             .query("SELECT * FROM task_step WHERE idempotency_key = $key LIMIT 1")
             .bind(("key", idempotency_key.to_string()))
@@ -1661,11 +2056,11 @@ impl MemoryStorage for SurrealStorage {
         entity.updated_at = now;
         entity.embedding = Some(self.embed_entity(&entity).await?);
 
-        let created: Option<Entity> = db
-            .create("entity")
-            .content(entity)
-            .await
-            .context("Failed to create entity")?;
+        let created: Option<Entity> = self
+            .write_retrying_conflicts("create_entity", || async {
+                db.create("entity").content(entity.clone()).await
+            })
+            .await?;
 
         created.ok_or_else(|| anyhow::anyhow!("No entity returned after creation"))
     }
@@ -1693,13 +2088,18 @@ impl MemoryStorage for SurrealStorage {
         entity.updated_at = Datetime::default();
         entity.embedding = Some(self.embed_entity(&entity).await?);
 
-        let mut res = db
-            .query("UPDATE entity SET entity_type = $type, observations = $obs, embedding = $embedding, updated_at = $updated WHERE name = $name RETURN AFTER")
-            .bind(("name", entity.name.clone()))
-            .bind(("type", entity.entity_type.clone()))
-            .bind(("obs", entity.observations.clone()))
-            .bind(("embedding", entity.embedding.clone()))
-            .bind(("updated", entity.updated_at))
+        let mut res = self
+            .write_retrying_conflicts("update_entity", || async {
+                check_statements(
+                    db.query("UPDATE entity SET entity_type = $type, observations = $obs, embedding = $embedding, updated_at = $updated WHERE name = $name RETURN AFTER")
+                        .bind(("name", entity.name.clone()))
+                        .bind(("type", entity.entity_type.clone()))
+                        .bind(("obs", entity.observations.clone()))
+                        .bind(("embedding", entity.embedding.clone()))
+                        .bind(("updated", entity.updated_at))
+                        .await?,
+                )
+            })
             .await?;
         let updated: Option<Entity> = res.take(0)?;
         updated.context("Failed to update entity")
@@ -1707,9 +2107,16 @@ impl MemoryStorage for SurrealStorage {
 
     async fn delete_entity(&self, name: &str) -> Result<()> {
         let db = self.live_db()?;
-        db.query("DELETE FROM entity WHERE name = $name; DELETE FROM relation WHERE from = $name OR to = $name")
-            .bind(("name", name.to_string()))
-            .await?;
+        // One transaction, so the entity and its relations are removed together
+        // and a conflict aborts both.
+        self.write_retrying_conflicts("delete_entity", || async {
+            check_statements(
+                db.query("BEGIN TRANSACTION; DELETE FROM entity WHERE name = $name; DELETE FROM relation WHERE from = $name OR to = $name; COMMIT TRANSACTION;")
+                    .bind(("name", name.to_string()))
+                    .await?,
+            )
+        })
+        .await?;
         Ok(())
     }
 
@@ -1754,11 +2161,18 @@ impl MemoryStorage for SurrealStorage {
 
     async fn delete_relation(&self, from: &str, to: &str, relation_type: &str) -> Result<()> {
         let db = self.live_db()?;
-        db.query("DELETE FROM relation WHERE from = $from AND to = $to AND relation_type = $rt")
-            .bind(("from", from.to_string()))
-            .bind(("to", to.to_string()))
-            .bind(("rt", relation_type.to_string()))
-            .await?;
+        self.write_retrying_conflicts("delete_relation", || async {
+            check_statements(
+                db.query(
+                    "DELETE FROM relation WHERE from = $from AND to = $to AND relation_type = $rt",
+                )
+                .bind(("from", from.to_string()))
+                .bind(("to", to.to_string()))
+                .bind(("rt", relation_type.to_string()))
+                .await?,
+            )
+        })
+        .await?;
         Ok(())
     }
 
@@ -1834,8 +2248,8 @@ impl MemoryStorage for SurrealStorage {
 
         // Semantic deduplication at 0.92 threshold
         let candidates = self
-            .search_memories(
-                &memory.content,
+            .search_memories_with_embedding(
+                emb.clone(),
                 memory.user_id.as_deref(),
                 memory.agent_id.as_deref(),
                 memory.session_id.as_deref(),
@@ -1862,90 +2276,89 @@ impl MemoryStorage for SurrealStorage {
         memory.updated_at = now;
         memory.version = 1;
 
-        let created: Option<DbMemory> = db
-            .create("memory")
-            .content(DbMemory::from(memory))
-            .await
-            .context("Failed to create memory")?;
-
-        let stored = created.ok_or_else(|| anyhow::anyhow!("No memory returned after creation"))?;
-        let stored = Self::decode_memory(stored)?;
-
-        // Record history
-        if let Some(id) = &stored.id {
-            db.query(
-                "INSERT INTO memory_history { memory_id: $mid, version: 1, old_content: NONE, new_content: $content, changed_at: $now, change_type: 'created' }"
+        // The memory and its 'created' history row are one transaction, so a
+        // conflict retry resubmits both and neither can land without the other.
+        // The key is generated client-side so both statements name the record.
+        let memory_key = Uuid::new_v4().to_string();
+        let payload = DbMemory::from(memory);
+        self.write_retrying_conflicts("add_memory", || async {
+            check_statements(
+                db.query(
+                    "BEGIN TRANSACTION;\n\
+                     CREATE type::record('memory', $key) CONTENT $memory;\n\
+                     INSERT INTO memory_history { memory_id: type::record('memory', $key), version: 1, old_content: NONE, new_content: $content, changed_at: $now, change_type: 'created' };\n\
+                     COMMIT TRANSACTION;",
+                )
+                .bind(("key", memory_key.clone()))
+                .bind(("memory", payload.clone()))
+                .bind(("content", payload.content.clone()))
+                .bind(("now", now))
+                .await?,
             )
-            .bind(("mid", id.clone()))
-            .bind(("content", stored.content.clone()))
-            .bind(("now", Datetime::default()))
-            .await?;
-        }
+        })
+        .await?;
 
-        Ok(stored)
+        let stored: Option<DbMemory> = db
+            .query("SELECT * FROM type::record('memory', $key)")
+            .bind(("key", memory_key))
+            .await?
+            .take(0)?;
+        let stored = stored.context("add_memory: no memory returned after commit")?;
+        Self::decode_memory(stored)
     }
 
     async fn get_memory(&self, id: &str) -> Result<Option<Memory>> {
-        let db = self.live_db()?;
-        let (table, key) = Self::parse_record_id_str(id, "memory")?;
-        let result: Vec<DbMemory> = db
-            .query("SELECT * FROM type::record($table, $key)")
-            .bind(("table", table))
-            .bind(("key", key))
+        let cutoff = self.cutoff();
+        Ok(self
+            .get_memory_including_expired(id)
             .await?
-            .take(0)?;
-        result
-            .into_iter()
-            .next()
-            .map(Self::decode_memory)
-            .transpose()
+            .filter(|memory| !Self::is_expired_at(memory, cutoff)))
     }
 
     async fn update_memory(&self, id: &str, content: String) -> Result<Memory> {
         let db = self.live_db()?;
-        let old = self
-            .get_memory(id)
+        let cutoff = self.cutoff();
+        self.get_memory(id)
             .await?
             .with_context(|| format!("Memory '{}' not found", id))?;
         let new_emb = self.embed_text(&content).await?;
-        let new_version = old.version + 1;
         let token_count = Self::estimate_tokens(&content);
         let now = Datetime::default();
         let (table, key) = Self::parse_record_id_str(id, "memory")?;
 
-        let mut res = db
-            .query(
-                "UPDATE type::record($table, $key) \
-                 SET content = $content, embedding = $emb, token_count = $tc, version = $v, updated_at = $now \
-                 RETURN AFTER",
+        // The update and its 'updated' history row are one transaction, so a
+        // conflict retry resubmits both and neither can land without the other.
+        // The prior content and version are read inside the transaction: a
+        // conflict usually means another update of this memory won, and a
+        // resubmitted request must build on that update, not on a stale read.
+        // A memory deleted after the check above aborts the whole transaction
+        // (THROW is not a conflict, so it surfaces instead of retrying).
+        self.write_retrying_conflicts("update_memory", || async {
+            check_statements(
+                db.query(
+                    "BEGIN TRANSACTION;\n\
+                     LET $before = (SELECT content, version, valid_until FROM ONLY type::record($table, $key));\n\
+                     IF $before = NONE OR ($before.valid_until != NONE AND $before.valid_until < $cutoff) { THROW 'memory not found' };\n\
+                     UPDATE type::record($table, $key) \
+                     SET content = $content, embedding = $emb, token_count = $tc, version = $before.version + 1, updated_at = $now;\n\
+                     INSERT INTO memory_history { memory_id: type::record($table, $key), version: $before.version + 1, old_content: $before.content, new_content: $content, changed_at: $now, change_type: 'updated' };\n\
+                     COMMIT TRANSACTION;",
+                )
+                .bind(("table", table.clone()))
+                .bind(("key", key.clone()))
+                .bind(("content", content.clone()))
+                .bind(("emb", new_emb.clone()))
+                .bind(("tc", token_count))
+                .bind(("cutoff", cutoff))
+                .bind(("now", now))
+                .await?,
             )
-            .bind(("table", table))
-            .bind(("key", key))
-            .bind(("content", content.clone()))
-            .bind(("emb", new_emb))
-            .bind(("tc", token_count))
-            .bind(("v", new_version))
-            .bind(("now", now))
-            .await?;
+        })
+        .await?;
 
-        let updated: Option<DbMemory> = res.take(0)?;
-        let updated = updated.context("Failed to update memory")?;
-        let updated = Self::decode_memory(updated)?;
-
-        // History
-        if let Some(mem_id) = &updated.id {
-            db.query(
-                "INSERT INTO memory_history { memory_id: $mid, version: $v, old_content: $old, new_content: $new, changed_at: $now, change_type: 'updated' }"
-            )
-            .bind(("mid", mem_id.clone()))
-            .bind(("v", new_version))
-            .bind(("old", old.content))
-            .bind(("new", content))
-            .bind(("now", now))
-            .await?;
-        }
-
-        Ok(updated)
+        self.get_memory(id)
+            .await?
+            .context("Failed to update memory")
     }
 
     async fn delete_memory(&self, id: &str) -> Result<()> {
@@ -1957,32 +2370,55 @@ impl MemoryStorage for SurrealStorage {
         // reader can still observe the memory after `delete_memory` returned,
         // and a failure between them leaves a 'deleted' history row behind a
         // still-live memory.
-        if let Some(mem) = self.get_memory(id).await?
+        if let Some(mem) = self.get_memory_including_expired(id).await?
             && let Some(mem_id) = &mem.id
         {
-            db.query(
-                "BEGIN TRANSACTION;\n\
-                 INSERT INTO memory_history { memory_id: $mid, version: $v, old_content: $old, new_content: $old, changed_at: $now, change_type: 'deleted' };\n\
-                 DELETE type::record($table, $key);\n\
-                 COMMIT TRANSACTION;",
-            )
-            .bind(("mid", mem_id.clone()))
-            .bind(("v", mem.version + 1))
-            .bind(("old", mem.content))
-            .bind(("now", Datetime::default()))
-            .bind(("table", table))
-            .bind(("key", key))
-            .await?
-            .check()
-            .context("delete_memory transaction failed")?;
+            let now = Datetime::default();
+            self.write_retrying_conflicts("delete_memory", || async {
+                check_statements(
+                    db.query(
+                        "BEGIN TRANSACTION;\n\
+                         INSERT INTO memory_history { memory_id: $mid, version: $v, old_content: $old, new_content: $old, changed_at: $now, change_type: 'deleted' };\n\
+                         DELETE type::record($table, $key);\n\
+                         COMMIT TRANSACTION;",
+                    )
+                    .bind(("mid", mem_id.clone()))
+                    .bind(("v", mem.version + 1))
+                    .bind(("old", mem.content.clone()))
+                    .bind(("now", now))
+                    .bind(("table", table.clone()))
+                    .bind(("key", key.clone()))
+                    .await?,
+                )
+            })
+            .await?;
             return Ok(());
         }
 
-        db.query("DELETE type::record($table, $key)")
-            .bind(("table", table))
-            .bind(("key", key))
-            .await?;
+        self.write_retrying_conflicts("delete_memory", || async {
+            check_statements(
+                db.query("DELETE type::record($table, $key)")
+                    .bind(("table", table.clone()))
+                    .bind(("key", key.clone()))
+                    .await?,
+            )
+        })
+        .await?;
         Ok(())
+    }
+
+    async fn update_memory_owned(
+        &self,
+        id: &str,
+        owner_user_id: &str,
+        content: String,
+    ) -> Result<Memory> {
+        self.update_memory_owned_impl(id, owner_user_id, content)
+            .await
+    }
+
+    async fn delete_memory_owned(&self, id: &str, owner_user_id: &str) -> Result<()> {
+        self.delete_memory_owned_impl(id, owner_user_id).await
     }
 
     async fn delete_all_memories(
@@ -1991,14 +2427,8 @@ impl MemoryStorage for SurrealStorage {
         agent_id: Option<&str>,
         session_id: Option<&str>,
     ) -> Result<u64> {
-        let memories = self.get_all_memories(user_id, agent_id, session_id).await?;
-        let count = memories.len() as u64;
-        for mem in memories {
-            if let Some(id) = &mem.id {
-                self.delete_memory(&Self::record_id_to_string(id)).await?;
-            }
-        }
-        Ok(count)
+        // Erasure covers expired rows too, so it selects physically.
+        self.delete_all_paged(user_id, agent_id, session_id).await
     }
 
     async fn get_all_memories(
@@ -2007,43 +2437,15 @@ impl MemoryStorage for SurrealStorage {
         agent_id: Option<&str>,
         session_id: Option<&str>,
     ) -> Result<Vec<Memory>> {
-        let mut query = String::from("SELECT * FROM memory WHERE ");
+        self.all_memories_paged(user_id, agent_id, session_id).await
+    }
 
-        let uid = user_id.map(str::to_string);
-        let aid = agent_id.map(str::to_string);
-        let sid = session_id.map(str::to_string);
-
-        let mut parts: Vec<String> = vec![];
-        if uid.is_some() {
-            parts.push("user_id = $user_id".into());
-        }
-        if aid.is_some() {
-            parts.push("agent_id = $agent_id".into());
-        }
-        if sid.is_some() {
-            parts.push("session_id = $session_id".into());
-        }
-        if parts.is_empty() {
-            parts.push("true".into());
-        }
-
-        query.push_str(&parts.join(" AND "));
-
-        let db = self.live_db()?;
-
-        let mut q = db.query(query);
-        if let Some(v) = uid {
-            q = q.bind(("user_id", v));
-        }
-        if let Some(v) = aid {
-            q = q.bind(("agent_id", v));
-        }
-        if let Some(v) = sid {
-            q = q.bind(("session_id", v));
-        }
-
-        let results: Vec<DbMemory> = q.await?.take(0)?;
-        Self::decode_memories(results)
+    async fn list_memories_page(
+        &self,
+        request: crate::storage::MemoryPageRequest,
+    ) -> Result<crate::storage::MemoryPage> {
+        self.memory_page("list_memories_page", &request, self.cutoff())
+            .await
     }
 
     async fn search_memories(
@@ -2052,26 +2454,19 @@ impl MemoryStorage for SurrealStorage {
         user_id: Option<&str>,
         agent_id: Option<&str>,
         session_id: Option<&str>,
-        _categories: Option<&[String]>,
+        categories: Option<&[String]>,
         limit: usize,
     ) -> Result<Vec<Memory>> {
-        let query_emb = self.embed_text(query).await?;
-
-        // Get candidates with embedding (filtered by scope)
-        let candidates = self.get_all_memories(user_id, agent_id, session_id).await?;
-
-        let mut scored: Vec<(f32, Memory)> = candidates
-            .into_iter()
-            .filter_map(|m| {
-                let emb = m.embedding.as_deref()?;
-                let sim = Self::cosine_similarity(&query_emb, emb);
-                Some((sim, m))
-            })
-            .collect();
-
-        scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(Ordering::Equal));
-        scored.truncate(limit);
-        Ok(scored.into_iter().map(|(_, m)| m).collect())
+        if limit == 0 {
+            return Ok(Vec::new());
+        }
+        // An empty list means "no category filter", not "match nothing".
+        let categories = categories.filter(|list| !list.is_empty());
+        let query_emb = self.embed_query(query).await?;
+        self.search_memories_with_embedding(
+            query_emb, user_id, agent_id, session_id, categories, limit,
+        )
+        .await
     }
 
     async fn get_memory_history(&self, memory_id: &str) -> Result<Vec<MemoryHistory>> {
@@ -2167,8 +2562,8 @@ impl MemoryStorage for SurrealStorage {
         // tokens are already counted in `total_tokens`, so we must NOT bump
         // the counter again.
         let candidates = self
-            .search_memories(
-                &memory.content,
+            .search_memories_with_embedding(
+                embedding.clone(),
                 memory.user_id.as_deref(),
                 memory.agent_id.as_deref(),
                 memory.session_id.as_deref(),
@@ -2234,8 +2629,10 @@ impl MemoryStorage for SurrealStorage {
         }
         txn_sql.push_str(";\nCOMMIT TRANSACTION;");
 
-        let mut conflict_attempts: u32 = 0;
-        loop {
+        // The whole transaction is resubmitted after a conflict: the database
+        // rejected all of it, so the stable memory key is absent and the same
+        // write is safe to send again.
+        self.write_retrying_conflicts("add_to_task_stream", || async {
             let mut txn_q = db
                 .query(txn_sql.clone())
                 .bind(("mkey", memory_key.clone()))
@@ -2250,58 +2647,9 @@ impl MemoryStorage for SurrealStorage {
             if let Some(v) = agent_id {
                 txn_q = txn_q.bind(("aid", v.to_string()));
             }
-            let mut response = txn_q
-                .await
-                .context("add_to_task_stream transaction failed")?;
-            let errors = response.take_errors();
-            if errors.is_empty() {
-                break;
-            }
-            let transaction_conflict = errors.values().any(|error| {
-                matches!(
-                    error.query_details(),
-                    Some(surrealdb_types::QueryError::TransactionConflict)
-                ) || error.to_string().contains("Transaction conflict")
-            });
-            let transaction_abort_only = errors.values().all(|error| {
-                matches!(
-                    error.query_details(),
-                    Some(
-                        surrealdb_types::QueryError::TransactionConflict
-                            | surrealdb_types::QueryError::NotExecuted
-                    )
-                ) || error.to_string().contains("Transaction conflict")
-                    || error.to_string().contains("failed transaction")
-            });
-            if !transaction_conflict || !transaction_abort_only {
-                let error = errors
-                    .into_values()
-                    .next()
-                    .context("transaction response reported an error without details")?;
-                return Err(error).context("add_to_task_stream transaction was rejected");
-            }
-
-            // The database authoritatively rejected the entire transaction,
-            // so the stable memory key is absent and the same write can be
-            // resubmitted safely. A bare `yield_now` re-submits immediately,
-            // which under sustained contention spins hot against the very
-            // conflict it is waiting on. Back off, and bound the attempts so a
-            // conflict that never clears surfaces as an error instead of
-            // hanging the caller forever.
-            conflict_attempts += 1;
-            if conflict_attempts >= MAX_TRANSACTION_CONFLICT_RETRIES {
-                let error = errors
-                    .into_values()
-                    .next()
-                    .context("transaction response reported an error without details")?;
-                return Err(error).with_context(|| {
-                    format!(
-                        "add_to_task_stream still conflicting after {MAX_TRANSACTION_CONFLICT_RETRIES} attempts"
-                    )
-                });
-            }
-            tokio::time::sleep(transaction_conflict_backoff(conflict_attempts)).await;
-        }
+            check_statements(txn_q.await?)
+        })
+        .await?;
 
         // Index-stability: whether BEGIN/COMMIT occupy result-set slots is
         // driver-dependent, so we do NOT rely on a hardcoded statement index
@@ -2351,8 +2699,12 @@ impl MemoryStorage for SurrealStorage {
         };
 
         let all_memories: Vec<DbMemory> = db
-            .query("SELECT * FROM memory WHERE task_stream_id = $sid ORDER BY importance DESC, created_at DESC")
+            .query(format!(
+                "SELECT * FROM memory WHERE task_stream_id = $sid AND {LIVE_MEMORY_SQL} \
+                 ORDER BY importance DESC, created_at DESC"
+            ))
             .bind(("sid", stream_id))
+            .bind(("now", self.cutoff()))
             .await?
             .take(0)?;
         let all_memories = Self::decode_memories(all_memories)?;
@@ -2447,9 +2799,14 @@ impl MemoryStorage for SurrealStorage {
         }
 
         let db = self.live_db()?;
-        db.query("UPDATE mindmap SET task_stream_id = NONE WHERE task_stream_id = $sid")
-            .bind(("sid", stream_id.clone()))
-            .await?;
+        self.write_retrying_conflicts("delete_task_stream", || async {
+            check_statements(
+                db.query("UPDATE mindmap SET task_stream_id = NONE WHERE task_stream_id = $sid")
+                    .bind(("sid", stream_id.clone()))
+                    .await?,
+            )
+        })
+        .await?;
 
         let (table, key) = Self::record_id_parts(&stream_id);
         let deleted: Option<DbTaskStream> = db
@@ -2490,19 +2847,20 @@ impl MemoryStorage for SurrealStorage {
         user_id: Option<&str>,
         agent_id: Option<&str>,
         session_id: Option<&str>,
+        categories: Option<&[String]>,
         limit: usize,
         vector_weight: f32,
         bm25_weight: f32,
     ) -> Result<Vec<Memory>> {
-        use std::collections::HashMap;
-
-        // Vector branch (uses HNSW index)
+        let categories = categories.filter(|list| !list.is_empty());
+        // Vector branch (uses HNSW index); the category filter applies to both
+        // branches so a filtered search never merges in unfiltered BM25 rows.
         let vec_results = self
-            .search_memories(query, user_id, agent_id, session_id, None, limit * 2)
+            .search_memories(query, user_id, agent_id, session_id, categories, limit * 2)
             .await?;
 
         // BM25 full-text branch
-        let mut scope_parts: Vec<String> = vec!["content @@ $query".into()];
+        let mut scope_parts: Vec<String> = vec!["content @@ $query".into(), LIVE_MEMORY_SQL.into()];
         if user_id.is_some() {
             scope_parts.push("user_id = $uid".into());
         }
@@ -2512,15 +2870,22 @@ impl MemoryStorage for SurrealStorage {
         if session_id.is_some() {
             scope_parts.push("session_id = $sid".into());
         }
+        if categories.is_some() {
+            scope_parts.push("categories CONTAINSANY $cats".into());
+        }
 
         let db = self.live_db()?;
 
         let bm25_sql = format!(
-            "SELECT *, search::score(0) AS bm25_score FROM memory WHERE {} LIMIT {}",
+            "SELECT *, search::score(0) AS bm25_score FROM memory WHERE {} \
+             ORDER BY bm25_score DESC LIMIT {}",
             scope_parts.join(" AND "),
             limit * 2
         );
-        let mut q = db.query(&bm25_sql).bind(("query", query.to_string()));
+        let mut q = db
+            .query(&bm25_sql)
+            .bind(("query", query.to_string()))
+            .bind(("now", self.cutoff()));
         if let Some(v) = user_id {
             q = q.bind(("uid", v.to_string()));
         }
@@ -2530,7 +2895,10 @@ impl MemoryStorage for SurrealStorage {
         if let Some(v) = session_id {
             q = q.bind(("sid", v.to_string()));
         }
-        let bm25_results: Vec<DbMemory> = q.await?.take(0).unwrap_or_default();
+        if let Some(list) = categories {
+            q = q.bind(("cats", list.to_vec()));
+        }
+        let bm25_results: Vec<DbMemory> = q.await?.take(0)?;
         let bm25_results = Self::decode_memories(bm25_results)?;
 
         // Merge scores: weighted RRF-style normalisation
@@ -2565,6 +2933,83 @@ impl MemoryStorage for SurrealStorage {
         Ok(merged.into_iter().take(limit).map(|(m, _)| m).collect())
     }
 
+    async fn rekey_unattributed_agent_id(
+        &self,
+        to_agent_id: &str,
+        user_id: Option<&str>,
+        dry_run: bool,
+    ) -> Result<RekeyReport> {
+        let to_agent_id = to_agent_id.trim();
+        if to_agent_id.is_empty() {
+            anyhow::bail!("to_agent_id cannot be empty");
+        }
+        // NONE (absent), NULL and "" are all "unattributed": option<string>
+        // fields may hold either of the first two depending on how the row was
+        // written, and task streams store an absent id as "" (migration v18).
+        let unattributed = "(agent_id IS NONE OR agent_id = NULL OR agent_id = '')";
+        let user_clause = if user_id.is_some() {
+            " AND user_id = $uid"
+        } else {
+            ""
+        };
+        let db = self.live_db()?;
+
+        let mut memory_query = db.query(format!(
+            "SELECT VALUE id FROM memory WHERE {unattributed}{user_clause}"
+        ));
+        if let Some(v) = user_id {
+            memory_query = memory_query.bind(("uid", v.to_string()));
+        }
+        let memory_ids: Vec<surrealdb::types::RecordId> = memory_query.await?.take(0)?;
+
+        let mut stream_query = db.query(format!(
+            "SELECT VALUE id FROM task_stream WHERE {unattributed}{user_clause}"
+        ));
+        if let Some(v) = user_id {
+            stream_query = stream_query.bind(("uid", v.to_string()));
+        }
+        let stream_ids: Vec<surrealdb::types::RecordId> = stream_query.await?.take(0)?;
+
+        let mut report = RekeyReport {
+            dry_run,
+            to_agent_id: to_agent_id.to_owned(),
+            user_id: user_id.map(str::to_owned),
+            memories: memory_ids.len() as u64,
+            task_streams: stream_ids.len() as u64,
+            task_stream_conflicts: 0,
+        };
+        if dry_run {
+            return Ok(report);
+        }
+        if !memory_ids.is_empty() {
+            db.query("UPDATE $ids SET agent_id = $to")
+                .bind(("ids", memory_ids))
+                .bind(("to", to_agent_id.to_owned()))
+                .await?
+                .check()?;
+        }
+        // One statement per stream: a unique-index collision on one row must
+        // not abort the rest.
+        let mut moved = 0u64;
+        for id in stream_ids {
+            let outcome = db
+                .query("UPDATE $id SET agent_id = $to")
+                .bind(("id", id))
+                .bind(("to", to_agent_id.to_owned()))
+                .await
+                .and_then(|response| response.check());
+            match outcome {
+                Ok(_) => moved += 1,
+                Err(error) if error.to_string().to_lowercase().contains("index") => {
+                    report.task_stream_conflicts += 1
+                }
+                Err(error) => return Err(error.into()),
+            }
+        }
+        report.task_streams = moved;
+        Ok(report)
+    }
+
     // ── mem0 Advanced ─────────────────────────────────────────────────────────
 
     async fn compress_memories(
@@ -2574,7 +3019,13 @@ impl MemoryStorage for SurrealStorage {
         session_id: Option<&str>,
         older_than_days: u32,
     ) -> Result<Option<Memory>> {
-        let mut conditions = vec![format!("created_at < time::now() - {}d", older_than_days)];
+        // Stream-bound memories belong to their stream's own summarization
+        // (and counter); archived and expired memories are not sources.
+        let mut conditions = vec![
+            format!("created_at < time::now() - {}d", older_than_days),
+            "task_stream_id IS NONE".to_string(),
+            LIVE_MEMORY_SQL.to_string(),
+        ];
         if user_id.is_some() {
             conditions.push("user_id = $uid".into());
         }
@@ -2588,10 +3039,10 @@ impl MemoryStorage for SurrealStorage {
         let db = self.live_db()?;
 
         let sql = format!(
-            "SELECT * FROM memory WHERE {} ORDER BY created_at ASC",
+            "SELECT * FROM memory WHERE {} ORDER BY created_at ASC LIMIT 200",
             conditions.join(" AND ")
         );
-        let mut q = db.query(&sql);
+        let mut q = db.query(&sql).bind(("now", self.cutoff()));
         if let Some(v) = user_id {
             q = q.bind(("uid", v.to_string()));
         }
@@ -2601,40 +3052,27 @@ impl MemoryStorage for SurrealStorage {
         if let Some(v) = session_id {
             q = q.bind(("sid", v.to_string()));
         }
-        let old_memories: Vec<DbMemory> = q.await?.take(0).unwrap_or_default();
+        let old_memories: Vec<DbMemory> = q.await?.take(0)?;
         let old_memories = Self::decode_memories(old_memories)?;
 
         if old_memories.is_empty() {
             return Ok(None);
         }
 
-        let summary_text = old_memories
-            .iter()
-            .enumerate()
-            .map(|(i, m)| format!("{}. {}", i + 1, m.content))
-            .collect::<Vec<_>>()
-            .join("\n");
-        let summary_content = format!(
-            "[Compressed {} memories]\n{}",
-            old_memories.len(),
-            summary_text
-        );
-
-        for m in &old_memories {
-            if let Some(id) = &m.id {
-                let id_str = Self::record_id_to_string(id);
-                let _ = self.delete_memory(&id_str).await;
+        match self
+            .derive_summary(derivation::DerivationRequest {
+                sources: old_memories,
+                stream: None,
+                label: "compressed",
+            })
+            .await?
+        {
+            derivation::DerivationOutcome::Published(summary) => Ok(Some(*summary)),
+            derivation::DerivationOutcome::Deferred(reason) => {
+                tracing::info!(reason, "compression deferred");
+                Ok(None)
             }
         }
-
-        let summary = Memory::new(
-            summary_content,
-            user_id.map(str::to_string),
-            agent_id.map(str::to_string),
-            session_id.map(str::to_string),
-            vec!["compressed".to_string()],
-        );
-        Ok(Some(self.add_memory(summary).await?))
     }
 
     async fn add_memories_from_conversation(
@@ -2673,23 +3111,19 @@ impl MemoryStorage for SurrealStorage {
     }
 
     async fn expire_stale_memories(&self) -> Result<u64> {
-        let db = self.live_db()?;
-        let expired: Vec<DbMemory> = db
-            .query(
-                "SELECT * FROM memory WHERE valid_until IS NOT NONE AND valid_until < time::now()",
-            )
-            .await?
-            .take(0)
-            .unwrap_or_default();
-        let expired = Self::decode_memories(expired)?;
-        let count = expired.len() as u64;
-        for m in &expired {
-            if let Some(id) = &m.id {
-                let _ = self.delete_memory(&Self::record_id_to_string(id)).await;
-            }
+        let report = self.sweep_expired().await?;
+        if report.failed > 0 {
+            return Err(anyhow::Error::new(super::SweepIncomplete {
+                selected: report.selected,
+                removed: report.removed,
+                failed: report.failed,
+            }));
         }
-        tracing::info!("Expired {} stale memories", count);
-        Ok(count)
+        Ok(report.removed)
+    }
+
+    async fn expire_stale_memories_report(&self) -> Result<super::SweepReport> {
+        self.sweep_expired().await
     }
 
     // ── TaskSteps ────────────────────────────────────────────────────────────
@@ -2747,7 +3181,7 @@ impl MemoryStorage for SurrealStorage {
         result: Option<String>,
         error: Option<String>,
     ) -> Result<TaskStep> {
-        let db = self.db()?;
+        let db = self.live_db()?;
         let now = Datetime::default();
         // Set started_at the first time the step leaves Pending — for ANY
         // non-Pending target status, including a direct jump to Completed/
@@ -2797,7 +3231,7 @@ impl MemoryStorage for SurrealStorage {
             .with_context(|| format!("TaskStream '{}' not found", stream_name))?;
         let stream_id = stream.id.clone().context("TaskStream has no id")?;
 
-        let db = self.db()?;
+        let db = self.live_db()?;
         let steps: Vec<DbTaskStep> = db
             .query("SELECT * FROM task_step WHERE task_stream_id = $sid ORDER BY ordinal ASC")
             .bind(("sid", stream_id))
@@ -2821,7 +3255,7 @@ impl MemoryStorage for SurrealStorage {
             .with_context(|| format!("TaskStream '{}' not found", stream_name))?;
         let stream_id = stream.id.clone().context("TaskStream has no id")?;
 
-        let db = self.db()?;
+        let db = self.live_db()?;
         let steps: Vec<DbTaskStep> = db
             .query(
                 "SELECT * FROM task_step WHERE task_stream_id = $sid \
@@ -3083,7 +3517,8 @@ impl MemoryStorage for SurrealStorage {
         let stream_id = stream.id.clone().with_context(|| "TaskStream has no id")?;
 
         // Fetch stream memories ordered oldest-first, scoped to this stream.
-        let mut scope_parts: Vec<String> = vec!["task_stream_id = $sid".into()];
+        let mut scope_parts: Vec<String> =
+            vec!["task_stream_id = $sid".into(), LIVE_MEMORY_SQL.into()];
         if user_id.is_some() {
             scope_parts.push("user_id = $uid".into());
         }
@@ -3096,14 +3531,17 @@ impl MemoryStorage for SurrealStorage {
             "SELECT * FROM memory WHERE {} ORDER BY created_at ASC LIMIT 200",
             scope_parts.join(" AND ")
         );
-        let mut q = db.query(&sql).bind(("sid", stream_id.clone()));
+        let mut q = db
+            .query(&sql)
+            .bind(("sid", stream_id.clone()))
+            .bind(("now", self.cutoff()));
         if let Some(u) = user_id {
             q = q.bind(("uid", u.to_string()));
         }
         if let Some(a) = agent_id {
             q = q.bind(("aid", a.to_string()));
         }
-        let memories: Vec<DbMemory> = q.await?.take(0).unwrap_or_default();
+        let memories: Vec<DbMemory> = q.await?.take(0)?;
         let memories = Self::decode_memories(memories)?;
 
         if memories.len() < 4 {
@@ -3114,86 +3552,27 @@ impl MemoryStorage for SurrealStorage {
         let half = memories.len() / 2;
         let to_compress = memories.into_iter().take(half).collect::<Vec<_>>();
 
-        // M-2(a): sum the compacted memories' token counts so the stream's
-        // `total_tokens` counter can be decremented by exactly what we remove.
-        // Use the same estimate fallback as `add_to_task_stream` /
-        // `get_context_for_task` so the counter stays consistent.
-        let compacted_tokens: u64 = to_compress
-            .iter()
-            .map(|m| {
-                m.token_count
-                    .map(|t| t as u64)
-                    .unwrap_or_else(|| Self::estimate_tokens(&m.content) as u64)
+        // Evidence-backed compression: the pipeline validates, publishes the
+        // summary atomically, archives (never deletes) the sources and fixes
+        // the stream counter in the same transaction. A deferred result
+        // changes nothing.
+        let outcome = self
+            .derive_summary(derivation::DerivationRequest {
+                sources: to_compress,
+                stream: Some(derivation::StreamRef { id: stream_id }),
+                label: "auto_summary",
             })
-            .sum();
-
-        // Build summary content. NOTE: a naive concat can itself grow tokens;
-        // a real LLM summarization path is out of scope for this correctness
-        // tier (there is no existing summarization helper to call here).
-        let summary_content = format!(
-            "[Auto-summary of {} memories from task stream '{}'] {}",
-            half,
-            stream_name,
-            to_compress
-                .iter()
-                .map(|m| m.content.as_str())
-                .collect::<Vec<_>>()
-                .join(" | ")
-        );
-
-        // Delete the originals
-        for m in &to_compress {
-            if let Some(id) = &m.id {
-                let s = Self::record_id_to_string(id);
-                let key = s.split(':').nth(1).unwrap_or(&s).to_string();
-                let _: Option<DbMemory> = db.delete(("memory", key)).await?;
+            .await?;
+        match outcome {
+            derivation::DerivationOutcome::Published(summary) => {
+                tracing::info!(stream = stream_name, "auto-summarized task stream");
+                Ok(Some(*summary))
+            }
+            derivation::DerivationOutcome::Deferred(reason) => {
+                tracing::info!(stream = stream_name, reason, "auto-summary deferred");
+                Ok(None)
             }
         }
-
-        // M-2(b): the summary memory MUST stay attached to the stream so that
-        // `get_context_for_task` (which filters by `task_stream_id`) returns it.
-        let mut summary = crate::memory::Memory::new(
-            summary_content,
-            user_id.map(str::to_string),
-            agent_id.map(str::to_string),
-            None,
-            vec!["auto_summary".to_string()],
-        );
-        summary.task_stream_id = Some(stream_id.clone());
-        let stored = self.add_memory(summary).await?;
-
-        // M-2: the summary memory is now a linked member of the stream, so its
-        // own tokens must be counted in `total_tokens`. `add_memory` only
-        // counts tokens into the memory row, never the stream counter, so the
-        // net effect must be `total_tokens -= compacted; total_tokens +=
-        // summary`. Use the same token-estimate source as the rest of the code.
-        let summary_tokens: u64 = stored
-            .token_count
-            .map(|t| t as u64)
-            .unwrap_or_else(|| Self::estimate_tokens(&stored.content) as u64);
-
-        // M-2(a): decrement `total_tokens` by the compacted total, add the new
-        // summary memory's tokens back, and bump `summary_count`.
-        let _: Option<serde_json::Value> = db
-            .query(
-                "UPDATE type::table($t) \
-                 SET total_tokens = math::max([0, total_tokens - $compacted]) + $summary, \
-                     summary_count += 1, last_active = time::now() \
-                 WHERE name = $n",
-            )
-            .bind(("t", "task_stream"))
-            .bind(("compacted", compacted_tokens))
-            .bind(("summary", summary_tokens))
-            .bind(("n", stream_name.to_string()))
-            .await?
-            .take(0)?;
-
-        tracing::info!(
-            "Auto-summarized {} memories in task stream '{}' → 1 summary",
-            half,
-            stream_name
-        );
-        Ok(Some(stored))
     }
 
     async fn try_update_persona_mindmap(
@@ -3439,7 +3818,8 @@ fn chrono_node_id() -> String {
 impl SurrealStorage {
     /// Creates a `SurrealStorage` backed by an **embedded RocksDB in a unique temp directory**.
     /// Each call uses a nanosecond-timestamped path so parallel tests don't collide.
-    /// `mem://` is unavailable in surrealdb 3.0.0 (`kv-mem` requires surrealmx ≥ 0.17).
+    /// `mem://` is unavailable because this crate does not enable surrealdb's
+    /// `kv-mem` feature (connecting reports "Unsupported scheme: memory").
     pub async fn new_mem(
         embedding_service: Arc<dyn crate::embeddings::EmbeddingService>,
     ) -> Result<Self> {
@@ -3449,6 +3829,7 @@ impl SurrealStorage {
         let path = dir.display().to_string();
 
         let config = SurrealConfig {
+            auth_level: Default::default(),
             mode: SurrealMode::Embedded,
             embedded_path: Some(path),
             namespace: "test".to_string(),
@@ -3460,18 +3841,28 @@ impl SurrealStorage {
             config: config.clone(),
         };
 
-        let db = Self::connect_with_config(&config).await?;
+        // Throwaway test datastore: SurrealKV's default flushes every commit to
+        // disk (a full fsync on macOS), which makes migrations and writes slow.
+        // Production embedded mode keeps the durable default.
+        let sdk_config = surrealdb::opt::Config::default()
+            .query_timeout(Duration::from_millis(config.retry.query_timeout_ms))
+            .datastore_option("datastore_sync", "never");
+        let db = Self::connect_with_sdk_config(&config, sdk_config).await?;
         run_migrations(&db).await?;
         Self::ensure_embedding_indexes(&db, embedding_service.dimensions()).await?;
 
         let embedded_semaphore = make_embedded_semaphore(&connection_info.config);
 
         Ok(Self {
-            connection: Arc::new(ArcSwap::new(Arc::new(ConnectionCell::Connected(db)))),
+            connection: Arc::new(ArcSwap::new(Arc::new(ConnectionCell::Connected(Arc::new(
+                db,
+            ))))),
             connection_info,
             lifecycle_mode: SurrealLifecycleMode::Autonomous,
             embedding_service,
             embedded_semaphore,
+            query_embed_cache: QueryEmbedCache::from_env(),
+            compression: crate::compression::CompressionRuntime::default(),
             #[cfg(feature = "palace")]
             palace: tokio::sync::OnceCell::new(),
         })
@@ -3577,7 +3968,7 @@ impl PalaceStorage for SurrealStorage {
 
         // Run all three searches concurrently
         let memory_fut =
-            self.hybrid_search_memories(query, user_id, agent_id, session_id, n, 0.7, 0.3);
+            self.hybrid_search_memories(query, user_id, agent_id, session_id, None, n, 0.7, 0.3);
         let entity_fut = self.semantic_search(query, n, 0.0);
         let palace_ctx = self.palace_context().await?;
         let palace_fut = palace_ctx.search_drawers_structured(query, wing, None, n);
@@ -3685,6 +4076,23 @@ mod retry_tests {
     use super::*;
 
     #[test]
+    fn embedding_dimension_validation_never_projects_vectors() {
+        for (table, expected) in [
+            (
+                "entity",
+                "SELECT id, array::len(embedding) AS dimension FROM entity WHERE embedding IS NOT NONE",
+            ),
+            (
+                "memory",
+                "SELECT id, array::len(embedding) AS dimension FROM memory WHERE embedding IS NOT NONE",
+            ),
+        ] {
+            let query = SurrealStorage::embedding_dimension_query(table).unwrap();
+            assert_eq!(query, expected);
+        }
+    }
+
+    #[test]
     fn test_retry_config_defaults() {
         let config = RetryConfig::default();
         assert_eq!(config.max_connect_retries, 10);
@@ -3768,6 +4176,108 @@ mod retry_tests {
         }
     }
 
+    fn conflict() -> surrealdb::Error {
+        surrealdb::Error::query(
+            "Transaction conflict: Resource busy. This transaction can be retried".to_string(),
+            QueryError::TransactionConflict,
+        )
+    }
+
+    fn not_executed() -> surrealdb::Error {
+        surrealdb::Error::query(
+            "The query was not executed due to a failed transaction".to_string(),
+            QueryError::NotExecuted,
+        )
+    }
+
+    #[test]
+    fn retryable_conflict_is_only_the_typed_transaction_conflict() {
+        assert!(is_retryable_conflict(&conflict()));
+        assert!(!is_retryable_conflict(&not_executed()));
+        assert!(!is_retryable_conflict(&surrealdb::Error::query(
+            "cancelled".to_string(),
+            QueryError::Cancelled
+        )));
+        // An indeterminate commit outcome carries no kind and must never be
+        // resubmitted.
+        assert!(!is_retryable_conflict(&surrealdb::Error::query(
+            "commit outcome is unknown".to_string(),
+            None
+        )));
+        assert!(!is_retryable_conflict(&surrealdb::Error::internal(
+            "Transaction conflict: this text alone does not count".to_string()
+        )));
+        assert!(!is_retryable_conflict(&surrealdb::Error::already_exists(
+            "exists".to_string(),
+            None
+        )));
+    }
+
+    #[test]
+    fn transaction_conflict_classifies_as_retry_through_context() {
+        assert_eq!(classify_surreal_error(&conflict()), RetryAction::Retry);
+        let storage = mock_storage();
+        let wrapped = anyhow::Error::new(conflict())
+            .context("inner")
+            .context("outer");
+        assert_eq!(storage.classify_error(&wrapped), RetryAction::Retry);
+    }
+
+    #[test]
+    fn statement_error_selection_finds_the_conflict_behind_placeholders() {
+        // The shape SurrealDB 3.3 returns when BEGIN…COMMIT loses a conflict.
+        let aborted = HashMap::from([(0, not_executed()), (1, not_executed()), (2, conflict())]);
+        let selected = select_statement_error(aborted).expect("an error");
+        assert!(is_retryable_conflict(&selected));
+
+        let single = HashMap::from([(0, conflict())]);
+        assert!(is_retryable_conflict(
+            &select_statement_error(single).expect("an error")
+        ));
+    }
+
+    #[test]
+    fn statement_error_selection_surfaces_real_errors_over_conflicts() {
+        // A real error alongside a conflict is not a definite abort.
+        let mixed = HashMap::from([
+            (0, not_executed()),
+            (1, conflict()),
+            (
+                2,
+                surrealdb::Error::already_exists("exists".to_string(), None),
+            ),
+        ]);
+        let selected = select_statement_error(mixed).expect("an error");
+        assert!(!is_retryable_conflict(&selected));
+        assert_eq!(selected.to_string(), "exists");
+
+        // All placeholders: the COMMIT row (highest index) carries the cause.
+        let placeholders = HashMap::from([
+            (0, not_executed()),
+            (
+                1,
+                surrealdb::Error::query(
+                    "Cannot COMMIT: disk full".to_string(),
+                    QueryError::NotExecuted,
+                ),
+            ),
+        ]);
+        assert_eq!(
+            select_statement_error(placeholders)
+                .expect("an error")
+                .to_string(),
+            "Cannot COMMIT: disk full"
+        );
+
+        let indeterminate =
+            HashMap::from([(0, surrealdb::Error::query("unknown".to_string(), None))]);
+        assert!(!is_retryable_conflict(
+            &select_statement_error(indeterminate).expect("an error")
+        ));
+
+        assert!(select_statement_error(HashMap::new()).is_none());
+    }
+
     #[test]
     fn test_classify_schema_errors_as_fail_fast() {
         let storage = mock_storage();
@@ -3791,6 +4301,7 @@ mod retry_tests {
     async fn test_connect_with_retry_succeeds_after_transient_failure() {
         // Test that the static connect_with_retry function has correct signature.
         let config = SurrealConfig {
+            auth_level: Default::default(),
             mode: SurrealMode::Embedded,
             embedded_path: Some("/tmp/test-retry".to_string()),
             ..Default::default()
@@ -4008,6 +4519,7 @@ mod retry_tests {
         }
 
         let config = SurrealConfig {
+            auth_level: Default::default(),
             mode: SurrealMode::Embedded,
             embedded_path: Some("/tmp/test".to_string()),
             endpoint: None,
@@ -4030,6 +4542,8 @@ mod retry_tests {
             connection_info,
             lifecycle_mode: SurrealLifecycleMode::Autonomous,
             embedding_service: Arc::new(MockEmbedding),
+            query_embed_cache: QueryEmbedCache::from_env(),
+            compression: crate::compression::CompressionRuntime::default(),
             embedded_semaphore: None,
             #[cfg(feature = "palace")]
             palace: tokio::sync::OnceCell::new(),
