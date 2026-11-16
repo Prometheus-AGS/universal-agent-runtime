@@ -9,7 +9,10 @@ use super::service::MemoryService;
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Retention {
     Days { days: u16 },
-    UntilDeleted,
+    // An empty struct variant, not a unit variant: serde ignores unknown fields
+    // on unit variants of internally tagged enums even with
+    // `deny_unknown_fields`, which accepted `{"kind":"until_deleted","days":7}`.
+    UntilDeleted {},
 }
 impl Retention {
     pub fn validate(&self) -> Result<()> {
@@ -19,7 +22,7 @@ impl Retention {
         Ok(())
     }
     pub(crate) fn days(&self) -> Option<u16> {
-        match self { Self::Days { days } => Some(*days), Self::UntilDeleted => None }
+        match self { Self::Days { days } => Some(*days), Self::UntilDeleted {} => None }
     }
 }
 
@@ -148,4 +151,23 @@ impl MemoryService {
         backend::summarize(self, owner, sources, summary).await
     }
     pub(crate) async fn resume_memory_purge(&self) -> Result<u64> { backend::purge(self).await }
+}
+
+#[cfg(test)]
+mod retention_tests {
+    use super::Retention;
+    use serde_json::json;
+
+    #[test]
+    fn until_deleted_rejects_a_stray_days_field() {
+        let parsed = serde_json::from_value::<Retention>(json!({"kind":"until_deleted","days":7}));
+        assert!(parsed.is_err());
+    }
+
+    #[test]
+    fn until_deleted_keeps_its_wire_form() {
+        let parsed: Retention = serde_json::from_value(json!({"kind":"until_deleted"})).unwrap();
+        assert!(matches!(parsed, Retention::UntilDeleted {}));
+        assert_eq!(serde_json::to_value(&parsed).unwrap(), json!({"kind":"until_deleted"}));
+    }
 }

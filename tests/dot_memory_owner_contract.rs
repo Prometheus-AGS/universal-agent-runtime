@@ -1,6 +1,6 @@
 //! Dot12 real-store production-boundary contract. Authoring is not acceptance.
 //! Run only after the complete expanded Dot implementation inventory is recorded.
-#![cfg(all(feature = "server", feature = "surreal-backend"))]
+#![cfg(all(feature = "server", feature = "surreal-backend", feature = "test-probes"))]
 
 use axum::{
     Router,
@@ -201,7 +201,7 @@ async fn exercise(service: Arc<MemoryService>, other_runtime: Arc<MemoryService>
             universal_agent_runtime::uar::memory::controls::CapturePolicyUpdate {
                 enabled: true,
                 retention: Some(
-                    universal_agent_runtime::uar::memory::controls::Retention::UntilDeleted,
+                    universal_agent_runtime::uar::memory::controls::Retention::UntilDeleted {},
                 ),
             },
         )
@@ -267,12 +267,7 @@ async fn exercise(service: Arc<MemoryService>, other_runtime: Arc<MemoryService>
 
     // Seed quarantined legacy data using a separate SDK session on the same
     // production engine. This also works for embedded SurrealKV without a second lock.
-    let storage = service.admin_storage(&administrator).unwrap();
-    let storage = storage
-        .as_any()
-        .downcast_ref::<surreal_memory::SurrealStorage>()
-        .unwrap();
-    let legacy = storage.db().unwrap();
+    let legacy = service.probe_database(&administrator).unwrap();
     legacy
         .use_db(service.config().database.clone())
         .await
@@ -338,13 +333,13 @@ async fn exercise(service: Arc<MemoryService>, other_runtime: Arc<MemoryService>
     let server = tokio::spawn(async move {
         axum::serve(listener, app).await.unwrap();
     });
-    let endpoint = format!("http://{address}/memory/");
+    let endpoint = format!("http://{address}/memory");
     let client = reqwest::Client::new();
     let initialized = client.post(&endpoint).bearer_auth(&alice_token)
         .header("accept", "application/json, text/event-stream")
         .json(&json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"dot12-contract","version":"1"}}}))
         .send().await.unwrap();
-    assert!(initialized.status().is_success());
+    assert!(initialized.status().is_success(), "initialize returned {}", initialized.status());
     let session = initialized
         .headers()
         .get("mcp-session-id")
