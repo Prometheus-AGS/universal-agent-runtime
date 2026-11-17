@@ -114,6 +114,11 @@ static/assets
 !.agents/skills/ui-ux-pro-max/**
 !.agents/skills/web-design-guidelines/
 !.agents/skills/web-design-guidelines/**
+# OpenSpec 2.0 keeps one shared skill copy here; `.claude/skills/openspec-*`
+# symlinks into it and `.openspec-target` records the configured tools.
+!.agents/skills/.openspec-target
+!.agents/skills/openspec-*/
+!.agents/skills/openspec-*/**
 .firecrawl/
 .zed/
 

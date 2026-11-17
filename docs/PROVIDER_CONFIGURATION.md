@@ -56,6 +56,16 @@ phase-owned `qwen3-coder-plus` seed and exact selected
 Other Alibaba model selections, credential references, endpoints, and custom
 provider blocks remain operator-owned.
 
+### Proposed Apple first-run bootstrap
+
+**Specification only (2026-11-15); not implemented or locally verified by this change.** A new supported Apple Silicon Mac with no saved model choice, explicit configuration or bootstrap opt-out should use the available on-device Apple `SystemLanguageModel` to assist setup. Check chip/OS, compiled adapter, Apple Intelligence and ready system assets; retain manual setup when unavailable. Supported iOS/iPadOS profiles require their own qualification. Existing selections always win.
+
+The system-model availability API starts at macOS/iOS 26. The optional custom `LanguageModel` integration is a separate macOS 27 SDK/runtime path: `MLXLanguageModel` with loader-owned `weightsLocation`/`load`, `CoreAILanguageModel` with exported resources, or a bridge to flint-loader. Direct native inference is allowed only with declared model, hardware and capability support. Core AI FP4/FP8 activation/KV-cache presets require macOS 27.2+. These are eligibility floors, not dependency pins or claims of support for every model.
+
+UAR remains the sole agent/tool execution authority. Flint-loader owns custom-model acquisition and load/unload leases; Apple owns system assets. Setup shows durable progress, reasons and cancel/retry/resume controls. Downloads, provider changes, cloud transitions (including Private Cloud Compute) and credential acquisition/use require explicit consent; no silent remote fallback. Generation switches never change embedding identities, vector dimensions or reindex policy.
+
+The [direct provider specification](../openspec/specs/provider-model-settings-certification/spec.md) and [design with primary sources and future VLBV gates](../openspec/changes/apple-foundation-models-bootstrap/design.md) define the target contract. No existing configuration key enables it yet. Do not treat this section as an install or runtime instruction.
+
 ### Environment Variables (Recommended)
 
 The simplest approach: set your provider's API key and the model you want.
