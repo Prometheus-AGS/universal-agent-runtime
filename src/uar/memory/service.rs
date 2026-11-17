@@ -1565,6 +1565,18 @@ impl MemoryService {
         Ok(Arc::clone(&self.storage))
     }
 
+    /// Raw database client for real-store test fixtures (seeding legacy rows,
+    /// ageing records). It bypasses lifecycle admission, so it exists only in
+    /// `test-probes` builds and still requires trusted-host authority.
+    #[cfg(all(feature = "surreal-backend", feature = "test-probes"))]
+    pub fn probe_database(&self, context: &UserContext) -> Result<Surreal<Any>> {
+        anyhow::ensure!(
+            context.trusted_host_id().is_some(),
+            "Trusted host memory administration required"
+        );
+        self.memory_db()
+    }
+
     /// Config accessor.
     pub fn config(&self) -> &MemoryConfig {
         &self.config

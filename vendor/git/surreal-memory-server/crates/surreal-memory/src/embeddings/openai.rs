@@ -14,6 +14,7 @@ pub struct OpenAIEmbeddings {
     /// Override for the returned vector dimension. Use when the runtime cannot
     /// infer the dimension from the model name (most third-party models).
     dimensions_override: Option<usize>,
+    cache_namespace: String,
 }
 
 #[derive(Serialize)]
@@ -52,23 +53,37 @@ impl OpenAIEmbeddings {
         base_url: String,
         dimensions_override: Option<usize>,
     ) -> Self {
-        // Reserved for future per-model dimension mapping; the dimensions()
-        // method below holds the authoritative inference today.
-        let _default_dimensions = match model.as_str() {
+        let base_url = if base_url.is_empty() {
+            "https://api.openai.com/v1".to_string()
+        } else {
+            base_url
+        };
+        let dimensions = dimensions_override.unwrap_or(match model.as_str() {
             "text-embedding-3-small" => 1536,
             "text-embedding-3-large" => 3072,
             "text-embedding-ada-002" => 1536,
             _ => 1536,
-        };
+        });
+
+        // The endpoint is part of the identity: the same model name served by
+        // another OpenAI-compatible host is a different vector space.
+        let cache_namespace = serde_json::json!([
+            "openai",
+            &model,
+            format!(
+                "{}/embeddings;dimensions=default",
+                base_url.trim_end_matches('/')
+            ),
+            dimensions
+        ])
+        .to_string();
+
         Self {
+            cache_namespace,
             client: Client::new(),
             api_key,
             model,
-            base_url: if base_url.is_empty() {
-                "https://api.openai.com/v1".to_string()
-            } else {
-                base_url
-            },
+            base_url,
             dimensions_override,
         }
     }
@@ -115,6 +130,10 @@ impl EmbeddingService for OpenAIEmbeddings {
             .into_iter()
             .map(|d| d.embedding)
             .collect())
+    }
+
+    fn cache_namespace(&self) -> Option<&str> {
+        Some(&self.cache_namespace)
     }
 
     fn dimensions(&self) -> usize {

@@ -7,7 +7,7 @@ refresh. Vendored trees omit VCS metadata, tests, tooling and agent state.
 
 | Package | Upstream | Commit | License |
 |---|---|---|---|
-| `surreal-memory` | `https://github.com/Prometheus-AGS/surreal-memory-server.git` | `9e36b1cd8b83a657366eb1e3ef8cd837178336de` | MIT (declared in crate manifest) |
+| `surreal-memory` | `https://github.com/Prometheus-AGS/surreal-memory-server.git` | `dfae3099b0fe723538927abf6a6cbd46cac5c138` | MIT (declared in crate manifest) |
 | `prometheus-parking-lot-core` (with facade and sibling source) | `https://github.com/Prometheus-AGS/prometheus-parking-lot-rs` | `53682521cb2a7a49c06e046c826890d9e11b6bfe` | MIT (`prometheus-parking-lot-rs/LICENSE-MIT`) |
 | `sycophancy-core` | `https://github.com/Know-Me-Tools/sycophancy-correction-skill.git` | `01150389c10169816fbd4cc4ef4145fbe052ad90` | MIT (declared in workspace manifest) |
 
@@ -15,16 +15,27 @@ The two upstream snapshots that declare MIT without shipping a license file are
 covered by the canonical MIT text in `LICENSE-MIT`; the provenance table
 preserves that this record was added during vendoring.
 
-The `surreal-memory` snapshot intentionally preserves UAR's standalone manifest
-adaptations while copying the four changed implementation files byte-for-byte
-from the recorded upstream commit. Its manifest exact-pins `surrealdb`,
-`surrealdb-types`, and `hf-hub` while retaining the empty, disabled `palace`
-compatibility feature because UAR does not ship the upstream workspace's
-`mempalace-core` dependency. The local manifest also pins the three Candle crates
-to 0.11.1 so PyTorch weight loading uses ZIP 9.1.3. The upstream commit and
-vendored implementation files are unchanged.
+The `surreal-memory` snapshot is upstream `main` at the recorded commit, merged
+with UAR's local changes; it is not a byte-for-byte copy. Upstream source files
+that UAR had not changed are copied unchanged, including the new `compression`,
+`storage/auth.rs`, `storage/page.rs` and `storage/surreal/` modules and
+migrations v22 to v24. Tests, tooling and the server binary are omitted.
 
-The lifecycle integration advances the memory export by the upstream storage changes at `9e36b1cd8b83a657366eb1e3ef8cd837178336de`, through its parent 3a767608d53481ebc3c9085b8f5b4b82316ad8cb from the prior pin. It introduces opt-in host-managed connection ownership. Existing standalone manifest adaptations are preserved; upstream source is copied byte-for-byte. No upstream push or verification is implied.
+UAR-local differences from that upstream commit:
+
+- `Cargo.toml` keeps UAR's standalone manifest: exact pins for `surrealdb`,
+  `surrealdb-types` and `hf-hub`, the three Candle crates at 0.11.1 so PyTorch
+  weight loading uses ZIP 9.1.3, and an empty, disabled `palace` feature because
+  UAR does not ship the upstream workspace's `mempalace-core` dependency.
+- `src/storage/surreal.rs` keeps opt-in host-managed connection ownership
+  (`SurrealLifecycleMode`, `from_host_connection`, `install_host_connection`,
+  `mark_host_connection_failed`, `close`), which upstream does not have.
+- `src/embeddings/` keeps the UAR-only `anthropic.rs` and `mistral.rs`
+  providers and the OpenAI-compatible `base_url` and `dimensions_override`
+  options. The OpenAI cache identity includes the endpoint.
+
+The previous export was recorded as `9e36b1cd8b83a657366eb1e3ef8cd837178336de`, a commit that is not on the upstream
+remote. No upstream push of the UAR-local changes is implied.
 
 The in-tree Liter checkout additionally carries a local UAR serialization
 accessor in `crates/liter-llm/src/client/mod.rs`:

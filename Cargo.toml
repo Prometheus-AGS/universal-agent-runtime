@@ -259,6 +259,20 @@ name = "agent_fabric_c07_gate"
 path = "tests/agent_fabric_c07_gate.rs"
 required-features = ["server", "surreal-backend", "afc-c07-gate"]
 
+# Dot12/Dot13 real-store memory scenarios seed and age rows through
+# `MemoryService::probe_database`, which exists only in `test-probes` builds.
+# Declaring the requirement makes a build without it refuse the target instead
+# of compiling an empty harness.
+[[test]]
+name = "dot_memory_owner_contract"
+path = "tests/dot_memory_owner_contract.rs"
+required-features = ["server", "surreal-backend", "test-probes"]
+
+[[test]]
+name = "dot_memory_controls"
+path = "tests/dot_memory_controls.rs"
+required-features = ["server", "surreal-backend", "test-probes"]
+
 # CH-20: Criterion benchmarks for the router/dialect/context hot path.
 # harness = false because Criterion drives its own main().
 [[bench]]

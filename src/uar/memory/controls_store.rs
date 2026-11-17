@@ -47,7 +47,7 @@ pub(super) async fn policy(service: &MemoryService, owner: &str) -> Result<Captu
         .bind(("owner", owner.to_owned())).await?.check()?.take(0)?;
     Ok(match rows.into_iter().next() {
         Some(row) => CapturePolicy { enabled: row.enabled, retention: if row.chosen { Some(match row.days {
-            Some(days) => Retention::Days { days }, None => Retention::UntilDeleted,
+            Some(days) => Retention::Days { days }, None => Retention::UntilDeleted {},
         }) } else { None }, revision: row.revision, consent_epoch: row.consent_epoch, host_capture_enabled: service.config.auto_capture },
         None => CapturePolicy { enabled: false, retention: None, revision: 0, consent_epoch: 0, host_capture_enabled: service.config.auto_capture },
     })
@@ -106,7 +106,7 @@ pub(super) async fn visible(service: &MemoryService, mut memory: Memory) -> Resu
                 "automatic": control.automatic.unwrap_or(false), "first_capture": control.first_capture,
                 "policy_revision": control.policy_revision, "retention_days": control.retention_days,
                 "effective_expires_at": control.expires_at,
-                "retention": if control.automatic.unwrap_or(false) { Some(match control.retention_days { Some(days) => Retention::Days { days }, None => Retention::UntilDeleted }) } else { None },
+                "retention": if control.automatic.unwrap_or(false) { Some(match control.retention_days { Some(days) => Retention::Days { days }, None => Retention::UntilDeleted {} }) } else { None },
             }));
         }
     }

@@ -8,6 +8,7 @@
 //! - **Model profiles** — built-in token budget registry for GPT-4o, Claude, Gemini, and more
 //! - **Zero-loss migrations** — versioned schema evolution via `MigrationRunner`
 
+pub mod compression;
 pub mod embeddings;
 pub mod entity;
 pub mod memory;
@@ -25,8 +26,12 @@ pub use entity::{Entity, KnowledgeGraph, Relation, SemanticSearchResult};
 pub use memory::{Memory, MemoryHistory, MemoryScope, MemoryType};
 pub use mindmap::{ExportFormat, MapType, MindMap, MindMapEdge, MindMapNode};
 pub use model_profiles::{MODEL_PROFILES, ModelProfile, profile_for};
-pub use storage::MemoryStorage;
-pub use storage::surreal::{RetryConfig, SurrealConfig, SurrealStorage};
+pub use storage::auth::SurrealAuthLevel;
+pub use storage::surreal::{QueryEmbedCacheStats, RetryConfig, SurrealConfig, SurrealStorage};
+pub use storage::{
+    DEFAULT_MEMORY_PAGE_SIZE, MAX_MEMORY_PAGE_SIZE, MAX_MEMORY_PAGE_SIZE_WITH_EMBEDDINGS,
+    MEMORY_PAGE_BYTE_BUDGET, MemoryPage, MemoryPageRequest, MemoryStorage, RekeyReport,
+};
 pub use task_step::{TaskStep, TaskStepStatus};
 pub use task_stream::{ContextWindow, TaskStream, TaskStreamStatus};
 

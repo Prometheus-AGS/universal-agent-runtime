@@ -1,6 +1,6 @@
 //! Authored real-store scenarios; execute only at the full expanded Dot boundary.
 //! Child processes give local KV a joined process-exit/reopen boundary. No mocks.
-#![cfg(all(feature = "server", feature = "surreal-backend"))]
+#![cfg(all(feature = "server", feature = "surreal-backend", feature = "test-probes"))]
 use std::{path::Path, process::{Command, Child}, sync::Arc, time::{Duration, Instant}};
 use serde_json::json;
 use universal_agent_runtime::{config::{MemoryConfig, SecurityConfig}, mcp::registry::NativeTool, uar::{
@@ -44,7 +44,7 @@ async fn scenario(directory: &Path, action: &str) {
     let service = Arc::new(MemoryService::new(config).await.unwrap());
     let user = owner().await;
     let storage = service.admin_storage(&user).unwrap();
-    let database = storage.as_any().downcast_ref::<surreal_memory::SurrealStorage>().unwrap().db().unwrap();
+    let database = service.probe_database(&user).unwrap();
     match action {
         "seed" => {
             assert!(!service.capture_policy(&user).await.unwrap().enabled);
@@ -52,13 +52,13 @@ async fn scenario(directory: &Path, action: &str) {
             for input in [json!({"enabled":true}), json!({"enabled":true,"retention":{"kind":"days","days":8}}),
                 json!({"enabled":true,"retention":{"kind":"until_deleted","days":7}})] {
                 match serde_json::from_value::<CapturePolicyUpdate>(input) {
-                    Ok(update) => assert!(service.set_capture_policy(&user, update).await.is_err()),
+                    Ok(update) => assert!(service.set_capture_policy(&user, update.clone()).await.is_err(), "accepted invalid policy {update:?}"),
                     Err(_) => {},
                 }
             }
             let explicit = service.add("explicit stays without capture consent", MemoryScope::User, MemoryType::Semantic,
                 &user, None, None, vec![], None, 0.5).await.unwrap();
-            service.set_capture_policy(&user, enable(Retention::UntilDeleted)).await.unwrap();
+            service.set_capture_policy(&user, enable(Retention::UntilDeleted {})).await.unwrap();
             let captured = service.auto_capture(messages("automatic private capture"), &user, None, Some("session")).await.unwrap();
             let capture_id = id(&captured[0]);
             let first_anchor = captured[0].metadata.as_ref().unwrap()["uar_capture"]["first_capture"].clone();
@@ -74,7 +74,7 @@ async fn scenario(directory: &Path, action: &str) {
             database.query("UPDATE type::record('uar_memory_control',$id) SET first_capture=time::now()-8d, expires_at=NONE")
                 .bind(("id", capture_id.clone())).await.unwrap().check().unwrap();
             service.set_capture_policy(&user, enable(Retention::Days { days:7 })).await.unwrap();
-            service.set_capture_policy(&user, enable(Retention::UntilDeleted)).await.unwrap();
+            service.set_capture_policy(&user, enable(Retention::UntilDeleted {})).await.unwrap();
             assert!(service.get(&capture_id, &user).await.unwrap().is_none());
             assert!(service.history(&capture_id, &user).await.is_err());
             let deleted = service.add("erase this content and its earlier history", MemoryScope::User, MemoryType::Semantic,
@@ -128,7 +128,7 @@ async fn scenario(directory: &Path, action: &str) {
             service.purge_memories(&user).await.unwrap();
         },
         "queue" => {
-            service.set_capture_policy(&user, enable(Retention::UntilDeleted)).await.unwrap();
+            service.set_capture_policy(&user, enable(Retention::UntilDeleted {})).await.unwrap();
             let admission = service.capture_admission(&user).await.unwrap().unwrap();
             std::fs::write(directory.join("ready"), b"admitted").unwrap();
             let started=Instant::now();

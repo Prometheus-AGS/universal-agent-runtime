@@ -11037,6 +11037,7 @@ dependencies = [
  "chrono",
  "dirs 6.0.0",
  "hf-hub 0.5.0",
+ "quick_cache",
  "rand 0.10.3",
  "reqwest 0.13.5",
  "serde",
@@ -11049,6 +11050,7 @@ dependencies = [
  "tokenizers 0.22.2",
  "tokio",
  "tracing",
+ "unicode-normalization",
  "uuid",
 ]
 
