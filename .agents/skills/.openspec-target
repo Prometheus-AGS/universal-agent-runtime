@@ -3,9 +3,9 @@ claude own-files
 cline
 codex
 cursor
-devin
+devin own-files
 gemini
 kilocode
 opencode
-qwen
-roocode
+qwen own-files
+roocode own-files
