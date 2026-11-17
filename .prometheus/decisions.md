@@ -2800,3 +2800,13 @@ evidence. The full archive and recursive OSV rule remain in scope.
 ## 2026-11-14 — RC5 protocol boundary
 
 RC5 upgrades the dedicated AG-UI endpoint and supported A2UI surface and action lifecycle. UAR retains its custom renderer and trusted-host admission and adopts PEM 5.0.0 for entity state. Existing A2UI v0.9 and v0.9.1 history stays readable. Remote functions and external framework qualification remain outside scope. The historical agui_spec compatibility transport keeps its profile.
+
+## 2026-11-17 — Keep the OpenSpec 2.1.0 tool integrations
+
+The operator chose to keep the output of `openspec update` from CLI 2.1.0
+rather than roll back to 2.0.0. The update changed the 12 shared
+`openspec-*` skills and `.openspec-target` under `.agents/skills/`, and added
+symlinks to them under `.devin/skills`, `.qwen/skills` and `.roo/skills`.
+The cost is a version split: The Boss's bundled CLI stays at 2.0.0 and would
+revert the shared skills if run. MiniMax Code is no longer counted as a
+configured tool by 2.1.0; adding it back needs `openspec init`.
