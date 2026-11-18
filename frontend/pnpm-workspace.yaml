@@ -25,7 +25,7 @@ overrides:
   '@ag-ui/core': 1.0.4
   '@ag-ui/core@1.0.4>zod': 4.6.7
   '@a2ui/web_core@0.15.0>zod': 4.6.7
-  '@prometheus-ags/prometheus-entity-management@5.0.0>@prometheus-ags/entity-graph-react': 5.0.0
+  '@prometheus-ags/prometheus-entity-management@5.0.1>@prometheus-ags/entity-graph-react': 5.0.1
   '@vitest/browser@4.1.10': 4.1.12
   '@vitest/browser-playwright@4.1.10': 4.1.12
   '@vitest/coverage-v8@4.1.10': 4.1.12
@@ -45,6 +45,6 @@ patchedDependencies:
 minimumReleaseAgeExclude:
   - '@ag-ui/core@1.0.4'
   - '@a2ui/web_core@0.15.0'
-  - '@prometheus-ags/entity-graph-core@5.0.0'
-  - '@prometheus-ags/entity-graph-react@5.0.0'
-  - '@prometheus-ags/prometheus-entity-management@5.0.0'
+  - '@prometheus-ags/entity-graph-core@5.0.1'
+  - '@prometheus-ags/entity-graph-react@5.0.1'
+  - '@prometheus-ags/prometheus-entity-management@5.0.1'
