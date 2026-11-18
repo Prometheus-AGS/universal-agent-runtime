@@ -2389,3 +2389,7 @@ The teams domain shares one in-flight request per load key (`platform/entities/t
 ## 2026-11-18 — Browser checks of focus and animation need the tab in front
 
 The in-app browser pauses `requestAnimationFrame` for a tab that is not the active one, and `document.visibilityState` still reports `visible`. Code that moves focus after one or two animation frames silently does nothing there. Before judging focus, scroll-into-view or reveal behaviour, front the tab (`tabs_select`) and confirm a frame fires.
+
+## 2026-11-18 — `pnpm -C frontend` is its own workspace and needs its own install
+
+`frontend/pnpm-workspace.yaml` and `frontend/pnpm-lock.yaml` are tracked, so `pnpm -C frontend <script>` resolves `frontend/` as a separate workspace root. With `verifyDepsBeforeRun: error`, pnpm then looks for `frontend/node_modules/.pnpm-workspace-state-v1.json`; a checkout installed only from the repository root has none, and every `pnpm -C frontend` script fails with `ERR_PNPM_VERIFY_DEPS_BEFORE_RUN` ("Cannot check whether dependencies are outdated"). That includes the `frontend-lint` and `frontend-typecheck` pre-commit hooks. `pnpm -C frontend install --frozen-lockfile` (the documented install) writes the state file without touching either lockfile. Calling `node node_modules/<tool>` directly hides the problem; the hooks do not.
