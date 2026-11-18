@@ -1,0 +1,18 @@
+{
+  "method": "GET",
+  "path": "/team-instances/969e56c3-6aef-4c49-b586-17e5a6d14c49/artifacts",
+  "status": 200,
+  "response": [
+    {
+      "id": "artifact-a7c50e75-7708-4003-8b7e-6c46075731bb",
+      "ownerId": "v1:s:3:dev",
+      "workspaceId": "default",
+      "teamId": "969e56c3-6aef-4c49-b586-17e5a6d14c49",
+      "taskId": "summary",
+      "memberId": "8405bbb2-7e9b-44ab-a42a-4f45cac38d25",
+      "attemptId": "a7c50e75-7708-4003-8b7e-6c46075731bb",
+      "content": "Sunlight contains all visible wavelengths, and as it passes through the atmosphere, air molecules scatter shorter wavelengths far more strongly than longer ones — a process called Rayleigh scattering. Blue light scatters in every direction and reaches our eyes from all across the sky, so the sky looks blue rather than the direct white of the sun.",
+      "createdAt": "2026-11-18T07:48:05.470005Z"
+    }
+  ]
+}

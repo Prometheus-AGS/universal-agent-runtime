@@ -1,0 +1,208 @@
+{
+  "method": "GET",
+  "path": "/team-instances/969e56c3-6aef-4c49-b586-17e5a6d14c49/execution",
+  "status": 200,
+  "response": {
+    "attempts": [
+      {
+        "id": "a7c50e75-7708-4003-8b7e-6c46075731bb",
+        "runId": "78e32ba9-6487-4c97-85fd-682d677249a4",
+        "rootId": "bff74c84-af1e-46e2-a5be-daa4455154a1",
+        "approvalScopeId": "bff74c84-af1e-46e2-a5be-daa4455154a1",
+        "queueSequence": 60,
+        "ownerId": "v1:s:3:dev",
+        "workspaceId": "default",
+        "teamId": "969e56c3-6aef-4c49-b586-17e5a6d14c49",
+        "taskId": "summary",
+        "memberId": "8405bbb2-7e9b-44ab-a42a-4f45cac38d25",
+        "memberRevision": 1,
+        "ownershipEpoch": 1,
+        "bindingRevision": 1,
+        "executionEpoch": 1,
+        "executionFence": {
+          "catalogId": "uar-collaboration-catalog",
+          "serviceInstanceId": "uar-dev-local",
+          "incarnationId": "dd51a05e-13e8-4f20-938f-21631a93efb2",
+          "epoch": 4
+        },
+        "effectiveModels": [
+          {
+            "route": {
+              "providerId": "alibaba",
+              "modelId": "qwen4-max"
+            },
+            "wireModelAlias": "qwen4-max",
+            "pricingIdentity": {
+              "providerId": "alibaba",
+              "modelId": "qwen3.7-max",
+              "catalogRevision": "sha256:1ae5688933841d01fe884a30e015d5b6ee0719607e60f4602740f1ccb034e7ac"
+            },
+            "endpointKind": "openai-compatible-chat",
+            "profile": {
+              "id": "uar.openai-compatible-chat.settings-v1",
+              "revision": 1
+            },
+            "settingsRevision": 1,
+            "requestedReasoning": {
+              "mode": "off"
+            },
+            "effectiveReasoning": {
+              "mode": "off"
+            },
+            "support": "validated",
+            "supportEvidenceRef": "team-profile-eaacac3b6ceb28772f30aa2bb4fe9fae49ed47a00c320fcafb61bbb1a39ba3af",
+            "limits": {
+              "source": "unknown"
+            },
+            "fit": {
+              "mode": "settings-only",
+              "guaranteedFit": false,
+              "reason": "count-or-framing-unqualified"
+            }
+          }
+        ],
+        "effectDisposition": "confirmed",
+        "accountingState": "settled",
+        "status": "succeeded",
+        "executionOutcome": "succeeded",
+        "reservation": {
+          "tokens": 128000,
+          "costMicrounits": 1000000,
+          "elapsedSeconds": 120
+        },
+        "contextArtifactIds": [],
+        "usage": {
+          "tokens": 973,
+          "costMicrounits": 2873,
+          "elapsedSeconds": 6
+        },
+        "usageRevision": 1,
+        "output": "Sunlight contains all visible wavelengths, and as it passes through the atmosphere, air molecules scatter shorter wavelengths far more strongly than longer ones — a process called Rayleigh scattering. Blue light scatters in every direction and reaches our eyes from all across the sky, so the sky looks blue rather than the direct white of the sun.",
+        "stateReason": null,
+        "createdAt": "2026-11-18T07:47:59.444291Z",
+        "updatedAt": "2026-11-18T07:48:05.489430Z"
+      }
+    ],
+    "committed": {
+      "tokens": 973,
+      "costMicrounits": 2873,
+      "elapsedSeconds": 6
+    },
+    "reserved": {
+      "tokens": 0,
+      "costMicrounits": 0,
+      "elapsedSeconds": 0
+    },
+    "uncertainAttempts": [],
+    "commandReceipts": [],
+    "waits": [],
+    "continuations": [],
+    "contextReceipts": [
+      {
+        "authority": {
+          "ownerId": "v1:s:3:dev",
+          "workspaceId": "default",
+          "teamId": "969e56c3-6aef-4c49-b586-17e5a6d14c49",
+          "taskId": "summary",
+          "memberId": "8405bbb2-7e9b-44ab-a42a-4f45cac38d25",
+          "attemptId": "a7c50e75-7708-4003-8b7e-6c46075731bb",
+          "runId": "78e32ba9-6487-4c97-85fd-682d677249a4",
+          "taskOwnershipEpoch": 1,
+          "memberRevision": 1,
+          "binding": {
+            "id": "urn:uar:console-sample:binding-qwen-2",
+            "revision": 1
+          },
+          "executionFence": {
+            "catalogId": "uar-collaboration-catalog",
+            "serviceInstanceId": "uar-dev-local",
+            "incarnationId": "dd51a05e-13e8-4f20-938f-21631a93efb2",
+            "epoch": 4
+          }
+        },
+        "rootId": "bff74c84-af1e-46e2-a5be-daa4455154a1",
+        "approvalScopeId": "bff74c84-af1e-46e2-a5be-daa4455154a1",
+        "teamInstructions": {
+          "revision": 1,
+          "digest": "sha256:dbddd6698be847e347288eb28e0d85cfa0d2cd202a5fc630bac9090aa696810b",
+          "text": "Complete the assigned taskInput.request directly. Do not reveal planning or reasoning."
+        },
+        "instructionOrder": [
+          "host-policy",
+          "team-instructions",
+          "member-instructions",
+          "task-instructions"
+        ],
+        "self": {
+          "memberId": "8405bbb2-7e9b-44ab-a42a-4f45cac38d25",
+          "role": "writer",
+          "label": "writer",
+          "safeCapabilities": [
+            "team_roster",
+            "team_send",
+            "team_delegate",
+            "team_wait"
+          ]
+        },
+        "coordinatorMemberId": "8405bbb2-7e9b-44ab-a42a-4f45cac38d25",
+        "roster": [
+          {
+            "memberId": "8405bbb2-7e9b-44ab-a42a-4f45cac38d25",
+            "role": "writer",
+            "label": "writer",
+            "safeCapabilities": [
+              "team_roster",
+              "team_send",
+              "team_delegate",
+              "team_wait"
+            ]
+          },
+          {
+            "memberId": "f990fa1d-8568-416e-a285-3703542d761b",
+            "role": "researcher",
+            "label": "researcher",
+            "safeCapabilities": [
+              "team_roster",
+              "team_send"
+            ]
+          }
+        ],
+        "authorizationRevision": 61,
+        "selections": [
+          {
+            "sourceId": "summary",
+            "sourceKind": "task-input",
+            "disposition": "selected",
+            "originalBytes": 65,
+            "selectedBytes": 65,
+            "truncated": false
+          },
+          {
+            "sourceId": "969e56c3-6aef-4c49-b586-17e5a6d14c49",
+            "sourceKind": "team-input",
+            "disposition": "selected",
+            "originalBytes": 32,
+            "selectedBytes": 32,
+            "truncated": false
+          }
+        ],
+        "targetOutcomes": [],
+        "targetOutcomeDataTrust": "untrusted-attributed-data",
+        "contextBudgetTokens": 128000,
+        "countQuality": "unknown"
+      }
+    ],
+    "budget": {
+      "currency": "USD",
+      "maxCostMicrounits": 3000000,
+      "maxElapsedSeconds": 360,
+      "maxTokens": 384000
+    },
+    "limits": {
+      "concurrentTurns": 2,
+      "maxDepth": 1,
+      "maxMembers": 2,
+      "maxPendingTasks": 8
+    }
+  }
+}

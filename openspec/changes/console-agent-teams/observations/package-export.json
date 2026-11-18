@@ -1,0 +1,977 @@
+{
+  "method": "POST",
+  "path": "/packages:export",
+  "status": 200,
+  "request": {
+    "package": {
+      "id": "urn:uar:console-sample:package",
+      "version": "1.0.0",
+      "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7"
+    },
+    "target": {
+      "kind": "canonicalDraft2"
+    }
+  },
+  "response": {
+    "status": "exported",
+    "export": {
+      "package": {
+        "id": "urn:uar:console-sample:package",
+        "version": "1.0.0",
+        "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7"
+      },
+      "manifest": "{\"capabilityDeclarations\":[{\"capability\":\"collaboration_definition_packages_v2\",\"required\":true}],\"contentDigest\":\"sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7\",\"entrypoints\":[{\"digest\":\"sha256:5393d5b8a82cbd481e0c3b11c1b2e6cd7ac8cbba66eff37365190f1e732aae15\",\"id\":\"urn:uar:console-sample:team\",\"version\":\"1.0.0\"}],\"extensions\":{},\"files\":[{\"byteDigest\":\"sha256:875217206ff132a696d858906412c405b51028100217cc645cf61f6f90d09055\",\"definition\":{\"digest\":\"sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe\",\"id\":\"urn:uar:console-sample:agent:researcher\",\"version\":\"1.0.0\"},\"kind\":\"AgentDefinition\",\"path\":\"researcher.json\"},{\"byteDigest\":\"sha256:5dd7824ca9ba6640670ffc35dbfd9f7ecb1337bb8a28180680f8a5b29a19d571\",\"definition\":{\"digest\":\"sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000\",\"id\":\"urn:uar:console-sample:agent:writer\",\"version\":\"1.0.0\"},\"kind\":\"AgentDefinition\",\"path\":\"writer.json\"},{\"byteDigest\":\"sha256:b06cea6c6e0ff3f3fdfcf017cd2b160538fd0e8c396eda68b5f917700e65860b\",\"definition\":{\"digest\":\"sha256:5393d5b8a82cbd481e0c3b11c1b2e6cd7ac8cbba66eff37365190f1e732aae15\",\"id\":\"urn:uar:console-sample:team\",\"version\":\"1.0.0\"},\"kind\":\"TeamDefinition\",\"path\":\"team.json\"}],\"id\":\"urn:uar:console-sample:package\",\"kind\":\"PackageManifest\",\"lock\":[{\"reference\":{\"digest\":\"sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe\",\"id\":\"urn:uar:console-sample:agent:researcher\",\"version\":\"1.0.0\"},\"requestedBy\":\"urn:uar:console-sample:team\",\"resolvedPath\":\"researcher.json\"},{\"reference\":{\"digest\":\"sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000\",\"id\":\"urn:uar:console-sample:agent:writer\",\"version\":\"1.0.0\"},\"requestedBy\":\"urn:uar:console-sample:team\",\"resolvedPath\":\"writer.json\"}],\"profile\":\"urn:prometheus:uar:collaboration:0.1.0-draft.2\",\"provenance\":{\"authors\":[\"UAR operator\"],\"source\":\"Sample team for the operator console\"},\"requiredCapabilities\":[\"collaboration_definition_packages_v2\"],\"resolution\":\"exact-version-and-digest\",\"version\":\"1.0.0\"}",
+      "files": {
+        "researcher.json": "{\"apiHarness\":{\"required\":false,\"value\":{\"id\":\"uar.ordinary-agent/1\"}},\"authoredFields\":[\"/metadata/id\",\"/metadata/version\"],\"contentDigest\":\"sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe\",\"context\":{\"artifacts\":[],\"history\":\"none\",\"memoryScopes\":[],\"mode\":\"selected\"},\"contextStrategy\":{\"required\":true,\"value\":{\"max_messages\":64,\"type\":\"sliding_window\"}},\"extensions\":{},\"id\":\"urn:uar:console-sample:agent:researcher\",\"input\":{},\"instructions\":\"You are the researcher. Answer the assigned taskInput.request with a short list of concrete facts. Do not write prose.\",\"kind\":\"AgentDefinition\",\"legacySections\":{\"skills\":\"\"},\"modelRequirements\":{\"required\":true,\"value\":{\"capabilities\":[\"text\",\"tool-calling\"]}},\"models\":[{\"capabilities\":[\"text\",\"tool-calling\"],\"preferredAliases\":[\"team-model\"],\"role\":\"primary\"}],\"output\":{},\"permittedChildren\":[],\"profile\":\"urn:prometheus:uar:collaboration:0.1.0-draft.2\",\"promptDialect\":{\"required\":true,\"value\":\"default\"},\"provenance\":{\"authors\":[\"UAR operator\"],\"source\":\"Sample team for the operator console\"},\"ragConfiguration\":{\"required\":false,\"value\":{\"mode\":\"disabled\"}},\"renameMapping\":{\"reason\":\"unchanged\",\"sourceId\":\"urn:uar:console-sample:agent:researcher\",\"targetId\":\"urn:uar:console-sample:agent:researcher\"},\"requestedLimits\":{\"concurrentTurns\":2,\"maxDepth\":1,\"maxMembers\":2,\"maxPendingTasks\":8},\"requiredCapabilities\":[\"collaboration_definition_packages_v2\"],\"role\":\"assistant\",\"skills\":[],\"sourceDescriptor\":{\"metadata\":{\"id\":\"urn:uar:console-sample:agent:researcher\",\"version\":\"1.0.0\"},\"skills\":[]},\"sourceIdentity\":{\"digest\":\"sha256:024a2e2f0c8ca0930b70fa5aa4850c25dfc90aa39dc673c9261ad63d351c73e2\",\"id\":\"urn:uar:console-sample:agent:researcher\",\"profile\":\"uar.agent/1\",\"revision\":null,\"version\":\"1.0.0\"},\"title\":\"Researcher\",\"version\":\"1.0.0\",\"whenToUse\":\"Find and state the facts a request needs.\"}",
+        "team.json": "{\"budget\":{\"currency\":\"USD\",\"maxCostMicrounits\":3000000,\"maxElapsedSeconds\":360,\"maxTokens\":384000},\"communication\":[{\"fromRole\":\"researcher\",\"modes\":[\"queue-only\",\"trigger-turn\"],\"toRole\":\"writer\"},{\"fromRole\":\"writer\",\"modes\":[\"queue-only\",\"trigger-turn\"],\"toRole\":\"researcher\"}],\"contentDigest\":\"sha256:5393d5b8a82cbd481e0c3b11c1b2e6cd7ac8cbba66eff37365190f1e732aae15\",\"coordinatorRole\":\"writer\",\"extensions\":{},\"id\":\"urn:uar:console-sample:team\",\"input\":{},\"instructions\":{\"digest\":\"sha256:dbddd6698be847e347288eb28e0d85cfa0d2cd202a5fc630bac9090aa696810b\",\"revision\":1,\"text\":\"Complete the assigned taskInput.request directly. Do not reveal planning or reasoning.\"},\"kind\":\"TeamDefinition\",\"limits\":{\"concurrentTurns\":2,\"maxDepth\":1,\"maxMembers\":2,\"maxPendingTasks\":8},\"members\":[{\"definition\":{\"digest\":\"sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe\",\"id\":\"urn:uar:console-sample:agent:researcher\",\"version\":\"1.0.0\"},\"kind\":\"agent\",\"max\":1,\"min\":1,\"responsibility\":\"Gather facts\",\"role\":\"researcher\"},{\"definition\":{\"digest\":\"sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000\",\"id\":\"urn:uar:console-sample:agent:writer\",\"version\":\"1.0.0\"},\"kind\":\"agent\",\"max\":1,\"min\":1,\"responsibility\":\"Write and coordinate\",\"role\":\"writer\"}],\"output\":{},\"profile\":\"urn:prometheus:uar:collaboration:0.1.0-draft.2\",\"provenance\":{\"authors\":[\"UAR operator\"],\"source\":\"Sample team for the operator console\"},\"purpose\":\"A two-member sample team for exercising the operator console\",\"requiredCapabilities\":[],\"routing\":{\"eligibilityFirst\":true,\"explain\":true,\"strategy\":\"operator-role-capacity-cost-stable-id\"},\"taskAcceptance\":{\"allowedWorkflows\":[],\"mode\":\"coordinator-within-binding\"},\"title\":\"Research and writing team\",\"version\":\"1.0.0\"}",
+        "writer.json": "{\"apiHarness\":{\"required\":false,\"value\":{\"id\":\"uar.ordinary-agent/1\"}},\"authoredFields\":[\"/metadata/id\",\"/metadata/version\"],\"contentDigest\":\"sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000\",\"context\":{\"artifacts\":[],\"history\":\"none\",\"memoryScopes\":[],\"mode\":\"selected\"},\"contextStrategy\":{\"required\":true,\"value\":{\"max_messages\":64,\"type\":\"sliding_window\"}},\"extensions\":{},\"id\":\"urn:uar:console-sample:agent:writer\",\"input\":{},\"instructions\":\"You are the writer and team coordinator. Complete the assigned taskInput.request directly in two or three plain sentences.\",\"kind\":\"AgentDefinition\",\"legacySections\":{\"skills\":\"\"},\"modelRequirements\":{\"required\":true,\"value\":{\"capabilities\":[\"text\",\"tool-calling\"]}},\"models\":[{\"capabilities\":[\"text\",\"tool-calling\"],\"preferredAliases\":[\"team-model\"],\"role\":\"primary\"}],\"output\":{},\"permittedChildren\":[],\"profile\":\"urn:prometheus:uar:collaboration:0.1.0-draft.2\",\"promptDialect\":{\"required\":true,\"value\":\"default\"},\"provenance\":{\"authors\":[\"UAR operator\"],\"source\":\"Sample team for the operator console\"},\"ragConfiguration\":{\"required\":false,\"value\":{\"mode\":\"disabled\"}},\"renameMapping\":{\"reason\":\"unchanged\",\"sourceId\":\"urn:uar:console-sample:agent:writer\",\"targetId\":\"urn:uar:console-sample:agent:writer\"},\"requestedLimits\":{\"concurrentTurns\":2,\"maxDepth\":1,\"maxMembers\":2,\"maxPendingTasks\":8},\"requiredCapabilities\":[\"collaboration_definition_packages_v2\"],\"role\":\"assistant\",\"skills\":[],\"sourceDescriptor\":{\"metadata\":{\"id\":\"urn:uar:console-sample:agent:writer\",\"version\":\"1.0.0\"},\"skills\":[]},\"sourceIdentity\":{\"digest\":\"sha256:6d7e519e4e4df0b8cabebf530c42c78d39e7987cab9f4e49a7a04e517dfe2fb8\",\"id\":\"urn:uar:console-sample:agent:writer\",\"profile\":\"uar.agent/1\",\"revision\":null,\"version\":\"1.0.0\"},\"title\":\"Writer\",\"version\":\"1.0.0\",\"whenToUse\":\"Turn facts into a short, clear answer and coordinate the team.\"}"
+      },
+      "conversionReports": [
+        {
+          "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+          "kind": "ConversionReport",
+          "id": "urn:uar:conversion:urn:uar:console-sample:agent:researcher",
+          "version": "1.0.0",
+          "contentDigest": "sha256:53d87b884a8f8819ab389ff780b7be25aad58fbb9a09be13b8920412ffb7d0b3",
+          "provenance": {
+            "authors": [
+              "Prometheus-AGS"
+            ],
+            "source": "UAR collaboration compiler"
+          },
+          "requiredCapabilities": [],
+          "extensions": {},
+          "exportClass": "portable-evidence",
+          "source": {
+            "profile": "uar.agent/1",
+            "id": "urn:uar:console-sample:agent:researcher",
+            "version": "1.0.0",
+            "digest": "sha256:024a2e2f0c8ca0930b70fa5aa4850c25dfc90aa39dc673c9261ad63d351c73e2",
+            "revision": null
+          },
+          "target": {
+            "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+            "harness": null
+          },
+          "diagnostics": [
+            {
+              "pointer": "/apiHarness",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/apiHarness",
+              "disposition": "optional-unsupported",
+              "reasonCode": "projection.optional-unsupported",
+              "message": "The optional field is preserved without a runtime support claim.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/authoredFields",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/contentDigest",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/context",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/contextStrategy",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/contextStrategy",
+              "disposition": "required-unsupported",
+              "reasonCode": "projection.required-unsupported",
+              "message": "The required field is preserved and blocks activation until it is supported.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/extensions",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/id",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/input",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/instructions",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/kind",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/legacySections",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/modelRequirements",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/modelRequirements",
+              "disposition": "required-unsupported",
+              "reasonCode": "projection.required-unsupported",
+              "message": "The required field is preserved and blocks activation until it is supported.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/models",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/output",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/permittedChildren",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/profile",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/promptDialect",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/promptDialect",
+              "disposition": "required-unsupported",
+              "reasonCode": "projection.required-unsupported",
+              "message": "The required field is preserved and blocks activation until it is supported.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/provenance",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/ragConfiguration",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/ragConfiguration",
+              "disposition": "optional-unsupported",
+              "reasonCode": "projection.optional-unsupported",
+              "message": "The optional field is preserved without a runtime support claim.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/renameMapping",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/requestedLimits",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/requiredCapabilities/0",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/role",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/skills",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/sourceDescriptor",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/sourceIdentity",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/title",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/version",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/whenToUse",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            }
+          ],
+          "activationBlocked": true
+        },
+        {
+          "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+          "kind": "ConversionReport",
+          "id": "urn:uar:conversion:urn:uar:console-sample:agent:writer",
+          "version": "1.0.0",
+          "contentDigest": "sha256:80a2ac23b85f93077ad926e4a2d559fe7281766243411e7b46790499f4642933",
+          "provenance": {
+            "authors": [
+              "Prometheus-AGS"
+            ],
+            "source": "UAR collaboration compiler"
+          },
+          "requiredCapabilities": [],
+          "extensions": {},
+          "exportClass": "portable-evidence",
+          "source": {
+            "profile": "uar.agent/1",
+            "id": "urn:uar:console-sample:agent:writer",
+            "version": "1.0.0",
+            "digest": "sha256:6d7e519e4e4df0b8cabebf530c42c78d39e7987cab9f4e49a7a04e517dfe2fb8",
+            "revision": null
+          },
+          "target": {
+            "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+            "harness": null
+          },
+          "diagnostics": [
+            {
+              "pointer": "/apiHarness",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/apiHarness",
+              "disposition": "optional-unsupported",
+              "reasonCode": "projection.optional-unsupported",
+              "message": "The optional field is preserved without a runtime support claim.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/authoredFields",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/contentDigest",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/context",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/contextStrategy",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/contextStrategy",
+              "disposition": "required-unsupported",
+              "reasonCode": "projection.required-unsupported",
+              "message": "The required field is preserved and blocks activation until it is supported.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/extensions",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/id",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/input",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/instructions",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/kind",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/legacySections",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/modelRequirements",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/modelRequirements",
+              "disposition": "required-unsupported",
+              "reasonCode": "projection.required-unsupported",
+              "message": "The required field is preserved and blocks activation until it is supported.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/models",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/output",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/permittedChildren",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/profile",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/promptDialect",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/promptDialect",
+              "disposition": "required-unsupported",
+              "reasonCode": "projection.required-unsupported",
+              "message": "The required field is preserved and blocks activation until it is supported.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/provenance",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/ragConfiguration",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/ragConfiguration",
+              "disposition": "optional-unsupported",
+              "reasonCode": "projection.optional-unsupported",
+              "message": "The optional field is preserved without a runtime support claim.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/renameMapping",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/requestedLimits",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/requiredCapabilities/0",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/role",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/skills",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/sourceDescriptor",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/sourceIdentity",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/title",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/version",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/whenToUse",
+              "disposition": "translated",
+              "reasonCode": "projection.translated",
+              "message": "The field is retained with a documented translation.",
+              "effectiveBindingRef": null
+            }
+          ],
+          "activationBlocked": true
+        },
+        {
+          "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+          "kind": "ConversionReport",
+          "id": "urn:uar:conversion:urn:uar:console-sample:team",
+          "version": "1.0.0",
+          "contentDigest": "sha256:5f7d82888ed594df02d3cad45f9f9bd216320506c45982306c898d02bc9855f5",
+          "provenance": {
+            "authors": [
+              "Prometheus-AGS"
+            ],
+            "source": "UAR collaboration compiler"
+          },
+          "requiredCapabilities": [],
+          "extensions": {},
+          "exportClass": "portable-evidence",
+          "source": {
+            "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+            "id": "urn:uar:console-sample:team",
+            "version": "1.0.0",
+            "digest": "sha256:5393d5b8a82cbd481e0c3b11c1b2e6cd7ac8cbba66eff37365190f1e732aae15",
+            "revision": null
+          },
+          "target": {
+            "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+            "harness": null
+          },
+          "diagnostics": [
+            {
+              "pointer": "/budget/currency",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/budget/maxCostMicrounits",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/budget/maxElapsedSeconds",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/budget/maxTokens",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/communication/0/fromRole",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/communication/0/modes/0",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/communication/0/modes/1",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/communication/0/toRole",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/communication/1/fromRole",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/communication/1/modes/0",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/communication/1/modes/1",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/communication/1/toRole",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/contentDigest",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/coordinatorRole",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/extensions",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/id",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/input",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/instructions/digest",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/instructions/revision",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/instructions/text",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/kind",
+              "disposition": "required-unsupported",
+              "reasonCode": "projection.required-unsupported",
+              "message": "The required field is preserved and blocks activation until it is supported.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/limits/concurrentTurns",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/limits/maxDepth",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/limits/maxMembers",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/limits/maxPendingTasks",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/0/definition/digest",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/0/definition/id",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/0/definition/version",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/0/kind",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/0/max",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/0/min",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/0/responsibility",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/0/role",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/1/definition/digest",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/1/definition/id",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/1/definition/version",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/1/kind",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/1/max",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/1/min",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/1/responsibility",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/members/1/role",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/output",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/profile",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/provenance/authors/0",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/provenance/source",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/purpose",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/requiredCapabilities",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/routing/eligibilityFirst",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/routing/explain",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/routing/strategy",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/taskAcceptance/allowedWorkflows",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/taskAcceptance/mode",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/title",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            },
+            {
+              "pointer": "/version",
+              "disposition": "exact",
+              "reasonCode": "source.preserved",
+              "message": "The source field is retained exactly.",
+              "effectiveBindingRef": null
+            }
+          ],
+          "activationBlocked": true
+        }
+      ]
+    }
+  }
+}

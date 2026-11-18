@@ -10,6 +10,7 @@ export * from "./session-configuration";
 export * from "./presentations";
 export * from "./presentation-assignments";
 export * from "./presentation-provenance";
+export * from "./teams";
 
 export * from "./a2ui-actions";
 export * from "./chat-turns";

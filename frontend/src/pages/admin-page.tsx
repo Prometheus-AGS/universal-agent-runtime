@@ -20,6 +20,7 @@ import {
 import { useRuntimeConsoleFeeds } from "@/features/runtime/model/runtime-console-feeds";
 import { SettingsPage } from "@/features/settings";
 import { SkillsPage } from "@/features/skills";
+import { TeamsPage } from "@/features/teams";
 import { McpHealthPage, ToolsPage } from "@/features/tools";
 
 const LazyA2uiTestingPage = import.meta.env.DEV
@@ -39,6 +40,7 @@ const PAGE_MAP = {
   skills: () => <SkillsPage />,
   presentations: () => <PresentationsPage />,
   agents: () => <AgentsPage />,
+  teams: () => <TeamsPage />,
   tools: () => <ToolsPage />,
   auth: () => <AuthPage />,
   knowledge: () => <KnowledgePage />,

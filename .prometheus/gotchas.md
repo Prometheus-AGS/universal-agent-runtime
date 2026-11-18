@@ -2373,3 +2373,19 @@ Each UAR start gets a new random incarnation (`compiler/collaboration/service.rs
 ## 2026-11-18 — The Rust pre-commit baseline rejects the macOS linker's `__eh_frame` warning
 
 `scripts/verify-rust-test-baseline.sh` fails any compile that prints a `warning:` line. With Xcode 27.2 (`ld-27106.1`) every link of the main crate prints `linker stderr: ld: __eh_frame section too large (max 16MB)` through rustc's `linker_messages` lint, in release binaries and in the debug test harness. The first feature set alone takes about 33 minutes cold before the hook refuses the commit. The operator approved a one-time skip of that hook step for the A2UI schema fix on 2026-11-18; the warning itself is unresolved.
+
+## 2026-11-18 — Package preflight always reports a team package as not activatable
+
+`compiler/collaboration/validation.rs:83-92` adds a `required-unsupported` diagnostic ("is cataloged but is not executable until durable collaboration runtime support lands") for every non-agent definition, so `POST /collaboration/packages:preflight` answers `activationSupported: false` for every team package. `service.rs` `install_package` installs it anyway. Whether a team can run is decided at binding preflight, where the same agent fields come back `exact`. A client that gates package install on `activationSupported` can never install a team. The console spec had that gate and it was caught only in the browser.
+
+## 2026-11-18 — A keyed load de-duplicator drops what the second caller asked for
+
+The teams domain shares one in-flight request per load key (`platform/entities/teams/store.ts` `runLoad`). Two callers with the same key and different contents (run refresh with and without artifacts and peer messages) silently became the first caller's request. Symptom: a team opened from the list showed "Artifacts (0)" until the next attempt transition. When a load has variants, either key the variant or have the caller check that the shared result contains what it asked for.
+
+## 2026-11-18 — The shared `Tabs` component lays out sideways unless the caller passes `flex-col`
+
+`frontend/src/components/ui/tabs.tsx` sets `data-orientation` on the root but styles the column layout with `data-horizontal:flex-col`, which matches a `data-horizontal` attribute that nothing sets. A default `<Tabs>` therefore renders the tab list as a full-height side column next to its panels. Existing callers (`run-inspector.tsx`, `agent-editor.tsx`) pass `flex-col` explicitly; the Teams list hit it on first use. The same applies to `group-data-horizontal/tabs:*` variants inside the list and triggers.
+
+## 2026-11-18 — Browser checks of focus and animation need the tab in front
+
+The in-app browser pauses `requestAnimationFrame` for a tab that is not the active one, and `document.visibilityState` still reports `visible`. Code that moves focus after one or two animation frames silently does nothing there. Before judging focus, scroll-into-view or reveal behaviour, front the tab (`tabs_select`) and confirm a frame fires.

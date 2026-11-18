@@ -1,0 +1,919 @@
+{
+  "method": "GET",
+  "path": "/deployment-bindings",
+  "status": 200,
+  "response": [
+    {
+      "id": "urn:uar:console-sample:binding",
+      "ownerId": "v1:s:3:dev",
+      "workspaceId": "default",
+      "revision": 1,
+      "document": {
+        "contentDigest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2",
+        "contextGrants": [],
+        "effectiveBindingReceiptRef": null,
+        "effectiveBudget": {
+          "currency": "USD",
+          "maxCostMicrounits": 3000000,
+          "maxElapsedSeconds": 360,
+          "maxTokens": 384000
+        },
+        "effectiveLimits": {
+          "concurrentTurns": 2,
+          "maxDepth": 1,
+          "maxMembers": 2,
+          "maxPendingTasks": 8
+        },
+        "exportClass": "private-installed-state",
+        "extensions": {},
+        "id": "urn:uar:console-sample:binding",
+        "kind": "DeploymentBinding",
+        "modelBindings": [
+          {
+            "credentialRef": "protected-credential://uar/local-primary",
+            "modelId": "k3",
+            "providerId": "kimi-for-coding",
+            "requestedAlias": "team-model"
+          }
+        ],
+        "ownerId": "v1:s:3:dev",
+        "package": {
+          "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7",
+          "id": "urn:uar:console-sample:package",
+          "version": "1.0.0"
+        },
+        "policyRevision": "acceptance-owned-policy-v1",
+        "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+        "provenance": {
+          "authors": [
+            "UAR operator"
+          ],
+          "source": "Sample team binding for the operator console"
+        },
+        "representationGrantRefs": [],
+        "requiredCapabilities": [
+          "collaboration_deployment_bindings_v2"
+        ],
+        "revision": 1,
+        "runtimeInstanceId": "uar-dev-local",
+        "skillBindings": [],
+        "status": "ready",
+        "storage": {
+          "backend": "surrealkv",
+          "connectionRef": "protected-connection://uar/catalog",
+          "durableTransactions": true
+        },
+        "version": "1.0.0",
+        "workspaceId": "default"
+      },
+      "package": {
+        "id": "urn:uar:console-sample:package",
+        "version": "1.0.0",
+        "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7"
+      },
+      "activationSupported": false,
+      "preflightDiagnostics": [
+        {
+          "field": "/models/0",
+          "disposition": "exact",
+          "message": "The model role resolves through a declared preferred alias."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "required-unsupported",
+          "message": "Selected provider 'kimi-for-coding' is not configured."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "required-unsupported",
+          "message": "The selected provider is not configured for prompt dialect enforcement."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "exact",
+          "message": "The authored context strategy is installed as the ordinary turn policy."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/models/0",
+          "disposition": "exact",
+          "message": "The model role resolves through a declared preferred alias."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "required-unsupported",
+          "message": "Selected provider 'kimi-for-coding' is not configured."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "required-unsupported",
+          "message": "The selected provider is not configured for prompt dialect enforcement."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "exact",
+          "message": "The authored context strategy is installed as the ordinary turn policy."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        }
+      ],
+      "effectiveBindingReceipt": {
+        "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+        "kind": "EffectiveBindingReceipt",
+        "exportClass": "private-binding-evidence",
+        "id": "urn:uar:console-sample:binding/effective",
+        "revision": 1,
+        "contentDigest": "sha256:d33b5329f9c7d8d8c6c500df26f5d6fbfa6ecd1f375dcad1f0cac0baa4ab227b",
+        "bindingRef": {
+          "id": "urn:uar:console-sample:binding",
+          "revision": 1,
+          "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+        },
+        "package": {
+          "id": "urn:uar:console-sample:package",
+          "version": "1.0.0",
+          "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7"
+        },
+        "requested": {
+          "apiHarness": null,
+          "contextStrategy": null,
+          "definition": {
+            "digest": "sha256:5393d5b8a82cbd481e0c3b11c1b2e6cd7ac8cbba66eff37365190f1e732aae15",
+            "id": "urn:uar:console-sample:team",
+            "version": "1.0.0"
+          },
+          "modelRequirements": null,
+          "promptDialect": null,
+          "ragConfiguration": null,
+          "skills": []
+        },
+        "effective": {
+          "teamExecution": false,
+          "teamPlanning": true
+        },
+        "resolvedSkills": [],
+        "resolvedModels": [],
+        "policyRevision": "acceptance-owned-policy-v1",
+        "representationGrants": [],
+        "runtimeCapabilities": [
+          "approval_lifecycle_v1",
+          "collaboration_conversion_reports_v1",
+          "collaboration_definition_packages_v1",
+          "collaboration_definition_packages_v2",
+          "collaboration_deployment_bindings_v1",
+          "collaboration_deployment_bindings_v2",
+          "collaboration_representation_execution_v1",
+          "collaboration_representation_grant_refs_v1",
+          "collaboration_team_execution_v1",
+          "collaboration_team_planning_v1",
+          "durable_agent_instances_v1",
+          "full_harness_delegation_v1",
+          "host_history",
+          "host_lifecycle_control_v1",
+          "local_scoped_observers_v1",
+          "prometheus.workflow-execution/1.0.0",
+          "reasoning_effort",
+          "run_scoped_credentials",
+          "run_scoped_mcp_servers",
+          "service_instance_placement_v1",
+          "session_principal",
+          "team_execution_continuations_v1",
+          "team_execution_host_workspace_v1",
+          "team_execution_peer_tools_v1",
+          "team_execution_shared_instructions_v1",
+          "tool_admission_v2",
+          "uar_target_catalog_v1",
+          "uar_target_model_override_v1",
+          "working_directory"
+        ],
+        "serviceBinding": {
+          "instanceId": "uar-dev-local",
+          "profile": "uar.service-instance/1",
+          "workspaceLocation": "remote",
+          "endpoints": {
+            "runtime": "http://127.0.0.1:1907",
+            "administration": "http://127.0.0.1:1907/api/uar",
+            "models": "http://127.0.0.1:1907/v1",
+            "console": "http://127.0.0.1:1907/admin"
+          },
+          "capabilities": [
+            "approval_lifecycle_v1",
+            "collaboration_conversion_reports_v1",
+            "collaboration_definition_packages_v1",
+            "collaboration_definition_packages_v2",
+            "collaboration_deployment_bindings_v1",
+            "collaboration_deployment_bindings_v2",
+            "collaboration_representation_execution_v1",
+            "collaboration_representation_grant_refs_v1",
+            "collaboration_team_execution_v1",
+            "collaboration_team_planning_v1",
+            "durable_agent_instances_v1",
+            "full_harness_delegation_v1",
+            "host_history",
+            "host_lifecycle_control_v1",
+            "local_scoped_observers_v1",
+            "prometheus.workflow-execution/1.0.0",
+            "reasoning_effort",
+            "run_scoped_credentials",
+            "run_scoped_mcp_servers",
+            "service_instance_placement_v1",
+            "session_principal",
+            "team_execution_continuations_v1",
+            "team_execution_host_workspace_v1",
+            "team_execution_peer_tools_v1",
+            "team_execution_shared_instructions_v1",
+            "tool_admission_v2",
+            "uar_target_catalog_v1",
+            "uar_target_model_override_v1",
+            "working_directory"
+          ],
+          "intent": "new",
+          "bindingId": "urn:uar:console-sample:binding",
+          "bindingRevision": 1
+        },
+        "diagnostics": [
+          {
+            "pointer": "/models/0",
+            "disposition": "exact",
+            "reasonCode": "model.bound-exactly",
+            "message": "The model role resolves through a declared preferred alias.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/modelRequirements",
+            "disposition": "required-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "Selected provider 'kimi-for-coding' is not configured.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/promptDialect",
+            "disposition": "required-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The selected provider is not configured for prompt dialect enforcement.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/contextStrategy",
+            "disposition": "exact",
+            "reasonCode": "runtime.context-policy-enforced",
+            "message": "The authored context strategy is installed as the ordinary turn policy.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/ragConfiguration",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/apiHarness",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/models/0",
+            "disposition": "exact",
+            "reasonCode": "model.bound-exactly",
+            "message": "The model role resolves through a declared preferred alias.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          },
+          {
+            "pointer": "/modelRequirements",
+            "disposition": "required-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "Selected provider 'kimi-for-coding' is not configured.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          },
+          {
+            "pointer": "/promptDialect",
+            "disposition": "required-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The selected provider is not configured for prompt dialect enforcement.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          },
+          {
+            "pointer": "/contextStrategy",
+            "disposition": "exact",
+            "reasonCode": "runtime.context-policy-enforced",
+            "message": "The authored context strategy is installed as the ordinary turn policy.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          },
+          {
+            "pointer": "/ragConfiguration",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          },
+          {
+            "pointer": "/apiHarness",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding",
+              "revision": 1,
+              "digest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          }
+        ],
+        "admitted": false,
+        "createdAt": "2026-11-18T07:30:31.603823Z"
+      },
+      "updatedAt": "2026-11-18T07:30:31.603900Z"
+    },
+    {
+      "id": "urn:uar:console-sample:binding-qwen",
+      "ownerId": "v1:s:3:dev",
+      "workspaceId": "default",
+      "revision": 1,
+      "document": {
+        "contentDigest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266",
+        "contextGrants": [],
+        "effectiveBindingReceiptRef": null,
+        "effectiveBudget": {
+          "currency": "USD",
+          "maxCostMicrounits": 3000000,
+          "maxElapsedSeconds": 360,
+          "maxTokens": 384000
+        },
+        "effectiveLimits": {
+          "concurrentTurns": 2,
+          "maxDepth": 1,
+          "maxMembers": 2,
+          "maxPendingTasks": 8
+        },
+        "exportClass": "private-installed-state",
+        "extensions": {},
+        "id": "urn:uar:console-sample:binding-qwen",
+        "kind": "DeploymentBinding",
+        "modelBindings": [
+          {
+            "credentialRef": "protected-credential://uar/local-primary",
+            "modelId": "qwen4-max",
+            "providerId": "alibaba",
+            "requestedAlias": "team-model"
+          }
+        ],
+        "ownerId": "v1:s:3:dev",
+        "package": {
+          "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7",
+          "id": "urn:uar:console-sample:package",
+          "version": "1.0.0"
+        },
+        "policyRevision": "acceptance-owned-policy-v1",
+        "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+        "provenance": {
+          "authors": [
+            "UAR operator"
+          ],
+          "source": "Sample team binding for the operator console"
+        },
+        "representationGrantRefs": [],
+        "requiredCapabilities": [
+          "collaboration_deployment_bindings_v2"
+        ],
+        "revision": 1,
+        "runtimeInstanceId": "uar-dev-local",
+        "skillBindings": [],
+        "status": "ready",
+        "storage": {
+          "backend": "surrealkv",
+          "connectionRef": "protected-connection://uar/catalog",
+          "durableTransactions": true
+        },
+        "version": "1.0.0",
+        "workspaceId": "default"
+      },
+      "package": {
+        "id": "urn:uar:console-sample:package",
+        "version": "1.0.0",
+        "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7"
+      },
+      "activationSupported": true,
+      "preflightDiagnostics": [
+        {
+          "field": "/models/0",
+          "disposition": "exact",
+          "message": "The model role resolves through a declared preferred alias."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "exact",
+          "message": "Every selected configured model satisfies the authored capability requirements."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "exact",
+          "message": "The bound model uses the authored dialect in ordinary prompt and request assembly."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "exact",
+          "message": "The authored context strategy is installed as the ordinary turn policy."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/models/0",
+          "disposition": "exact",
+          "message": "The model role resolves through a declared preferred alias."
+        },
+        {
+          "field": "/modelRequirements",
+          "disposition": "exact",
+          "message": "Every selected configured model satisfies the authored capability requirements."
+        },
+        {
+          "field": "/promptDialect",
+          "disposition": "exact",
+          "message": "The bound model uses the authored dialect in ordinary prompt and request assembly."
+        },
+        {
+          "field": "/contextStrategy",
+          "disposition": "exact",
+          "message": "The authored context strategy is installed as the ordinary turn policy."
+        },
+        {
+          "field": "/ragConfiguration",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        },
+        {
+          "field": "/apiHarness",
+          "disposition": "optional-unsupported",
+          "message": "The field is preserved without an enforcing runtime component."
+        }
+      ],
+      "effectiveBindingReceipt": {
+        "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+        "kind": "EffectiveBindingReceipt",
+        "exportClass": "private-binding-evidence",
+        "id": "urn:uar:console-sample:binding-qwen/effective",
+        "revision": 1,
+        "contentDigest": "sha256:473d9683141e7a57be7476db669418183a1e9a7f12efcb3633908dc4771c38bc",
+        "bindingRef": {
+          "id": "urn:uar:console-sample:binding-qwen",
+          "revision": 1,
+          "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+        },
+        "package": {
+          "id": "urn:uar:console-sample:package",
+          "version": "1.0.0",
+          "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7"
+        },
+        "requested": {
+          "apiHarness": null,
+          "contextStrategy": null,
+          "definition": {
+            "digest": "sha256:5393d5b8a82cbd481e0c3b11c1b2e6cd7ac8cbba66eff37365190f1e732aae15",
+            "id": "urn:uar:console-sample:team",
+            "version": "1.0.0"
+          },
+          "modelRequirements": null,
+          "promptDialect": null,
+          "ragConfiguration": null,
+          "skills": []
+        },
+        "effective": {
+          "teamExecution": true,
+          "teamPlanning": true
+        },
+        "resolvedSkills": [],
+        "resolvedModels": [],
+        "policyRevision": "acceptance-owned-policy-v1",
+        "representationGrants": [],
+        "runtimeCapabilities": [
+          "approval_lifecycle_v1",
+          "collaboration_conversion_reports_v1",
+          "collaboration_definition_packages_v1",
+          "collaboration_definition_packages_v2",
+          "collaboration_deployment_bindings_v1",
+          "collaboration_deployment_bindings_v2",
+          "collaboration_representation_execution_v1",
+          "collaboration_representation_grant_refs_v1",
+          "collaboration_team_execution_v1",
+          "collaboration_team_planning_v1",
+          "durable_agent_instances_v1",
+          "full_harness_delegation_v1",
+          "host_history",
+          "host_lifecycle_control_v1",
+          "local_scoped_observers_v1",
+          "prometheus.workflow-execution/1.0.0",
+          "reasoning_effort",
+          "run_scoped_credentials",
+          "run_scoped_mcp_servers",
+          "service_instance_placement_v1",
+          "session_principal",
+          "team_execution_continuations_v1",
+          "team_execution_host_workspace_v1",
+          "team_execution_peer_tools_v1",
+          "team_execution_shared_instructions_v1",
+          "tool_admission_v2",
+          "uar_target_catalog_v1",
+          "uar_target_model_override_v1",
+          "working_directory"
+        ],
+        "serviceBinding": {
+          "instanceId": "uar-dev-local",
+          "profile": "uar.service-instance/1",
+          "workspaceLocation": "remote",
+          "endpoints": {
+            "runtime": "http://127.0.0.1:1907",
+            "administration": "http://127.0.0.1:1907/api/uar",
+            "models": "http://127.0.0.1:1907/v1",
+            "console": "http://127.0.0.1:1907/admin"
+          },
+          "capabilities": [
+            "approval_lifecycle_v1",
+            "collaboration_conversion_reports_v1",
+            "collaboration_definition_packages_v1",
+            "collaboration_definition_packages_v2",
+            "collaboration_deployment_bindings_v1",
+            "collaboration_deployment_bindings_v2",
+            "collaboration_representation_execution_v1",
+            "collaboration_representation_grant_refs_v1",
+            "collaboration_team_execution_v1",
+            "collaboration_team_planning_v1",
+            "durable_agent_instances_v1",
+            "full_harness_delegation_v1",
+            "host_history",
+            "host_lifecycle_control_v1",
+            "local_scoped_observers_v1",
+            "prometheus.workflow-execution/1.0.0",
+            "reasoning_effort",
+            "run_scoped_credentials",
+            "run_scoped_mcp_servers",
+            "service_instance_placement_v1",
+            "session_principal",
+            "team_execution_continuations_v1",
+            "team_execution_host_workspace_v1",
+            "team_execution_peer_tools_v1",
+            "team_execution_shared_instructions_v1",
+            "tool_admission_v2",
+            "uar_target_catalog_v1",
+            "uar_target_model_override_v1",
+            "working_directory"
+          ],
+          "intent": "new",
+          "bindingId": "urn:uar:console-sample:binding-qwen",
+          "bindingRevision": 1
+        },
+        "diagnostics": [
+          {
+            "pointer": "/models/0",
+            "disposition": "exact",
+            "reasonCode": "model.bound-exactly",
+            "message": "The model role resolves through a declared preferred alias.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/modelRequirements",
+            "disposition": "exact",
+            "reasonCode": "runtime.model-capabilities-enforced",
+            "message": "Every selected configured model satisfies the authored capability requirements.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/promptDialect",
+            "disposition": "exact",
+            "reasonCode": "runtime.prompt-dialect-enforced",
+            "message": "The bound model uses the authored dialect in ordinary prompt and request assembly.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/contextStrategy",
+            "disposition": "exact",
+            "reasonCode": "runtime.context-policy-enforced",
+            "message": "The authored context strategy is installed as the ordinary turn policy.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/ragConfiguration",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/apiHarness",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:researcher",
+              "version": "1.0.0",
+              "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+            }
+          },
+          {
+            "pointer": "/models/0",
+            "disposition": "exact",
+            "reasonCode": "model.bound-exactly",
+            "message": "The model role resolves through a declared preferred alias.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          },
+          {
+            "pointer": "/modelRequirements",
+            "disposition": "exact",
+            "reasonCode": "runtime.model-capabilities-enforced",
+            "message": "Every selected configured model satisfies the authored capability requirements.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          },
+          {
+            "pointer": "/promptDialect",
+            "disposition": "exact",
+            "reasonCode": "runtime.prompt-dialect-enforced",
+            "message": "The bound model uses the authored dialect in ordinary prompt and request assembly.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          },
+          {
+            "pointer": "/contextStrategy",
+            "disposition": "exact",
+            "reasonCode": "runtime.context-policy-enforced",
+            "message": "The authored context strategy is installed as the ordinary turn policy.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          },
+          {
+            "pointer": "/ragConfiguration",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          },
+          {
+            "pointer": "/apiHarness",
+            "disposition": "optional-unsupported",
+            "reasonCode": "runtime.component-unavailable",
+            "message": "The field is preserved without an enforcing runtime component.",
+            "effectiveBindingRef": {
+              "id": "urn:uar:console-sample:binding-qwen",
+              "revision": 1,
+              "digest": "sha256:769ee9771be73164f4fa65e62d13f7534c15d31b5490bc7211d5cc710710e266"
+            },
+            "sourceKind": "AgentDefinition",
+            "sourceDefinition": {
+              "id": "urn:uar:console-sample:agent:writer",
+              "version": "1.0.0",
+              "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+            }
+          }
+        ],
+        "admitted": true,
+        "createdAt": "2026-11-18T07:31:50.656962Z"
+      },
+      "updatedAt": "2026-11-18T07:31:50.657051Z"
+    }
+  ]
+}

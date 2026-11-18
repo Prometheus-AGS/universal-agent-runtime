@@ -1,0 +1,91 @@
+{
+  "method": "GET",
+  "path": "/team-instances/969e56c3-6aef-4c49-b586-17e5a6d14c49",
+  "status": 200,
+  "response": {
+    "id": "969e56c3-6aef-4c49-b586-17e5a6d14c49",
+    "ownerId": "v1:s:3:dev",
+    "workspaceId": "default",
+    "revision": 6,
+    "status": "inactive",
+    "definition": {
+      "id": "urn:uar:console-sample:team",
+      "version": "1.0.0",
+      "digest": "sha256:5393d5b8a82cbd481e0c3b11c1b2e6cd7ac8cbba66eff37365190f1e732aae15"
+    },
+    "package": {
+      "id": "urn:uar:console-sample:package",
+      "version": "1.0.0",
+      "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7"
+    },
+    "binding": {
+      "id": "urn:uar:console-sample:binding-qwen-2",
+      "revision": 1
+    },
+    "input": {
+      "project": "Console sample run"
+    },
+    "members": [
+      {
+        "id": "f990fa1d-8568-416e-a285-3703542d761b",
+        "role": "researcher",
+        "kind": "agent",
+        "ordinal": 1,
+        "definition": {
+          "id": "urn:uar:console-sample:agent:researcher",
+          "version": "1.0.0",
+          "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+        },
+        "revision": 1,
+        "status": "inactive"
+      },
+      {
+        "id": "8405bbb2-7e9b-44ab-a42a-4f45cac38d25",
+        "role": "writer",
+        "kind": "agent",
+        "ordinal": 1,
+        "definition": {
+          "id": "urn:uar:console-sample:agent:writer",
+          "version": "1.0.0",
+          "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+        },
+        "revision": 1,
+        "status": "inactive"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "summary",
+        "title": "summary",
+        "role": "writer",
+        "input": {
+          "request": "In two sentences, explain why the sky appears blue."
+        },
+        "outputContract": {},
+        "output": "Sunlight contains all visible wavelengths, and as it passes through the atmosphere, air molecules scatter shorter wavelengths far more strongly than longer ones — a process called Rayleigh scattering. Blue light scatters in every direction and reaches our eyes from all across the sky, so the sky looks blue rather than the direct white of the sun.",
+        "dependsOn": [],
+        "status": "succeeded",
+        "revision": 5,
+        "assigneeMemberId": "8405bbb2-7e9b-44ab-a42a-4f45cac38d25",
+        "ownershipEpoch": 1,
+        "assignmentAuthority": {
+          "bindingId": "urn:uar:console-sample:binding-qwen-2",
+          "bindingRevision": 1,
+          "workspaceId": "default",
+          "role": "writer",
+          "memberId": "8405bbb2-7e9b-44ab-a42a-4f45cac38d25",
+          "ownershipEpoch": 1,
+          "canExecute": false,
+          "canUseTools": false
+        },
+        "reviewerMemberId": null,
+        "reviewerEpoch": 0,
+        "stateReason": null,
+        "createdAt": "2026-11-18T07:47:59.334053Z",
+        "updatedAt": "2026-11-18T07:48:05.489430Z"
+      }
+    ],
+    "createdAt": "2026-11-18T07:47:59.246990Z",
+    "updatedAt": "2026-11-18T07:48:05.489430Z"
+  }
+}

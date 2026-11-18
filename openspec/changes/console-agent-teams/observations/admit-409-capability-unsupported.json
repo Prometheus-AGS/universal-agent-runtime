@@ -1,0 +1,29 @@
+{
+  "method": "POST",
+  "path": "/team-instances/a9e38f7c-2504-4f5e-b05f-1a095b5a704d/tasks/facts/admit",
+  "status": 409,
+  "request": {
+    "commandId": "c3a3cdaa-08e3-4c18-95fd-9d71508e8e34",
+    "expectedTeamRevision": 3,
+    "expectedTaskRevision": 2,
+    "memberId": "05088a6b-77e4-4183-847f-1f92a191fdb2",
+    "reservation": {
+      "tokens": 128000,
+      "costMicrounits": 1000000,
+      "elapsedSeconds": 120
+    },
+    "contextArtifactIds": []
+  },
+  "response": {
+    "error": {
+      "code": "TEAM_CAPABILITY_UNSUPPORTED",
+      "messageKey": "collaboration.error.revisionConflict",
+      "detail": "TEAM_CAPABILITY_UNSUPPORTED",
+      "diagnostic": {
+        "code": "TEAM_CAPABILITY_UNSUPPORTED",
+        "retryable": false,
+        "action": "rebind"
+      }
+    }
+  }
+}
