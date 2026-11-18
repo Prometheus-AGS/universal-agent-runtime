@@ -2295,3 +2295,81 @@ run of the 2.0.0 default reports that it would rewrite all 13 files under
 `.agents/skills/` and keep no copy. Until the pack pin reaches 2.1.0, run
 `~/.the-boss/bin/openspec` for `update` in this repo, and check
 `openspec --version` before running `openspec update`.
+
+## 2026-11-17 — A large live snapshot froze the UI for ~50 s in the entity library's flush
+
+Every page load blocked the browser main thread for about 52 s right after
+`/api/live/models/snapshot` returned 8,180 rows (3.4 MB, every provider in the
+catalog). The cost was in `@prometheus-ags/entity-graph-core` 5.0.0:
+`RealtimeManager.flush()` made two store actions per change, each its own immer
+`setState`, so cost grew with the square of the batch size. Fixed upstream in
+Prometheus-AGS/prometheus-entity-management#81 (one `setState` per flush;
+measured 48,415 ms down to 94 ms on UAR's real path). UAR still needs the
+5.0.1 bump once it is published. Two UAR-side contributors remain: the
+`models` topic snapshots the whole catalog regardless of configured providers,
+and `src/uar/api/live.rs` resets a topic (forcing a full refetch) on every
+committed change and on `consumer_lagged`, which a long main-thread block can
+itself trigger. Measure with the `long-animation-frame` PerformanceObserver
+(`buffered: true`); in dev mode the resource-timing buffer fills before the
+snapshots load, so read the network panel for request timing.
+
+## 2026-11-17 — Moonshot (Kimi) rejects any request carrying an untyped tool schema
+
+Moonshot validates `tools[].function.parameters` against its "flavored" JSON
+Schema subset and refuses the whole request on the first violation: every
+property and every `anyOf`/`oneOf` branch must declare `type`, `items` must be
+an object, and `required` keys must exist in `properties`
+(MoonshotAI/kimi-cli#1595, ENTERPILOT/GoModel#1500). The `a2ui_render` tool had
+30 violations (enum-only `axis`/`align`/`justify`, description-only bindable
+fields, an untyped legacy `oneOf`, and bare `{required}` branches), so every
+Kimi turn failed with `provider_invalid_request`. `GET /api/tools` returns the
+exact tool definitions sent to models; check all of them, not only the path the
+provider names, since it reports one violation at a time. `schedules`,
+`agents` and `team_tools` schemas still carry enum- or const-only properties.
+
+## 2026-11-17 — Native chat needs a verified principal, an attested remote store and a verified model
+
+On the installed service a chat turn passes three independent gates. (1) A
+verified principal: open the UI through `uar-jwt-proxy`, not port 1906; with no
+`jwt_secret` configured UAR verifies with its built-in fallback secret, which
+the proxy must be given. (2) A durable store: a remote SurrealDB counts only
+when the launch environment sets `UAR_REMOTE_SURREAL_DURABILITY_ATTESTED=1`;
+otherwise every turn returns 503 `native_chat_recovery_unavailable`. (3) A
+verified model: `model_verifications` must hold a receipt matching the
+provider's current configuration digest, or the turn returns 422
+`model_not_verified`. A chat session's Model Override is a draft until "Save
+Configuration" is pressed.
+
+## 2026-11-17 — A first page load on a new browser profile cannot load chat history
+
+`UarDb.open()` seeds a brand-new PGlite database from `pglite-seed-v3` and then
+skips migrations. The seed stops at migration 3; migration 4 added `run_id`,
+`client_turn_id` and `history_position`, so `getMessages` fails with
+`column "run_id" does not exist` and no chat request is sent. A reload runs the
+migrations and repairs it. Not yet fixed in code.
+
+## 2026-11-17 — A rebuilt binary loses macOS access to the external T7 volume
+
+The launch agent's `--config` points through `~/Projects/graph-explorer` into
+`/Volumes/T7`. Every rebuild gets a new ad-hoc code signature, so TCC's
+`kTCCServiceSystemPolicyRemovableVolumes` grant no longer matches and the
+process blocks inside `open()` while loading config, logging nothing, until the
+operator answers the prompt. `sample <pid>` shows the blocked `open`; `log show
+--predicate 'subsystem == "com.apple.TCC"'` shows `AUTHREQ_PROMPTING`.
+
+## 2026-11-17 — Dependabot lockfile-only bumps can break exact pins
+
+PR #506 moved `lopdf` to 0.47.0 in `Cargo.lock` only, while `Cargo.toml` pins
+`lopdf = "=0.46.0"`, so every `cargo build --locked` on `main` failed. A
+targeted `cargo update -p lopdf@0.47.0 --precise 0.46.0` restores consistency;
+it also bumps `libsqlite3-sys` as a side effect, which `--precise 0.39.0` undoes.
+SQLite is never compiled into `server-full`: it is sqlx's optional backend,
+present in the lockfile only.
+
+## 2026-11-18 — A lost team execution owner cannot be reclaimed without a supervisor registration
+
+Each UAR start gets a new random incarnation (`compiler/collaboration/service.rs:97`). Startup takes the execution claim only when none exists, the prior one is `released`, or it matches the exact fence (`team_execution/ownership.rs:44-48`). A non-owner's graceful shutdown never releases (`server.rs:2047-2052`). So when an owning process dies, every later process reports `ownsExecution: false`, the runtime withholds `collaboration_team_execution_v1`, and team bindings fail preflight with `TEAM_EXECUTION_OWNER_CONFLICT`. Reclaim needs `x-uar-admin-key` plus fencing evidence, and for a dead owner that evidence needs a supervisor registration written when that owner started (`supervisor_recovery` configured). Without one the catalog is permanently blocked; the documented escape is a fresh, separate database. Deleting the claim or resetting the epoch is forbidden. Configure `service_instance.instance_id` (a binding needs a non-empty `runtimeInstanceId`), `supervisor_recovery` and `security.settings_admin_key` before first use of teams.
+
+## 2026-11-18 — The Rust pre-commit baseline rejects the macOS linker's `__eh_frame` warning
+
+`scripts/verify-rust-test-baseline.sh` fails any compile that prints a `warning:` line. With Xcode 27.2 (`ld-27106.1`) every link of the main crate prints `linker stderr: ld: __eh_frame section too large (max 16MB)` through rustc's `linker_messages` lint, in release binaries and in the debug test harness. The first feature set alone takes about 33 minutes cold before the hook refuses the commit. The operator approved a one-time skip of that hook step for the A2UI schema fix on 2026-11-18; the warning itself is unresolved.
