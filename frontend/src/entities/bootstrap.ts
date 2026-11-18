@@ -8,6 +8,7 @@ import {
   registerPresentationProvenanceEntities,
   registerA2uiActionEntities,
   registerChatTurnEntities,
+  registerTeamEntities,
   bindA2uiActionPersistence,
   persistGraphToStorage,
   startLocalFirstGraph,
@@ -79,6 +80,7 @@ export async function bootstrapEntityGraph() {
   registerPresentationProvenanceEntities();
   registerA2uiActionEntities();
   registerChatTurnEntities();
+  registerTeamEntities();
 }
 
 export async function initializeDurableEntityGraph(

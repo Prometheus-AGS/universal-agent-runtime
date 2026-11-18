@@ -1,0 +1,139 @@
+{
+  "method": "POST",
+  "path": "/deployment-bindings:preflight",
+  "status": 200,
+  "request": {
+    "commandId": "c5476e45-7abd-4335-b770-39c970dbb021",
+    "expectedRevision": 0,
+    "binding": {
+      "profile": "urn:prometheus:uar:collaboration:0.1.0-draft.2",
+      "kind": "DeploymentBinding",
+      "id": "urn:uar:console-sample:binding",
+      "version": "1.0.0",
+      "provenance": {
+        "source": "Sample team binding for the operator console",
+        "authors": [
+          "UAR operator"
+        ]
+      },
+      "requiredCapabilities": [
+        "collaboration_deployment_bindings_v2"
+      ],
+      "extensions": {},
+      "exportClass": "private-installed-state",
+      "revision": 1,
+      "modelBindings": [
+        {
+          "requestedAlias": "team-model",
+          "providerId": "kimi-for-coding",
+          "modelId": "k3",
+          "credentialRef": "protected-credential://uar/local-primary"
+        }
+      ],
+      "skillBindings": [],
+      "contextGrants": [],
+      "representationGrantRefs": [],
+      "policyRevision": "acceptance-owned-policy-v1",
+      "status": "ready",
+      "effectiveBindingReceiptRef": null,
+      "package": {
+        "id": "urn:uar:console-sample:package",
+        "version": "1.0.0",
+        "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7"
+      },
+      "ownerId": "v1:s:3:dev",
+      "workspaceId": "default",
+      "runtimeInstanceId": "uar-dev-local",
+      "effectiveLimits": {
+        "concurrentTurns": 2,
+        "maxDepth": 1,
+        "maxMembers": 2,
+        "maxPendingTasks": 8
+      },
+      "effectiveBudget": {
+        "currency": "USD",
+        "maxCostMicrounits": 3000000,
+        "maxElapsedSeconds": 360,
+        "maxTokens": 384000
+      },
+      "storage": {
+        "backend": "surrealkv",
+        "connectionRef": "protected-connection://uar/catalog",
+        "durableTransactions": true
+      },
+      "contentDigest": "sha256:be6862f6d3597d11af2b8c6e06acb59b40df2bffe927ccb3401fbcae108772c2"
+    }
+  },
+  "response": {
+    "bindingId": "urn:uar:console-sample:binding",
+    "package": {
+      "id": "urn:uar:console-sample:package",
+      "version": "1.0.0",
+      "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7"
+    },
+    "diagnostics": [
+      {
+        "field": "/models/0",
+        "disposition": "exact",
+        "message": "The model role resolves through a declared preferred alias."
+      },
+      {
+        "field": "/modelRequirements",
+        "disposition": "required-unsupported",
+        "message": "Selected provider 'kimi-for-coding' is not configured."
+      },
+      {
+        "field": "/promptDialect",
+        "disposition": "required-unsupported",
+        "message": "The selected provider is not configured for prompt dialect enforcement."
+      },
+      {
+        "field": "/contextStrategy",
+        "disposition": "exact",
+        "message": "The authored context strategy is installed as the ordinary turn policy."
+      },
+      {
+        "field": "/ragConfiguration",
+        "disposition": "optional-unsupported",
+        "message": "The field is preserved without an enforcing runtime component."
+      },
+      {
+        "field": "/apiHarness",
+        "disposition": "optional-unsupported",
+        "message": "The field is preserved without an enforcing runtime component."
+      },
+      {
+        "field": "/models/0",
+        "disposition": "exact",
+        "message": "The model role resolves through a declared preferred alias."
+      },
+      {
+        "field": "/modelRequirements",
+        "disposition": "required-unsupported",
+        "message": "Selected provider 'kimi-for-coding' is not configured."
+      },
+      {
+        "field": "/promptDialect",
+        "disposition": "required-unsupported",
+        "message": "The selected provider is not configured for prompt dialect enforcement."
+      },
+      {
+        "field": "/contextStrategy",
+        "disposition": "exact",
+        "message": "The authored context strategy is installed as the ordinary turn policy."
+      },
+      {
+        "field": "/ragConfiguration",
+        "disposition": "optional-unsupported",
+        "message": "The field is preserved without an enforcing runtime component."
+      },
+      {
+        "field": "/apiHarness",
+        "disposition": "optional-unsupported",
+        "message": "The field is preserved without an enforcing runtime component."
+      }
+    ],
+    "activationSupported": false,
+    "requestDigest": "sha256:087832505a820c103ee82b2d6a52b8b08af26d5c7dfb5c0bd9f98f071a93f1fb"
+  }
+}

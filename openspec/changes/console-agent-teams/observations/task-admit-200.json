@@ -1,0 +1,86 @@
+{
+  "method": "POST",
+  "path": "/team-instances/291c775f-109f-447e-b5da-af83c61fa399/tasks/facts/admit",
+  "status": 200,
+  "request": {
+    "commandId": "43898426-0fbb-4ff1-9c7d-86200a05c1a0",
+    "expectedTeamRevision": 3,
+    "expectedTaskRevision": 2,
+    "memberId": "5cf60f86-e853-45ea-8790-efe5aeb9d9b3",
+    "reservation": {
+      "tokens": 128000,
+      "costMicrounits": 1000000,
+      "elapsedSeconds": 120
+    },
+    "contextArtifactIds": []
+  },
+  "response": {
+    "id": "d29e52a5-8c33-4417-bc43-3e5f98b05240",
+    "runId": "341315db-d79d-4617-9b73-51991d59f2f8",
+    "rootId": "0a614db0-e49c-4c1b-a3f2-9936c2db4645",
+    "approvalScopeId": "0a614db0-e49c-4c1b-a3f2-9936c2db4645",
+    "queueSequence": 16,
+    "ownerId": "v1:s:3:dev",
+    "workspaceId": "default",
+    "teamId": "291c775f-109f-447e-b5da-af83c61fa399",
+    "taskId": "facts",
+    "memberId": "5cf60f86-e853-45ea-8790-efe5aeb9d9b3",
+    "memberRevision": 1,
+    "ownershipEpoch": 1,
+    "bindingRevision": 1,
+    "executionEpoch": 1,
+    "executionFence": {
+      "catalogId": "uar-collaboration-catalog",
+      "serviceInstanceId": "uar-dev-local",
+      "incarnationId": "0b2efe0e-1a01-462c-939d-4628592e0234",
+      "epoch": 2
+    },
+    "effectiveModels": [
+      {
+        "route": {
+          "providerId": "alibaba",
+          "modelId": "qwen4-max"
+        },
+        "wireModelAlias": "qwen4-max",
+        "endpointKind": "openai-compatible-chat",
+        "profile": {
+          "id": "uar.openai-compatible-chat.settings-v1",
+          "revision": 1
+        },
+        "settingsRevision": 1,
+        "requestedReasoning": {
+          "mode": "off"
+        },
+        "effectiveReasoning": {
+          "mode": "off"
+        },
+        "support": "validated",
+        "supportEvidenceRef": "team-profile-eaacac3b6ceb28772f30aa2bb4fe9fae49ed47a00c320fcafb61bbb1a39ba3af",
+        "limits": {
+          "source": "unknown"
+        },
+        "fit": {
+          "mode": "settings-only",
+          "guaranteedFit": false,
+          "reason": "count-or-framing-unqualified"
+        }
+      }
+    ],
+    "effectDisposition": "confirmed",
+    "accountingState": "reserved-unknown",
+    "status": "running",
+    "executionOutcome": null,
+    "reservation": {
+      "tokens": 128000,
+      "costMicrounits": 1000000,
+      "elapsedSeconds": 120
+    },
+    "contextArtifactIds": [],
+    "usage": null,
+    "usageRevision": 0,
+    "output": null,
+    "stateReason": null,
+    "createdAt": "2026-11-18T07:31:50.746375Z",
+    "updatedAt": "2026-11-18T07:31:50.772492Z"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "method": "GET",
+  "path": "/team-definitions",
+  "status": 200,
+  "response": [
+    {
+      "instructions": {
+        "revision": 1,
+        "digest": "sha256:dbddd6698be847e347288eb28e0d85cfa0d2cd202a5fc630bac9090aa696810b",
+        "text": "Complete the assigned taskInput.request directly. Do not reveal planning or reasoning."
+      },
+      "id": "urn:uar:console-sample:team",
+      "version": "1.0.0",
+      "digest": "sha256:5393d5b8a82cbd481e0c3b11c1b2e6cd7ac8cbba66eff37365190f1e732aae15",
+      "title": "Research and writing team",
+      "purpose": "A two-member sample team for exercising the operator console",
+      "package": {
+        "id": "urn:uar:console-sample:package",
+        "version": "1.0.0",
+        "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7"
+      },
+      "members": [
+        {
+          "role": "researcher",
+          "kind": "agent",
+          "min": 1,
+          "max": 1,
+          "definition": {
+            "id": "urn:uar:console-sample:agent:researcher",
+            "version": "1.0.0",
+            "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+          }
+        },
+        {
+          "role": "writer",
+          "kind": "agent",
+          "min": 1,
+          "max": 1,
+          "definition": {
+            "id": "urn:uar:console-sample:agent:writer",
+            "version": "1.0.0",
+            "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+          }
+        }
+      ],
+      "budget": {
+        "currency": "USD",
+        "maxCostMicrounits": 3000000,
+        "maxElapsedSeconds": 360,
+        "maxTokens": 384000
+      },
+      "limits": {
+        "concurrentTurns": 2,
+        "maxDepth": 1,
+        "maxMembers": 2,
+        "maxPendingTasks": 8
+      }
+    }
+  ]
+}

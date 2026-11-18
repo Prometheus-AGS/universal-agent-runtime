@@ -17,12 +17,14 @@ describe("shell navigation inventory", () => {
       "chat",
       "knowledge",
       "agents",
+      "teams",
       "runs",
     ]);
     expect(COMPACT_DESTINATIONS.map(({ id }) => id)).toEqual([
       "chat",
       "knowledge",
       "agents",
+      "teams",
     ]);
     expect(CONFIGURE_DESTINATIONS.map(({ label }) => label)).toEqual([
       "Providers",
@@ -41,6 +43,7 @@ describe("shell navigation inventory", () => {
     ["/threads/thread-1", "chat"],
     ["/admin/knowledge", "knowledge"],
     ["/admin/agents", "agents"],
+    ["/admin/teams", "teams"],
     ["/admin/runs/run-1", "runs"],
     ["/admin/credentials", "providers"],
     ["/admin/mcp-health", "mcp-tools"],
@@ -63,8 +66,17 @@ describe("shell navigation inventory", () => {
     expect(runtimeSettings && isDestinationActive(runtimeSettings, "/admin/knowledge")).toBe(false);
     expect(isConfigurePath("/admin/knowledge")).toBe(false);
     expect(isConfigurePath("/admin/agents")).toBe(false);
+    expect(isConfigurePath("/admin/teams")).toBe(false);
     expect(isConfigurePath("/admin/runs")).toBe(false);
     expect(isConfigurePath("/admin/settings")).toBe(true);
+  });
+
+  test("highlights the Teams compact tab on every Teams route", () => {
+    const teams = COMPACT_DESTINATIONS.find(({ id }) => id === "teams");
+    expect(teams).toBeDefined();
+    expect(teams && isDestinationActive(teams, "/admin/teams")).toBe(true);
+    expect(teams && isDestinationActive(teams, "/admin/teams/team-1")).toBe(true);
+    expect(teams && isDestinationActive(teams, "/admin/agents")).toBe(false);
   });
 
   test("excludes the A2UI testing destination from production inventory and routing", () => {

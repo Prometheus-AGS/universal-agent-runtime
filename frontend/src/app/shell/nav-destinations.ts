@@ -10,6 +10,7 @@ import {
   Settings2,
   SlidersHorizontal,
   Sparkles,
+  Users,
 } from "lucide-react";
 
 export type NavigationGroup = "work" | "configure" | "system";
@@ -18,6 +19,7 @@ export type NavigationDestinationId =
   | "chat"
   | "knowledge"
   | "agents"
+  | "teams"
   | "runs"
   | "providers"
   | "mcp-tools"
@@ -65,6 +67,15 @@ const BASE_NAV_DESTINATIONS: readonly NavigationDestination[] = [
     description: "Agent definitions and capabilities",
     group: "work",
     icon: Bot,
+    compactTab: true,
+  },
+  {
+    id: "teams",
+    path: "/admin/teams",
+    label: "Teams",
+    description: "Agent teams, bindings, and member runs",
+    group: "work",
+    icon: Users,
     compactTab: true,
   },
   {

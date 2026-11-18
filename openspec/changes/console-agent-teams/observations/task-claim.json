@@ -1,0 +1,97 @@
+{
+  "method": "POST",
+  "path": "/team-instances/291c775f-109f-447e-b5da-af83c61fa399/tasks/facts/claim",
+  "status": 200,
+  "request": {
+    "commandId": "0e7086c2-4b57-4e72-82ea-85b64609893c",
+    "expectedTeamRevision": 2,
+    "expectedTaskRevision": 1,
+    "memberId": "5cf60f86-e853-45ea-8790-efe5aeb9d9b3"
+  },
+  "response": {
+    "id": "291c775f-109f-447e-b5da-af83c61fa399",
+    "ownerId": "v1:s:3:dev",
+    "workspaceId": "default",
+    "revision": 3,
+    "status": "inactive",
+    "definition": {
+      "id": "urn:uar:console-sample:team",
+      "version": "1.0.0",
+      "digest": "sha256:5393d5b8a82cbd481e0c3b11c1b2e6cd7ac8cbba66eff37365190f1e732aae15"
+    },
+    "package": {
+      "id": "urn:uar:console-sample:package",
+      "version": "1.0.0",
+      "digest": "sha256:fc9af2886f4b485598b1398c4b40776a30a38cb7dbfc73c00d40b86448b8f5f7"
+    },
+    "binding": {
+      "id": "urn:uar:console-sample:binding-qwen",
+      "revision": 1
+    },
+    "input": {
+      "project": "Console sample run"
+    },
+    "members": [
+      {
+        "id": "5cf60f86-e853-45ea-8790-efe5aeb9d9b3",
+        "role": "researcher",
+        "kind": "agent",
+        "ordinal": 1,
+        "definition": {
+          "id": "urn:uar:console-sample:agent:researcher",
+          "version": "1.0.0",
+          "digest": "sha256:41a99cc8465b7fce4ba9ef7aa090e45bb402476eb26762aaa0cb3c54026683fe"
+        },
+        "revision": 1,
+        "status": "inactive"
+      },
+      {
+        "id": "c12e3cb2-34f3-4e63-ac2c-b035f91ea6ed",
+        "role": "writer",
+        "kind": "agent",
+        "ordinal": 1,
+        "definition": {
+          "id": "urn:uar:console-sample:agent:writer",
+          "version": "1.0.0",
+          "digest": "sha256:e8c43571213669ece02b772763e03411b534d66b83d8a6787342a6cbd7677000"
+        },
+        "revision": 1,
+        "status": "inactive"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "facts",
+        "title": "facts",
+        "role": "researcher",
+        "input": {
+          "request": "List three facts about why the sky appears blue."
+        },
+        "outputContract": {},
+        "output": null,
+        "dependsOn": [],
+        "status": "ready",
+        "revision": 2,
+        "assigneeMemberId": "5cf60f86-e853-45ea-8790-efe5aeb9d9b3",
+        "ownershipEpoch": 1,
+        "assignmentAuthority": {
+          "bindingId": "urn:uar:console-sample:binding-qwen",
+          "bindingRevision": 1,
+          "workspaceId": "default",
+          "role": "researcher",
+          "memberId": "5cf60f86-e853-45ea-8790-efe5aeb9d9b3",
+          "ownershipEpoch": 1,
+          "canExecute": false,
+          "canUseTools": false
+        },
+        "reviewerMemberId": null,
+        "reviewerEpoch": 0,
+        "stateReason": null,
+        "createdAt": "2026-11-18T07:31:50.703764Z",
+        "updatedAt": "2026-11-18T07:31:50.724857Z"
+      }
+    ],
+    "createdAt": "2026-11-18T07:31:50.681425Z",
+    "updatedAt": "2026-11-18T07:31:50.724857Z"
+  }
+}

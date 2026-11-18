@@ -1,0 +1,383 @@
+{
+  "method": "GET",
+  "path": "/team-instances/3cdefad7-0024-44fc-8739-529da7766646/execution",
+  "status": 200,
+  "response": {
+    "attempts": [
+      {
+        "id": "2d7287aa-8d19-494e-93ef-859548badf8b",
+        "runId": "1afdc561-b297-4352-9074-1eb3cd2106bf",
+        "rootId": "4cd8a039-4de3-4551-bd1a-19a9107cd9ba",
+        "approvalScopeId": "4cd8a039-4de3-4551-bd1a-19a9107cd9ba",
+        "queueSequence": 35,
+        "ownerId": "v1:s:3:dev",
+        "workspaceId": "default",
+        "teamId": "3cdefad7-0024-44fc-8739-529da7766646",
+        "taskId": "facts",
+        "memberId": "cd261026-db8b-4cd3-b8cf-820f0f915241",
+        "memberRevision": 1,
+        "ownershipEpoch": 1,
+        "bindingRevision": 1,
+        "executionEpoch": 1,
+        "executionFence": {
+          "catalogId": "uar-collaboration-catalog",
+          "serviceInstanceId": "uar-dev-local",
+          "incarnationId": "c47462fb-d13a-4bca-9dfa-ae3c3eb19a40",
+          "epoch": 3
+        },
+        "effectiveModels": [
+          {
+            "route": {
+              "providerId": "alibaba",
+              "modelId": "qwen4-max"
+            },
+            "wireModelAlias": "qwen4-max",
+            "endpointKind": "openai-compatible-chat",
+            "profile": {
+              "id": "uar.openai-compatible-chat.settings-v1",
+              "revision": 1
+            },
+            "settingsRevision": 1,
+            "requestedReasoning": {
+              "mode": "off"
+            },
+            "effectiveReasoning": {
+              "mode": "off"
+            },
+            "support": "validated",
+            "supportEvidenceRef": "team-profile-eaacac3b6ceb28772f30aa2bb4fe9fae49ed47a00c320fcafb61bbb1a39ba3af",
+            "limits": {
+              "source": "unknown"
+            },
+            "fit": {
+              "mode": "settings-only",
+              "guaranteedFit": false,
+              "reason": "count-or-framing-unqualified"
+            }
+          }
+        ],
+        "effectDisposition": "confirmed",
+        "accountingState": "settled",
+        "status": "failed",
+        "executionOutcome": "failed",
+        "reservation": {
+          "tokens": 128000,
+          "costMicrounits": 1000000,
+          "elapsedSeconds": 120
+        },
+        "contextArtifactIds": [],
+        "usage": {
+          "tokens": 0,
+          "costMicrounits": 0,
+          "elapsedSeconds": 1
+        },
+        "usageRevision": 1,
+        "output": null,
+        "stateReason": "TEAM_EXECUTION_BUDGET_FAILED; diagnostic reference 689634b4-8360-4f4d-b579-e1ae2571c33b; diagnostic metadata {\"sourceStage\":\"provider-opening\",\"category\":\"budget_admission_failed\",\"httpStatus\":null,\"collaborationCode\":null}",
+        "diagnostic": {
+          "code": "TEAM_EXECUTION_BUDGET_FAILED",
+          "retryable": false,
+          "action": "change-settings",
+          "protectedDiagnosticRef": "689634b4-8360-4f4d-b579-e1ae2571c33b",
+          "sourceStage": "provider-opening",
+          "category": "budget_admission_failed"
+        },
+        "createdAt": "2026-11-18T07:34:01.427626Z",
+        "updatedAt": "2026-11-18T07:34:01.879677Z"
+      },
+      {
+        "id": "23d2fc38-01c7-4b94-9783-bf0ba7e960cd",
+        "runId": "59d417df-b829-4dba-89c3-e54da78db6be",
+        "rootId": "e330cc18-f5ae-4863-b8b2-750fd5a17f62",
+        "approvalScopeId": "e330cc18-f5ae-4863-b8b2-750fd5a17f62",
+        "queueSequence": 40,
+        "ownerId": "v1:s:3:dev",
+        "workspaceId": "default",
+        "teamId": "3cdefad7-0024-44fc-8739-529da7766646",
+        "taskId": "summary",
+        "memberId": "f5ec6c4f-e618-4832-b605-d76f438d8e9e",
+        "memberRevision": 1,
+        "ownershipEpoch": 1,
+        "bindingRevision": 1,
+        "executionEpoch": 1,
+        "executionFence": {
+          "catalogId": "uar-collaboration-catalog",
+          "serviceInstanceId": "uar-dev-local",
+          "incarnationId": "c47462fb-d13a-4bca-9dfa-ae3c3eb19a40",
+          "epoch": 3
+        },
+        "effectiveModels": [
+          {
+            "route": {
+              "providerId": "alibaba",
+              "modelId": "qwen4-max"
+            },
+            "wireModelAlias": "qwen4-max",
+            "endpointKind": "openai-compatible-chat",
+            "profile": {
+              "id": "uar.openai-compatible-chat.settings-v1",
+              "revision": 1
+            },
+            "settingsRevision": 1,
+            "requestedReasoning": {
+              "mode": "off"
+            },
+            "effectiveReasoning": {
+              "mode": "off"
+            },
+            "support": "validated",
+            "supportEvidenceRef": "team-profile-eaacac3b6ceb28772f30aa2bb4fe9fae49ed47a00c320fcafb61bbb1a39ba3af",
+            "limits": {
+              "source": "unknown"
+            },
+            "fit": {
+              "mode": "settings-only",
+              "guaranteedFit": false,
+              "reason": "count-or-framing-unqualified"
+            }
+          }
+        ],
+        "effectDisposition": "confirmed",
+        "accountingState": "settled",
+        "status": "failed",
+        "executionOutcome": "failed",
+        "reservation": {
+          "tokens": 128000,
+          "costMicrounits": 1000000,
+          "elapsedSeconds": 120
+        },
+        "contextArtifactIds": [],
+        "usage": {
+          "tokens": 0,
+          "costMicrounits": 0,
+          "elapsedSeconds": 1
+        },
+        "usageRevision": 1,
+        "output": null,
+        "stateReason": "TEAM_EXECUTION_BUDGET_FAILED; diagnostic reference b90498f8-6ff6-40e1-ada4-0bff5e118275; diagnostic metadata {\"sourceStage\":\"provider-opening\",\"category\":\"budget_admission_failed\",\"httpStatus\":null,\"collaborationCode\":null}",
+        "diagnostic": {
+          "code": "TEAM_EXECUTION_BUDGET_FAILED",
+          "retryable": false,
+          "action": "change-settings",
+          "protectedDiagnosticRef": "b90498f8-6ff6-40e1-ada4-0bff5e118275",
+          "sourceStage": "provider-opening",
+          "category": "budget_admission_failed"
+        },
+        "createdAt": "2026-11-18T07:34:01.643543Z",
+        "updatedAt": "2026-11-18T07:34:01.949564Z"
+      }
+    ],
+    "committed": {
+      "tokens": 0,
+      "costMicrounits": 0,
+      "elapsedSeconds": 2
+    },
+    "reserved": {
+      "tokens": 0,
+      "costMicrounits": 0,
+      "elapsedSeconds": 0
+    },
+    "uncertainAttempts": [],
+    "commandReceipts": [],
+    "waits": [],
+    "continuations": [],
+    "contextReceipts": [
+      {
+        "authority": {
+          "ownerId": "v1:s:3:dev",
+          "workspaceId": "default",
+          "teamId": "3cdefad7-0024-44fc-8739-529da7766646",
+          "taskId": "summary",
+          "memberId": "f5ec6c4f-e618-4832-b605-d76f438d8e9e",
+          "attemptId": "23d2fc38-01c7-4b94-9783-bf0ba7e960cd",
+          "runId": "59d417df-b829-4dba-89c3-e54da78db6be",
+          "taskOwnershipEpoch": 1,
+          "memberRevision": 1,
+          "binding": {
+            "id": "urn:uar:console-sample:binding-qwen-2",
+            "revision": 1
+          },
+          "executionFence": {
+            "catalogId": "uar-collaboration-catalog",
+            "serviceInstanceId": "uar-dev-local",
+            "incarnationId": "c47462fb-d13a-4bca-9dfa-ae3c3eb19a40",
+            "epoch": 3
+          }
+        },
+        "rootId": "e330cc18-f5ae-4863-b8b2-750fd5a17f62",
+        "approvalScopeId": "e330cc18-f5ae-4863-b8b2-750fd5a17f62",
+        "teamInstructions": {
+          "revision": 1,
+          "digest": "sha256:dbddd6698be847e347288eb28e0d85cfa0d2cd202a5fc630bac9090aa696810b",
+          "text": "Complete the assigned taskInput.request directly. Do not reveal planning or reasoning."
+        },
+        "instructionOrder": [
+          "host-policy",
+          "team-instructions",
+          "member-instructions",
+          "task-instructions"
+        ],
+        "self": {
+          "memberId": "f5ec6c4f-e618-4832-b605-d76f438d8e9e",
+          "role": "writer",
+          "label": "writer",
+          "safeCapabilities": [
+            "team_roster",
+            "team_send",
+            "team_delegate",
+            "team_wait"
+          ]
+        },
+        "coordinatorMemberId": "f5ec6c4f-e618-4832-b605-d76f438d8e9e",
+        "roster": [
+          {
+            "memberId": "cd261026-db8b-4cd3-b8cf-820f0f915241",
+            "role": "researcher",
+            "label": "researcher",
+            "safeCapabilities": [
+              "team_roster",
+              "team_send"
+            ]
+          },
+          {
+            "memberId": "f5ec6c4f-e618-4832-b605-d76f438d8e9e",
+            "role": "writer",
+            "label": "writer",
+            "safeCapabilities": [
+              "team_roster",
+              "team_send",
+              "team_delegate",
+              "team_wait"
+            ]
+          }
+        ],
+        "authorizationRevision": 41,
+        "selections": [
+          {
+            "sourceId": "summary",
+            "sourceKind": "task-input",
+            "disposition": "selected",
+            "originalBytes": 65,
+            "selectedBytes": 65,
+            "truncated": false
+          },
+          {
+            "sourceId": "3cdefad7-0024-44fc-8739-529da7766646",
+            "sourceKind": "team-input",
+            "disposition": "selected",
+            "originalBytes": 32,
+            "selectedBytes": 32,
+            "truncated": false
+          }
+        ],
+        "targetOutcomes": [],
+        "targetOutcomeDataTrust": "untrusted-attributed-data",
+        "contextBudgetTokens": 128000,
+        "countQuality": "unknown"
+      },
+      {
+        "authority": {
+          "ownerId": "v1:s:3:dev",
+          "workspaceId": "default",
+          "teamId": "3cdefad7-0024-44fc-8739-529da7766646",
+          "taskId": "facts",
+          "memberId": "cd261026-db8b-4cd3-b8cf-820f0f915241",
+          "attemptId": "2d7287aa-8d19-494e-93ef-859548badf8b",
+          "runId": "1afdc561-b297-4352-9074-1eb3cd2106bf",
+          "taskOwnershipEpoch": 1,
+          "memberRevision": 1,
+          "binding": {
+            "id": "urn:uar:console-sample:binding-qwen-2",
+            "revision": 1
+          },
+          "executionFence": {
+            "catalogId": "uar-collaboration-catalog",
+            "serviceInstanceId": "uar-dev-local",
+            "incarnationId": "c47462fb-d13a-4bca-9dfa-ae3c3eb19a40",
+            "epoch": 3
+          }
+        },
+        "rootId": "4cd8a039-4de3-4551-bd1a-19a9107cd9ba",
+        "approvalScopeId": "4cd8a039-4de3-4551-bd1a-19a9107cd9ba",
+        "teamInstructions": {
+          "revision": 1,
+          "digest": "sha256:dbddd6698be847e347288eb28e0d85cfa0d2cd202a5fc630bac9090aa696810b",
+          "text": "Complete the assigned taskInput.request directly. Do not reveal planning or reasoning."
+        },
+        "instructionOrder": [
+          "host-policy",
+          "team-instructions",
+          "member-instructions",
+          "task-instructions"
+        ],
+        "self": {
+          "memberId": "cd261026-db8b-4cd3-b8cf-820f0f915241",
+          "role": "researcher",
+          "label": "researcher",
+          "safeCapabilities": [
+            "team_roster",
+            "team_send"
+          ]
+        },
+        "coordinatorMemberId": "f5ec6c4f-e618-4832-b605-d76f438d8e9e",
+        "roster": [
+          {
+            "memberId": "cd261026-db8b-4cd3-b8cf-820f0f915241",
+            "role": "researcher",
+            "label": "researcher",
+            "safeCapabilities": [
+              "team_roster",
+              "team_send"
+            ]
+          },
+          {
+            "memberId": "f5ec6c4f-e618-4832-b605-d76f438d8e9e",
+            "role": "writer",
+            "label": "writer",
+            "safeCapabilities": [
+              "team_roster",
+              "team_send",
+              "team_delegate",
+              "team_wait"
+            ]
+          }
+        ],
+        "authorizationRevision": 36,
+        "selections": [
+          {
+            "sourceId": "facts",
+            "sourceKind": "task-input",
+            "disposition": "selected",
+            "originalBytes": 62,
+            "selectedBytes": 62,
+            "truncated": false
+          },
+          {
+            "sourceId": "3cdefad7-0024-44fc-8739-529da7766646",
+            "sourceKind": "team-input",
+            "disposition": "selected",
+            "originalBytes": 32,
+            "selectedBytes": 32,
+            "truncated": false
+          }
+        ],
+        "targetOutcomes": [],
+        "targetOutcomeDataTrust": "untrusted-attributed-data",
+        "contextBudgetTokens": 128000,
+        "countQuality": "unknown"
+      }
+    ],
+    "budget": {
+      "currency": "USD",
+      "maxCostMicrounits": 3000000,
+      "maxElapsedSeconds": 360,
+      "maxTokens": 384000
+    },
+    "limits": {
+      "concurrentTurns": 2,
+      "maxDepth": 1,
+      "maxMembers": 2,
+      "maxPendingTasks": 8
+    }
+  }
+}

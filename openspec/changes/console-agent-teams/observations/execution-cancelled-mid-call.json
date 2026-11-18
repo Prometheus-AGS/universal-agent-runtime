@@ -1,0 +1,197 @@
+{
+    "attempts": [
+        {
+            "id": "2a46a358-fdee-4016-94d9-851d82622341",
+            "runId": "d3b610a6-756a-4bde-8bd6-468f9443e912",
+            "rootId": "b9353b8b-d76d-440d-9856-1df162d68e32",
+            "approvalScopeId": "b9353b8b-d76d-440d-9856-1df162d68e32",
+            "queueSequence": 91,
+            "ownerId": "v1:s:3:dev",
+            "workspaceId": "default",
+            "teamId": "56316c51-47e4-4358-ad38-522b00a5b9e9",
+            "taskId": "0b8e6872-7873-4a09-9efe-f0cfab5d4a72",
+            "memberId": "b3de0e00-4300-4c6c-bdfc-3f5e84619b20",
+            "memberRevision": 1,
+            "ownershipEpoch": 1,
+            "bindingRevision": 1,
+            "executionEpoch": 1,
+            "executionFence": {
+                "catalogId": "uar-collaboration-catalog",
+                "serviceInstanceId": "uar-dev-local",
+                "incarnationId": "0f30d732-c887-4e2b-8913-f2803fc3879e",
+                "epoch": 5
+            },
+            "effectiveModels": [
+                {
+                    "route": {
+                        "providerId": "alibaba",
+                        "modelId": "qwen4-max"
+                    },
+                    "wireModelAlias": "qwen4-max",
+                    "pricingIdentity": {
+                        "providerId": "alibaba",
+                        "modelId": "qwen3.7-max",
+                        "catalogRevision": "sha256:1ae5688933841d01fe884a30e015d5b6ee0719607e60f4602740f1ccb034e7ac"
+                    },
+                    "endpointKind": "openai-compatible-chat",
+                    "profile": {
+                        "id": "uar.openai-compatible-chat.settings-v1",
+                        "revision": 1
+                    },
+                    "settingsRevision": 1,
+                    "requestedReasoning": {
+                        "mode": "off"
+                    },
+                    "effectiveReasoning": {
+                        "mode": "off"
+                    },
+                    "support": "validated",
+                    "supportEvidenceRef": "team-profile-eaacac3b6ceb28772f30aa2bb4fe9fae49ed47a00c320fcafb61bbb1a39ba3af",
+                    "limits": {
+                        "source": "unknown"
+                    },
+                    "fit": {
+                        "mode": "settings-only",
+                        "guaranteedFit": false,
+                        "reason": "count-or-framing-unqualified"
+                    }
+                }
+            ],
+            "effectDisposition": "confirmed",
+            "accountingState": "reserved-unknown",
+            "status": "cancelled",
+            "executionOutcome": "cancelled",
+            "reservation": {
+                "tokens": 128000,
+                "costMicrounits": 1000000,
+                "elapsedSeconds": 120
+            },
+            "contextArtifactIds": [],
+            "usage": null,
+            "usageRevision": 1,
+            "output": null,
+            "stateReason": "team_usage_or_effect_outcome_uncertain",
+            "createdAt": "2026-11-18T11:59:31.360222Z",
+            "updatedAt": "2026-11-18T11:59:46.507140Z"
+        }
+    ],
+    "committed": {
+        "tokens": 0,
+        "costMicrounits": 0,
+        "elapsedSeconds": 0
+    },
+    "reserved": {
+        "tokens": 128000,
+        "costMicrounits": 1000000,
+        "elapsedSeconds": 120
+    },
+    "uncertainAttempts": [],
+    "commandReceipts": [],
+    "waits": [],
+    "continuations": [],
+    "contextReceipts": [
+        {
+            "authority": {
+                "ownerId": "v1:s:3:dev",
+                "workspaceId": "default",
+                "teamId": "56316c51-47e4-4358-ad38-522b00a5b9e9",
+                "taskId": "0b8e6872-7873-4a09-9efe-f0cfab5d4a72",
+                "memberId": "b3de0e00-4300-4c6c-bdfc-3f5e84619b20",
+                "attemptId": "2a46a358-fdee-4016-94d9-851d82622341",
+                "runId": "d3b610a6-756a-4bde-8bd6-468f9443e912",
+                "taskOwnershipEpoch": 1,
+                "memberRevision": 1,
+                "binding": {
+                    "id": "urn:uar:console-sample:binding-qwen",
+                    "revision": 1
+                },
+                "executionFence": {
+                    "catalogId": "uar-collaboration-catalog",
+                    "serviceInstanceId": "uar-dev-local",
+                    "incarnationId": "0f30d732-c887-4e2b-8913-f2803fc3879e",
+                    "epoch": 5
+                }
+            },
+            "rootId": "b9353b8b-d76d-440d-9856-1df162d68e32",
+            "approvalScopeId": "b9353b8b-d76d-440d-9856-1df162d68e32",
+            "teamInstructions": {
+                "revision": 1,
+                "digest": "sha256:dbddd6698be847e347288eb28e0d85cfa0d2cd202a5fc630bac9090aa696810b",
+                "text": "Complete the assigned taskInput.request directly. Do not reveal planning or reasoning."
+            },
+            "instructionOrder": [
+                "host-policy",
+                "team-instructions",
+                "member-instructions",
+                "task-instructions"
+            ],
+            "self": {
+                "memberId": "b3de0e00-4300-4c6c-bdfc-3f5e84619b20",
+                "role": "researcher",
+                "label": "researcher",
+                "safeCapabilities": [
+                    "team_roster",
+                    "team_send"
+                ]
+            },
+            "coordinatorMemberId": "a28df2ed-f02d-461a-8531-68b10f1dba50",
+            "roster": [
+                {
+                    "memberId": "a28df2ed-f02d-461a-8531-68b10f1dba50",
+                    "role": "writer",
+                    "label": "writer",
+                    "safeCapabilities": [
+                        "team_roster",
+                        "team_send",
+                        "team_delegate",
+                        "team_wait"
+                    ]
+                },
+                {
+                    "memberId": "b3de0e00-4300-4c6c-bdfc-3f5e84619b20",
+                    "role": "researcher",
+                    "label": "researcher",
+                    "safeCapabilities": [
+                        "team_roster",
+                        "team_send"
+                    ]
+                }
+            ],
+            "authorizationRevision": 92,
+            "selections": [
+                {
+                    "sourceId": "0b8e6872-7873-4a09-9efe-f0cfab5d4a72",
+                    "sourceKind": "task-input",
+                    "disposition": "selected",
+                    "originalBytes": 118,
+                    "selectedBytes": 118,
+                    "truncated": false
+                },
+                {
+                    "sourceId": "56316c51-47e4-4358-ad38-522b00a5b9e9",
+                    "sourceKind": "team-input",
+                    "disposition": "selected",
+                    "originalBytes": 2,
+                    "selectedBytes": 2,
+                    "truncated": false
+                }
+            ],
+            "targetOutcomes": [],
+            "targetOutcomeDataTrust": "untrusted-attributed-data",
+            "contextBudgetTokens": 128000,
+            "countQuality": "unknown"
+        }
+    ],
+    "budget": {
+        "currency": "USD",
+        "maxCostMicrounits": 3000000,
+        "maxElapsedSeconds": 360,
+        "maxTokens": 384000
+    },
+    "limits": {
+        "concurrentTurns": 2,
+        "maxDepth": 1,
+        "maxMembers": 2,
+        "maxPendingTasks": 8
+    }
+}
