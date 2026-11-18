@@ -20,6 +20,8 @@ impl NativeSkill for A2uiRenderSkill {
     }
 
     fn parameters_schema(&self) -> serde_json::Value {
+        let mut message_branches = modern_message_schemas();
+        message_branches.extend(legacy_message_schemas());
         serde_json::json!({
             "type": "object",
             "required": ["messages"],
@@ -28,7 +30,7 @@ impl NativeSkill for A2uiRenderSkill {
                     "type": "array",
                     "minItems": 1,
                     "description": "Ordered A2UI 1.0 messages. Create a new surface before updating it. Use id root for the root component. Updates can address fewer components. Functions are unavailable.",
-                    "items": {"anyOf": [modern_message_schema(), legacy_message_schema()]},
+                    "items": {"anyOf": message_branches},
                     "examples": [[{
                         "version": VERSION_1_0,
                         "createSurface": {
@@ -82,62 +84,111 @@ impl NativeSkill for A2uiRenderSkill {
     }
 }
 
-fn modern_message_schema() -> serde_json::Value {
+/// One typed branch per A2UI 1.0 operation: `version` plus exactly one
+/// operation. Strict tool-schema dialects (Moonshot's rejects a request whose
+/// tool has an untyped property or union branch) cannot express the former
+/// `oneOf` of bare `required` lists, so the operation choice lives in the branch.
+fn modern_message_schemas() -> Vec<serde_json::Value> {
+    let operations = [
+        ("createSurface", serde_json::json!({
+            "type": "object",
+            "required": ["surfaceId", "catalogId"],
+            "properties": {
+                "surfaceId": {"type": "string"},
+                "catalogId": {"type": "string", "enum": [CATALOG_ID, BASIC_CATALOG_ID_1_0]},
+                "dataModel": {"type": "object"},
+                "components": {"type": "array", "minItems": 1, "items": component_schema()}
+            },
+            "additionalProperties": false
+        })),
+        ("updateComponents", serde_json::json!({
+            "type": "object",
+            "required": ["surfaceId", "components"],
+            "properties": {
+                "surfaceId": {"type": "string"},
+                "components": {"type": "array", "minItems": 1, "items": component_schema()}
+            },
+            "additionalProperties": false
+        })),
+        ("updateDataModel", serde_json::json!({
+            "type": "object",
+            "required": ["surfaceId", "value"],
+            "properties": {
+                "surfaceId": {"type": "string"},
+                "path": {"type": "string", "description": "JSON pointer. Omit or use / for the root."},
+                "value": json_value_schema("A JSON value. Use null to delete the addressed value.")
+            },
+            "additionalProperties": false
+        })),
+        ("deleteSurface", serde_json::json!({
+            "type": "object",
+            "required": ["surfaceId"],
+            "properties": {"surfaceId": {"type": "string"}},
+            "additionalProperties": false
+        })),
+    ];
+    operations
+        .into_iter()
+        .map(|(operation, schema)| {
+            let mut properties = serde_json::Map::new();
+            properties.insert(
+                "version".to_owned(),
+                serde_json::json!({"type": "string", "const": VERSION_1_0}),
+            );
+            properties.insert(operation.to_owned(), schema);
+            serde_json::json!({
+                "type": "object",
+                "required": ["version", operation],
+                "properties": properties,
+                "additionalProperties": false
+            })
+        })
+        .collect()
+}
+
+/// A string literal or a `{"@path": JSON pointer}` data binding.
+fn bindable_text_schema() -> serde_json::Value {
+    serde_json::json!({
+        "description": "A string or {@path: JSON pointer}.",
+        "anyOf": [{"type": "string"}, path_binding_schema()]
+    })
+}
+
+fn path_binding_schema() -> serde_json::Value {
     serde_json::json!({
         "type": "object",
-        "required": ["version"],
-        "properties": {
-            "version": {"type": "string", "const": VERSION_1_0},
-            "createSurface": {
-                "type": "object",
-                "required": ["surfaceId", "catalogId"],
-                "properties": {
-                    "surfaceId": {"type": "string"},
-                    "catalogId": {"type": "string", "enum": [CATALOG_ID, BASIC_CATALOG_ID_1_0]},
-                    "dataModel": {"type": "object"},
-                    "components": {"type": "array", "minItems": 1, "items": component_schema()}
-                },
-                "additionalProperties": false
-            },
-            "updateComponents": {
-                "type": "object",
-                "required": ["surfaceId", "components"],
-                "properties": {
-                    "surfaceId": {"type": "string"},
-                    "components": {"type": "array", "minItems": 1, "items": component_schema()}
-                },
-                "additionalProperties": false
-            },
-            "updateDataModel": {
-                "type": "object",
-                "required": ["surfaceId", "value"],
-                "properties": {
-                    "surfaceId": {"type": "string"},
-                    "path": {"type": "string", "description": "JSON pointer. Omit or use / for the root."},
-            "value": {"description": "A JSON value. Use null to delete the addressed value."}
-                },
-                "additionalProperties": false
-            },
-            "deleteSurface": {
-                "type": "object",
-                "required": ["surfaceId"],
-                "properties": {"surfaceId": {"type": "string"}},
-                "additionalProperties": false
-            }
-        },
-        "oneOf": [
-            {"required": ["createSurface"]},
-            {"required": ["updateComponents"]},
-            {"required": ["updateDataModel"]},
-            {"required": ["deleteSurface"]}
-        ],
+        "required": ["@path"],
+        "properties": {"@path": {"type": "string"}},
         "additionalProperties": false
     })
 }
 
-fn legacy_message_schema() -> serde_json::Value {
+/// Any JSON value, with every union branch typed. Array elements cover every
+/// JSON type except a nested array.
+fn json_value_schema(description: &str) -> serde_json::Value {
     serde_json::json!({
-        "oneOf": [
+        "description": description,
+        "anyOf": [
+            {"type": "string"},
+            {"type": "number"},
+            {"type": "boolean"},
+            {"type": "object"},
+            {"type": "array", "items": {"anyOf": [
+                {"type": "string"},
+                {"type": "number"},
+                {"type": "boolean"},
+                {"type": "object"},
+                {"type": "null"}
+            ]}},
+            {"type": "null"}
+        ]
+    })
+}
+
+/// The three v0.9/v0.9.1 message shapes, each a typed branch of the same union
+/// as the 1.0 operations.
+fn legacy_message_schemas() -> Vec<serde_json::Value> {
+    let branches = serde_json::json!([
             {
                 "type": "object",
                 "required": ["version", "createSurface"],
@@ -172,7 +223,7 @@ fn legacy_message_schema() -> serde_json::Value {
                                 "contains": {
                                     "type": "object",
                                     "required": ["id"],
-                                    "properties": { "id": { "const": "root" } }
+                                    "properties": { "id": { "type": "string", "const": "root" } }
                                 },
                                 "items": {
                                     "type": "object",
@@ -182,11 +233,11 @@ fn legacy_message_schema() -> serde_json::Value {
                                         "component": { "type": "string", "enum": ["Text", "Button", "TextField", "CheckBox", "ChoicePicker", "Row", "Column", "Card", "Divider"] },
                                         "child": { "type": "string" },
                                         "children": { "type": "array", "items": { "type": "string" } },
-                                        "text": {},
+                                        "text": json_value_schema("A string or binding."),
                                         "variant": { "type": "string" },
                                         "label": { "type": "string" },
                                         "placeholder": { "type": "string" },
-                                        "value": {},
+                                        "value": json_value_schema("A literal or binding."),
                                         "options": { "type": "array", "items": { "type": "object" } },
                                         "action": {
                                             "type": "object",
@@ -225,15 +276,18 @@ fn legacy_message_schema() -> serde_json::Value {
                         "properties": {
                             "surfaceId": { "type": "string" },
                             "path": { "type": "string" },
-                            "value": {}
+                            "value": json_value_schema("A JSON value.")
                         },
                         "additionalProperties": false
                     }
                 },
                 "additionalProperties": false
             }
-        ]
-    })
+        ]);
+    match branches {
+        serde_json::Value::Array(branches) => branches,
+        other => vec![other],
+    }
 }
 
 fn component_schema() -> serde_json::Value {
@@ -246,15 +300,23 @@ fn component_schema() -> serde_json::Value {
             "@catalogId": {"type": "string", "enum": [CATALOG_ID, BASIC_CATALOG_ID_1_0]},
             "child": {"type": "string"},
             "children": {"type": "array", "items": {"type": "string"}},
-            "text": {"description": "A string or {@path: JSON pointer}."},
+            "text": bindable_text_schema(),
             "variant": {"type": "string"},
-            "label": {"description": "A string or {@path: JSON pointer}."},
-            "placeholder": {"description": "A string or {@path: JSON pointer}."},
-            "value": {"description": "A component-specific literal or {@path: JSON pointer}."},
+            "label": bindable_text_schema(),
+            "placeholder": bindable_text_schema(),
+            "value": {
+                "description": "TextField: a string; CheckBox: a boolean; ChoicePicker: an array of strings; or {@path: JSON pointer}.",
+                "anyOf": [
+                    {"type": "string"},
+                    {"type": "boolean"},
+                    {"type": "array", "items": {"type": "string"}},
+                    path_binding_schema()
+                ]
+            },
             "options": {"type": "array", "items": {"type": "object"}},
-            "axis": {"enum": ["horizontal", "vertical"]},
-            "align": {"enum": ["start", "center", "end", "stretch"]},
-            "justify": {"enum": ["start", "center", "end", "spaceBetween", "spaceAround", "spaceEvenly", "stretch"]},
+            "axis": {"type": "string", "enum": ["horizontal", "vertical"]},
+            "align": {"type": "string", "enum": ["start", "center", "end", "stretch"]},
+            "justify": {"type": "string", "enum": ["start", "center", "end", "spaceBetween", "spaceAround", "spaceEvenly", "stretch"]},
             "action": {
                 "type": "object",
                 "required": ["event"],
@@ -265,7 +327,7 @@ fn component_schema() -> serde_json::Value {
                         "properties": {
                             "name": {"type": "string"},
                             "context": {"type": "object"},
-                            "userMessage": {"description": "A string or {@path: JSON pointer}."}
+                            "userMessage": bindable_text_schema()
                         },
                         "additionalProperties": false
                     }
@@ -303,5 +365,74 @@ mod tests {
             ]}
         }]});
         assert!(A2uiRenderSkill.execute(unsafe_value).await.is_err());
+    }
+
+    /// Moonshot checks tool parameters against a strict JSON Schema subset and
+    /// rejects the whole request on the first violation: every property and
+    /// union branch declares `type`, `items` is a schema object, and `required`
+    /// keys exist in `properties` (MoonshotAI/kimi-cli#1595).
+    fn strict_dialect_violations(
+        node: &serde_json::Value,
+        path: &str,
+        needs_type: bool,
+        out: &mut Vec<String>,
+    ) {
+        let Some(object) = node.as_object() else {
+            out.push(format!("{path}: schema is not an object"));
+            return;
+        };
+        let union = object.get("anyOf").or_else(|| object.get("oneOf"));
+        if let Some(branches) = union.and_then(serde_json::Value::as_array) {
+            for (index, branch) in branches.iter().enumerate() {
+                let branch_path = format!("{path}.union[{index}]");
+                if branch.get("type").is_none() {
+                    out.push(format!("{branch_path}: union branch has no type"));
+                }
+                strict_dialect_violations(branch, &branch_path, false, out);
+            }
+        } else if needs_type && !object.contains_key("type") {
+            out.push(format!("{path}: type is not defined"));
+        }
+        match object.get("items") {
+            Some(serde_json::Value::Array(_)) => out.push(format!("{path}.items: tuple items")),
+            Some(items) => strict_dialect_violations(items, &format!("{path}.items"), true, out),
+            None => {}
+        }
+        if let Some(contains) = object.get("contains") {
+            strict_dialect_violations(contains, &format!("{path}.contains"), true, out);
+        }
+        let properties = object.get("properties").and_then(serde_json::Value::as_object);
+        if let Some(required) = object.get("required").and_then(serde_json::Value::as_array) {
+            for key in required.iter().filter_map(serde_json::Value::as_str) {
+                if !properties.is_some_and(|properties| properties.contains_key(key)) {
+                    out.push(format!("{path}: required {key} is not a property"));
+                }
+            }
+        }
+        for (key, value) in properties.into_iter().flatten() {
+            strict_dialect_violations(value, &format!("{path}.properties.{key}"), true, out);
+        }
+    }
+
+    #[test]
+    fn parameters_schema_satisfies_the_strict_moonshot_dialect() {
+        let mut violations = Vec::new();
+        strict_dialect_violations(&A2uiRenderSkill.parameters_schema(), "root", true, &mut violations);
+        assert!(violations.is_empty(), "{violations:#?}");
+    }
+
+    #[test]
+    fn parameters_schema_keeps_one_operation_per_message() {
+        let validator = jsonschema::validator_for(&A2uiRenderSkill.parameters_schema())
+            .expect("the a2ui_render schema compiles");
+        let surface = serde_json::json!({"surfaceId": "demo", "catalogId": CATALOG_ID});
+        let single = serde_json::json!({"messages": [{"version": VERSION_1_0, "createSurface": surface}]});
+        let double = serde_json::json!({"messages": [{
+            "version": VERSION_1_0, "createSurface": surface, "deleteSurface": {"surfaceId": "demo"}
+        }]});
+        let none = serde_json::json!({"messages": [{"version": VERSION_1_0}]});
+        assert!(validator.is_valid(&single));
+        assert!(!validator.is_valid(&double));
+        assert!(!validator.is_valid(&none));
     }
 }
