@@ -1,0 +1,113 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "claude-opus-5-5",
+  "isolation_mode": "harness-native",
+  "producer_model": "claude-opus-5-5",
+  "cross_model_check": "same-model-collision",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "line": 18,
+      "claim": "The conclusion that realtime push 'already works with remote Surreal and Postgres' assumes a single UAR process. The repo ships multi-replica deployments, and the providers and settings snapshots plus turn-time default-model resolution are served from per-process memory that no replica refreshes after boot. Topic fixes alone would deliver stale data, and no build item covers it.",
+      "evidence": "k8s/base/uar-deployment.yaml:11 'replicas: 2'; k8s/overlays/production/patches/uar-deployment-patch.yaml:7 'replicas: 3'. The providers snapshot is self.json(\"/api/uar/providers\") (server/lifecycle_snapshot.rs:130-142), and list_providers reads state.registry.list() and default_id() from in-memory registry state (api/providers.rs:129-139). The settings snapshot is /api/uar/settings, which is served from SettingsManager's in-memory cache (settings/manager.rs:861-888). Registry hydration from the DB is 'Intended to run once at startup' (settings/provider_sync.rs:9-12), and its only caller is server.rs:1173. No process subscribes to EntityTopic::Providers, Settings or Models (grep finds no subscribe call; the host subscribes only to internal topics, server.rs:2286-2291). Runtime turns resolve the system default from the local registry (runtime/manager.rs:5946, 6664, 11317). So on replica B, a default-provider change made on replica A invalidates the providers topic (after build item 14), B's clients refetch B's stale registry, and B's conversations keep the old system model until restart. Decision 2 and goal 4 ('effect realized immediately in conversations') fail in exactly the remote deployment that decision 3 brings into scope. analysis.md:60-62 notices that every event 'comes back through the DB change feed, including the process's own writes', but draws no conclusion about other processes' in-memory state.",
+      "suggested_fix": "Add a build item: each replica consumes provider and settings change events (or a DB re-read on invalidation) to rehydrate ProviderRegistry, its default and the SettingsManager cache before serving snapshots or resolving turns. Alternatively, record an operator decision that multi-replica deployments are out of scope for this phase and amend the supported-environments list. Downgrade the delta-1 headline until then."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "line": 245,
+      "claim": "Round-1 CRITICAL 1 is only partly resolved. G7's systemic cause and its non-model free-text controls still have no build item, so the readiness claim that 'every gap has an incumbent or a build item' is still false for G7.",
+      "evidence": "Item 19 (analysis.md:245-246) limits dispatch to 'x-control picker kinds (provider, chat model, embedding model, enum source)'. Item 20 (:247-248) covers only 'free-text model and provider fields'. The assessment's systemic G7 cause is that generic-schema-panel.tsx renders every array as CSV, every object as a raw JSON textarea and numbers as bare fields across 13 panels (assessment.md:211); no item covers it. The hand-written controls listed at assessment.md:213-223 are also uncovered: retryable HTTP status list plus 9 bare ms/count fields, agent allowed tools as CSV, skill keywords and preferred tools as CSV, skill import by typed absolute path, memory ID filters, team launch raw JSON, team binding typed references, team workspace typed path, presentation template JSON, MIME CSV and OCR language. Round 1 named 'team launch JSON, binding references, workspace and skill-import paths' explicitly, yet analysis.md:325-326 reports C1 as 'addressed' by items that do not touch them. Item 4 (:196-197) also defers the message and stream store duplication to Plan with no rule.",
+      "suggested_fix": "Add build items for generic-panel array, object and number controls (list editors, structured sub-forms, bounded numeric or duration controls) and for each non-settings free-text site in assessment G7, with a path-picker candidate for the two typed-path sites. Then re-derive the readiness sentence at analysis.md:298-299."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "line": 245,
+      "claim": "Round-1 CRITICAL 3 is only partly resolved. The generic schema control for the boot-only `llm.default_provider` key stays in the settings panel, and item 19's 'provider' picker kind would turn it into a second, restart-only system-model picker. Decision 2 forbids a second system control.",
+      "evidence": "settings/manager.rs:2851-2856 still renders llm `default_provider` with \"x-control\": \"text\". Item 11 (analysis.md:216-218) removes only the 15 decision-6 namespaces, and llm.default_provider is not one of them (decisions.md:2890-2892). Item 12 (:221-224) says the picker must not use the field, but it neither removes the field nor makes a settings PUT call registry.set_default; api/settings.rs contains no default_provider handling. Item 19 (:245-246) maps 'provider' x-control kinds to Combobox pickers. The result is the failure that 'The uncomfortable part' (:307-312) names, 'a polished picker that does nothing until restart', still present in the settings panel. Decision 2 says run_policy.global.model must never be 'exposed as a second system control' (decisions.md:2836-2838), and the same applies to this field. Item 10's honest restart-required label does not remove the duplicate.",
+      "suggested_fix": "Add to item 11 or 12: remove llm.default_provider from the operator schema UI, or route its write through the live set_default path. Make item 19 exclude it explicitly."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "line": 206,
+      "claim": "Build item 7's last-known-good fallback, as specified through cand-008, would bypass the boot-time security validation that deliberately refuses to start. A security-tightening YAML edit that fails validation would boot on the older, weaker configuration with only a warning.",
+      "evidence": "cand-008 (library-candidates.json:218, 236; analysis.md:177): 'Reuse the same validation at boot to choose between the YAML and a last-known-good copy'. That validation is security.validate() (config_manager.rs:48, 76, 121). It fails closed by design, for example 'security.jwt_secret uses the built-in fallback while security.jwt_required=true' (config.rs:940-946) and 'remote shared-secret verification requires a deliberate signing secret' (config.rs:905-909). Item 7 (analysis.md:206-208) says 'on a YAML load failure at boot, start from it with a visible warning', which does not separate parse failures from trust-boundary validation failures. The effective config also merges env, CLI and vault sources (config.rs:1828-1829; vault::resolve). AppConfig derives only Deserialize (config.rs:243), so 'save to disk' is unspecified: a raw-YAML copy misses env and vault inputs, and serializing the effective config would write resolved secrets to a new file.",
+      "suggested_fix": "Specify that LKG fallback applies only to parse and shape failures of non-security sections, and that security.validate() failures still refuse to start. Specify that the LKG artifact is the raw YAML file (not resolved secrets), with its location and permissions."
+    },
+    {
+      "severity": "WARNING",
+      "file": "library-candidates.json",
+      "line": 214,
+      "claim": "cand-008 adopts jsonschema plus schemars for configuration validation, but neither crate is in the config validation path, and boot already runs exactly the validation that reload runs.",
+      "evidence": "ConfigManager::load (config_manager.rs:43-48) and reload (:114-123) both call AppConfig::load_with_cli plus security.validate(). No jsonschema call exists in config loading; jsonschema:: is used only in tools, workflows, persistence and response formats (grep src). schemars is used only to publish AppConfig::json_schema() at /.well-known/uar-config (config.rs:2057-2064). 'Reuse the existing validation at boot' (library-candidates.json:236) is vacuous: main.rs:94-99 already fails because boot runs it. Round 1 raised this ('cand-008's jsonschema adds validation that serde deserialization into AppConfig already performs'), and the verdict is still 'adopt' with coverage 0.4.",
+      "suggested_fix": "Re-label cand-008 as not applicable (or 'reference') and attribute the boot-validation reuse to the existing serde plus security.validate() path."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 230,
+      "claim": "Item 15 says to 'relax the binding-revision gate', but a binding revision covers more than member models. A generic relaxation would let a running team adopt skill, package-context or other binding-document changes mid-run, which decision 4 does not authorize.",
+      "evidence": "resolution.rs:36-48 gates on binding.revision == attempt.binding_revision && binding.package == team.package. The same binding.document then feeds resolve_skills, resolve_legacy_team_context and resolve_models (resolution.rs:63-71). Decision 4 (decisions.md:2845-2849) covers 'a member model change and an edit to a route the team captured'. It does not cover skills or other binding content.",
+      "suggested_fix": "Specify that the next-task-boundary adoption applies only when the revision delta is limited to modelBindings, and that any other binding change keeps today's block or requires re-admission."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 3,
+      "claim": "The header says all round-1 critical findings were 'verified at source and addressed', and the review record (:325-328) maps each one to items. The current artifacts do not support that for C1 (G7) or C3 (generic default_provider control).",
+      "evidence": "See the two CRITICAL findings above. Items 19-20 do not cover the G7 sites round 1 named, and no item removes manager.rs:2851-2856's control.",
+      "suggested_fix": "Restate the resolution status per finding, as partial where it is partial."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 192,
+      "claim": "Item 3 settles the Model id across four writers but not the record shape. The realtime models snapshot carries the raw /api/models shape, not ModelEntity's flattened fields, and it deletes every Model it lacks.",
+      "evidence": "Round-1 warning 7 asked to 'Settle the Model data shape as well as the id'. Item 3 (analysis.md:192-193) and build_required (library-candidates.json:368) mention only identity and atomic ingestion. Delta 1 (:49-52) admits the snapshot path was not re-read by the lead.",
+      "suggested_fix": "Add the shape contract to item 3, or remove the models subscription as item 14 allows, and record which of the two Plan should take."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 241,
+      "claim": "Item 18 omits two G5 inventory entries: the Providers 'default' banner that shows models[0] instead of default_model, and the settings reload endpoint that reports success with no effect.",
+      "evidence": "assessment.md:185 ('The reload endpoint that reports success with no effect') and :187 (providers-page.tsx:368-371 shows models[0]). Item 18 lists only unreachable pages, duplicate surfaces and the RAG control. The banner matters most for decision 2, because it would show the wrong system model after a live default change.",
+      "suggested_fix": "Add both to item 18, or to item 8 for the reload endpoint."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 276,
+      "claim": "Tier-1 search is still skipped on the premise that every gap maps to an incumbent or glue. The typed-path controls (skill import, team workspace) have no incumbent, and no path-picker candidate was evaluated. This repeats the round-1 suggestion.",
+      "evidence": "frontend/package.json has only @tauri-apps/api and @tauri-apps/plugin-shell, and src-tauri/Cargo.toml has no dialog plugin. assessment.md:216 and :220 list the typed absolute paths.",
+      "suggested_fix": "Evaluate @tauri-apps/plugin-dialog (desktop) and the File System Access API or a server-side browse endpoint (web)."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "library-candidates.json",
+      "line": 351,
+      "claim": "cand-012's risk still says starvation 'remains unless the graph is kept small', while its rationale says persistNow() provides the max-wait. The record contradicts itself.",
+      "evidence": "library-candidates.json:351 vs :353.",
+      "suggested_fix": "Align the risk text with the persistNow() max-wait, or state the residual risk that each persistNow() still serializes the whole graph."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "library-candidates.json",
+      "line": 267,
+      "claim": "License fields are still not SPDX identifiers. The round-1 suggestion was not applied.",
+      "evidence": "cand-010 'proprietary (in-repo)' (:267); cand-011 and cand-012 'UNKNOWN' (:303, :332).",
+      "suggested_fix": "Use NOASSERTION or a LicenseRef-* identifier."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "decision-log.md",
+      "claim": "The phase decision log still records 'Build: 9 items', while the revised artifacts list 23. A resuming lead reading the log gets the round-1 inventory.",
+      "evidence": "decision-log.md 2026-11-19T19:06:35Z entry: 'Build: 9 items in library-candidates.json build_required.' library-candidates.json build_required has 23 entries.",
+      "suggested_fix": "Append a superseding entry for the round-2 inventory."
+    }
+  ]
+}

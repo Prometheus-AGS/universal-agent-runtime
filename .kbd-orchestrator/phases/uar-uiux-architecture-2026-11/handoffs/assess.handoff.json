@@ -1,0 +1,11 @@
+{
+  "stage": "assess",
+  "completedAt": "2026-11-19T15:53:56Z",
+  "outputs": [
+    "assessment.md"
+  ],
+  "nextStage": "analyze",
+  "summaryForNext": "All nine goals PARTIAL or NOT MET. Key gaps: YAML hot reload inert and invalid YAML is a delayed boot brick; R3 YAML-authority decision silently reverted in 7a6aa305 (operator to confirm); system-level model has no reachable effective control; ~11 free-text model fields plus a generic schema panel rendering text/CSV/JSON for 13 panels; 8 unreachable admin pages and a broken RAG embedding control that discards co-edits; PGlite on main thread with a first-session stale-seed defect, divergent Model identity across graph writers, no web workers; PRODUCT.md forbids redesign and no DESIGN.md exists; 259 open OpenSpec changes need disposition. Adversarial review: harness-native (external judge blocked by permission classifier), 2 rounds, round-2 corrections not re-vetted. Eight operator questions block Analyze/Plan.",
+  "skipped": false,
+  "skipReason": null
+}
