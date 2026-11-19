@@ -1,0 +1,146 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "claude-opus-5-5",
+  "isolation_mode": "harness-native",
+  "producer_model": "claude-opus-5-5",
+  "cross_model_check": "same-model-collision",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "line": 208,
+      "claim": "The readiness conclusion 'Every gap has either an adopted incumbent or a named build item' is false: G5 and G9 have neither, and large parts of G1, G3, G4 and G7 have no build item.",
+      "evidence": "library-candidates.json:14-22 gaps_addressed lists G1,G2,G3,G4,G6,G7,G8 and omits G5 and G9. None of the 9 build_required items covers: (G5) the 8 unreachable admin pages, the 6 duplicate editing surfaces, the RAG embedding control whose bulk save rejection discards valid co-edits (assessment.md:182-184; api/settings.rs:916,1353-1361), the Providers banner showing models[0] (assessment.md:187); (G9) regrouping 30 settings sections into the ~7 areas of docs/design (decisions.md:2871-2884), deep-linkable sections (section state in useState, assessment.md:190; react-router ^8.5.1 is installed, frontend/package.json:71, and not evaluated), progressive disclosure; (G1) the 31 Zustand stores duplicating Provider/Model/threads/messages, the useGraphStore facade leak (assessment.md:54-65), and the stale-seed fix itself (client.ts:113-117 skips runMigrations after seed load; moving it into a worker per cand-001 does not fix it); (G4) sub-agents ignoring conversation overrides (policy_intersection.rs:582-590); (G7) non-settings free text such as team launch JSON, binding references, workspace and skill-import paths (assessment.md:213-223).",
+      "suggested_fix": "Add G5 and G9 to gaps_addressed with explicit build items (or explicit no-library rationale), add build items for the G1 store consolidation and stale-seed fix, the G4 sub-agent inheritance decision, and the G7 non-settings controls, then re-derive the readiness verdict."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "line": 157,
+      "claim": "The G3 'delayed brick' is not covered: build item 4 and cand-008 describe validate-then-swap with last-known-good on reload, which already exists, while the boot path that actually bricks has no build item.",
+      "evidence": "config_manager.rs:103-130: reload() already builds the new config via AppConfig::load_with_cli and security.validate() before self.current.store(), so a failed reload keeps the last good value in memory. The brick is at boot: main.rs:94-99 maps ConfigManager::load errors to a fatal 'Failed to load configuration'. No build item specifies a persisted last-known-good that boot falls back to (assessment VS-5: 'never bricks the next boot (last-known-good persisted)'). The DB-value boot paths are also uncovered: persisted llm.embedding.vector_dimension aborting boot (server.rs:1251-1263) and one malformed provider row silently dropping all providers (assessment.md:135-137, VS-6). cand-008's jsonschema adds validation that serde deserialization into AppConfig already performs.",
+      "suggested_fix": "Add a build item for a persisted last-known-good config used by ConfigManager::load on parse/validation failure, plus per-row tolerant provider loading and safe fallback for invalid persisted embedding dimensions. Re-justify cand-008 against serde's existing validation or downgrade it to reference."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "line": 77,
+      "claim": "The analysis misses that `llm.default_provider`, the persisted system-level key, is only read at boot. Build item 1 would turn it into a picker that does nothing until restart while the API reports it as effective.",
+      "evidence": "The registry default is read from llm.default_provider only in hydrate_provider_registry_from_settings (settings/provider_sync.rs:21-24, 'Intended to run once at startup'). api/settings.rs has no default_provider handling, so a generic settings PUT writes the row without registry.set_default. setting_apply_mode (settings/manager.rs:73-79) labels it NextTurn, so the API reports it as effective. The schema renders it as x-control text (manager.rs:2851-2856), and build item 1 maps such fields to provider-picker. Only POST /api/uar/providers/{id}/default (api/providers.rs:367-399) swaps the live registry. That handler publishes nothing. Its DB write is the `llm.default_provider` settings row, which goes to the `settings` topic on Surreal and on Postgres ('provider.%' does not match, notify_entity_change.sql:66-72). So decision 2's premise 'published on the providers topic' (decisions.md:2833-2834) is false on both backends, and build item 3 ('provider events on the providers topic for Surreal') does not cover it.",
+      "suggested_fix": "Classify llm.default_provider as boot-only via the settings API. Route the system picker exclusively through POST /providers/{id}/default (or make the settings write perform the registry swap). Add a topic fix so default changes invalidate the providers topic on both backends. Remove the generic schema control."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "analysis.md",
+      "line": 162,
+      "claim": "Build item 6 and delta 4 omit the binding-revision check that blocks member model changes, so a plan built from them will not satisfy the operator's team-adoption decision.",
+      "evidence": "The operator decision covers 'both a member model change and an edit to a route the team captured' (decisions.md:2843-2855). A member model change requires a new binding revision (assessment.md:158-160). resolution.rs:39-48 rejects any binding whose revision != attempt.binding_revision with 'Team deployment binding changed', before the route comparison at :71-101. Delta 4 (analysis.md:64-73) tells Spec/Plan to use its list of failure modes ('Spec and Plan must use these, not the assessment text') and omits this one. Build item 6 says only 're-resolve routes at task admission'.",
+      "suggested_fix": "Add the binding-revision gate to delta 4. Extend build item 6 to adopt the latest binding revision at the next task boundary, with provenance, distinct from the route re-resolution."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "library-candidates.json",
+      "line": 342,
+      "claim": "Work items that the binding 2026-11-19 operator decisions explicitly assign to this phase have no build item.",
+      "evidence": "Decision 1 (decisions.md:2823-2826): 'Planning default ... bring the provider seed into line with the spec — YAML flows into config-owned rows and merges missing entries'. Today seed_providers skips every existing provider.* row (settings/manager.rs:975-978); no build item. Decision 2 (decisions.md:2835-2839): run_policy.global.model 'must be retired from model selection or kept internal-only' and 'the system picker must be reachable from primary navigation'. Neither is a build item; build item 9 covers only pinned-agent visibility. Decision 6 (decisions.md:2899-2901): dead DB rows for removed namespaces must be 'left inert or cleaned up explicitly'. Not addressed.",
+      "suggested_fix": "Add build items for the provider-seed alignment, run_policy.global.model retirement, a reachable system-level picker, and the disposition of dead namespace rows."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 166,
+      "claim": "The claim that 'A max-wait would need a PEM change' is wrong. PEM 5.0.1 already exposes persistNow(), so the app can bound persistence starvation without a PEM release.",
+      "evidence": "node_modules/@prometheus-ags/entity-graph-core/dist/index.d.ts:966 LocalFirstGraphRuntime.persistNow: () => Promise<void>. The app does not use it today (only bootstrap.test.ts:41 mocks it). cand-012 risk (library-candidates.json:337) and Open Question 1 (analysis.md:196-199) frame starvation as unfixable without PEM.",
+      "suggested_fix": "Add an app-side max-wait (periodic persistNow during streaming) to build item 7, and drop the PEM-change contingency from Open Question 1."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 150,
+      "claim": "Build item 2 counts three Model writers. A fourth exists, the realtime models snapshot, and it already does atomic, provider-qualified ingestion with authoritative deletes.",
+      "evidence": "server/lifecycle_snapshot.rs:165-193 serves the models topic snapshot with id `${provider_id}/${model_id}` and the raw /api/models record shape (nested limit/cost/modalities, not the flattened ModelEntity fields). frontend lib/realtime/uar-sse-adapter.ts:258-283 buildAuthoritativeSnapshotChangeSet upserts every record in one changeset and deletes every graph Model id not in the snapshot, including bare-id rows written by providers-graph.ts:86. It runs on every subscription_established/reset event (live.rs:81,98-110). This also qualifies 'No writer to the models topic ... never fires' (analysis.md:42-43): models are delivered on connect/reset, though never on change.",
+      "suggested_fix": "List the snapshot path as a fourth writer and as an adoptable incumbent for atomic ingestion. Settle the Model data shape as well as the id."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 202,
+      "claim": "Open Question 3 can already be answered from source, and the delta mis-describes Surreal provider delivery. /api/live sends only invalidations, so the frontend never sees provider.* row data.",
+      "evidence": "live.rs:98-110: every bus event becomes an SSE 'reset' with requires_snapshot:true and no row data ('Shared database notifications are invalidations'). On Surreal, a provider.{id} write therefore triggers a settings-topic snapshot refetch. It does not deliver 'Setting rows' carrying provider data (analysis.md:39-40), and the providers topic is never invalidated. The fix must be backend topic routing or invalidation, not frontend mapping.",
+      "suggested_fix": "Resolve Open Question 3 now: the Surreal fix is backend-side (invalidate providers when provider.* settings rows change)."
+    },
+    {
+      "severity": "WARNING",
+      "file": "library-candidates.json",
+      "line": 52,
+      "claim": "The cand-001 PGliteWorker risks miss two concrete hazards: localStorage use in the open path, and cross-tab clobbering of the single PEM snapshot row once all tabs share one database.",
+      "evidence": "platform/pglite/client.ts:118,159-169 runs migrateFromLocalStorage, which reads localStorage. localStorage is unavailable in Web Workers, yet the analysis says to move 'seed load and migrations into the worker init'. Today each tab opens idb://uar-threads separately. Under PGliteWorker every tab proxies to one leader, and each tab's startLocalFirstGraph persists its whole graph as one JSON row under the same key (assessment.md:75), so tabs overwrite each other's snapshots.",
+      "suggested_fix": "Keep the localStorage migration on the main thread (pass its data in). Add a risk and build item for per-tab snapshot keys or a single snapshot owner under leader election."
+    },
+    {
+      "severity": "WARNING",
+      "file": "library-candidates.json",
+      "line": 288,
+      "claim": "cand-011 Impeccable ignores two things. The engine actually run is pinned by IMPECCABLE_BIN, so `impeccable update` does not change it. The `document` step's default mode extracts tokens from current code, which conflicts with the decision that docs/design is the visual authority.",
+      "evidence": "~/.claude/settings.json:6 sets IMPECCABLE_BIN=/Users/gqadonis/.impeccable/bin/0.1.17/impeccable. The ~/.local/bin/impeccable shim (-> ~/.the-boss/bin/impeccable) resolves '$IMPECCABLE_BIN' first. The assessment already flagged CLI 4.9.2 vs skill 0.1.19 vs engine 0.1.17 (assessment.md:84), and cand-011 discusses only 4.9.2 -> 4.10.0. ~/.claude/skills/impeccable/reference/document.md:1 says it 'captures the current visual design system'. Decision 5 (decisions.md:2876-2879) makes docs/design the authority for the new DESIGN.md, and the code has drifted far from it (assessment.md:94).",
+      "suggested_fix": "Add the IMPECCABLE_BIN pin and version reconciliation to cand-011 risks. Specify how docs/design prototypes feed DESIGN.md (seed mode or scan of docs/design), not a scan of the drifted src."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 153,
+      "claim": "Build item 3 makes team realtime push conditional, but the binding decision requires it.",
+      "evidence": "decisions.md:2859-2861 requires live updates for 'settings, providers, agents, teams and conversation model changes' with remote persistence. Build item 3 says 'whatever public topic the team console needs', and library-candidates.json:354 says 'public team topic if the console needs it'. Team topics are host-only (realtime/mod.rs:193-198), and frontend topics.ts has no team topic.",
+      "suggested_fix": "Name the team entities that must be pushed and the public, invalidation-only topic plus snapshot route that will carry them."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 157,
+      "claim": "Build item 4 ('handlers read ConfigManager::current() per request') would let live YAML bypass the DB-wins precedence. It does not require reload to re-run settings reconciliation.",
+      "evidence": "Decision 1 (decisions.md:2814-2828): operator-edited DB rows win, and YAML edits surface as drift. Precedence is computed only at boot in settings/manager.rs:191-343 (assessment.md:114-115, 'DB is not re-reconciled'). Reading AppConfig live in handlers without a reconcile step applies YAML directly for any key that also has a DB row.",
+      "suggested_fix": "Specify that a validated reload re-runs SettingsManager reconciliation (DB-wins, drift flag) and that only YAML-only keys are read from ConfigManager::current()."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 160,
+      "claim": "Build item 5 fixes only the backend apply status. The frontend reads none of those fields, so the fix stays invisible.",
+      "evidence": "assessment.md:112 and :118: frontend SettingWithMeta (types/index.ts:320-345) expects nested meta.{source,is_drift} and declares no apply/application_status. The backend sends flattened fields (api/settings.rs:557-620), and no frontend code reads application_status.",
+      "suggested_fix": "Extend build item 5 (or 4) to fix the frontend/backend settings contract so status, source and drift are displayed."
+    },
+    {
+      "severity": "WARNING",
+      "file": "analysis.md",
+      "line": 18,
+      "claim": "The headline 'Realtime push already works with remote Surreal and Postgres' rests on source reading that the lead did not re-verify for the Postgres path. It is then used to shrink the decision-3 scope.",
+      "evidence": "The 'Verified by the lead' list (analysis.md:98-106) contains no Postgres bus, trigger or /api/live citation. Those are subagent-sourced (analysis.md:108-109). The Postgres notify path had a latent write-aborting trigger defect found only when a Postgres test became runnable (migrations/20260801000000_notify_entity_change_key_agnostic.sql:6-22). 'The uncomfortable part' (analysis.md:216-220) calls the requirement 'cheaper than recorded' on this basis.",
+      "suggested_fix": "Label the headline as source-inferred and unverified at runtime, and keep the Postgres end-to-end push as an explicit boundary scenario."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "library-candidates.json",
+      "line": 180,
+      "claim": "cand-006's rejection rationale assumes a native catalog worker that appears nowhere in build_required.",
+      "evidence": "decision_rationale: 'One worker with two message types does not justify a dependency; native module worker suffices.' build_required has no catalog normalize/filter worker (assessment G8 candidate 2), so G8 reduces to PGliteWorker plus the service-worker fix without saying so.",
+      "suggested_fix": "Either add the catalog worker as a build item or state that it is excluded and why."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "library-candidates.json",
+      "line": 259,
+      "claim": "License fields are not SPDX identifiers, although the schema requires SPDX.",
+      "evidence": "cand-010 license 'proprietary (in-repo)' (line 259); cand-011 and cand-012 'UNKNOWN' (lines 295, 322). The schema describes license as an 'SPDX identifier'.",
+      "suggested_fix": "Use 'NOASSERTION' or a LicenseRef-* identifier, and resolve the Impeccable license before adoption."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "analysis.md",
+      "line": 189,
+      "claim": "Tier-1 search was skipped on the premise that every gap maps to an incumbent, but some uncovered G7 controls (filesystem path pickers for skill import and team workspace) have no evaluated candidate.",
+      "evidence": "analysis.md:189 'Tier 1 (GitHub search) was skipped because every gap maps to an incumbent library or to project-specific glue'. assessment.md:216,220 list typed absolute paths. No candidate (for example a Tauri dialog plugin or the File System Access API) was considered.",
+      "suggested_fix": "Evaluate a path-picker candidate for the desktop shell and the web console."
+    }
+  ]
+}

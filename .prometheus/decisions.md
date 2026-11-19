@@ -2810,3 +2810,150 @@ symlinks to them under `.devin/skills`, `.qwen/skills` and `.roo/skills`.
 The cost is a version split: The Boss's bundled CLI stays at 2.0.0 and would
 revert the shared skills if run. MiniMax Code is no longer counted as a
 configured tool by 2.1.0; adding it back needs `openspec init`.
+
+## 2026-11-19 — Settings authority: DB wins; the R3 revert was deliberate
+
+The operator confirmed that the 2026-07-20 revert of R3 ("env/YAML authoritative
+on every boot", implemented in `c41da57e`, undone inside `7a6aa305`) was
+deliberate. Operator-edited settings in the database win over YAML. This matches
+the `provider-model-settings-certification` spec. Supersedes the R3 product
+decision in `openspec/changes/make-config-authoritative-on-boot/proposal.md`,
+whose task ledger now describes reverted code; that change carries no spec
+deltas and is to be dispositioned (archived or closed as superseded) in phase
+`uar-uiux-architecture-2026-11`. Planning default for that phase: bring the
+provider seed into line with the spec — YAML flows into config-owned rows and
+merges missing entries, operator-edited rows keep their values with drift made
+visible — rather than reopening the authority question. The cost: YAML edits
+never override a value an operator changed in the UI; they surface as drift.
+
+## 2026-11-19 — The system-level model is the registry default provider
+
+The operator chose the registry default provider, with that provider's
+`default_model`, as "the system level" for model selection in phase
+`uar-uiux-architecture-2026-11`. It is set through
+`POST /api/uar/providers/{id}/default` (durable write, then live registry swap)
+and published on the `providers` topic. Consequences for planning: `llm.model`
+(no runtime reader) leaves the operator UI; `run_policy.global.model` must be
+retired from model selection or kept internal-only, never exposed as a second
+system control; the system picker must be reachable from primary navigation
+(today the Models-page control is unreachable). Still open: whether the system
+default may ever override an agent's explicit model. Today it applies only when
+the agent has no model and `run_policy.global.model` is unset.
+
+## 2026-11-19 — Running teams adopt model changes at the next task boundary
+
+The operator chose that a running agent team picks up model changes at its next
+task boundary instead of staying pinned to the models captured at admission.
+Read as covering both a member model change and an edit to a route the team
+captured (profile, endpoint, price, disable). A task already in flight finishes
+on the model it started with. This replaces today's behavior, where drift on
+resume raises `TEAM_ROUTE_PROFILE_MISMATCH` / `TEAM_REVISION_CONFLICT` and
+blocks the task (`team_execution/resolution.rs`, `src/llm/team_profile.rs`).
+The cost: one team run can span several models, so per-task model provenance
+must be recorded and shown. Planning must still define what happens when the
+new route is unavailable at the boundary (fail the task visibly, never silently
+substitute).
+
+## 2026-11-19 — Realtime push must work with remote persistence in this phase
+
+The operator required that live updates to open clients (settings, providers,
+agents, teams and conversation model changes) work with remote Surreal and
+Postgres in phase `uar-uiux-architecture-2026-11`, not only with embedded/local
+Surreal. Today `/api/uar/sync/stream` returns 404 with a remote database
+(`server.rs:4823`), and conversation policy changes publish no topic at all.
+The frontend also has a per-topic SSE adapter path selected from
+`/api/config/persistence` (`frontend/src/entities/sync.ts:32-52`); whether the
+backend serves those topics for remote stores is unverified and is the first
+thing Analyze must establish. The cost: remote change notification needs a
+source per backend (for example Surreal LIVE queries or Postgres LISTEN/NOTIFY),
+which widens the phase into backend persistence work.
+
+## 2026-11-19 — Redesign authorized; docs/design is the visual authority
+
+The operator authorized a redesign of the UAR operator console in phase
+`uar-uiux-architecture-2026-11`. `frontend/PRODUCT.md` may be rewritten: its
+statement "does not redesign the application" no longer holds. The October
+prototypes and specs in `docs/design/` (HTML prototypes,
+`react-implementation-plan.md`, `brand-spec.md`) are the visual authority for
+the new `DESIGN.md`: one collapsible sidebar with a tabbed inspector, Settings
+grouped into about seven areas. `docs/UI_DESIGN.md` (Material 3) is retired as
+an authority; `docs/ui-design-authority.md` stays in force where it does not
+conflict with `docs/design/`, including the Base UI exception (D1). The rewrite
+of PRODUCT.md and creation of DESIGN.md happen through Impeccable init/document
+during the phase, not as part of Assess. The cost: the redesign and the
+migration of 30 settings sections into the new grouping enlarge the phase.
+
+## 2026-11-19 — Settings with no reader come out of the UI
+
+The operator chose to remove from the operator console every setting that is
+persisted but that no code reads, instead of wiring each one up. The assessment
+lists them (G3): `server.*`, `security.*`, `persistence.*`, `llm.model`,
+skill_evolution, llm_failover, context_management, file_processing, sycophancy,
+sandbox, vision, acp, kreuzberg, unstructured, mistral_ocr. Today the UI lets
+operators edit them and the edits do nothing. Scope of the decision: the
+controls leave the UI; YAML keys and the code that reads YAML at boot are not
+deleted, so a value that is honored from YAML stays configurable there. The
+list came from source inspection during Assess and is not proven per key;
+Analyze must confirm each namespace has no runtime reader before its control is
+removed, and any key found to have a reader is moved to the picker/wiring work
+instead. The cost: operators lose a UI path for these keys until a later change
+wires a real reader, and stored DB rows for them become dead data that planning
+must either leave inert or clean up explicitly.
+
+## 2026-11-19 — Overlapping open OpenSpec changes are dispositioned in planning
+
+The operator chose to decide the fate of each open OpenSpec change that
+overlaps phase `uar-uiux-architecture-2026-11` (assessment §0.5) during
+planning, change by change, rather than archiving them all now. No change is
+archived, superseded or edited as part of Assess. The plan must record, for
+every overlapping change, one of: continue (folded into this phase's change
+list), supersede (named successor change, with the superseded change marked,
+not deleted), or archive (with the reason). The R3 YAML-authority change is
+included; its disposition must be consistent with the DB-wins decision above.
+The cost: planning carries this review work, and until it is done the open
+changes still describe behavior the phase may replace.
+
+## 2026-11-19 — uar-uiux-architecture-2026-11 recorded and activated canonically
+
+The operator chose to create and activate phase `uar-uiux-architecture-2026-11`
+in the KBD runtime now, rather than create it and defer activation. Commands:
+`prometheus kbd phase create` (revision 3462), `phase activate` (3463, exact
+next work: run /kbd-analyze), then `stage enter assess` and
+`stage transition assess --status complete` (3465). The active path moved off
+`uar-outstanding-issues-v1-1-1::…::uar-rc5-surrealdb-401-producer` (execute,
+change `uar-rc5-surreal-401-qualify`, task 3). That work is not cancelled; its
+phase keeps its state and must be re-activated to resume. No claims were held
+when activation ran. After activation, `method-context.mjs` resolves the phase
+but reports BLOCKED: "adopted contract unavailable". The adopted-outcome
+contract is written and bound during Plan. The cost: anything driven by the
+canonical position (reminders, hooks, another session resuming rc5) now points
+here until the rc5 phase is re-activated.
+
+## 2026-11-19 — An agent's explicit model always beats the system default
+
+The operator decided that the system-level model (the registry default provider
+plus its `default_model`) never overrides a model an agent has set explicitly.
+The system default applies only where an agent, team member or conversation
+names no model. This matches today's precedence in `policy.rs:510-566`
+(Global → Agent → Conversation → Turn, later levels win) and rules out adding a
+force or lock-to-system option in this phase. Conversation and turn selections
+still override the agent, as they do now. The cost: changing the system default
+does not reach agents that pin a model, so the UI must show which agents are
+pinned when an operator changes the default; otherwise the change looks like it
+did not take effect.
+
+## 2026-11-19 — Realtime model changes must be correct across UAR replicas
+
+The operator required that realtime provider and model changes work when several
+UAR replicas share one remote database (Surreal or Postgres), in phase
+`uar-uiux-architecture-2026-11`. The repo already deploys 2 replicas
+(`k8s/base/uar-deployment.yaml:11`) and 3 in production
+(`k8s/overlays/production/patches/uar-deployment-patch.yaml:7`). Today each
+replica loads the provider registry (`settings/provider_sync.rs`, once from
+`server.rs:1173`), the settings cache and the turn-time default model at boot and
+subscribes to none of the change topics, so a change made through replica A is
+invisible to replica B's snapshots and turns until restart. The phase must add
+server-side consumers of the existing change feed that refresh those in-memory
+copies on every replica. The cost: a backend item on the critical path, and the
+boundary gate must exercise at least two replicas against one remote store, not
+only a single process.

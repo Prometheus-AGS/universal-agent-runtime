@@ -1,0 +1,478 @@
+{
+  "phase": "uar-uiux-architecture-2026-11",
+  "generated_at": "2026-11-19T19:06:35Z",
+  "research_budget": {
+    "max_queries_per_tier": 8,
+    "max_minutes": 20,
+    "queries_used": {
+      "tier1": 0,
+      "tier2": 5,
+      "tier3": 6,
+      "tier4": 0
+    }
+  },
+  "gaps_addressed": [
+    "G1",
+    "G2",
+    "G3",
+    "G4",
+    "G5",
+    "G6",
+    "G7",
+    "G8",
+    "G9"
+  ],
+  "candidates": [
+    {
+      "id": "cand-001",
+      "name": "@electric-sql/pglite/worker (PGliteWorker)",
+      "kind": "library",
+      "registry": "npm",
+      "fit_for_gap": "G1/G8: move WASM Postgres off the main thread; single leader across tabs for idb://uar-threads",
+      "verdict": "adapt",
+      "coverage_estimate": 0.7,
+      "license": "Apache-2.0",
+      "maintenance": {
+        "last_release": "0.5.17 (registry, modified 2026-11-19); installed ^0.5.12"
+      },
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://github.com/electric-sql/pglite/blob/main/docs/docs/multi-tab-worker.md",
+          "claim": "Worker per tab, leader election, only the leader runs init; onLeaderChange/isLeader exposed"
+        },
+        {
+          "tier": 2,
+          "source_url": "https://github.com/electric-sql/pglite/blob/main/docs/docs/multi-tab-worker.md",
+          "claim": "Plugin extensions such as live are exposed on the main thread via the PGliteWorker extensions option; PGliteWorker.create gives typed pg.live"
+        },
+        {
+          "tier": 3,
+          "claim": "frontend/node_modules/@electric-sql/pglite/dist/worker/index.d.ts declares PGliteWorker, worker({init}), LeaderChangedError in the installed version"
+        }
+      ],
+      "risks": [
+        "Seed load (client.ts:113-117) and runMigrations must move into the worker init, or the stale-seed defect moves with it",
+        "Run-snapshot live subscriptions must be re-verified through the worker at the boundary",
+        "Leader change mid-write: LeaderChangedError must be handled by callers",
+        "The localStorage migration cannot run in a worker; keep it on the main thread",
+        "Tabs sharing one database would overwrite the single graph-snapshot row; leader-only writes or per-tab keys required"
+      ],
+      "decision_rationale": "Removes the multi-tab IndexedDB hazard and main-thread WASM cost with an upstream-supported API; adaptation is the init/seed move.",
+      "repo_url": "https://github.com/electric-sql/pglite"
+    },
+    {
+      "id": "cand-002",
+      "name": "@base-ui/react Combobox",
+      "kind": "library",
+      "registry": "npm",
+      "fit_for_gap": "G6/G7: picker for every provider, model and enumerable setting",
+      "verdict": "adopt",
+      "coverage_estimate": 0.6,
+      "license": "MIT",
+      "maintenance": {
+        "last_release": "1.9.0 (installed = latest, 2026-10-09)"
+      },
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://github.com/mui/base-ui/blob/v1.9.0/docs/src/app/(docs)/react/components/combobox/page.mdx",
+          "claim": "Combobox.Group/GroupLabel and createItems support grouped option sets (provider -> models)"
+        },
+        {
+          "tier": 3,
+          "claim": "frontend/src/components/ui/combobox.tsx already wraps it; settings-primitives.tsx uses it"
+        }
+      ],
+      "risks": [
+        "Design authority docs/design may restyle the wrapper; keep the primitive"
+      ],
+      "decision_rationale": "Already the house primitive under the Base UI exception (D1); no new dependency.",
+      "repo_url": "https://github.com/mui/base-ui"
+    },
+    {
+      "id": "cand-003",
+      "name": "@tanstack/react-virtual",
+      "kind": "library",
+      "registry": "npm",
+      "fit_for_gap": "G6: keep the ~8k-model picker fast to open",
+      "verdict": "adopt",
+      "coverage_estimate": 0.3,
+      "license": "MIT",
+      "maintenance": {
+        "last_release": "3.14.23 (installed)"
+      },
+      "evidence": [
+        {
+          "tier": 2,
+          "source_url": "https://github.com/mui/base-ui/blob/v1.9.0/docs/src/app/(docs)/react/components/autocomplete/page.mdx",
+          "claim": "Base UI recommends memoized items up to ~1,000 entries and virtualization (@tanstack/react-virtual) beyond, because mount cost dominates opening"
+        }
+      ],
+      "risks": [],
+      "decision_rationale": "Installed and named by Base UI docs for this case."
+    },
+    {
+      "id": "cand-004",
+      "name": "@rjsf/core",
+      "kind": "library",
+      "registry": "npm",
+      "fit_for_gap": "G7: render settings forms from JSON Schema",
+      "verdict": "reject",
+      "coverage_estimate": 0.4,
+      "license": "Apache-2.0",
+      "maintenance": {
+        "last_release": "6.11.1 (2026-11-05)"
+      },
+      "evidence": [
+        {
+          "tier": 3,
+          "claim": "npm registry: 6.11.1, Apache-2.0, active"
+        },
+        {
+          "tier": 3,
+          "claim": "generic-schema-panel.tsx:109-120 already consumes JSON Schema properties with enum, x-control, x-sensitive"
+        }
+      ],
+      "risks": [
+        "Second form-state system beside react-hook-form; second theme layer over Base UI"
+      ],
+      "decision_rationale": "The project already has schema-driven rendering; the gap is control kinds, not a form engine."
+    },
+    {
+      "id": "cand-005",
+      "name": "@jsonforms/react",
+      "kind": "library",
+      "registry": "npm",
+      "fit_for_gap": "G7: dispatch pattern for schema controls",
+      "verdict": "reference",
+      "coverage_estimate": 0.2,
+      "license": "MIT",
+      "maintenance": {
+        "last_release": "3.8.0 (2026-11-11)"
+      },
+      "evidence": [
+        {
+          "tier": 3,
+          "claim": "npm registry: 3.8.0, MIT, active"
+        }
+      ],
+      "risks": [],
+      "decision_rationale": "Read its tester/renderer registry for the x-control dispatch design; do not depend on it."
+    },
+    {
+      "id": "cand-006",
+      "name": "comlink",
+      "kind": "library",
+      "registry": "npm",
+      "fit_for_gap": "G8: RPC wrapper for a catalog worker",
+      "verdict": "reject",
+      "coverage_estimate": 0.1,
+      "license": "Apache-2.0",
+      "maintenance": {
+        "last_release": "4.4.2 (2024-11-07)"
+      },
+      "evidence": [
+        {
+          "tier": 3,
+          "claim": "npm registry: last publish 2024-11-07"
+        }
+      ],
+      "risks": [
+        "Low maintenance activity"
+      ],
+      "decision_rationale": "One worker with two message types does not justify a dependency; native module worker suffices."
+    },
+    {
+      "id": "cand-007",
+      "name": "arc-swap via ConfigManager (incumbent)",
+      "kind": "library",
+      "registry": "crates",
+      "fit_for_gap": "G3: live configuration read path",
+      "verdict": "adopt",
+      "coverage_estimate": 0.5,
+      "license": "MIT OR Apache-2.0",
+      "maintenance": {
+        "last_release": "Cargo.toml arc-swap = 1.9"
+      },
+      "evidence": [
+        {
+          "tier": 3,
+          "claim": "src/config_manager.rs:2,20,51 holds AppConfig in ArcSwap"
+        },
+        {
+          "tier": 3,
+          "claim": "server.rs:490 takes current() once; AppState.config (server.rs:2196) keeps the boot snapshot; ConfigManager::reload (config_manager.rs:103) only re-reads YAML"
+        }
+      ],
+      "risks": [
+        "Handlers that cache config pieces at construction (ingestion pool server.rs:2262) need explicit rebind"
+      ],
+      "decision_rationale": "The holder exists; the defect is consumers reading a boot snapshot."
+    },
+    {
+      "id": "cand-008",
+      "name": "jsonschema + schemars (incumbent)",
+      "kind": "library",
+      "registry": "crates",
+      "fit_for_gap": "G3: validation at boot to choose YAML or a disk-saved last-known-good copy (reload already validates)",
+      "verdict": "adopt",
+      "coverage_estimate": 0.4,
+      "license": "MIT",
+      "maintenance": {
+        "last_release": "jsonschema 0.49.4, schemars 1 (Cargo.toml)"
+      },
+      "evidence": [
+        {
+          "tier": 3,
+          "claim": "Cargo.toml:617,625 pin schemars 1 and jsonschema 0.49.4; config.rs:2058 derives schema via schemars"
+        },
+        {
+          "tier": 3,
+          "claim": "config_manager.rs:103-130 reload loads, validates and rejects a bad file, keeping the current config; main.rs:94-99 fails startup on a bad config"
+        }
+      ],
+      "risks": [],
+      "decision_rationale": "Reuse the existing validation at boot; the delayed brick is the boot path, not hot reload."
+    },
+    {
+      "id": "cand-009",
+      "name": "notify (incumbent watcher)",
+      "kind": "library",
+      "registry": "crates",
+      "fit_for_gap": "G3: detect YAML edits",
+      "verdict": "adopt",
+      "coverage_estimate": 0.2,
+      "license": "CC0-1.0 OR Artistic-2.0",
+      "maintenance": {
+        "last_release": "Cargo.toml notify = 8"
+      },
+      "evidence": [
+        {
+          "tier": 3,
+          "claim": "Cargo.toml:681 notify = 8; assessment G3: watcher fires but reload has no effect"
+        }
+      ],
+      "risks": [],
+      "decision_rationale": "Keep; fix what the reload feeds."
+    },
+    {
+      "id": "cand-010",
+      "name": "RealtimeBus: Surreal LIVE + Postgres LISTEN/NOTIFY (incumbent)",
+      "kind": "pattern",
+      "registry": "none",
+      "fit_for_gap": "G4: push model/provider/policy changes to open clients on all backends",
+      "verdict": "adopt",
+      "coverage_estimate": 0.6,
+      "license": "proprietary (in-repo)",
+      "maintenance": {},
+      "evidence": [
+        {
+          "tier": 3,
+          "claim": "lib.rs:133-137 live_bus documented as Surreal live queries or Postgres LISTEN/NOTIFY"
+        },
+        {
+          "tier": 3,
+          "claim": "surreal_bus.rs:169-172 db.select(table).live(); started without is_remote check server.rs:887-892"
+        },
+        {
+          "tier": 3,
+          "claim": "postgres_bus.rs:110-117 PgListener LISTEN uar_entity_change; triggers in migrations/20260220000002_notify_entity_change.sql:95-136"
+        },
+        {
+          "tier": 3,
+          "claim": "/api/live served on all backends (server.rs:2437-2438); frontend uses it for postgres and remote surreal (entities/sync.ts:342-344)"
+        }
+      ],
+      "risks": [
+        "Conversation policy has no topic",
+        "Providers emitted on settings topic on Surreal vs providers on Postgres",
+        "No models-topic writer found",
+        "Postgres is a non-default feature (Cargo.toml:318-321,399)"
+      ],
+      "decision_rationale": "Backend-neutral push exists; extend topics rather than build a per-backend source."
+    },
+    {
+      "id": "cand-011",
+      "name": "Impeccable (CLI and skills)",
+      "kind": "service",
+      "registry": "npm",
+      "fit_for_gap": "G2: update and initialize design context (PRODUCT.md, DESIGN.md), then audit/critique",
+      "verdict": "adopt",
+      "coverage_estimate": 0.9,
+      "license": "UNKNOWN",
+      "maintenance": {
+        "last_release": "4.10.0 (registry, 2026-11-18); installed 4.9.2 at ~/.local/bin/impeccable"
+      },
+      "evidence": [
+        {
+          "tier": 3,
+          "claim": "impeccable --help lists install/update/check/detect; init and document are skill commands"
+        },
+        {
+          "tier": 3,
+          "claim": "npm view impeccable: 4.10.0"
+        }
+      ],
+      "risks": [
+        "impeccable update writes global skill files outside the repo; run it as an explicit execute step",
+        "IMPECCABLE_BIN in the user's harness settings pins engine 0.1.17; impeccable update does not change it, and editing user settings is the operator's call",
+        "document derives DESIGN.md from shipped code, conflicting with docs/design as visual authority; write DESIGN.md from docs/design and use document only to check drift"
+      ],
+      "decision_rationale": "Required by goal 2; installed."
+    },
+    {
+      "id": "cand-012",
+      "name": "@prometheus-ags/entity-graph-core 5.0.1 startLocalFirstGraph (incumbent)",
+      "kind": "library",
+      "registry": "npm",
+      "fit_for_gap": "G1/G8: bounded snapshot persistence during streaming",
+      "verdict": "adopt",
+      "coverage_estimate": 0.3,
+      "license": "UNKNOWN",
+      "maintenance": {
+        "last_release": "5.0.1 (installed)"
+      },
+      "evidence": [
+        {
+          "tier": 3,
+          "claim": "dist/index.d.ts StartLocalFirstGraphOptions exposes persistDebounceMs only (default 50); no max-wait or type filter"
+        },
+        {
+          "tier": 3,
+          "claim": "GraphPersistenceAdapter.set receives an already-serialized string, so filtering in the adapter would re-parse"
+        },
+        {
+          "tier": 3,
+          "claim": "dist/index.d.ts:966 LocalFirstGraphRuntime exposes persistNow(): Promise<void>"
+        }
+      ],
+      "risks": [
+        "Persistence starvation under sustained sub-50ms updates remains unless the graph is kept small"
+      ],
+      "decision_rationale": "No PEM change: persistNow() gives an app-side max-wait; bound the snapshot app-side (keep RuntimeAgUiEvent out of the graph or prune it)."
+    }
+  ],
+  "build_required": [
+    {
+      "need": "G1: fix the stale PGlite seed (regenerate at latest migration or migrate after seed load) and enforce pglite:seed:check",
+      "why_no_candidate": "In-repo asset and init-order defect",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G1: PGliteWorker adoption with main-thread localStorage migration and a multi-tab rule for the snapshot row",
+      "why_no_candidate": "Adaptation glue around cand-001",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G1: one provider-qualified Model identity across four writers (incl. realtime models snapshot) and one atomic catalog ingestion action",
+      "why_no_candidate": "Domain identity decision inside the app",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G1: retire Zustand stores duplicating graph-owned records and close the useGraphStore facade leak",
+      "why_no_candidate": "Project entity-state rule; in-repo refactor",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G1/G8: app-side snapshot bounding (RuntimeAgUiEvent), persistDebounceMs tuning, persistNow() max-wait",
+      "why_no_candidate": "PEM 5.0.1 has no type filter; persistNow suffices for max-wait",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G2: impeccable update, init (PRODUCT.md), DESIGN.md from docs/design, audit and dual-critic critique",
+      "why_no_candidate": "Process work with an adopted tool",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G3: boot safety with disk-saved last-known-good config and fallbacks for persisted embedding values and malformed provider rows",
+      "why_no_candidate": "main.rs:94-99, server.rs:1251-1263; no library provides this policy",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G3: live config consumers that re-run DB-wins reconciliation on reload; visible drift with one-click resolution",
+      "why_no_candidate": "Consumers read the boot snapshot (server.rs:490)",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G3: provider seed aligned with DB-wins spec (manager.rs:975-978 skips existing rows)",
+      "why_no_candidate": "Decision 1; in-repo seed logic",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G3: truthful apply status end to end (backend manager.rs:666-671 and frontend display)",
+      "why_no_candidate": "In-repo status contract",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G3: remove the 15 namespaces from the UI and decide the fate of their stored rows",
+      "why_no_candidate": "Decision 6",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G4: system-default picker on the live default route plus default_model; retire run_policy.global.model; reachable from primary navigation",
+      "why_no_candidate": "llm.default_provider is boot-only (provider_sync.rs:21-23); decision 2",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G4: show pinned agents when the system default changes (agent wins)",
+      "why_no_candidate": "Decision 9; UI consequence",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G4: topic fixes: conversation-policy topic; provider and default-provider changes on providers topic; models writer or subscription removal; public team/binding topic",
+      "why_no_candidate": "api/live.rs is invalidation-only; topics are in-repo wiring",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G4: team adoption at next task boundary: relax binding-revision gate (resolution.rs:39-48), route re-resolution at admission, per-task provenance, visible failure",
+      "why_no_candidate": "Changes UAR's own team admission semantics",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G4: sub-agent inheritance rule for conversation overrides (policy_intersection.rs:582-590)",
+      "why_no_candidate": "Spec silent; operator rule needed",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G4: build and verify the postgres-backend feature at the boundary",
+      "why_no_candidate": "Non-default feature (Cargo.toml:318-321,399)",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G5: remove or relink unreachable admin pages, merge duplicate settings surfaces, fix RAG embedding co-edit loss",
+      "why_no_candidate": "Assessment G5 inventory; in-repo UI",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G6/G7: schema-to-control dispatch with x-control picker kinds mapped to Base UI Combobox + virtualization",
+      "why_no_candidate": "Project-specific mapping; RJSF rejected",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G6: replace ~11 free-text model/provider fields outside the schema panel",
+      "why_no_candidate": "Assessment G6 list",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G8: optional catalog normalize/filter native module worker",
+      "why_no_candidate": "comlink rejected; small glue",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G8: service-worker eviction of old hashed assets (public/sw.js)",
+      "why_no_candidate": "Small in-repo fix",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G9: regroup Settings into about seven areas per docs/design with deep links and progressive disclosure",
+      "why_no_candidate": "Decision 5; design work",
+      "capability_gap_id": null
+    },
+    {
+      "need": "G4: cross-replica refresh of provider registry, settings cache and turn-time default model via server-side subscribers to the existing change feed; boundary gate with at least two replicas on one remote store",
+      "why_no_candidate": "Operator decision 2026-11-19 (replicas in scope); in-repo wiring on cand-010",
+      "capability_gap_id": null
+    }
+  ]
+}

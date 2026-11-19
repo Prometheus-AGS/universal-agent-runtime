@@ -2393,3 +2393,15 @@ The in-app browser pauses `requestAnimationFrame` for a tab that is not the acti
 ## 2026-11-18 — `pnpm -C frontend` is its own workspace and needs its own install
 
 `frontend/pnpm-workspace.yaml` and `frontend/pnpm-lock.yaml` are tracked, so `pnpm -C frontend <script>` resolves `frontend/` as a separate workspace root. With `verifyDepsBeforeRun: error`, pnpm then looks for `frontend/node_modules/.pnpm-workspace-state-v1.json`; a checkout installed only from the repository root has none, and every `pnpm -C frontend` script fails with `ERR_PNPM_VERIFY_DEPS_BEFORE_RUN` ("Cannot check whether dependencies are outdated"). That includes the `frontend-lint` and `frontend-typecheck` pre-commit hooks. `pnpm -C frontend install --frozen-lockfile` (the documented install) writes the state file without touching either lockfile. Calling `node node_modules/<tool>` directly hides the problem; the hooks do not.
+
+## 2026-11-19 — Pre-commit fails with ERR_PNPM_VERIFY_DEPS_BEFORE_RUN after a pull
+
+`pnpm-workspace.yaml` sets `verifyDepsBeforeRun: error`, and the pre-commit hook runs
+`pnpm github-actions-policy:validate`. After a checkout or fast-forward that rewrites
+`package.json`, `pnpm-lock.yaml` or `pnpm-workspace.yaml`, pnpm refuses to run any
+script ("The lockfile … does not satisfy project of id frontend") until `node_modules`
+is reconciled, even when the lockfile itself is correct
+(`pnpm install --frozen-lockfile --lockfile-only` passes). Fix: `pnpm install
+--frozen-lockfile` (no tracked file changes; on 2026-11-19 it added one missing package).
+Do not bypass the hook. The `vite` `^8.3.8` manifest vs `8.3.5` lockfile difference is the
+`pnpm-workspace.yaml` override, not the cause.

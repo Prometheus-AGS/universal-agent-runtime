@@ -1,0 +1,12 @@
+{
+  "stage": "analyze",
+  "completedAt": "2026-11-19T20:03:48Z",
+  "outputs": [
+    "analysis.md",
+    "library-candidates.json"
+  ],
+  "nextStage": "spec",
+  "summaryForNext": "READY to spec. 12 candidates (adopt: Base UI Combobox, react-virtual, arc-swap ConfigManager, notify, RealtimeBus Surreal LIVE/Postgres NOTIFY, Impeccable, PEM 5.0.1 with persistNow; adapt: PGliteWorker; reference: JSON Forms; reject: RJSF, comlink) and 24 build items, including cross-replica refresh (operator: replicas in scope). Corrections to assess: /api/live already pushes invalidations on remote backends, gaps are per topic; llm.default_provider is boot-only; binding-revision gate blocks team model changes; the brick is at boot. Review capped at 2 harness-native rounds; unresolved criticals carried into Spec: G7 schema-panel and free-text controls lack items, llm.default_provider text control must leave the UI, last-known-good must not cover security refusals or persist secrets, replica refresh design unreviewed.",
+  "skipped": false,
+  "skipReason": null
+}
