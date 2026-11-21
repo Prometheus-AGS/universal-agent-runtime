@@ -44,6 +44,14 @@ export type UarSnapshotFetcher = (
   signal: AbortSignal,
 ) => Promise<UarTopicSnapshot>;
 
+/** Maps one snapshot record to the shape the graph stores. Throws to reject the record. */
+export type UarSnapshotRecordProjection = (
+  record: Record<string, unknown>,
+) => Record<string, unknown>;
+
+/** The result of applying a complete snapshot: ingested, or rejected with the projection's error. */
+export type UarSnapshotOutcome = { ok: true } | { ok: false; error: unknown };
+
 export interface UarSseAdapterOptions {
   /** Topic name from the bus: `knowledge_documents`, `agents`, `providers`, etc. */
   topic: string;
@@ -57,6 +65,13 @@ export interface UarSseAdapterOptions {
   maxReconnectAttempts?: number;
   /** Observe a validated change before it is forwarded to the entity graph. */
   onChange?: (change: EntityChange) => void;
+  /**
+   * Applied to every snapshot record before the snapshot is turned into a change set. A record
+   * it throws on rejects the whole snapshot: nothing is written and the previous entities stay.
+   */
+  projectRecord?: UarSnapshotRecordProjection;
+  /** Observe whether a complete snapshot was ingested or rejected by `projectRecord`. */
+  onSnapshotOutcome?: (outcome: UarSnapshotOutcome) => void;
   /** Observe a lifecycle invalidation before its snapshot is requested. */
   onReset?: (reset: UarRealtimeReset) => void;
   /** Injected by tests or a host-specific authenticated snapshot bridge. */
@@ -325,6 +340,8 @@ export function createUarSseAdapter(opts: UarSseAdapterOptions): RealtimeAdapter
     baseUrl = "",
     onChange,
     onReset,
+    projectRecord,
+    onSnapshotOutcome,
     fetchSnapshot = (snapshotTopic, signal) =>
       fetchUarTopicSnapshot(baseUrl, snapshotTopic, signal),
   } = opts;
@@ -370,7 +387,19 @@ export function createUarSseAdapter(opts: UarSseAdapterOptions): RealtimeAdapter
               recover({ ...reset, reason: "change_during_snapshot" });
               return;
             }
-            const changeset = buildAuthoritativeSnapshotChangeSet(entityType, snapshot.records);
+            let records = snapshot.records;
+            if (projectRecord) {
+              try {
+                records = records.map((record) => projectRecord(record));
+              } catch (error) {
+                recovering = false;
+                snapshotController = null;
+                markListsStale();
+                onSnapshotOutcome?.({ ok: false, error });
+                return;
+              }
+            }
+            const changeset = buildAuthoritativeSnapshotChangeSet(entityType, records);
             if (!changeset) {
               recovering = false;
               snapshotController = null;
@@ -380,6 +409,7 @@ export function createUarSseAdapter(opts: UarSseAdapterOptions): RealtimeAdapter
             handler(changeset);
             recovering = false;
             snapshotController = null;
+            onSnapshotOutcome?.({ ok: true });
           },
           () => {
             if (stopped || expectedVersion !== recoveryVersion) return;

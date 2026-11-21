@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { ProviderModelPicker, ProviderPicker } from "../pickers";
+import { ModelsIngestionError } from "./models-ingestion-error";
 import { useModelsAdmin } from "../model/use-models-admin";
 import {
   filterModelRows,
@@ -215,6 +216,7 @@ export const ModelsPage: FC = () => {
           <span className="mr-2 font-semibold">ERR-MODELS</span>{error}
         </div>
       )}
+      <ModelsIngestionError />
 
       <div className="flex-1 overflow-y-auto">
         {/* Configured models section */}

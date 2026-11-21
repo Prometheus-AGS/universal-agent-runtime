@@ -32,6 +32,7 @@ export const TID = {
   sessionRequested: 'session-config-requested',
   sessionEffectiveModel: 'session-config-effective-model',
   sessionEffectiveOrigin: 'session-config-effective-origin',
+  inheritedModel: 'session-config-inherited-model',
   modelOption: 'model-option',
 } as const;
 

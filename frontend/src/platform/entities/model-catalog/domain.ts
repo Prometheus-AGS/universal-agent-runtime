@@ -15,6 +15,7 @@ import {
   CATALOG_MODEL_ENTITY,
   MODEL_CATALOG_LOAD_ID,
   MODEL_CATALOG_LOAD_STATE_ENTITY,
+  MODEL_CATALOG_SNAPSHOT_LOAD_ID,
   PROVIDER_ENTITY,
   PROVIDER_LIST_KEY,
   PROVIDER_META_ENTITY,
@@ -47,6 +48,25 @@ function errorMessage(error: unknown): string {
 function recordLoadFailure(id: ModelCatalogLoadId, error: unknown): void {
   batchGraphWrites((batch) => {
     batch.upsertEntity(MODEL_CATALOG_LOAD_STATE_ENTITY, id, { id, error: errorMessage(error) });
+  });
+}
+
+/**
+ * Record that a realtime `models` snapshot was rejected. The graph keeps the previous catalog;
+ * only the snapshot load state changes, so the Models page can show why the update did not apply.
+ */
+export function recordModelCatalogSnapshotRejected(error: unknown): void {
+  recordLoadFailure(MODEL_CATALOG_SNAPSHOT_LOAD_ID, error);
+}
+
+/** Record that a realtime `models` snapshot was ingested, clearing an earlier rejection. */
+export function recordModelCatalogSnapshotAccepted(): void {
+  batchGraphWrites((batch) => {
+    batch.upsertEntity(
+      MODEL_CATALOG_LOAD_STATE_ENTITY,
+      MODEL_CATALOG_SNAPSHOT_LOAD_ID,
+      loadedState(MODEL_CATALOG_SNAPSHOT_LOAD_ID),
+    );
   });
 }
 

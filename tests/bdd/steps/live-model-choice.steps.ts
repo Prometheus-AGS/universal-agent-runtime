@@ -39,7 +39,6 @@ import {
   startFreshThread,
   switchToConversation,
   systemDefaultOptionState,
-  tokensOf,
   tryOverride,
 } from '../support/s1-ui';
 import type { RefusalObservation } from '../support/s1-ui';
@@ -73,6 +72,16 @@ const POST_ACK_SETTLE_MS = NO_WRITE_WINDOW_MS;
 /** SCN-SYS-016: the runtime's refusal of an override its provider does not offer. */
 const OVERRIDE_REFUSAL_STATUS = 422;
 const OVERRIDE_REFUSAL_CODE = 'model_not_offered';
+/**
+ * The live default route's refusals (`src/uar/api/providers.rs` `set_default`): 404 for a
+ * provider that does not exist, 409 for one that is disabled. Keyed by the reason the step names.
+ */
+const LIVE_ROUTE_REFUSAL_STATUS: Readonly<Record<string, number>> = { 'not found': 404, disabled: 409 };
+/**
+ * The agent the neg-sys-003 control creates with its own model, so a loaded pinned list is
+ * observable: the list is only trusted to be empty of the others once it shows this one.
+ */
+const CONTROL_PINNED_WITNESS = 'BDD Agent Aurora';
 
 /** The latest refused change of a scenario, recorded by the When step that made it. */
 const refusals = new WeakMap<S1Context, RefusalObservation>();
@@ -658,8 +667,10 @@ Then(
   async ({ page }, model: string, origin: string) => {
     const preview = page.getByTestId(TID.clearPreview);
     await expect(preview).toBeVisible();
-    expect(tokensOf(await preview.innerText()), 'the clear preview').toContain(model);
-    await expect(preview).toContainText(origin);
+    // The preview container is visible while it still says "Checking what this conversation
+    // would inherit", so each value is awaited with a retrying assertion on its own field.
+    await expect(preview.getByTestId(TID.inheritedModel), 'the inherited model in the clear preview').toHaveText(exactly(model));
+    await expect(preview, 'the origin in the clear preview').toContainText(`from ${origin}`);
   },
 );
 
@@ -705,6 +716,9 @@ Then('an error says the system default was not changed', async ({ s1 }) => {
   const error = operator.getByTestId(TID.error);
   await expect(error).toBeVisible({ timeout: 10_000 });
   await expect(error).toContainText(/not changed/i);
+  // With the error rendered the response has been handled, so a confirmation shown on any
+  // settled response would exist by now; "no confirmation is shown" alone ran before that.
+  await expect(operator.getByTestId(TID.confirmation), 'no confirmation beside the error').toHaveCount(0);
 });
 
 /**
@@ -719,6 +733,10 @@ Then('the change is refused with a reason mentioning {string}', async ({ s1 }, n
   const shown = `HTTP ${refusal.status} ${refusal.body} (requested ${refusal.requested}; picker showed "${refusal.uiText ?? ''}")`;
   expect(refusal.status, `the refused request answered a client error: ${shown}`).toBeGreaterThanOrEqual(400);
   expect(refusal.status, `the refused request answered a client error: ${shown}`).toBeLessThan(500);
+  const liveStatus = refusal.target === 'live-default-route' ? LIVE_ROUTE_REFUSAL_STATUS[needle.toLowerCase()] : undefined;
+  if (liveStatus !== undefined) {
+    expect(refusal.status, `the live route status for a "${needle}" refusal: ${shown}`).toBe(liveStatus);
+  }
   if (refusal.target === 'conversation-override') {
     expect(refusal.status, `the override save status: ${shown}`).toBe(OVERRIDE_REFUSAL_STATUS);
     expect(refusal.code, `the override save error code: ${shown}`).toBe(OVERRIDE_REFUSAL_CODE);
@@ -747,6 +765,14 @@ Then(
 Then('the change result does not list {string} as pinned', async ({ s1 }, title: string) => {
   const operator = await s1.operatorPage();
   await expect(operator.getByTestId(TID.confirmation)).toBeVisible({ timeout: 15_000 });
+  // The list loads independently of the confirmation, and a list that is loading or failed
+  // is empty. Absence only means something once the loaded list shows the agent this control
+  // pins on purpose, and the loaded state's follow count.
+  await expect(operator.getByTestId(TID.followCount), 'the pinned list has loaded').toBeVisible({ timeout: 15_000 });
+  await expect(
+    operator.getByTestId(TID.pinnedAgent).filter({ hasText: CONTROL_PINNED_WITNESS }),
+    `the loaded pinned list shows ${CONTROL_PINNED_WITNESS}`,
+  ).toHaveCount(1, { timeout: 15_000 });
   const texts = await operator.getByTestId(TID.pinnedAgent).allInnerTexts();
   expect(texts.filter((text) => text.includes(title)), `pinned entries naming ${title}`).toEqual([]);
 });
@@ -833,4 +859,6 @@ Then('the console issued no write to the server after the failed acknowledgement
   if (remaining > 0) await operator.waitForTimeout(remaining);
   const late = s1.writes.filter((write) => write.at > failedAt).map((write) => `${write.method} ${write.path}`);
   expect(late, `browser writes in the ${NO_WRITE_WINDOW_MS} ms after the failed acknowledgement`).toEqual([]);
+  // Still no confirmation once the whole no-write window has passed.
+  await expect(operator.getByTestId(TID.confirmation), 'no confirmation after the no-write window').toHaveCount(0);
 });

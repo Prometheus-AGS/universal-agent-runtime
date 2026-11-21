@@ -3,6 +3,7 @@ export {
   CATALOG_MODELS_LIST_KEY,
   MODEL_CATALOG_LOAD_ID,
   MODEL_CATALOG_LOAD_STATE_ENTITY,
+  MODEL_CATALOG_SNAPSHOT_LOAD_ID,
   ModelCatalogIngestionError,
   PROVIDER_ENTITY,
   PROVIDER_LIST_KEY,
@@ -42,6 +43,8 @@ export {
   loadModelCatalog,
   loadProviderHealth,
   loadProviderRegistry,
+  recordModelCatalogSnapshotAccepted,
+  recordModelCatalogSnapshotRejected,
 } from "./domain";
 
 export { setSystemDefaultModel, setSystemDefaultProvider } from "./system-default";

@@ -39,11 +39,37 @@ fs.mkdirSync(scratchDir, { recursive: true });
  * (`src/config.rs:300`, seeded at `src/server.rs:1070-1073`). The key is a placeholder for the
  * local stub only: the catalog marks a provider `configured` only when its registry entry has a
  * non-empty key (`src/server.rs:4087`, `api_catalog`), and `stub-llm` ignores Authorization.
+ *
+ * The frozen SCN-SET fixture `scratch-config.yaml` is read at run time and written first, so its
+ * keys (`security.settings_mutation_auth_required`, `resilience.requests_per_second`) are in
+ * force. The runner then appends only what it must own: the `providers:` block. The frozen file
+ * must not define `providers` (a duplicate top-level key is invalid YAML), and a key the runner
+ * sets through the process environment (`UAR_SECURITY__SETTINGS_MUTATION_AUTH_REQUIRED`) keeps the
+ * runner's value. The baseline comparison runs this file inside the pre-change worktree, where
+ * the fixture does not exist yet; that run is recognised by its explicit `UAR_STATIC_DIR`
+ * and proceeds without the fixture. Any other run without the fixture stops here.
  */
+const frozenConfigPath = path.join(
+  repoRoot,
+  "openspec/changes/uiux-settings-truthful-status-and-removals/fixtures/scratch-config.yaml",
+);
+function readFrozenScratchConfig(): string {
+  if (!fs.existsSync(frozenConfigPath)) {
+    if (process.env.UAR_STATIC_DIR !== undefined) return "";
+    throw new Error(`frozen SCN-SET fixture not found: ${frozenConfigPath}`);
+  }
+  const frozen = fs.readFileSync(frozenConfigPath, "utf8");
+  if (/^providers\s*:/m.test(frozen)) {
+    throw new Error(`${frozenConfigPath} defines "providers", which the runner owns`);
+  }
+  return frozen.endsWith("\n") ? frozen : `${frozen}\n`;
+}
+
 const configPath = path.join(scratchDir, "config.yaml");
 fs.writeFileSync(
   configPath,
   [
+    readFrozenScratchConfig(),
     "providers:",
     "  - id: anthropic",
     "    display_name: Anthropic",

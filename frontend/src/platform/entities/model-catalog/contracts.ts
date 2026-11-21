@@ -16,7 +16,12 @@ export const PROVIDER_META_ID = "current" as const;
 /** Load-state singleton ids. */
 export const MODEL_CATALOG_LOAD_ID = "models" as const;
 export const PROVIDER_REGISTRY_LOAD_ID = "providers" as const;
-export type ModelCatalogLoadId = typeof MODEL_CATALOG_LOAD_ID | typeof PROVIDER_REGISTRY_LOAD_ID;
+/** Outcome of the last realtime `models` snapshot. Separate from `models` so a REST load cannot clear it. */
+export const MODEL_CATALOG_SNAPSHOT_LOAD_ID = "models-snapshot" as const;
+export type ModelCatalogLoadId =
+  | typeof MODEL_CATALOG_LOAD_ID
+  | typeof PROVIDER_REGISTRY_LOAD_ID
+  | typeof MODEL_CATALOG_SNAPSHOT_LOAD_ID;
 
 /**
  * The one identity of a catalog model: `provider/model`.
