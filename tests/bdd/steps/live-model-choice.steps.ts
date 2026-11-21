@@ -365,12 +365,13 @@ When('the held acknowledgement fails with status {int}', async ({ s1 }, status: 
   if (!route) throw new Error('the live route request was not held');
   // Later matching requests pass through to the server, so a retry would change the registry.
   held.passThrough = true;
+  // Stamp before fulfilling: a write fired the moment the 500 lands must count as late.
+  held.failedAt = Date.now();
   await route.fulfill({
     status,
     contentType: 'application/json',
     body: JSON.stringify({ error: 'held acknowledgement failed' }),
   });
-  held.failedAt = Date.now();
 });
 
 When('the operator tries to change the system default to {string}', async ({ s1 }, target: string) => {

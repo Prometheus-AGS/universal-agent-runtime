@@ -22,6 +22,11 @@ const repoRoot = path.resolve(frontendDir, "..");
 const targetDebugDir =
   process.env.UAR_SETTINGS_TRUTH_TARGET_DIR ?? path.join(repoRoot, "target/debug");
 const staticDir = process.env.UAR_STATIC_DIR ?? path.join(repoRoot, "static");
+// The contract makes a supporting real-server start BLOCKED when index.html is absent; fail
+// before any test runs rather than serve a page that cannot load.
+if (!fs.existsSync(path.join(staticDir, "index.html"))) {
+  throw new Error(`UAR_STATIC_DIR ${staticDir} has no index.html; build the frontend first.`);
+}
 
 const appPort = Number(process.env.UAR_SETTINGS_TRUTH_PORT ?? "3013");
 const stubAPort = Number(process.env.UAR_SETTINGS_TRUTH_STUB_A_PORT ?? "4611");

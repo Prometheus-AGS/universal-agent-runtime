@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,6 +21,11 @@ const persistencePath = path.join(
 const binDir = process.env.UAR_REAL_E2E_BIN_DIR ?? path.join(repoRoot, "target/debug");
 // Bundle the runtime serves. Explicit so a baseline worktree serves its own build.
 const staticDir = process.env.UAR_STATIC_DIR ?? path.join(repoRoot, "static");
+// The contract makes a supporting real-server start BLOCKED when index.html is absent; fail
+// before any test runs rather than serve a page that cannot load.
+if (!fs.existsSync(path.join(staticDir, "index.html"))) {
+  throw new Error(`UAR_STATIC_DIR ${staticDir} has no index.html; build the frontend first.`);
+}
 // JSON report location. Kept under playwright-report/ (git-ignored) so a run leaves the tree clean.
 const jsonReportFile =
   process.env.UAR_REAL_E2E_JSON_REPORT ??

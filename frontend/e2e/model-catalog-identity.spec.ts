@@ -194,6 +194,7 @@ test("SCN-IDN-001 negative control: a snapshot record missing model_id is reject
   // Every other request reaches the real server.
   let persistenceRewritten = false;
   let strippedRecordId: string | null = null;
+  let strippedProviderId: string | null = null;
   let snapshotsDelivered = 0;
 
   await page.route("**/api/config/persistence", async (route) => {
@@ -213,13 +214,26 @@ test("SCN-IDN-001 negative control: a snapshot record missing model_id is reject
       records?: Array<Record<string, unknown>>;
     };
     const records = snapshot.records ?? [];
-    const index = records.findIndex((record) => typeof record.model_id === "string");
-    if (index < 0) {
-      throw new Error("The real models snapshot has no record with a model_id to strip.");
+    // Strip a record whose provider differs from the first record's, so a build that rejects
+    // the snapshot on record 0 for any reason names the wrong provider and fails the error check.
+    const firstProvider = records[0]?.provider_id;
+    let index = -1;
+    for (let position = records.length - 1; position > 0; position -= 1) {
+      const candidate = records[position];
+      if (typeof candidate.model_id === "string" && candidate.provider_id !== firstProvider) {
+        index = position;
+        break;
+      }
+    }
+    if (index < 1) {
+      throw new Error(
+        "The real models snapshot has no record with a model_id from a second provider to strip.",
+      );
     }
     const broken: Record<string, unknown> = { ...records[index] };
     delete broken.model_id;
     strippedRecordId = typeof broken.id === "string" ? broken.id : null;
+    strippedProviderId = typeof broken.provider_id === "string" ? broken.provider_id : null;
     snapshotsDelivered += 1;
     await route.fulfill({
       status: response.status(),
@@ -244,6 +258,7 @@ test("SCN-IDN-001 negative control: a snapshot record missing model_id is reject
       .toBeGreaterThan(0);
     expect(persistenceRewritten, "the persistence-mode response was rewritten").toBe(true);
     expect(strippedRecordId, "a snapshot record lost its model_id").not.toBeNull();
+    expect(strippedProviderId, "the stripped record names its provider").not.toBeNull();
   });
 
   await test.step("an ingestion error is visible", async () => {
@@ -262,6 +277,10 @@ test("SCN-IDN-001 negative control: a snapshot record missing model_id is reject
       ingestionError,
       "a visible error names the rejected snapshot record (missing model_id)",
     ).toBeVisible({ timeout: 30_000 });
+    await expect(
+      ingestionError,
+      "the error names the provider of the stripped record, not the first record's",
+    ).toContainText(`'${strippedProviderId ?? ""}'`);
   });
 
   await test.step("the rows are unchanged", async () => {
