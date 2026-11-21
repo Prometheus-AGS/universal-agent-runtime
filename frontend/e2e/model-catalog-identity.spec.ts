@@ -105,8 +105,8 @@ test("SCN-IDN-001 Catalog model identity survives shared bare model ids", async 
       "bare ids listed by two or more providers",
     ).toBe(oracle.expectedFromCatalog.bareIdsListedByTwoOrMoreProviders);
     expect(
-      pairs.filter((pair) => pair.modelId.includes("/")).length,
-      "model ids containing a slash",
+      [...providersPerBareId.keys()].filter((modelId) => modelId.includes("/")).length,
+      "distinct model ids containing a slash",
     ).toBe(oracle.expectedFromCatalog.modelIdsContainingSlash);
     for (const [bareId, providers] of Object.entries(oracle.sharedBareIdSamples)) {
       expect([...(providersPerBareId.get(bareId) ?? [])].sort(), `providers of ${bareId}`).toEqual(
