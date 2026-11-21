@@ -1,0 +1,18 @@
+{
+  "$comment": "Frozen oracle for SCN-DSN-003. The limit and the counting rule are fixed here; the count is computed by the runner from the rendered DOM. No audit file written during the phase is read.",
+  "maxVisibleControlsBeforeAdvanced": 8,
+  "countedSelector": "input:not([type=hidden]):not([type=search]), select, textarea, [role=switch], [role=combobox], [role=slider], [role=radio], [role=checkbox]",
+  "countRules": [
+    "count only elements that are visible (non-zero box, not display:none, not inside a collapsed Advanced region)",
+    "count inside the section's main panel only; exclude the navigation, header, breadcrumb and banner",
+    "buttons (Save, Reload, Test, links) are not counted",
+    "a radio group counts once"
+  ],
+  "sectionsChecked": "every section in fixtures/settings-routes.json with a namespace form; sections that render a full page (providers, models, credentials, tools, mcp-health, skills, compiler, memory-records, access-keys, budget) are checked for the same limit on their first screen",
+  "advancedDisclosure": {
+    "selector": "button[aria-expanded]",
+    "labelPattern": "^Advanced \\(\\d+\\)$",
+    "keyboard": ["Tab to the button", "Enter or Space opens it", "aria-expanded becomes true", "hidden controls become visible in DOM order"]
+  },
+  "negativeControl": "a scratch console served with one section forced to render 9 visible controls must fail the counter naming that section"
+}

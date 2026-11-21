@@ -1,0 +1,30 @@
+{
+  "baselineRevision": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+  "scenarios": {
+    "SCN-TEAM-001": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "src/uar/compiler/collaboration/team_execution/admission.rs:117-128 — after binding revision 2 is installed (bindings.rs:96-115 accepts it), admission of the next task returns 409 'team deployment binding changed; reinstall the team binding' because the team pin stays 1 (team_planning.rs:131-134, no writer afterwards). The oracle requires task 2 on route B at revision 2, pin 2 and provenance. The in-flight task 1 also loses its roster tool call (mod.rs:36 fence in current_actor, peer.rs:345-349)."
+    },
+    "SCN-TEAM-002": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "team_roster runs current_actor -> fence() (peer.rs:345-349, team_execution/mod.rs:36), which rejects once the stored binding revision is 2 while the attempt holds 1; claim revalidation also calls resolve_team_member_run (runtime/turn/representation.rs:207-208 -> request.rs:33-48 -> epoch.rs:12 -> resolution.rs:42-48). The tool call therefore fails (team_tools.rs:233-248 safe_error). NOTE: the run may still reach the stub's final text and settle succeeded, so status and request counts alone could PASS at baseline; the frozen toolResult assertion (roster result present in A's second request) is what makes the baseline FAIL. Added to the oracle on this pass."
+    },
+    "SCN-TEAM-003": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "admission.rs:117-128 refuses revision 2 with the generic 'team deployment binding changed' detail, error.code collaboration_revision_conflict (api/collaboration.rs:489-519), before any route check, so the oracle's TEAM_ROUTE_PROFILE_MISMATCH code never appears. The queued-attempt case cannot reach the claim: a failed claim other than TEAM_PENDING_LIMIT leaves the attempt queued with no state reason (controller.rs:287-293), while the oracle requires failed with model_route_unavailable_at_boundary. The 2-absent control also returns the generic code, not the frozen one."
+    },
+    "SCN-TEAM-004": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "The fixture needs a second attempt adopted onto route B at revision 2; baseline admission refuses it (admission.rs:117-128). TeamExecutionAttempt has no modelProvenance field (domain/team_execution.rs:35-78) and the console contract has none (frontend/src/platform/entities/teams/contracts.ts:437)."
+    },
+    "SCN-TEAM-005": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "regression-guard",
+      "evidence": "The guarded checks exist at baseline: dispatch.rs:31-32 (stale expectedTeamRevision), peer_commands.rs:44-47 (stale roster cursor), llm/registry.rs:176-177 with api/providers.rs:285 (stale provider settings edit 409), unknown attempt 404 via NotFound. But the frozen fixture requires a team that has already adopted a model-only rebind (design Acceptance prerequisite), and the baseline cannot produce one (admission.rs:117-128). The runner records the setup failure. Running the three checks on a never-adopted team would be a different scenario and would pass trivially, so it is not used as the baseline verdict."
+    }
+  }
+}

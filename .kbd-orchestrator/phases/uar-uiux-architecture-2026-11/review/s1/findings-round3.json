@@ -1,0 +1,61 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "isolation_mode": "harness-native",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 914,
+      "claim": "baseline-check-supporting can never pass. Each of its three jq calls is written as 'ID=SCN-... T=\"...\" jq -e --arg id \"$ID\" --arg t \"$T\" ...'. A prefix assignment applies only to the environment of the command it precedes. The shell expands \"$ID\" and \"$T\" in that same command's arguments before the assignment takes effect, so jq receives --arg id \"\" --arg t \"\". The filter then selects specs whose title is \"\", none exists, '$s | length == 1' is false, and jq -e exits 1 for SCN-SET-003, SCN-IDN-001 and SCN-PICK-002 whatever the report contains.",
+      "evidence": "adopted-contract.json:914 contains 'ID=SCN-SET-003 T=\"SCN-SET-003 System default has one live control\" jq -e --arg id \"$ID\" --arg t \"$T\"' (the same pattern repeats for SCN-IDN-001 and SCN-PICK-002). Shell check: bash -c 'unset ID T; ID=SCN-SET-003 T=\"x y\" printf \"[%s][%s]\\n\" \"$ID\" \"$T\"' prints '[][]'. adopted-contract.json:1684 says a mismatch 'rejects the runner and step definitions before any scenario command'. All three scenarios are mandatory: true.",
+      "suggested_fix": "Pass the literals to jq directly, for example jq -e --arg id SCN-SET-003 --arg t \"SCN-SET-003 System default has one live control\" ..., or set the variables in their own statement first: ID=...; T=...; jq --arg id \"$ID\" --arg t \"$T\" ....",
+      "resolves": "NEW (introduced by the fix for adopted-contract.json:908)"
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 964,
+      "claim": "The mutant is now bound to the inventory's candidateCommit, but nothing binds the tree the main scenarios run against to that commit. scn-sys-015 and scn-sys-017 run in the main checkout (cwd \".\") with that checkout's tests/bdd step definitions. Each mutant runs its own copy of the step definitions as they were at candidateCommit. No command checks that HEAD equals candidateCommit or that the checkout is clean, and tests/bdd/steps/** is not an invalidation key. If a step definition is weakened after the commit, for example uncommitted edits at the inventory or a repair inside the boundary loop that reruns only the failed gate, the main scenario passes on a vacuous step while neg-sys-015 and neg-sys-017 stay valid against the old, strict step code. Round-2's core defect, that the mutant's base is not proven to be the tested candidate, has moved rather than closed.",
+      "evidence": "adopted-contract.json:924 and :994 create the mutant from jq .candidateCommit; :964 and :1034 compare the mutant only with candidateCommit. scn-sys-015 at :1394-1399 and scn-sys-017 at :1479 have cwd \".\" and run no git check. The SCN-SYS-015 invalidationKeys (:468) and SCN-SYS-017 invalidationKeys (:578) list product source, fixtures and the feature files, but not tests/bdd/steps/**, tests/bdd/support/** or tests/bdd/playwright.config.ts. :827 says 'only affected scenarios are invalidated'.",
+      "suggested_fix": "Add a run step before prepare-bdd and before each scn-/neg- command that asserts test \"$(git rev-parse HEAD)\" = candidateCommit and git status --porcelain --untracked-files=no is empty in the main checkout. Add tests/bdd/steps/**, tests/bdd/support/** and tests/bdd/playwright.config.ts to the invalidationKeys of SCN-SYS-015 and SCN-SYS-017. State that any repair that changes the candidate requires a new candidateCommit, recreated mutant worktrees and a rerun of neg-sys-015 and neg-sys-017.",
+      "resolves": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json:918"
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "openspec/changes/uiux-system-model-live-default/design.md",
+      "line": 754,
+      "claim": "The hold mechanism is now pinned, but the step contract defines no point at which the held POST is known to have arrived before the absence assertions run. The UI performs an unheld PUT and then the POST. The held step 'does not wait', and Playwright absence assertions (not.toBeVisible) pass at once. Consider a candidate that reuses the baseline optimistic setDefault after the new PUT. It changes the control and the confirmation when the PUT returns, a few milliseconds after the click. 'no confirmation is shown yet' and 'does not yet show ... as live' can run before that and pass. The registry GET passes regardless, and after release the confirmation appears. This is exactly the optimistic UI that confirmationComparator.rejects claims to reject.",
+      "evidence": "design.md:754: 'the harness holds POST /api/uar/providers/*/default with Playwright page.route and does not wait'. s1-oracle.json:179-185: mechanism and assertionsWhileHeld, with no requirement that the route handler has captured the POST before the assertions. live-model-choice.feature:27-30: absence steps immediately after the click. providers-store.ts:156-164: optimisticUpsert writes default_id before setDefaultProvider issues the POST. design.md D1 (:46-47): PUT first, then POST.",
+      "suggested_fix": "In design.md:754 and s1-oracle.json confirmationComparator, require the held step to return only after (a) the PUT response has been received and (b) the page.route handler has captured the POST, awaited through a promise resolved inside the handler. The three assertions while held run after that point. Repeat the confirmation-absence check immediately before route.continue().",
+      "resolves": "tests/bdd/features/live-model-choice.feature:26"
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1427,
+      "claim": "Only the patch's author certifies what the mutant changes, and the judgement accepts any error at the named step. The digest and targetFile are written to the inventory by the implementer at the same moment the patch is authored. The contract pins neither. Only the M1 patch is listed as requiring review, so M2 is not. M2's health scenario (scenario 3) never checks receipt time. An M2 patch that blanks or removes the time element therefore satisfies neg-sys-015, so a presence-only 'receipt shows the time ...' step passes on the candidate while the control reports valid. The digest proves only that the patch did not change after the inventory.",
+      "evidence": "adopted-contract.json:1680: 'patch digests and targets are recorded at the implementation-complete inventory ... and are not in this contract'. :1682 lists 'the mutant M1 patch' as BLOCKED until reviewed, and M2 is absent. :1427 (jq): '$s[$i].error != null' accepts any error. live-model-choice.feature:52-59: the health scenario for M2 has no time step. tasks.md:65 (7.13) has no review step.",
+      "suggested_fix": "Add both patches, and their targetFile, to the list of items reviewed before the boundary run, with the reviewer recorded in the ledger. In the jq, require the failing step's error message to contain the mutant's wrong value: for M1 the unsuffixed 'claude-5-haiku' as the serving model, and for M2 a time outside A's window. Alternatively, give M2 a health check that asserts a receipt time, such as scenario 6, lines 110-111.",
+      "resolves": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json:918"
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 914,
+      "claim": "After the prefix-assignment bug is fixed, baseline-check-supporting still keys on Playwright's spec-level 'ok'. That field is true for a skipped or fixme test. The SCN-IDN-001 expectation (baseline PASS) is therefore met by a spec that never ran.",
+      "evidence": "adopted-contract.json:914: '$s[0].ok == (... .baselineVerdict == \"PASS\")'. boundary-baseline-expectations.json: SCN-IDN-001 baselineVerdict PASS.",
+      "suggested_fix": "For PASS, require every result of the selected spec to have status == \"passed\". For FAIL, require at least one result to be failed or timedOut, rather than relying on spec ok.",
+      "resolves": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json:908"
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "tests/bdd/features/live-model-choice-controls.feature",
+      "line": 58,
+      "claim": "In CTL-SYS-001-HELD-500 the step 'the registry default is still \"openai\"' cannot fail. The harness answers the POST with route.fulfill, so the request never reaches the server. Only the confirmation and error assertions discriminate.",
+      "evidence": "design.md:754: 'the held acknowledgement fails with status {int}' (route.fulfill). s1-oracle.json:191: 'the held POST is fulfilled with status 500 (route.fulfill) instead of continued'.",
+      "suggested_fix": "Keep the step but do not count it as discriminating evidence, or replace it with a read-back of bdd-provider-b's default_model to record the accepted partial PUT from D1.",
+      "resolves": "NEW"
+    }
+  ]
+}

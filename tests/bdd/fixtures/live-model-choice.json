@@ -1,0 +1,4322 @@
+[
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r1 after change",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r2 before",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r2 before",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r2 before",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r2 before",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r2 before",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r2 before",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r2 before",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r2 before",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r2 before",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r2 before",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r2 before",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r2 before",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r2 before",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r2 before",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r2 before",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r2 before",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r2 after",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r2 after",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r2 after",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r2 after",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r2 after",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r2 after",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r2 after",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r2 after",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r2 after",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r2 after",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r2 after",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r2 after",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r2 after",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r2 after",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r2 after",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r2 after",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r3 override",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r3 override",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r3 override",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r3 override",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r3 override",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r3 override",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r3 override",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r3 override",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r3 override",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r3 override",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r3 override",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r3 override",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r3 override",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r3 override",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r3 override",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r3 override",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r4 cancel",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r4 confirm",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r5 x1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r5 y1",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r5 x2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r5 y2",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r5 y3",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r6 next",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r6 next",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r6 next",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r6 next",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r6 next",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r6 next",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r6 next",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r6 next",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r6 next",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r6 next",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r6 next",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r6 next",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r6 next",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r6 next",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r6 next",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r6 next",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r7 override refused",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r8 aurora",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r8 cirrus",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 r8 dawn",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 served",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 served",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 served",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 served",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 served",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 served",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 served",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 served",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 served",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 served",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 served",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 served",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 served",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 served",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 served",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 served",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c001 button",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c001 button",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c001 button",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c001 button",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c001 button",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c001 button",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c001 button",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c001 button",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c001 button",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c001 button",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c001 button",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c001 button",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c001 button",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c001 button",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c001 button",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c001 button",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c003",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c003",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c003",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c003",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c003",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c003",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c003",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c003",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c003",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c003",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c003",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c003",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c003",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c003",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c003",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c003",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c007",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c007",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c007",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c007",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c007",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c007",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c007",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c007",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c007",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c007",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c007",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c007",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c007",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c007",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c007",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c007",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c011",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c011",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c011",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c011",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c011",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c011",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c011",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c011",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c011",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c011",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c011",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c011",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c011",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c011",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c011",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c011",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c012",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c012",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c012",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c012",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c012",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c012",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c012",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c012",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c012",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c012",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c012",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c012",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c012",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c012",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c012",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c012",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c013",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c013",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c013",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c013",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c013",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c013",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c013",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c013",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c013",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c013",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c013",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c013",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c013",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c013",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c013",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c013",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c016",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 c016",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c016",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 c016",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c016",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 c016",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c016",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 c016",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c016",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "S1 c016",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c016",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "S1 c016",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c016",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "S1 c016",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c016",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "S1 c016",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Reply with OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "Reply with OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Reply with OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "Reply with OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "Reply with OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "Reply with OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "Reply with OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "Reply with OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-haiku"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "Reply with OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "claude-5-sonnet",
+    "last_user_message": "Reply with OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "Reply with OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-sonnet",
+    "last_user_message": "Reply with OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-claude-5-sonnet"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "Reply with OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "qwen-5-turbo",
+    "last_user_message": "Reply with OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "Reply with OK.",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  },
+  {
+    "model": "bdd-provider-c/qwen-5-turbo",
+    "last_user_message": "Reply with OK.",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "bdd-reply-qwen-5-turbo"
+    }
+  }
+]

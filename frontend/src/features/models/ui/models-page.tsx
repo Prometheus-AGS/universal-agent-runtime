@@ -30,14 +30,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { ProviderModelPicker, ProviderPicker } from "../pickers";
 import { useModelsAdmin } from "../model/use-models-admin";
 import {
   filterModelRows,
@@ -453,7 +447,15 @@ function AddModelDialog({ open, onOpenChange, configured, catalog, busy, onAdd }
   }, [open, configured]);
 
   const selectedProvider = configured.find((p) => p.id === providerId);
-  const enabledIds = new Set((selectedProvider?.models ?? []).map((m) => m.id));
+  const providerScope = useMemo(
+    () => configured.map((p) => ({ id: p.id, label: p.display_name ?? p.id })),
+    [configured],
+  );
+  const enabledModelIds = useMemo(
+    () => (selectedProvider?.models ?? []).map((m) => m.id),
+    [selectedProvider],
+  );
+  const enabledIds = new Set(enabledModelIds);
 
   // Catalog models for the chosen provider that are not already enabled.
   const available = useMemo(
@@ -492,43 +494,30 @@ function AddModelDialog({ open, onOpenChange, configured, catalog, busy, onAdd }
             <Label htmlFor="add-model-provider" className="mb-1 block font-mono text-xs text-muted-foreground">
               Provider
             </Label>
-            <Select value={providerId} onValueChange={(v) => { if (v !== null) { setProviderId(v); setModelId(""); } }}>
-              <SelectTrigger id="add-model-provider" data-testid="add-model-provider">
-                <SelectValue placeholder="Select a provider" />
-              </SelectTrigger>
-              <SelectContent>
-                {configured.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.display_name ?? p.id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ProviderPicker
+              id="add-model-provider"
+              testId="add-model-provider"
+              ariaLabel="Provider"
+              value={providerId}
+              onChange={(v) => { setProviderId(v); setModelId(""); }}
+              scope={providerScope}
+            />
           </div>
           <div>
             <Label htmlFor="add-model-model" className="mb-1 block font-mono text-xs text-muted-foreground">
               Model
             </Label>
-            <Select value={modelId} onValueChange={(v) => { if (v !== null) setModelId(v); }} disabled={!providerId || available.length === 0}>
-              <SelectTrigger id="add-model-model" data-testid="add-model-model">
-                <SelectValue
-                  placeholder={
-                    !providerId
-                      ? "Select a provider first"
-                      : available.length === 0
-                        ? "All catalog models already enabled"
-                        : "Select a model"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {available.map((m) => (
-                  <SelectItem key={m.model_id} value={m.model_id}>
-                    {m.name || m.model_id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ProviderModelPicker
+              id="add-model-model"
+              testId="add-model-model"
+              ariaLabel="Model"
+              providerId={providerId}
+              value={modelId}
+              onChange={setModelId}
+              excludeModelIds={enabledModelIds}
+              placeholder="Select a model"
+              emptyLabel="All catalog models already enabled"
+            />
           </div>
         </div>
         <DialogFooter>

@@ -1,0 +1,61 @@
+{
+  "$comment": "Frozen oracle for SCN-DSN-001 and SCN-DSN-002. Truth sources: operator decision 'Redesign authorized; docs/design is the visual authority' (.prometheus/decisions.md, 2026-11-19: Settings grouped into about seven areas), docs/design/README.md and docs/design/assets/settings.js:61-70 (the seven prototype settings pages), and the removed/retained lists frozen in uiux-settings-truthful-status-and-removals/fixtures. Written before implementation; no implementer edits it.",
+  "areas": [
+    {"area": "models", "label": "Models & providers", "sections": ["providers", "models", "credentials", "llm-defaults", "model-files", "routing", "context", "caching"]},
+    {"area": "tools", "label": "Tools & MCP", "sections": ["tools", "mcp-health", "native-tools"]},
+    {"area": "skills", "label": "Skills", "sections": ["skills", "compiler"]},
+    {"area": "knowledge", "label": "Knowledge & memory", "sections": ["defaults", "knowledge-bases", "memory", "memory-records"]},
+    {"area": "governance", "label": "Governance", "sections": ["enforcement", "access-keys", "budget", "presentation-policy", "config-status"]},
+    {"area": "appearance", "label": "Appearance", "sections": ["theme", "preferences"]},
+    {"area": "desktop", "label": "Desktop", "sections": [], "visibleOnlyIn": "Tauri desktop host"}
+  ],
+  "namespaceToSection": {
+    "provider": "models/providers",
+    "llm": "models/llm-defaults",
+    "models": "models/model-files",
+    "resilience": "models/routing",
+    "intent_classifier": "models/routing",
+    "context_strategy": "models/context",
+    "prompt_caching": "models/caching",
+    "native_tools": "tools/native-tools",
+    "rag": "knowledge/defaults",
+    "knowledge_bases": "knowledge/knowledge-bases",
+    "memory": "knowledge/memory",
+    "governance": "governance/enforcement",
+    "presentation_policy": "governance/presentation-policy",
+    "user_settings": "appearance/preferences"
+  },
+  "linkOuts": {"agent_config": "/admin/agents", "skill_config": "/settings/skills/skills"},
+  "pageToSection": {
+    "providers": "models/providers", "models": "models/models", "credentials": "models/credentials",
+    "tools": "tools/tools", "mcp-health": "tools/mcp-health",
+    "skills": "skills/skills", "compiler": "skills/compiler",
+    "memory": "knowledge/memory-records",
+    "auth": "governance/access-keys", "cost": "governance/budget"
+  },
+  "removedNamespaces": ["server", "security", "persistence", "skill_evolution", "llm_failover", "context_management", "file_processing", "sycophancy", "sandbox", "vision", "acp", "kreuzberg", "unstructured", "mistral_ocr"],
+  "redirects": [
+    {"from": "/admin/settings", "to": "/settings"},
+    {"from": "/settings", "to": "/settings/models"},
+    {"from": "/admin/providers", "to": "/settings/models/providers"},
+    {"from": "/admin/models", "to": "/settings/models/models"},
+    {"from": "/admin/credentials", "to": "/settings/models/credentials"},
+    {"from": "/admin/tools", "to": "/settings/tools/tools"},
+    {"from": "/admin/mcp-health", "to": "/settings/tools/mcp-health"},
+    {"from": "/admin/skills", "to": "/settings/skills/skills"},
+    {"from": "/admin/compiler", "to": "/settings/skills/compiler"},
+    {"from": "/admin/memory", "to": "/settings/knowledge/memory-records"},
+    {"from": "/admin/auth", "to": "/settings/governance/access-keys"},
+    {"from": "/admin/cost", "to": "/settings/governance/budget"}
+  ],
+  "unchangedWorkRoutes": ["/admin/knowledge", "/admin/agents", "/admin/teams", "/admin/runs", "/admin/presentations", "/admin/approvals", "/admin/runtime", "/admin/protocols"],
+  "fallbackControls": [
+    {"open": "/settings/nope", "expectedFinal": "/settings/models"},
+    {"open": "/settings/models/nope", "expectedFinal": "/settings/models/providers"},
+    {"open": "/settings/desktop", "context": "browser, not the Tauri host", "expectedFinal": "/settings/models"},
+    {"open": "/admin/nonexistent", "expectedTestId": "admin-section-runtime"}
+  ],
+  "paletteEntries": ["Providers", "Models", "Credentials", "LLM defaults", "Model files", "Routing", "Context", "Caching", "Tools", "MCP health", "Native tools", "Skills", "Compiler", "Knowledge defaults", "Knowledge bases", "Memory", "Memory records", "Enforcement", "Access keys", "Budget", "Presentation policy", "Configuration status", "Theme", "Preferences"],
+  "primaryNavigation": {"settingsDestinationPath": "/settings", "runsDestinationMatches": ["/admin/runs", "/admin/runtime", "/admin/approvals", "/admin/protocols"]},
+  "deepLinkSamples": ["/settings/models/routing", "/settings/knowledge/memory-records", "/settings/governance/config-status"]
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "uar-pgl-first-session-001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "uar-pgl-reply-001" }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "uar-pgl-first-session-001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": { "kind": "content", "text": "uar-pgl-reply-001" }
+  }
+]

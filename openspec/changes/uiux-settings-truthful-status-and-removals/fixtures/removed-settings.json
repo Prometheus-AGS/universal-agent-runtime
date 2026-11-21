@@ -1,0 +1,38 @@
+{
+  "$comment": "Frozen oracle for SCN-SET-002. Truth source: operator decision 'Settings with no reader come out of the UI' (.prometheus/decisions.md, 2026-11-19) and the namespace classification table in analysis.md. Written before implementation; implementers must not edit it. Probe keys were read from the seeds in src/uar/settings/manager.rs at the cited lines.",
+  "decisionList": ["server", "security", "persistence", "llm.model", "skill_evolution", "llm_failover", "context_management", "file_processing", "sycophancy", "sandbox", "vision", "acp", "kreuzberg", "unstructured", "mistral_ocr"],
+  "removedNamespaces": [
+    {"namespace": "server", "navLabel": "Server", "probeKey": "server.shutdown_timeout_secs", "seedLine": 1434},
+    {"namespace": "security", "navLabel": "Security", "probeKey": "security.jwt_required", "seedLine": 1487},
+    {"namespace": "persistence", "navLabel": "Persistence", "probeKey": "persistence.external_cache_enabled", "seedLine": 1763},
+    {"namespace": "skill_evolution", "navLabel": "Skill Evolution", "probeKey": "skill_evolution.min_tool_calls", "seedLine": 3428},
+    {"namespace": "llm_failover", "navLabel": "LLM Failover", "probeKey": "llm_failover.cooldown_secs", "seedLine": 3043},
+    {"namespace": "context_management", "navLabel": "Context Management", "probeKey": "context_management.max_tokens", "seedLine": 2306},
+    {"namespace": "file_processing", "navLabel": "File Processing", "probeKey": "file_processing.max_files_per_prompt", "seedLine": 1821},
+    {"namespace": "sycophancy", "navLabel": "Sycophancy Detection", "probeKey": "sycophancy.log_only", "seedLine": 3158},
+    {"namespace": "sandbox", "navLabel": "Sandbox", "probeKey": "sandbox.default_timeout_secs", "seedLine": 3096},
+    {"namespace": "vision", "navLabel": "Vision", "probeKey": "vision.auto_detect", "seedLine": 1867},
+    {"namespace": "acp", "navLabel": "ACP Server", "probeKey": "acp.session_ttl_secs", "seedLine": 3503},
+    {"namespace": "kreuzberg", "navLabel": "Kreuzberg OCR", "probeKey": "kreuzberg.pdf_dpi", "seedLine": 2239},
+    {"namespace": "unstructured", "navLabel": "Unstructured API", "probeKey": "unstructured.api_url", "seedLine": 2149},
+    {"namespace": "mistral_ocr", "navLabel": "Mistral OCR", "probeKey": "mistral_ocr.ocr_model", "seedLine": 2186}
+  ],
+  "removedFields": [
+    {"key": "llm.model", "label": "Default Model", "reason": "yaml-only"},
+    {"key": "llm.default_provider", "label": "Default LLM Provider ID", "reason": "managed-by-registry"},
+    {"key": "rag.embedding_provider", "label": "Embedding Provider ID", "reason": "not-read"},
+    {"key": "rag.embedding_model", "label": "Embedding Model ID", "reason": "not-read"}
+  ],
+  "probeProcedure": "For each probeKey: GET /api/uar/settings/{key}; PUT the same value back with the row's revision. Expected: PUT succeeds and the returned row has apply == 'inert' and application_status == 'not_applied'. Repeat after a process restart: still 'not_applied'.",
+  "expectedStatus": {"apply": "inert", "application_status": "not_applied"},
+  "yamlStillHonored": {
+    "probe": "sandbox runner selection",
+    "procedure": "Start with env UAR_SANDBOX_RUNNER unset and sandbox.runner row PUT to a different value; the runner chosen at boot is the env/platform-chosen one (sandbox/platform.rs:21,61), unchanged by the row."
+  },
+  "defaultProviderWrite": {
+    "request": "PUT /api/uar/settings/llm.default_provider",
+    "expectedStatus": 422,
+    "expectedBody": {"error": "unsupported_setting", "key": "llm.default_provider"},
+    "expectedMessageContains": "POST /api/uar/providers/{id}/default"
+  }
+}

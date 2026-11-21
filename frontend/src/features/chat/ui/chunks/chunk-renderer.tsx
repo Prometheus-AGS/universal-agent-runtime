@@ -1,5 +1,6 @@
 import type { Chunk } from "@/features/chat/model/chunk";
 import { assertNever } from "@/shared/content";
+import { MODEL_RECEIPT_ARTIFACT_PREFIX } from "@/features/chat/model/model-receipt";
 import { A2uiChunkView } from "./a2ui-chunk";
 import { ToolApprovalChunkView, ToolDeniedChunkView } from "./approval-chunk";
 import { ArtifactChunkView } from "./artifact-chunk";
@@ -27,7 +28,8 @@ export function ChunkRenderer({ chunk }: { chunk: Chunk }) {
     case "citation": case "rag-citations": return <CitationChunkView chunk={chunk} />;
     case "context-update": return <ContextChunkView chunk={chunk} />;
     case "a2ui-display": case "a2ui-input": return <A2uiChunkView chunk={chunk} />;
-    case "artifact": return <ArtifactChunkView chunk={chunk} />;
+    // The model receipt is rendered once, under the answer, by AnswerReceipt; never as a raw artifact.
+    case "artifact": return chunk.artifactId.startsWith(MODEL_RECEIPT_ARTIFACT_PREFIX) ? null : <ArtifactChunkView chunk={chunk} />;
     case "image": case "video": case "file": return <MediaChunkView chunk={chunk} />;
     case "divider": return <DividerChunkView chunk={chunk} />;
     case "usage": return <UsageChunkView chunk={chunk} />;

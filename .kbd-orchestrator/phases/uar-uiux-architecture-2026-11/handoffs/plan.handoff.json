@@ -1,0 +1,18 @@
+{
+  "stage": "plan",
+  "completedAt": "2026-11-20T22:06:43Z",
+  "outputs": [
+    "plan.md"
+  ],
+  "nextStage": "execute",
+  "summaryForNext": "S1 plan: 4 changes, 69 tasks registered (54 implementation, 15 boundary). Six writers own disjoint files: W1 settings/provider routes, W2 turn receipt and served model, W3 stub and BDD harness (author only), W4 entity domain, W5 pickers, W6 S1 surfaces. Round 1 runs W1-W5 in parallel; W6 follows once the entity action, pickers and receipt fields exist. Task model assignments are in plan.md (Opus for design work, Sonnet for mechanical edits). Decisions P-1..P-6 are recorded. Adversarial plan review skipped per operator decision 2026-11-20. Method check CONFLICT unresolved (no KBD-POLICY-ACK in canonical state); it grants nothing early. The boundary needs an operator verification grant and one fresh-context review of the step definitions (contract requiredApprovals). Biggest risk: P-3, the provider-reported model may be missing from Liter's completion result; W2 checks it first.",
+  "skipped": false,
+  "skipReason": null,
+  "identity": {
+    "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+    "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+    "phaseId": "uar-uiux-architecture-2026-11",
+    "planRevision": 143,
+    "contractDigest": "6477e9a141d59effe2c68ecc8b277a672a6355fd2baac668a6ebbba920d98b04"
+  }
+}

@@ -619,3 +619,14 @@ warning is a failed gate step: fix it and rerun only that step.
 Operator instruction: NO functional/manual verification test may require authentication. External infrastructure owns authentication. Test scripts must not require, mint, renew, copy or send JWTs, bearer tokens, API authentication keys, or login credentials. Run behavior scripts against the externally provisioned local identity endpoint; UAR_BASE_URL, model and nonsecret workspace selectors are sufficient. Stable owner context may be provided by the external host/proxy so persisted data remains accessible, but authentication plumbing must never become a test step, scenario, approval or blocker presented to the operator. Do not weaken production/remote identity boundaries or remove unrelated security regression coverage. Preserve actual product assertions. This supersedes earlier manual-fixture JWT instructions and token-expiry gates.
 
 The active UAR already has jwt_required=false; team APIs nevertheless require a verified owner. The existing external uar-jwt-proxy supplies that owner and now preserves tenant context. Tests do not carry credentials. The previous claim that global JWT authentication was enabled was inaccurate; owner-scoped API admission caused the requirement.
+
+## Goals-first development
+
+**Always think in terms of user goals and value—not in tests or assumptions.**
+
+- **Assess and analyze:** Name the actual user or agent, the outcome they need, and why it matters. Trace the reported conditions through the real UI, service, and source of truth before choosing a fix. Distinguish confirmed intent from assumptions.
+- **Plan:** In the existing accepted spec or behavior contract, record each rule's condition, observable outcome, evidence, exceptions, and unresolved assumptions. Trace each material rule to a reachable phase-end Gherkin/VLBV scenario. Do not invent speculative cases or add an unrelated verification gate.
+- **Execute and reflect:** Stay within the adopted KBD scope and verification windows. Use the established build, phase-end verification, approval and release process unchanged. At the authorized boundary, run the smallest relevant checks that exercise the changed behavior, then record what was actually observed, any limitations, and how the user gets the intended value.
+- **Finish the handoff:** Use the agreed exit contract. Once applicable compile and changed-behavior checks satisfy it and review is authorized, hand off the reviewable change with evidence, not an indefinite draft. Do not hold on unrelated polish or bypass a real gate.
+
+For settings, distinguish “the picker displays the new model” from “the next turn uses the selected provider and model at the intended scope.” Where relevant and authorized, verify both surfaces and that clearing the override restores inheritance.

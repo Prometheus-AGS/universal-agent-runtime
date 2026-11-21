@@ -1,0 +1,65 @@
+{
+  "schema": "uar-frozen-oracle/1",
+  "change": "uiux-local-first-persistence-worker",
+  "frozenAt": "2026-11-19",
+  "adoptionRule": "Entries with status 'proposed' may be edited only together with design.md before the phase contract is adopted. After adoption every value is immutable. No value here is read from implementation code.",
+  "baseline": {
+    "gitRef": "f2c9e36e",
+    "worktreeName": "pgl-baseline",
+    "createdBy": "scripts/worktree-new.sh pgl-baseline --base f2c9e36e (path ~/.claude/worktrees/pgl-baseline)"
+  },
+  "electionLockName": "pglite-election-lock:uar-threads",
+  "indexedDbName": "/pglite/uar-threads",
+  "migrationVersions": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "messageColumns": [
+    "run_id",
+    "client_turn_id",
+    "history_position"
+  ],
+  "stubModel": "openai/gpt-5.4-mini",
+  "stubFixtureFile": "fixtures/stub-llm-pgl.json",
+  "firstSession": {
+    "prompt": "uar-pgl-first-session-001",
+    "expectedHistoryOccurrences": 1
+  },
+  "handover": {
+    "conversationsCreated": 20,
+    "leaderClosedAfterCreation": 5,
+    "expectedCountDelta": 20,
+    "samples": 10
+  },
+  "threadOriginControl": {
+    "sameServerOtherOrigins": [
+      "http://127.0.0.1:<port>",
+      "http://localhost:<port>"
+    ],
+    "expectedOnOtherOrigin": "empty database"
+  },
+  "bounds": {
+    "status": "proposed",
+    "runtimeAgUiEventRetention": 500,
+    "graphPersistMaxWaitMs": 2000,
+    "persistDurationToleranceMs": 1000,
+    "dbWriteRetryAttempts": 5,
+    "dbWriteRetryDelayMs": 200
+  },
+  "longStream": {
+    "stubFixtureFile": "fixtures/stub-llm-pgl-long-stream.json",
+    "requires": "stub-llm streamed fixture kind (task 4.6); the current stub emits a two-chunk stream",
+    "prompt": "uar-pgl-long-stream-001",
+    "minimumStreamDurationMs": 12000,
+    "precondition": "ingested AG-UI event count exceeds runtimeAgUiEventRetention, else the sample is BLOCKED",
+    "samples": 10
+  },
+  "runTrace": {
+    "firstType": "RUN_STARTED",
+    "lastType": "RUN_FINISHED",
+    "mustContainText": "uar-pgl-reply-001",
+    "order": "ascending seq"
+  }
+}

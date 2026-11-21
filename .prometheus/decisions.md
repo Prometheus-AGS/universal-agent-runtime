@@ -2957,3 +2957,77 @@ server-side consumers of the existing change feed that refresh those in-memory
 copies on every replica. The cost: a backend item on the critical path, and the
 boundary gate must exercise at least two replicas against one remote store, not
 only a single process.
+
+## 2026-11-19 — Spec review: a third revision round is authorized
+
+After two harness-native review rounds on the uar-uiux-architecture-2026-11 spec set,
+five critical findings on the contract's acceptance content remained (SCN-SYS-006
+unpassable by a correct console; baseline commands cannot build a baseline; runner
+integrity decided by the runner; SCN-RTM-008/009 using themselves as negative controls;
+SCN-IDN-004 taking truth from the server response). VLBV CR-30 forbids accepting these at
+the two-round cap. The operator chose to fix them in a third revision and review round
+rather than carry them into Plan. The cost: one more round of spec work and review before
+Plan; the contract stays unadopted until it passes.
+
+## 2026-11-19 — Phase re-anchored on configuring a working world (value-first)
+
+Operator direction: re-anchor uar-uiux-architecture-2026-11 at a safe checkpoint, keep current
+work and the KBD record, and judge done by a person or agent completing the job in the in-app
+browser against the actual candidate, with readable Gherkin and the supported Cucumber runner.
+Reconciled at canonical revision 3471 against the shared memory pack "UAR Settings Outcome
+Contract 2026-11-19" and docs/uar-settings-user-goals (rev 0.1, f2c9e36e). Consequences, all
+recorded in the phase's re-anchor-2026-11-19.md: the custom boundary runner is withdrawn in
+favour of the existing `pnpm test:bdd` path; the 89-scenario contract draft is not adopted and
+will be re-scoped to value slices, S1 (live default, conversation override and clear, actual
+answering model) first; the round-3 review is paused until that re-scope. Proposed slices are
+not adopted scope. The cost: part of the round-3 spec work becomes supporting material rather
+than the first-slice gate.
+
+### 2026-11-20 — S1 owner decision: one narrow fix round past the review cap (VLBV CR-30)
+Decision: the operator chose to fix the three unresolved S1 criticals rather than accept them at the cap ("Yes, fix them").
+Scope: (1) M1 mutant control built from the frozen candidate plus one recorded patch (path and sha256), run with a JSON reporter, required to fail at the named receipt step while scenario 2 passes on M1; neg-sys-015 gets its own control distinct from neg-sys-017. (2) The supporting baseline check keys on the exact main-scenario spec title and excludes control specs. (3) Confirmation timing is observed by holding POST /api/uar/providers/{id}/default, asserting no confirmation while held, then releasing; a control fulfils the held route with 500 and requires no confirmation, a shown error and an unchanged registry read-back.
+Rationale: each finding is an oracle or control defect on acceptance content, which CR-30 forbids accepting at the cap. Spec and Gherkin work only; verification stays closed.
+
+### 2026-11-20 — S1 owner decision: second narrow fix round (VLBV CR-30)
+Decision: the operator chose to fix the three criticals from the narrow re-check (`review/s1/findings-round3.json`) rather than accept them ("Yes, fix them").
+Scope: assign shell variables before use in baseline-check-supporting; bind scenario commands to the inventory's candidate commit with a clean-tree check and add `tests/bdd/steps/**` to invalidation keys; wait for the held POST to arrive before the "no confirmation yet" assertions. Warnings addressed where cheap (judge per-test status so skipped/fixme cannot count as passed).
+Rationale: each is an oracle or binding defect on acceptance content; spec and contract work only; verification stays closed.
+
+## 2026-11-20 — S1 owner decision: third narrow fix round (round-6 findings)
+
+Decision: the operator answered "Yes, fix them" to a narrow fix round on the round-6 check of the S1
+contract (`review/s1/findings-round6.json`, BLOCK 2/5/3). Rationale: both criticals were confirmed in
+source (single bind while the BDD frontend serves working-tree source; SYS-001 invalidation keys omit
+`frontend/src/features/models/**`). Unresolved criticals on acceptance content cannot be accepted at
+the review cap (VLBV CR-30). Scope: the contract, the S1 oracle and design text only; no runs.
+
+## 2026-11-20 — S1 owner decision: fourth narrow fix round (round-7 findings)
+
+Owner approved fixing round-7 findings (BLOCK 1/2/2). Decision: key every S1 scenario on files compiled into the server (migrations, build.rs, proto, data/model_benchmarks.json, docs/agents, rust-toolchain.toml), and bind the inventory to the independent critic's confirmation in every boundary command, so a missing or mismatched confirmation voids the run. Rationale: a repair to an embedded schema must invalidate earlier passes, and the commit under test must come from an independently recorded value. Contract 2710af0f…2a9a, not adopted. Residual: the confirmation file is forgeable by the lead; detection only.
+
+## 2026-11-20 — S1 owner decision: adopt the S1 contract
+
+Owner: "Adopt the contract after telling me what it means for me to do so." The lead explained the binding (13 scenarios define S1 done; changes after binding need a signed amend-contract manifest; budgets 180 min / 400 tool calls / 2 repairs start; verification stays closed until full implementation; S2-S5, the 89-scenario draft and the open decisions are not adopted). The owner accepted the named risks: the round-7 fixes were not independently re-checked, the inventory-confirmation file is forgeable by the lead, and an edit reverted within one command is undetected. Adopted through kbd-contract-adopt.sh (canonical bind-contract).
+
+## 2026-11-20 — Operator standing decision: no signing or review ceremonies; build the software
+
+Owner: "Remove the need for signings right now. Just do the work. Start planning ... we are here to build software and not waste time signing." Applied for uar-uiux-architecture-2026-11:
+- No further contract review rounds or amendment rounds unless the owner asks.
+- Planning and implementation do not change the adopted S1 contract, so nothing needs signing.
+- A defect found later in test steps, fixtures or runner wiring is fixed in that code and noted in the phase ledger; it is not escalated to an amendment.
+- Only a change to what S1 promises (scenarios, oracles) would touch the bound contract. The runtime's bind-contract refuses a changed digest without an operator-signed manifest, and the template script states signing is the operator's act with their own key. The lead will not sign as the owner and did not modify the runtime's enforcement; if that case arises the lead prepares the manifest so the owner runs one command.
+
+## 2026-11-20 — S1 plan decisions (uar-uiux-architecture-2026-11)
+
+- Receipt origin uses a separate `model_origin` field; `PolicyScope` is not widened.
+- Activation time comes from the server row the live route writes, never the client clock.
+- The served model is the provider-reported id from Liter's completion result; no fallback to the requested model.
+- The YAML model fallback stays for now; the clear preview names it as "configured fallback".
+- Six writers, one per file set, no shared files; verification stays closed until the S1 inventory.
+- Rationale and full list: `.kbd-orchestrator/phases/uar-uiux-architecture-2026-11/plan.md`.
+
+## 2026-11-20 — S1 execution decisions (uar-uiux-architecture-2026-11)
+
+- With the system default's provider disabled, the console now serves the configured fallback (`llm.model`) if that model verifies, labelled "configured fallback"; any other unservable model still fails the turn with no substitution. Rationale: the adopted S1 contract's mandatory SCN-SYS-012 control requires it; the previous 422 contradicted it.
+- `default_model` is excluded from the model-verification fingerprint. Rationale: it selects a model, it does not change how a provider is reached; including it invalidated every proof on each default switch, so the next turn failed. Upgrade cost: earlier proofs go stale once.
+- The settings API refuses `llm.default_provider`; the live provider route is its only writer. The console's settings save drops that key so one stray draft cannot sink a bulk save.

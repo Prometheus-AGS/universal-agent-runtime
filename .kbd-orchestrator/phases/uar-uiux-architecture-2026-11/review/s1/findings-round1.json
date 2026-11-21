@@ -1,0 +1,147 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "claude-opus-5-5",
+  "isolation_mode": "harness-native",
+  "producer_model": "claude-opus-5-5",
+  "cross_model_check": "same-model-collision",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "tests/bdd/features/live-model-choice.feature",
+      "line": 31,
+      "claim": "The 'time the default changed' part of the receipt oracle cannot reject a wrong time: it compares to the minute, the truth source is unknown, and the Background's default set and the A-to-B change happen seconds apart.",
+      "evidence": "Oracle SCN-SYS-015 comparator: 'the change time to the minute'. The truth is 'store read-back of the default's update time (source UNVERIFIED)' (s1-oracle.json SCN-SYS-015.timeTruth), and no frozen value exists. Main scenario 2 runs Background 'the system default model is openai/gpt-5.4-mini', then the change to B, then a send, all within one 120 s test (playwright.config.ts timeout). A receipt that prints the send time, the current clock, the client clock (which task 7.2 forbids) or A's activation time matches T to the minute in nearly every run. Scenario 6 (line 74) uses the same step for the in-flight turn, but it is not defined whether 'the time the default changed' there means A's activation or the mid-flight change to B. The spec says 'the time the default took effect', which for A is the Background time, so the expected value is ambiguous on top of being undetectable.",
+      "suggested_fix": "Freeze a time source before adoption: the llm.default_provider row's updated_at, read back through a named route. Make the A activation and the B change at least two minutes apart, either by seeding A's row with a fixed past timestamp in the scratch store or by comparing at second precision against the read-back. For the in-flight turn, state which activation time is expected (A's). Add a control in which the receipt must name A's activation time, not B's."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "claim": "SCN-SYS-015's negative control is the SCN-SYS-016 refusal scenario, which still passes on a build with no receipts at all, or with receipts that name the requested route rather than the model that produced the response.",
+      "evidence": "neg-sys-015 and scn-sys-016 run the same --grep, 'A choice that cannot be served is refused and nothing is claimed'. Its receipt checks are 'no answer's receipt names \"claude-5-retired\"' and '... \"off-model-1\"'. Both are absence assertions about choices refused before any turn ran, so they hold when no receipt element exists. No S1 scenario creates a turn where the requested route and the serving model differ. The stub echoes the request model (stub_llm.rs streaming_response uses fingerprint.model), and task 7.3 sources the receipt from 'the run's effective policy', which is the requested side. The rule 'never report the requested candidate as served' (design.md S1 value rules, memory record 02; spec 'SHALL NOT show a requested or candidate model as the answering model') therefore has no input that could make it fail.",
+      "suggested_fix": "Give SCN-SYS-015 a control that can fail. For example: (a) a positive receipt assertion in the same run, so an absent receipt fails; and (b) a stub fixture whose response 'model' differs from the request model, or a route on which requested and served legitimately differ, with the receipt required to name the served model. Do not reuse the SCN-SYS-016 command as the SCN-SYS-015 control."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "tests/bdd/features/live-model-choice.feature",
+      "line": 70,
+      "claim": "The in-flight scenario cannot confirm the default changed while the reply was still being generated, so a build that rebinds or re-sends in-flight turns passes whenever the console change takes longer than the stub's fixed 6000 ms delay.",
+      "evidence": "Steps: 'And a reply is being written for \"Chat Y\"' (stop control visible) is checked once, before 'the operator changes the system default'. The operator change goes through the console UI: navigate to Providers, open the picker, search, select, confirm, and wait for acknowledgement (S1-R1). It runs on a debug server behind the vite dev server, which compiles routes on demand (playwright.config.ts third webServer). Nothing asserts that the stop control is still visible, or that the stub request is still open, after the change is acknowledged. If the change finishes after 6000 ms, the turn completes on A before B exists, and 'finishes with content containing bdd-reply-gpt-5.4-mini' plus 'requests for that message number 1' hold for any build. The control 'A change made before sending applies to that message' only shows the runner can change the default; it does not show the change landed mid-flight.",
+      "suggested_fix": "Replace the fixed delay with a hold that the test releases: a stub fixture kind that blocks until a test-only release call, so the order is guaranteed. Alternatively, assert after the change is acknowledged that the stop control is still visible and that the stub log has the request with no completed response. Have the operator act from a second page or context, so the chat page that owns the stream does not navigate away."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary-baseline-expectations.json",
+      "line": 52,
+      "claim": "The baseline check is guaranteed to reject a correct runner. SCN-SYS-013 is expected to PASS at the baseline, but the overlaid candidate fixtures crash the baseline stub, and SCN-SYS-013 uses the same operator-change step that SCN-SYS-001, 003 and 007 need to be NOT_RUNNABLE.",
+      "evidence": "(1) baseline-check-bdd runs 'rsync -a tests/bdd/' onto the baseline worktree, including tests/bdd/fixtures/bdd-chat.json. Task 7.9 and s1-oracle.json stub.delay put a delayed_content entry in that file. At f2c9e36e, src/bin/stub-llm.rs:38-52 is an internally tagged enum with only content, grounded_content and tool_call, and load_fixtures panics on a parse error (:57-58). The stub webServer never starts, no spec runs, and the jq 'length == 1 and .ok == true' for SCN-SYS-013 fails. (2) Main scenario 5 (line 63) uses 'When the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"', which is identical to scenarios 1, 2, 6, 8 and 9 and must be NOT_RUNNABLE for SCN-SYS-001/003/007 ('no System default model picker ... to drive'). Scenario 5 also uses 'I confirm the change' for a clear, and the SCN-SYS-012 basis says the baseline clears 'with no preview' and no confirm. Any single step definition makes either SCN-SYS-013 fail at the baseline or SCN-SYS-001 runnable there. The stop condition 'any baseline verdict differs ... stops the batch' then blocks S1, or pushes the step author to weaken the operator step (see the next finding).",
+      "suggested_fix": "Put the delayed_content entry in a separate fixture file that only the candidate stub loads, or exclude fixtures from the overlay. Re-derive SCN-SYS-013's baseline verdict from the actual Gherkin: it cannot be PASS while it drives the picker and a confirm control. Either make it NOT_RUNNABLE, or give the regression guard its own scenario that uses only baseline-runnable steps, with the default changed through the existing route by a named harness step."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "claim": "The S1-R1 oracles for SCN-SYS-001 and SCN-SYS-007 are already satisfied by the baseline's per-provider 'Set as default' button, so a candidate with no picker and no model-first write path passes both. Their NOT_RUNNABLE verdict depends only on which locator an unwritten step definition uses.",
+      "evidence": "s1-oracle.json SCN-SYS-001.allowedConsoleWrites is ['POST /api/uar/providers/bdd-provider-b/default'], with whyNoPut 'provider bdd-provider-b already has default_model claude-5-haiku' (tests/bdd/support/api.ts:115). The baseline button (providers-page.tsx:409-410 -> providers-api.ts setDefaultProvider) issues exactly that POST. registry.default_model() (registry.rs:551-563) then yields bdd-provider-b/claude-5-haiku, so the stub sees claude-5-haiku. The design keeps that button as a valid path (D5: 'the Providers \"make default\" action call the one action'). SCN-SET-003, an S1 supporting scenario, uses 'Providers, Set as default' as its production entry (uiux-settings-truthful-status-and-removals design.md:411). The D1 path ('PUT model, then POST default'), which is the only new routing logic and the site of the optimistic default_model:null bug (providers-store.ts:156-176), is never exercised in S1, because the S1 vocabulary never selects a model other than the provider's existing default_model.",
+      "suggested_fix": "Add an S1 case in which the operator selects a pair whose model differs from the provider's current default_model. For example, give bdd-provider-b a second model and select it. The stub must then see that model, and the browser write set must be exactly PUT then POST, in order. Pin the operator step to the system default picker, and state in the step contract that the per-provider button does not satisfy it."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 853,
+      "claim": "baseline-check-supporting never compares the supporting scenarios' baseline results with the frozen expectations, despite the claim that it does, so a vacuous SCN-SET-003, SCN-IDN-001 or SCN-PICK-002 test is never rejected.",
+      "evidence": "The command ends with 'test -s .../baseline-set.json && test -s .../baseline-support.json'. That only checks the files are non-empty: there is no jq against boundary-baseline-expectations.json, which expects SCN-SET-003 FAIL, SCN-IDN-001 PASS and SCN-PICK-002 FAIL. Yet expectedEffects says 'baseline-check-bdd and baseline-check-supporting compare each S1 scenario with the frozen ...; a mismatch rejects the runner'. A SCN-SET-003 spec that passes on the baseline, which still accepts PUT llm.default_provider (manager.rs:1247-1249, :666-671), would go through. SAFE-SETTINGS-API-CANNOT-WRITE-DEFAULT would then rest on an unproven test.",
+      "suggested_fix": "Add the same jq comparison that baseline-check-bdd uses, keyed on the supporting runner's spec titles (they must contain the scenario IDs), so that FAIL means ok=false and PASS means ok=true for every frontend-playwright expectation."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 785,
+      "claim": "Every S1 row declares 3 samples (stopping rule: N=3, all must pass), but the boundary packet runs each scenario once with 'singleRun: true' and no --repeat-each, so a timing-dependent scenario can be recorded PASS on one sample.",
+      "evidence": "The scenarioMatrix stochastic blocks at :97, :153, :207, ... say 'samples 3 ... stoppingRule fixed N=3, all must pass' (SCN-PICK-002: 5). boundaryPacket.singleRun is true, and every scenario and negativeControl argv is a single playwright invocation with -c tests/bdd/playwright.config.ts --grep <title> and no --repeat-each. No step aggregates samples. SCN-SYS-014 depends on timing (see the in-flight finding), and the matrix's own nondeterministic:true reason is 'browser timing, network'. Task 8.17 names a different gate again: the package.json full-suite bdd script, which runs every feature with CI=1 and retries=1, so a pass on retry counts as ok.",
+      "suggested_fix": "Add --repeat-each 3 (5 for PICK-002) together with --retries 0 to every scenario and control argv, and make the receipt require 3 of 3 passes. Alternatively, change the stochastic declaration to what is actually run. Align task 8.17 with the contract's commands."
+    },
+    {
+      "severity": "WARNING",
+      "file": "tests/bdd/steps/agents.steps.ts",
+      "line": 25,
+      "claim": "The reused served-model step reads only the last stub request in the whole log. It cannot do the per-message and per-conversation tagging, or the per-turn count, that the SCN-SYS-013 and SCN-SYS-014 oracles claim, and it passes even when the turn failed.",
+      "evidence": "The step body is 'const last = requests.at(-1); expect(last!.model.endsWith(model))', with no filter on last_user_message or conversation. Oracle SCN-SYS-013: 'stub request model per message tagged by conversation'. SCN-SYS-014: 'first request model, count for that turn'. stub_llm.rs chat_completions_handler pushes the body to the log before the fixture lookup, so a request that gets a 404 for a missing fixture, or any failed turn, still satisfies the step. Only scenario 6 checks reply text, so 'the next eligible reply answered by the expected model' is shown only as 'a request was sent'. design.md lists 'stub logs a request even when no fixture matches' as UNVERIFIED, but the source settles it.",
+      "suggested_fix": "Add a new step that selects requests whose last user message equals the message just sent and asserts exactly one. After every send, assert the reply text 'bdd-reply-<wire id>' is visible, so that a turn that fails or falls back cannot pass."
+    },
+    {
+      "severity": "WARNING",
+      "file": "tests/bdd/features/live-model-choice.feature",
+      "line": 78,
+      "claim": "The parts of S1-R7 and SAFE-REFUSAL-NEVER-CLAIMS-SERVED that the Gherkin does not assert: no request reaches the stub for a refused model, the conversation's previous effective value is shown after the override refusal, and the default's stored state is unchanged. Meanwhile the YAML fallback hides a refused default that was persisted anyway.",
+      "evidence": "s1-oracle.json SCN-SYS-016.forbiddenWireModels ['off-model-1','claude-5-retired'] is never used in a step. Main scenario 7 has no 'no outgoing request used the model ...' step and no 'the \"Chat X\" conversation's effective model is ...' step after the refused override. The safety check says 'no request reaches the stub for it'. In the BDD config UAR_LLM__MODEL is 'openai/gpt-5.4-mini'. If a disabled provider were persisted as the default, registry.default_model() returns None for a disabled provider (registry.rs:551-563) and resolve_default_model falls back to llm_config.model (manager.rs:11322-11330). The next request would still be gpt-5.4-mini, so the routing check of scenario 7 cannot tell 'refused' from 'accepted but unusable'. Whether 'the system default is still' reads the store or the display is not specified. The SCN-SYS-016 oracle observes the 'displayed effective value'. The same holds for control 007: 'stored row unchanged' is in the oracle, but no step reads llm.default_provider back.",
+      "suggested_fix": "Add 'no outgoing request used the model' for both refused models, an effective-value display check for Chat X, and read-backs from the store for default_id and the llm.default_provider row (GET /api/uar/providers, GET settings row) in scenario 7 and control 007. Set UAR_LLM__MODEL in the S1 runs to a value distinct from A, or assert the registry pair directly, so the fallback cannot hide the refusal."
+    },
+    {
+      "severity": "WARNING",
+      "file": "tests/bdd/features/live-model-choice.feature",
+      "line": 54,
+      "claim": "Main scenario 5 does not implement S1-R5 or the frozen SCN-SYS-013 oracle: X never changes its override to another model, Y never sends before or during X's changes, and the order of defaults is the reverse of the fixture.",
+      "evidence": "S1-R5 condition: 'X changes its override C to another model, then clears it'. s1-oracle.json SCN-SYS-013.steps: 'X changes C to B-model then clears', 'Y sends after each step', expectedYWireModel claude-5-haiku, 'default changed to A between steps'. The Gherkin clears X's override, then Y sends (gpt-5.4-mini), then the default goes A to B and Y sends (claude-5-haiku). The only mutation X makes in scenario 5 is a clear, and a cross-scope leak of a clear is indistinguishable from inheritance, so the main scenario cannot detect an isolation breach. All of the discriminating work falls on the control.",
+      "suggested_fix": "Rewrite scenario 5 to match S1-R5 and the fixture: X sets another model, then clears, with Y sending after each step. Or edit the fixture and S1-R5 together before adoption, so the Gherkin and the oracle agree."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "claim": "SCN-SYS-003's declared comparator, 'exact set equality {Aurora, Cirrus}', is not what the Gherkin checks. S1-R8's 'states how many agents follow the new default' is not proven by any scenario.",
+      "evidence": "Gherkin: 'the change result lists \"BDD Agent Aurora\" ...', 'lists \"BDD Agent Cirrus\" ...', and the control 'does not list \"Default Assistant\"'. These are membership checks only. A wrong predicate such as 'every user-created agent is pinned' passes, because the only modelless agent checked is the built-in Default Assistant. The step phrase 'the change result says {int} agent follows the new default' (design.md S1 step phrases) appears in no scenario.",
+      "suggested_fix": "Add a user-created agent with no model, which must not be listed, and assert the exact pinned set and the follow count."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "claim": "R-07 and R-03 parts with no scenario: confirmation shown only after the runtime acknowledges, the requested value in the effective view, and activation labels.",
+      "evidence": "R-07: 'Show confirmation only after registry/runtime acknowledgement'. S1-R1 has the same text, and explicitUnknowns lists how 'acknowledged' is shown. No step delays or observes the route response before asserting what is displayed, and the baseline store is optimistic (providers-store.ts:156-176). R-03 / task 7.4 require the requested value and activation timing ('next-turn'), but the Gherkin checks only the effective model and its origin. V-01 evidence requires 'displayed selection/origin'.",
+      "suggested_fix": "Add a step that holds the POST default response (route interception), asserts that no confirmation or new live pair is shown while it is held, and then releases it. Assert the requested value and the next-turn label in the effective view."
+    },
+    {
+      "severity": "WARNING",
+      "file": "tests/bdd/support/api.ts",
+      "line": 114,
+      "claim": "The provider half of 'the model that actually answered' has no source of truth. Every S1 stub provider shares one base URL, and the stub logs only the body, so the provider-qualified receipt is checked against the display alone.",
+      "evidence": "ensureSecondTestProvider points bdd-provider-b at '${STUB_BASE_URL}/v1', the same base URL the 'openai' provider gets from UAR_LLM__BASE_URL. The request log stores 'body.clone()' only (stub_llm.rs chat_completions_handler), and the wire model is the bare id (chat-model-routing.feature comment). V-01 requires a 'correlated turn/provider/model receipt'. SCN-SET-003 in the same package uses 'two stub-llm listeners' to make provider identity observable. S1 does not.",
+      "suggested_fix": "Give each S1 provider a distinct stub listener or URL path, record which one received each request, and compare the receipt's provider with it."
+    },
+    {
+      "severity": "WARNING",
+      "file": "tests/bdd/features/live-model-choice-controls.feature",
+      "line": 36,
+      "claim": "Control 012 expects an 'inherited model unavailable' preview, but under the S1 runner configuration the runtime would actually answer a cleared conversation on A through the YAML fallback, so the expected preview is untruthful in that environment.",
+      "evidence": "With bdd-provider-b disabled while it is the registry default, registry.default_model() returns None (registry.rs:555-557), and resolve_default_model returns llm_config.model 'openai/gpt-5.4-mini' (manager.rs:11322-11330; playwright.config.ts UAR_LLM__MODEL). design.md Risks admits that 'the console may say \"no usable default\" while the runtime resolves', and open decision 4 is unresolved. A truthful preview ('will answer with openai/gpt-5.4-mini') would fail this control, while one that reports something other than what the runtime would serve passes.",
+      "suggested_fix": "Resolve open decision 4 before adoption. Either retire the fallback, or unset UAR_LLM__MODEL for S1 and say so, or change the expected preview to name the model the runtime would actually use."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "claim": "The baseline worktree cannot be built by the packet's commands, because git worktree add does not populate the submodules that the build needs.",
+      "evidence": "scripts/worktree-new.sh:57 runs a plain 'git worktree add' with no submodule step, and git config submodule.recurse is unset. Cargo.toml:694 makes liter-llm a path dependency into vendor/git/liter-llm, which is a gitlink (mode 160000). frontend/packages/prometheus-entity-management is also a gitlink, and pnpm-lock.yaml:788 lists its packages as importers. The build-baseline-server step therefore fails on the missing path dependency, and the frozen-lockfile install on the baseline has no entity package source tree (prepare-bdd builds it with turbo; the baseline commands never do).",
+      "suggested_fix": "Add a recursive submodule init for the baseline worktree, plus the entity-package step, to the baseline commands, and record both in the receipts."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "claim": "The claim about the identity boundary does not match the runner path: no S1 run goes through the external identity proxy or any operator authority, so 'authorized operator' is not exercised at all.",
+      "evidence": "requiredSafetyChecks SAFE-NO-TEST-CREDENTIALS: 'S1 identity: operator authority through the external identity proxy'. design.md S1 value rules: 'The operator acts through the existing external identity proxy'. tests/bdd/playwright.config.ts starts the app directly on 3002 with UAR_SECURITY__JWT_REQUIRED 'false' and UAR_SECURITY__SETTINGS_MUTATION_AUTH_REQUIRED 'false', and the browser reaches it through the vite proxy. No proxy is started. R-01 asks the deployment to 'clearly identify the deployment's actual operator/identity boundary'.",
+      "suggested_fix": "State in the contract's limitations that S1 runs with mutation authentication off and no proxy, so operator authorization is not proven. Do not cite the proxy as the S1 identity path."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary-baseline-expectations.json",
+      "line": 48,
+      "claim": "A frozen basis string is cut off mid-word, and the S1 scenarios that the boundary greps diverge from task 8.15.",
+      "evidence": "SCN-SYS-011 basis ends with 'UNVERIFIED: whether the overri'. Task 8.15 assigns SCN-SYS-015 to 'scenarios 2 and 4 receipts', but scn-sys-015 greps only scenario 2. The 'S1 ping default 0' entry in s1-oracle.json stubEntriesRequired is used by no scenario.",
+      "suggested_fix": "Regenerate the basis text without truncation and align task 8.15 with the commands."
+    }
+  ],
+  "confidence": 80,
+  "what_would_change_this": "Step definitions that already pin the operator step to the new picker and tag stub requests by message would not change the CRITICALs. The receipt-time, in-flight timing, SCN-SYS-015 control, baseline-fixture overlay, supporting-baseline comparison and sample-count defects come from the frozen Gherkin, fixtures and boundaryPacket argv. Each would be refuted only by an amendment to those files, or by evidence that bdd-chat.json will not carry the delayed_content entry, or that the gate runner applies --repeat-each outside the packet.",
+  "disconfirming": [
+    "The step definitions are unauthored and must pass an independent review before any scenario runs (requiredApprovals). That review could catch the last-request and locator problems, though nothing in the contract requires it to check them.",
+    "Several S1 rules are well anchored: served-model truth comes from the stub request log rather than labels, and the controls for SCN-SYS-011 and SCN-SYS-013 do reject the obvious wrong builds (an override ignored, an override written to agent or global scope).",
+    "The stop conditions turn some of these defects into BLOCKED rather than a false PASS: the baseline-overlay crash and the unbuildable baseline worktree would stop the batch rather than pass it."
+  ]
+}

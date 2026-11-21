@@ -1,0 +1,51 @@
+{
+ "frozenAt": "2026-11-19",
+ "purpose": "Independent expected values for SCN-PICK-002. Computed from the committed catalog snapshot only.",
+ "catalogSnapshot": {
+  "path": "catalog/provider_catalog.json",
+  "sha256": "ea7e74b3ba7d335e5710aec713e88972aa18825512f2c16030b9aeab95694276"
+ },
+ "provider": {
+  "id": "nano-gpt",
+  "display_name": "NanoGPT",
+  "catalogModelCount": 597
+ },
+ "searchRule": "case-insensitive substring over display name or raw model id, after trimming (existing spec: Provider default models use bounded selection)",
+ "searchCases": {
+  "claude": 44,
+  "gpt": 54,
+  "llama": 28,
+  "qwen": 85,
+  "zzzz-no-match": 0
+ },
+ "firstTenSortedIds": [
+  "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond",
+  "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0",
+  "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.1",
+  "EVA-UNIT-01/EVA-Qwen2.5-32B-v0.2",
+  "EVA-UNIT-01/EVA-Qwen2.5-72B-v0.2",
+  "Envoid/Llama-3.05-NT-Storybreaker-Ministral-70B",
+  "Envoid/Llama-3.05-Nemotron-Tenyxchat-Storybreaker-70B",
+  "GLM-4.6-Derestricted-v5",
+  "GalrionSoftworks/MN-LooseCannon-12B-v1",
+  "Gemma-4-26B-A4B-MeroMero"
+ ],
+ "lastTenSortedIds": [
+  "z-ai/glm-5.3",
+  "z-ai/glm-5.3-flash",
+  "z-ai/glm-5.3-flash-cybersecurity",
+  "z-ai/glm-5.3-flash-uncensored",
+  "z-ai/glm-5.3-uncensored",
+  "z-ai/glm-5.3:thinking",
+  "z-ai/glm-5:thinking",
+  "z-ai/glm-5v-turbo",
+  "z-ai/glm-5v-turbo:thinking",
+  "z-ai/glm-latest"
+ ],
+ "thresholds": {
+  "virtualizeAboveOptions": 1000,
+  "maxLongTaskMs": 200,
+  "maxOptionElementsInDomWhenVirtualized": 200
+ },
+ "noteOnLargeSource": "The largest single provider (nano-gpt) has 597 models, below the 1,000-option virtualization point. The cross-provider catalog picker (8,170 bundled pairs) is mounted only by the system default control owned by uiux-system-model-live-default; its scale check is that change's scenario and is listed here as a prerequisite, not asserted by this change alone."
+}

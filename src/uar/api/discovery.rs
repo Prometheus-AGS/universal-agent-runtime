@@ -5,9 +5,10 @@ use crate::uar::api::a2a::registry::AgentInfo;
 use crate::uar::domain::agent_store;
 use crate::uar::domain::artifact::AgentArtifact;
 use crate::uar::domain::policy::{
-    ChatMode, ConversationPolicyRecord, EffectiveRunPolicy, ModelRoute, PolicyResolutionContext,
-    PolicyUniverse, ResourceSelection, RunPolicy, SelectionMode, ToolApprovalPolicy,
-    resolve_effective_run_policy_core,
+    ChatMode, ConversationPolicyRecord, EffectiveRunPolicy, ModelOrigin, ModelRoute,
+    PolicyResolutionContext, PolicyUniverse, ResourceSelection, RunPolicy, SelectionMode,
+    ToolApprovalPolicy, agent_explicit_model, resolve_effective_run_policy_core,
+    system_default_activation_time,
 };
 use crate::uar::domain::runs::RunStatus;
 use crate::uar::domain::skills::{SkillConstraints, SkillTriggers};
@@ -36,8 +37,29 @@ pub fn build_router() -> Router<AppState> {
 
 #[derive(Debug, Serialize)]
 struct AgentsCatalogResponse {
-    runtime_agents: Vec<AgentArtifact>,
+    runtime_agents: Vec<RuntimeAgentView>,
     federated_agents: Vec<AgentInfo>,
+}
+
+/// A runtime agent with the model it keeps, derived by the same rule runtime
+/// policy resolution applies to the Agent scope.
+#[derive(Debug, Serialize)]
+struct RuntimeAgentView {
+    #[serde(flatten)]
+    agent: AgentArtifact,
+    /// `provider/model` the agent keeps, or null when it follows the system default.
+    explicit_model: Option<String>,
+}
+
+impl From<AgentArtifact> for RuntimeAgentView {
+    fn from(agent: AgentArtifact) -> Self {
+        let explicit_model = agent_explicit_model(&agent)
+            .map(|route| format!("{}/{}", route.provider_id, route.model_id));
+        Self {
+            agent,
+            explicit_model,
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -112,7 +134,10 @@ pub async fn list_agents(State(state): State<AppState>) -> impl IntoResponse {
     };
 
     Json(AgentsCatalogResponse {
-        runtime_agents,
+        runtime_agents: runtime_agents
+            .into_iter()
+            .map(RuntimeAgentView::from)
+            .collect(),
         federated_agents,
     })
     .into_response()
@@ -840,11 +865,27 @@ pub async fn resolve_effective_run_policy(
     agent: &AgentArtifact,
     turn: Option<RunPolicy>,
 ) -> EffectiveRunPolicy {
+    resolve_effective_run_policy_with(state, user, conversation_id, agent, turn, false).await
+}
+
+/// [`resolve_effective_run_policy`], optionally resolving as if the
+/// conversation named no model. The stored policy is read, never changed.
+async fn resolve_effective_run_policy_with(
+    state: &AppState,
+    user: &UserContext,
+    conversation_id: &str,
+    agent: &AgentArtifact,
+    turn: Option<RunPolicy>,
+    ignore_conversation_model: bool,
+) -> EffectiveRunPolicy {
     let owner_id = &user.user_id;
     let verified_owner =
         crate::uar::runtime::actor::messages::ActorOwner::from_verified_context(user).ok();
-    let (conversation, unavailable) =
+    let (mut conversation, unavailable) =
         load_conversation_policy_with_status(state, user, conversation_id).await;
+    if ignore_conversation_model && let Some(conversation) = conversation.as_mut() {
+        conversation.model = None;
+    }
     let mut universe = policy_universe(state, owner_id, verified_owner.as_ref()).await;
     if unavailable {
         universe.presentations.clear();
@@ -887,6 +928,11 @@ pub async fn save_agent_session_config(
             Json(json!({"error": "model must identify a nonempty provider/model"})),
         )
             .into_response();
+    }
+    if let Some((provider_id, model_id)) = config.model.as_deref().and_then(|m| m.split_once('/'))
+        && let Some(refusal) = unoffered_model_response(&state, provider_id, model_id).await
+    {
+        return refusal;
     }
     let Some(persistence) = &state.persistence else {
         let key = conversation_policy_cache_key(&owner_key, &session_id);
@@ -1056,30 +1102,44 @@ pub async fn get_effective_prompt_caching(
 
 /// GET /api/sessions/{id}/effective-config
 ///
-/// Returns the agent definition merged with any per-session overrides.
+/// Returns the agent definition merged with any per-session overrides, and the
+/// model a turn would be admitted on. A conversation with no stored policy is
+/// answered too (`requested_policy` is null; the default agent and the system
+/// default or configured fallback apply): the stored policy does not say whether
+/// a session id exists, so there is no 404 for it.
 pub async fn get_effective_config(
     State(state): State<AppState>,
     Extension(user): Extension<UserContext>,
     Path(session_id): Path<String>,
 ) -> impl IntoResponse {
-    let Some(policy) = load_conversation_policy(&state, &user, &session_id).await else {
+    let (policy, unavailable) =
+        load_conversation_policy_with_status(&state, &user, &session_id).await;
+    if unavailable {
+        // Never present a default as the answer while the stored policy cannot be read.
         return (
-            StatusCode::NOT_FOUND,
-            Json(json!({"error": "No agent session config found for this session"})),
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(json!({"error": "conversation policy unavailable"})),
         )
             .into_response();
-    };
+    }
 
     // Load the base agent definition from persistence (or built-in defaults).
     let agent_id = policy
-        .agent_id
-        .clone()
+        .as_ref()
+        .and_then(|policy| policy.agent_id.clone())
         .unwrap_or_else(|| "default-agent".to_string());
     let agent = match resolve_agent_for_run(&state, &agent_id).await {
         Ok(agent) => agent,
         Err(error) => return error.into_response(),
     };
-    let effective = resolve_effective_run_policy(&state, &user, &session_id, &agent, None).await;
+    let mut effective =
+        resolve_effective_run_policy(&state, &user, &session_id, &agent, None).await;
+    let unavailable_reason = bind_admitted_route(&state, &mut effective).await;
+    // What clearing the conversation's model would fall back to, resolved the
+    // way a turn is admitted: never a model that admission would refuse.
+    let mut inherited =
+        resolve_effective_run_policy_with(&state, &user, &session_id, &agent, None, true).await;
+    let inherited_unavailable_reason = bind_admitted_route(&state, &mut inherited).await;
     (
         StatusCode::OK,
         Json(json!({
@@ -1087,9 +1147,123 @@ pub async fn get_effective_config(
             "agent": agent,
             "requested_policy": policy,
             "effective_policy": effective,
+            "model_unavailable_reason": unavailable_reason,
+            "inherited_model": {
+                "model": inherited.model,
+                "model_origin": inherited.model_origin,
+                "model_origin_since": inherited.model_origin_since,
+                "unavailable_reason": inherited_unavailable_reason,
+            },
         })),
     )
         .into_response()
+}
+
+/// Bind the route a turn would be admitted on for `policy`, as chat admission
+/// does. A route a scope named is kept. With none, admission serves the
+/// registry's system default; only when that default cannot be verified does
+/// the configured `llm_config.model` serve, and only if it verifies itself
+/// (origin `configured_fallback`, no time). If neither verifies, admission
+/// refuses the turn: the default's refusal reason is returned and the route
+/// left empty, so a view never names a model that will not serve.
+async fn bind_admitted_route(
+    state: &AppState,
+    policy: &mut EffectiveRunPolicy,
+) -> Option<String> {
+    let named = policy.model.as_ref().is_some_and(|route| {
+        !route.provider_id.trim().is_empty() && !route.model_id.trim().is_empty()
+    });
+    if named {
+        return None;
+    }
+    policy.model = None;
+    policy.model_origin = None;
+    policy.model_origin_since = None;
+    let default_provider = state.provider_registry.default_id().await;
+    let default_selector = match &default_provider {
+        None => Err("No default provider is configured".to_owned()),
+        Some(provider_id) => match state.provider_registry.get(provider_id).await {
+            None => Err(format!("Default provider '{provider_id}' is not configured")),
+            Some(provider) => Ok(format!(
+                "{provider_id}/{}",
+                provider.default_model.as_deref().unwrap_or_default()
+            )),
+        },
+    };
+    let default_refusal = match default_selector {
+        Ok(selector) => match state
+            .run_manager
+            .target_sources()
+            .verified_model(&selector)
+            .await
+        {
+            Ok((route, _)) => {
+                policy.model_origin_since = system_default_activation_time(
+                    state.settings_manager.as_deref(),
+                    default_provider.as_deref(),
+                )
+                .await;
+                policy.model_origin = Some(ModelOrigin::SystemDefault);
+                policy.model = Some(route);
+                return None;
+            }
+            Err(reason) => reason,
+        },
+        Err(reason) => reason,
+    };
+    if let Some((provider_id, model_id)) = state.run_manager.configured_fallback_model()
+        && let Ok((route, _)) = state
+            .run_manager
+            .target_sources()
+            .verified_model(&format!("{provider_id}/{model_id}"))
+            .await
+    {
+        policy.model_origin = Some(ModelOrigin::ConfiguredFallback);
+        policy.model = Some(route);
+        return None;
+    }
+    Some(default_refusal)
+}
+
+/// Refuse a conversation model that its provider does not offer, with a reason
+/// a person can act on. `None` means the model is offered and admission would
+/// accept it.
+async fn unoffered_model_response(
+    state: &AppState,
+    provider_id: &str,
+    model_id: &str,
+) -> Option<axum::response::Response> {
+    let reason = match state.provider_registry.get(provider_id).await {
+        None => format!("Provider '{provider_id}' is not configured"),
+        Some(provider) if !provider.enabled => format!("Provider '{provider_id}' is disabled"),
+        Some(provider) => match provider.models.iter().find(|model| model.id == model_id) {
+            None => format!("Provider '{provider_id}' does not offer model '{model_id}'"),
+            Some(model) if !model.enabled => {
+                format!("Model '{model_id}' is disabled on provider '{provider_id}'")
+            }
+            Some(_) => match state
+                .run_manager
+                .target_sources()
+                .verified_model(&format!("{provider_id}/{model_id}"))
+                .await
+            {
+                Ok(_) => return None,
+                Err(reason) => reason,
+            },
+        },
+    };
+    Some(
+        (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({
+                "error": reason,
+                "code": "model_not_offered",
+                "provider_id": provider_id,
+                "model_id": model_id,
+            })),
+        )
+            .into_response(),
+    )
 }
 
 /// Conversation write compatibility: old clients do not know the Presentation field.
@@ -1113,6 +1287,12 @@ pub async fn save_conversation_policy(
     let Ok(owner_key) = user.session_owner_key() else {
         return StatusCode::UNAUTHORIZED.into_response();
     };
+    if let Some(route) = update.policy.model.as_ref()
+        && let Some(refusal) =
+            unoffered_model_response(&state, &route.provider_id, &route.model_id).await
+    {
+        return refusal;
+    }
     let Some(persistence) = &state.persistence else {
         return (
             StatusCode::SERVICE_UNAVAILABLE,

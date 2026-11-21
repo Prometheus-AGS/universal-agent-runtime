@@ -1,6 +1,6 @@
 # Derived method context
 
-Method: VLBV (pack-default); phase: uar-uiux-architecture-2026-11; revision: 3465; status: BLOCKED.
+Method: VLBV (pack-default); phase: uar-uiux-architecture-2026-11; revision: 3556; status: CONFLICT.
 
 This is a recovery index, not execution permission. Resolve current canonical decisions and contract before dependent action.
 
@@ -8,20 +8,47 @@ This is a recovery index, not execution permission. Resolve current canonical de
 {
   "schemaVersion": 1,
   "kind": "kbd.derived-method-context",
-  "generatedAt": "2026-11-19T18:51:18.327Z",
+  "generatedAt": "2026-11-20T22:06:42.718Z",
   "authority": "derived-read-only-index; canonical signed decisions, phase binding, contract and governing host policy remain authority",
   "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
   "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
   "phaseId": "uar-uiux-architecture-2026-11",
-  "sourceRevision": 3465,
+  "sourceRevision": 3556,
   "phaseDirectory": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11",
   "contract": {
     "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
-    "observation": "missing",
-    "sha256": null,
-    "contractDigest": null,
-    "binding": null,
-    "identity": null
+    "observation": "observed",
+    "sha256": "19ce700a169c230979d3a12b89ca27776fc142d1378d9c356307de63b6c62ffe",
+    "contractDigest": "6477e9a141d59effe2c68ecc8b277a672a6355fd2baac668a6ebbba920d98b04",
+    "binding": {
+      "contractPath": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "contractDigest": "6477e9a141d59effe2c68ecc8b277a672a6355fd2baac668a6ebbba920d98b04",
+      "scenarioDigests": {
+        "SCN-IDN-001": "ba094545908f8211be912bebeb351fdbe8c5cd215ee171f909f429c99b86a3bd",
+        "SCN-PICK-002": "fc8ad06f42d8f25744ad22c1ea88ded3d7a23c325eb5b2332d12c7a2c259c754",
+        "SCN-SET-003": "fc99f6bac26275869ec5c4c66199980601be8515f1fbd9b6eebc95371fd85afc",
+        "SCN-SYS-001": "96a96b02e5415aa11de1706499761cbe548bcccfe6a3c51d96da0ae07f47f119",
+        "SCN-SYS-003": "99c37054317320450ba5525c843d94173706438d7edc2c999da9d934a4a3ba9f",
+        "SCN-SYS-007": "4d0d3b40d0ddf03ddffb33918f3385b2f1db03e3a93d431c784d1fb09cb0250b",
+        "SCN-SYS-011": "c5d219819c2c3c300cf003d698f82bcc6e3b5c683aabb7eb0a1700a6e8c7a071",
+        "SCN-SYS-012": "8b42c60c16215f458326bf7f66026ae615431fde7f223ac1bf28149d414cfba7",
+        "SCN-SYS-013": "13aa48e0914b93f617ebcb5ab3e15ecf06018e8cef869f66bba34a82289e41bd",
+        "SCN-SYS-014": "0bbcf5fd7ab048c403fa854afc1f5f0f37e4932ae64c6a122a2c109d367f53f7",
+        "SCN-SYS-015": "ed560684d7de86f27fc73a389e02231287b3aabba2104d20c00ee5fbd969e625",
+        "SCN-SYS-016": "938cf061c4b2d0da8cfa437eb47bbb6370d3feff6a92274229e00b31cf231f9e",
+        "SCN-SYS-017": "92966bb3cf8ece4d0767e05905d0d61612f3f5eb9bca5994109b32f3a7ea91f4"
+      },
+      "planRevision": 143,
+      "adoptionDecisionId": "contract-adoption-uar-uiux-architecture-2026-11-6477e9a1",
+      "bindingRevision": 1
+    },
+    "identity": {
+      "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
+      "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
+      "phaseId": "uar-uiux-architecture-2026-11",
+      "planRevision": 143,
+      "contractDigest": "6477e9a141d59effe2c68ecc8b277a672a6355fd2baac668a6ebbba920d98b04"
+    }
   },
   "selectedMethod": "VLBV",
   "methodSource": "pack-default",
@@ -29,9 +56,33 @@ This is a recovery index, not execution permission. Resolve current canonical de
   "methodDecision": null,
   "retiredMethods": [],
   "references": [],
-  "includedValue": [],
-  "exclusions": [],
-  "stage": "assess",
+  "includedValue": [
+    "S1-R1 Live default: an authorized operator changes the system default A to B through the dedicated live route; confirmation shows only after the runtime acknowledges; no restart",
+    "S1-R2 Next eligible turn: a conversation with no override answers its next turn on B, and the transcript shows the model that actually answered, its origin (system default) and when the change took effect",
+    "S1-R3 Override holds: a conversation with override C keeps answering on C after the default change, shown with origin \"this conversation\"",
+    "S1-R4 Clear to inherit: clearing the override previews the inherited value B before confirming, and the next turn answers on B",
+    "S1-R5 Isolation: changing or clearing one conversation's override does not change another conversation",
+    "S1-R6 In-flight binding: a turn already generating when the default changes finishes on the model it started with",
+    "S1-R7 Truthful failure: an unavailable or disabled choice is refused with a usable reason, the previous effective value stays and is shown, and nothing reports the requested model as served",
+    "S1-R8 Agent pin: an agent with an explicit model keeps it and is listed as pinned when the default changes",
+    "S1-R9 Served model, not requested model: the receipt names the model id the provider reported as serving and never shows the requested candidate as the answering model",
+    "Supporting dependency (SCN-SET-003): the settings API rejects writes to llm.default_provider, so the live route is the only system-default writer",
+    "Supporting dependency (SCN-IDN-001): one provider-qualified Model identity holds under shared bare model ids",
+    "Supporting dependency (SCN-PICK-002): the model picker the operator and chat user drive is searchable and keyboard operable"
+  ],
+  "exclusions": [
+    "multi-replica refresh, Postgres backend and remote SurrealDB: later slice (operator decision 2026-11-19 keeps them in phase scope; not in S1)",
+    "SCN-SYS-006 (two replicas and a remote store); only its negative control idea is reused by SCN-SYS-016",
+    "restart survival (SCN-SYS-002), Global model retirement (SYS-004), reachability (SYS-005), sub-agent precedence (SYS-008), cross-replica agent edits (SYS-009) and full-catalog picker scale (SYS-010): kept in the change, not S1",
+    "My Defaults (U scope) and per-user identity",
+    "slices S2-S5 (authority map, knowledge bases, skills, personal history and memory) and the boot-safety, team, local-first and service-worker changes",
+    "pglite-oxide desktop data layer",
+    "A2UI/AG-UI protocol changes",
+    "Prometheus Entity Management package changes",
+    "new commercial claims",
+    "editing user or harness settings (including the Impeccable engine pin)"
+  ],
+  "stage": "plan",
   "stageAuthority": {
     "operations": [
       "discover/define/plan within governing policy"
@@ -44,12 +95,12 @@ This is a recovery index, not execution permission. Resolve current canonical de
     {
       "path": "AGENTS.md",
       "observation": "observed",
-      "sha256": "4f42bff65e3fb43a46f7c8e764aac6bf66a7bae47976f4f62bb277a4af9e21b0"
+      "sha256": "538603e86940a0a00c74520abd95e084d917a76e034d648b63bcb5120b972c30"
     },
     {
       "path": "CLAUDE.md",
       "observation": "observed",
-      "sha256": "4f42bff65e3fb43a46f7c8e764aac6bf66a7bae47976f4f62bb277a4af9e21b0"
+      "sha256": "538603e86940a0a00c74520abd95e084d917a76e034d648b63bcb5120b972c30"
     },
     {
       "path": ".kbd-orchestrator/constraints.md",
@@ -70,25 +121,46 @@ This is a recovery index, not execution permission. Resolve current canonical de
   "policyConflicts": [
     {
       "path": "AGENTS.md",
-      "sha256": "4f42bff65e3fb43a46f7c8e764aac6bf66a7bae47976f4f62bb277a4af9e21b0",
+      "sha256": "538603e86940a0a00c74520abd95e084d917a76e034d648b63bcb5120b972c30",
       "issue": "Host compiler or cadence exception conflicts with VLBV; do not infer permission to run generated-code checks during generation.",
       "acknowledged": false,
       "ackDecisionId": null
     },
     {
       "path": "CLAUDE.md",
-      "sha256": "4f42bff65e3fb43a46f7c8e764aac6bf66a7bae47976f4f62bb277a4af9e21b0",
+      "sha256": "538603e86940a0a00c74520abd95e084d917a76e034d648b63bcb5120b972c30",
       "issue": "Host compiler or cadence exception conflicts with VLBV; do not infer permission to run generated-code checks during generation.",
       "acknowledged": false,
       "ackDecisionId": null
     }
   ],
   "candidateAndEvidence": {
-    "freshness": "UNKNOWN",
-    "paths": []
+    "freshness": "Every invalidationKeys entry is a repository path or git pathspec glob. After an authorized repair, a scenario's or negative control's earlier evidence carries forward to the repaired candidate only when `git diff --name-only <old candidateCommit> <new candidateCommit>` lists no path matching any of its keys; otherwise it is invalidated and reruns on the new candidate. Every S1 scenario shares one key set covering the console source (frontend/src/**, frontend/packages/**), the server source (src/**, vendor/**), the files compiled into the server (migrations/** embedded through include_str! and sqlx::migrate!, build.rs, proto/**, data/model_benchmarks.json, docs/agents/**), rust-toolchain.toml, build manifests and lockfiles, catalog/** and tests/bdd/**, because each one drives the whole application through the browser; supporting scenarios also key on frontend/e2e/** and their Playwright configs. Both mutant controls always rerun after a repair, because their worktrees are recreated from the new candidate. A change to this contract, s1-oracle.json, either feature file, baseline-verdicts.json or boundary-baseline-expectations.json is an amendment under amendmentPolicy, never a repair. History is preserved.",
+    "paths": [
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/results.json",
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/build-receipts.json",
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/baseline-bdd.json",
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/baseline-scn-set-003.json",
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/baseline-scn-idn-001.json",
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/baseline-scn-pick-002.json",
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/mutant-m1-receipt.json",
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/mutant-m2-receipt.json",
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json (written at the implementation-complete inventory; candidate commit, mutant patch digests and targets)",
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/step-review.md (independent review of step definitions and runner configs)",
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary-baseline-expectations.json (frozen input; sha256 in expectedEffects)",
+      ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/scenarios/ (one evidence directory per scenario ID)"
+    ]
   },
   "budgets": {
-    "adopted": null,
+    "adopted": {
+      "timeMinutes": 180,
+      "toolCalls": 400,
+      "repairAttempts": 2,
+      "noProgressLimit": 3,
+      "tokenBudget": "UNKNOWN",
+      "tokenFallback": "toolCalls ceiling",
+      "exhaustion": "checkpoint + BLOCKED; never silent PASS"
+    },
     "consumption": "UNKNOWN; recover original canonical/evidence receipts before execution"
   },
   "unresolved": {
@@ -497,9 +569,7 @@ This is a recovery index, not execution permission. Resolve current canonical de
       "universal model obedience or arbitrary tool interception"
     ]
   },
-  "status": "BLOCKED",
-  "blockers": [
-    "adopted contract unavailable"
-  ]
+  "status": "CONFLICT",
+  "blockers": []
 }
 ```

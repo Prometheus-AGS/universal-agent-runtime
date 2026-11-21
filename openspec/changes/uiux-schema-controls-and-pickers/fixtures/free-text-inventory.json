@@ -1,0 +1,665 @@
+{
+  "frozenAt": "2026-11-19",
+  "purpose": "Frozen oracle for SCN-PICK-004, -003 and -006. Written before implementation from assessment.md lines 211-223 and a source audit of every input and textarea in frontend/src/features/{settings,providers,credentials,skills,memory,agents,teams,presentations,knowledge} (grep of <Input, <Textarea, <input, <textarea, checkbox/radio/range/file excluded). The implementer does not write or edit this file; a change to it needs the lead.",
+  "rule": "On every audited surface, every control with the ARIA role textbox must match exactly one entry in mayBeTextbox by surface and accessible name. Every entry in mustNotBeTextbox must exist on its surface with a role other than textbox (combobox, listbox, slider, spinbutton, switch, group) and, where an optionSource is named, its selectable options must equal that source. A textbox on an audited surface that is in neither list fails. A mayBeTextbox entry with no control fails as stale. An entry whose surface is removed by uiux-settings-truthful-status-and-removals must be absent from the surface (status satisfied-by-removal).",
+  "structuralAllowances": [
+    "The input part of a combobox or chip list that is bound to a mustNotBeTextbox entry has role combobox and is not a textbox.",
+    "The chip-entry input of a chip list listed in mayBeTextbox with kind chip-entry is allowed.",
+    "A raw JSON editor is allowed only inside a collapsed disclosure named Advanced, only for an object property that declares no properties, and only where listed under mayBeTextbox with kind advanced-json."
+  ],
+  "closedReasons": [
+    "prompt",
+    "content",
+    "name",
+    "secret",
+    "url",
+    "new-identifier",
+    "search-filter",
+    "server-path"
+  ],
+  "auditedSurfaces": [
+    {
+      "id": "settings",
+      "route": "/admin/settings",
+      "sections": [
+        "llm",
+        "provider",
+        "context_strategy",
+        "rag",
+        "knowledge_bases",
+        "memory",
+        "models",
+        "resilience",
+        "intent_classifier",
+        "governance",
+        "agent_config",
+        "presentation_policy",
+        "skill_config",
+        "native_tools",
+        "prompt_caching",
+        "user_settings"
+      ],
+      "note": "These are the settings-navigation.tsx keys that uiux-settings-truthful-status-and-removals does not remove. Removed by that change and therefore not audited: server, security, persistence, skill_evolution, llm_failover, context_management, file_processing, sycophancy, sandbox, vision, acp, kreuzberg, unstructured, mistral_ocr, the llm.model and llm.default_provider fields, and the rag embedding fields."
+    },
+    {
+      "id": "providers",
+      "route": "/admin/providers"
+    },
+    {
+      "id": "models",
+      "route": "/admin/models"
+    },
+    {
+      "id": "credentials",
+      "route": "/admin/credentials"
+    },
+    {
+      "id": "skills",
+      "route": "/admin/skills",
+      "includes": [
+        "editor",
+        "import dialog"
+      ]
+    },
+    {
+      "id": "memory",
+      "route": "/admin/memory"
+    },
+    {
+      "id": "agents",
+      "route": "/admin/agents",
+      "includes": [
+        "editor",
+        "ai builder"
+      ]
+    },
+    {
+      "id": "teams",
+      "route": "/admin/teams"
+    },
+    {
+      "id": "presentations",
+      "route": "/admin/presentations"
+    },
+    {
+      "id": "knowledge",
+      "route": "/admin/knowledge"
+    }
+  ],
+  "optionSources": {
+    "providers": "Union of provider ids in GET /api/catalog and GET /api/uar/providers.",
+    "tools": "Tool names in GET /api/tools.",
+    "agents": "Agent ids in GET /api/agents.",
+    "chunkingStrategies": [
+      "fixed_size",
+      "token",
+      "recursive",
+      "sentence",
+      "document",
+      "semantic",
+      "agentic"
+    ],
+    "httpStatusCodes": [
+      100,
+      101,
+      102,
+      103,
+      200,
+      201,
+      202,
+      203,
+      204,
+      205,
+      206,
+      207,
+      208,
+      226,
+      300,
+      301,
+      302,
+      303,
+      304,
+      305,
+      307,
+      308,
+      400,
+      401,
+      402,
+      403,
+      404,
+      405,
+      406,
+      407,
+      408,
+      409,
+      410,
+      411,
+      412,
+      413,
+      414,
+      415,
+      416,
+      417,
+      418,
+      421,
+      422,
+      423,
+      424,
+      425,
+      426,
+      428,
+      429,
+      431,
+      451,
+      500,
+      501,
+      502,
+      503,
+      504,
+      505,
+      506,
+      507,
+      508,
+      510,
+      511
+    ],
+    "embeddingModels": "UNVERIFIED: no source exists in the catalog (src/llm/catalog.rs:126-176). Entries that depend on it are blockedOn D4 and are BLOCKED, not passed, until a source is named in this file by the lead."
+  },
+  "mustNotBeTextbox": [
+    {
+      "id": "C-001",
+      "surface": "settings/knowledge_bases",
+      "label": "Default Embedding Provider",
+      "site": "frontend/src/features/settings/ui/panels/ai-settings-panels.tsx:549",
+      "target": "provider picker",
+      "optionSource": "providers"
+    },
+    {
+      "id": "C-002",
+      "surface": "settings/knowledge_bases",
+      "label": "Default Embedding Model",
+      "site": "frontend/src/features/settings/ui/panels/ai-settings-panels.tsx:559",
+      "target": "provider-scoped model picker",
+      "optionSource": "embeddingModels",
+      "blockedOn": "D4"
+    },
+    {
+      "id": "C-003",
+      "surface": "settings/knowledge_bases",
+      "label": "Chunking Strategy",
+      "site": "frontend/src/features/settings/ui/panels/ai-settings-panels.tsx:569",
+      "target": "select",
+      "optionSource": "chunkingStrategies"
+    },
+    {
+      "id": "C-004",
+      "surface": "settings/memory",
+      "label": "Embedding Model",
+      "site": "frontend/src/features/settings/ui/panels/memory-settings-panel.tsx:143",
+      "target": "provider-scoped model picker",
+      "optionSource": "embeddingModels",
+      "blockedOn": "D4"
+    },
+    {
+      "id": "C-005",
+      "surface": "settings/llm",
+      "label": "Embedding Model",
+      "site": "src/uar/settings/manager.rs:2864 (schema field llm.embedding.model, x-control text)",
+      "target": "provider-scoped model picker",
+      "optionSource": "embeddingModels",
+      "blockedOn": "D4"
+    },
+    {
+      "id": "C-006",
+      "surface": "credentials",
+      "label": "Provider ID",
+      "site": "frontend/src/features/credentials/ui/credentials-page.tsx:226",
+      "target": "provider picker on create, read-only on rotate",
+      "optionSource": "providers"
+    },
+    {
+      "id": "C-007",
+      "surface": "settings/resilience",
+      "label": "Retryable HTTP Status Codes",
+      "site": "frontend/src/features/settings/ui/panels/resilience-settings-panel.tsx:430",
+      "target": "multi-select",
+      "optionSource": "httpStatusCodes"
+    },
+    {
+      "id": "C-008",
+      "surface": "settings/agent_config OR agents",
+      "label": "Allowed Tools",
+      "site": "frontend/src/features/settings/ui/panels/governance-settings-panels.tsx:796",
+      "target": "multi-select",
+      "optionSource": "tools",
+      "ifRemovedBy": "uiux-settings-truthful-status-and-removals (status satisfied-by-removal)"
+    },
+    {
+      "id": "C-009",
+      "surface": "skills/editor",
+      "label": "Preferred tools",
+      "site": "frontend/src/features/skills/ui/skills-page.tsx:384",
+      "target": "multi-select",
+      "optionSource": "tools"
+    },
+    {
+      "id": "C-010",
+      "surface": "memory",
+      "label": "filter by agent id",
+      "site": "frontend/src/features/memory/ui/memory-page.tsx:204",
+      "target": "agent picker",
+      "optionSource": "agents"
+    },
+    {
+      "id": "C-011",
+      "surface": "skills/import dialog",
+      "label": "Directory path",
+      "site": "frontend/src/features/skills/ui/skill-import-dialog.tsx:119",
+      "target": "file chooser",
+      "blockedOn": "D5"
+    },
+    {
+      "id": "C-012",
+      "surface": "models/add dialog",
+      "label": "Provider and Model selects",
+      "site": "frontend/src/features/models/ui/models-page.tsx:460-531",
+      "target": "provider picker and provider-scoped model picker",
+      "optionSource": "providers"
+    }
+  ],
+  "mustBeBoundedNumber": {
+    "rule": "Role slider or spinbutton with the frozen minimum from numeric-bounds-oracle.json, and the frozen maximum where one is declared (a null maximum means none is asserted). Values outside the frozen range are rejected. The expected bounds are frozen in that file; the live types response is not an expected value.",
+    "sites": [
+      {
+        "surface": "settings/rag",
+        "label": "Chunk Size (chars)",
+        "site": "ai-settings-panels.tsx:456"
+      },
+      {
+        "surface": "settings/rag",
+        "label": "Chunk Size (tokens)",
+        "site": "ai-settings-panels.tsx:469"
+      },
+      {
+        "surface": "settings/rag",
+        "label": "Semantic Merge Threshold",
+        "site": "ai-settings-panels.tsx:485"
+      },
+      {
+        "surface": "settings/knowledge_bases",
+        "label": "Chunk Size",
+        "site": "ai-settings-panels.tsx:579"
+      },
+      {
+        "surface": "settings/intent_classifier",
+        "label": "Top-K Results",
+        "site": "governance-settings-panels.tsx:58"
+      },
+      {
+        "surface": "settings/intent_classifier",
+        "label": "Accept Threshold",
+        "site": "governance-settings-panels.tsx:67"
+      },
+      {
+        "surface": "settings/intent_classifier",
+        "label": "Margin Threshold",
+        "site": "governance-settings-panels.tsx:83"
+      },
+      {
+        "surface": "settings/memory",
+        "label": "Max Context Tokens",
+        "site": "memory-settings-panel.tsx:84"
+      },
+      {
+        "surface": "settings/memory",
+        "label": "Vector (Semantic) Weight",
+        "site": "memory-settings-panel.tsx:103"
+      },
+      {
+        "surface": "settings/memory",
+        "label": "BM25 (Keyword) Weight",
+        "site": "memory-settings-panel.tsx:117"
+      },
+      {
+        "surface": "settings/resilience",
+        "label": "Requests Per Second",
+        "site": "resilience-settings-panel.tsx:202"
+      },
+      {
+        "surface": "settings/resilience",
+        "label": "Burst Size",
+        "site": "resilience-settings-panel.tsx:219"
+      },
+      {
+        "surface": "settings/resilience",
+        "label": "Request Timeout (ms)",
+        "site": "resilience-settings-panel.tsx:241"
+      },
+      {
+        "surface": "settings/resilience",
+        "label": "Stream Start Timeout (ms)",
+        "site": "resilience-settings-panel.tsx:257"
+      },
+      {
+        "surface": "settings/resilience",
+        "label": "Max Attempts",
+        "site": "resilience-settings-panel.tsx:293"
+      },
+      {
+        "surface": "settings/resilience",
+        "label": "Base Delay (ms)",
+        "site": "resilience-settings-panel.tsx:310"
+      },
+      {
+        "surface": "settings/resilience",
+        "label": "Max Delay (ms)",
+        "site": "resilience-settings-panel.tsx:326"
+      },
+      {
+        "surface": "settings/resilience",
+        "label": "Backoff Multiplier",
+        "site": "resilience-settings-panel.tsx:346"
+      },
+      {
+        "surface": "settings/resilience",
+        "label": "Retry Budget (ms)",
+        "site": "resilience-settings-panel.tsx:369"
+      }
+    ],
+    "sitesNotFrozen": [
+      "settings/agent_config Request Timeout, Retry Max Attempts, Retry Base Delay, Retry Max Delay (governance-settings-panels.tsx:828-883): must be bounded controls, bounds reported not asserted",
+      "settings/knowledge_bases Chunk Size (ai-settings-panels.tsx:579)"
+    ]
+  },
+  "mayBeTextbox": [
+    {
+      "surface": "settings/provider",
+      "label": "Base URL",
+      "kind": "text",
+      "reason": "url",
+      "site": "ai-settings-panels.tsx:186"
+    },
+    {
+      "surface": "settings/llm",
+      "label": "Base URL Override",
+      "kind": "text",
+      "reason": "url",
+      "site": "src/uar/settings/manager.rs:2768"
+    },
+    {
+      "surface": "settings/memory",
+      "label": "DB Path",
+      "kind": "text",
+      "reason": "server-path",
+      "site": "memory-settings-panel.tsx:160"
+    },
+    {
+      "surface": "settings/memory",
+      "label": "MCP HTTP Path",
+      "kind": "text",
+      "reason": "server-path",
+      "site": "memory-settings-panel.tsx:187"
+    },
+    {
+      "surface": "settings/models",
+      "label": "Models Directory",
+      "kind": "text",
+      "reason": "server-path",
+      "site": "src/uar/settings/manager.rs:1885"
+    },
+    {
+      "surface": "settings/governance",
+      "label": "WASM Component Path",
+      "kind": "text",
+      "reason": "server-path",
+      "site": "governance-settings-panels.tsx:98"
+    },
+    {
+      "surface": "settings/native_tools",
+      "label": "Shell",
+      "kind": "text",
+      "reason": "server-path",
+      "site": "src/uar/settings/manager.rs:3209"
+    },
+    {
+      "surface": "settings/native_tools",
+      "label": "Allowed File Paths",
+      "kind": "chip-entry",
+      "reason": "server-path",
+      "site": "src/uar/settings/manager.rs:3179"
+    },
+    {
+      "surface": "settings/native_tools",
+      "label": "Allowed Domains",
+      "kind": "chip-entry",
+      "reason": "content",
+      "site": "src/uar/settings/manager.rs:3203"
+    },
+    {
+      "surface": "settings/context_strategy",
+      "label": "Strategy Config",
+      "kind": "advanced-json",
+      "reason": "content",
+      "site": "src/uar/settings/manager.rs:2361"
+    },
+    {
+      "surface": "settings/agent_config",
+      "label": "Override description",
+      "kind": "text",
+      "reason": "content",
+      "site": "governance-settings-panels.tsx:1006",
+      "ifRemovedBy": "uiux-settings-truthful-status-and-removals"
+    },
+    {
+      "surface": "providers",
+      "label": "Search providers",
+      "kind": "text",
+      "reason": "search-filter",
+      "site": "providers-page.tsx:121"
+    },
+    {
+      "surface": "providers",
+      "label": "API Key",
+      "kind": "text",
+      "reason": "secret",
+      "site": "providers-page.tsx:269"
+    },
+    {
+      "surface": "providers",
+      "label": "Base URL Override",
+      "kind": "text",
+      "reason": "url",
+      "site": "providers-page.tsx:279"
+    },
+    {
+      "surface": "credentials",
+      "label": "API Key",
+      "kind": "text",
+      "reason": "secret",
+      "site": "credentials-page.tsx:245"
+    },
+    {
+      "surface": "skills/editor",
+      "label": "Skill title",
+      "kind": "text",
+      "reason": "name",
+      "site": "skills-page.tsx:345"
+    },
+    {
+      "surface": "skills/editor",
+      "label": "Version",
+      "kind": "text",
+      "reason": "new-identifier",
+      "site": "skills-page.tsx:356"
+    },
+    {
+      "surface": "skills/editor",
+      "label": "Keywords",
+      "kind": "chip-entry",
+      "reason": "content",
+      "site": "skills-page.tsx:370"
+    },
+    {
+      "surface": "skills/editor",
+      "label": "Skill body",
+      "kind": "text",
+      "reason": "content",
+      "site": "skills-page.tsx:68"
+    },
+    {
+      "surface": "memory",
+      "label": "search memories by meaning",
+      "kind": "text",
+      "reason": "search-filter",
+      "site": "memory-page.tsx:178"
+    },
+    {
+      "surface": "memory",
+      "label": "filter by user id",
+      "kind": "text",
+      "reason": "search-filter",
+      "site": "memory-page.tsx:198",
+      "note": "No option source is confirmed (UNVERIFIED); revisit if one is named."
+    },
+    {
+      "surface": "agents/editor",
+      "label": "Name",
+      "kind": "text",
+      "reason": "name",
+      "site": "agent-editor.tsx:328"
+    },
+    {
+      "surface": "agents/editor",
+      "label": "Description",
+      "kind": "text",
+      "reason": "name",
+      "site": "agent-editor.tsx:338"
+    },
+    {
+      "surface": "agents/editor",
+      "label": "System Prompt",
+      "kind": "text",
+      "reason": "prompt",
+      "site": "agent-editor.tsx:390"
+    },
+    {
+      "surface": "agents/ai builder",
+      "label": "agent description prompt",
+      "kind": "text",
+      "reason": "prompt",
+      "site": "agent-ai-builder.tsx:217"
+    },
+    {
+      "surface": "knowledge",
+      "label": "Search by meaning",
+      "kind": "text",
+      "reason": "search-filter",
+      "site": "knowledge-page.tsx:402"
+    },
+    {
+      "surface": "knowledge",
+      "label": "Name",
+      "kind": "text",
+      "reason": "name",
+      "site": "knowledge-page.tsx:684"
+    },
+    {
+      "surface": "knowledge",
+      "label": "Description",
+      "kind": "text",
+      "reason": "name",
+      "site": "knowledge-page.tsx:698"
+    },
+    {
+      "surface": "presentations",
+      "label": "Find a template",
+      "kind": "text",
+      "reason": "search-filter",
+      "site": "presentation-assignment-panel.tsx:113; presentation-selection-control.tsx:100"
+    },
+    {
+      "surface": "presentations",
+      "label": "Find a Presentation",
+      "kind": "text",
+      "reason": "search-filter",
+      "site": "presentations-page.tsx:87"
+    },
+    {
+      "surface": "presentations",
+      "label": "Title",
+      "kind": "text",
+      "reason": "name",
+      "site": "presentation-editor.tsx:20"
+    },
+    {
+      "surface": "presentations",
+      "label": "Description",
+      "kind": "text",
+      "reason": "name",
+      "site": "presentation-editor.tsx:35"
+    },
+    {
+      "surface": "presentations",
+      "label": "Template source",
+      "kind": "text",
+      "reason": "content",
+      "site": "presentation-editor.tsx:66"
+    },
+    {
+      "surface": "teams",
+      "label": "Workspace",
+      "kind": "text",
+      "reason": "new-identifier",
+      "site": "workspace-control.tsx:26",
+      "note": "A workspace id sent as x-uar-workspace-id, not a path (teams-transport.ts:47-51)."
+    },
+    {
+      "surface": "teams",
+      "label": "Team input (JSON)",
+      "kind": "text",
+      "reason": "content",
+      "site": "launch-sheet.tsx:155"
+    },
+    {
+      "surface": "teams",
+      "label": "member slot input",
+      "kind": "text",
+      "reason": "content",
+      "site": "launch-sheet.tsx:53"
+    },
+    {
+      "surface": "teams",
+      "label": "binding reference fields",
+      "kind": "text",
+      "reason": "new-identifier",
+      "site": "binding-reference-fields.tsx:26,53",
+      "note": "No enumerable source is confirmed (UNVERIFIED)."
+    },
+    {
+      "surface": "teams",
+      "label": "cancel reason",
+      "kind": "text",
+      "reason": "content",
+      "site": "teams/ui/run/cancel-attempt.tsx:104"
+    },
+    {
+      "surface": "teams",
+      "label": "routing reservation",
+      "kind": "text",
+      "reason": "new-identifier",
+      "site": "teams/ui/run/routing-reservation.tsx:65"
+    },
+    {
+      "surface": "teams",
+      "label": "routing test prompt",
+      "kind": "text",
+      "reason": "prompt",
+      "site": "teams/ui/run/routing-test.tsx:143"
+    }
+  ],
+  "unverifiedEntries": [
+    "memory page user id filter and team binding references have no confirmed option source; they sit in mayBeTextbox until the lead names one.",
+    "The labels above are read from the source near each input; the boundary runner resolves the exact accessible name and any mismatch is reported to the lead rather than silently re-registered.",
+    "teams/ui/run/routing-reservation.tsx:65 was not opened; its reason is a proposal."
+  ]
+}

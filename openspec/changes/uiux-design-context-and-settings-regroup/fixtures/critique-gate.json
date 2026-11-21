@@ -1,0 +1,14 @@
+{
+  "$comment": "Frozen oracle for SCN-DSN-007. Pass criteria come from independent reviewers' findings files, counted by the runner, not from any header or summary an author or critic wrote about itself. Rule: .prometheus/decisions.md 2026-11-19 plus openspec/specs/agent-ui-design-workflow.",
+  "artifacts": [
+    {"id": "design-context", "inputs": ["frontend/DESIGN.md", ".impeccable/design.json", "frontend/PRODUCT.md"]},
+    {"id": "settings-regroup", "inputs": ["git diff of frontend/src/features/settings/**", "git diff of frontend/src/app/shell/**", "git diff of frontend/src/App.tsx", "git diff of frontend/src/pages/admin-page.tsx"]}
+  ],
+  "forbiddenReviewerInputs": [".kbd-orchestrator/phases/", ".prometheus/", "openspec/changes/", "any conversation transcript or generation log"],
+  "requiredFilesPerArtifact": {"impeccableCritique": 2, "adversarialReview": 1},
+  "findingMarkerRule": "the runner counts lines in the file body matching ^\\s*\\d+\\.\\s+\\*\\*\\[P0\\] and ^\\s*\\d+\\.\\s+\\*\\*\\[P1\\] under the heading 'Priority Issues'; front-matter p0_count and p1_count are ignored",
+  "passRule": {"p0InAdversarialReview": 0, "p0InEachCritique": 0, "p1": "each P1 is either absent or listed in a resolution file signed by an operator decision id"},
+  "isolationCheck": "the packet manifest each reviewer received lists exactly the artifact inputs above (by sha256) and no forbidden path",
+  "negativeControl": "a reviewer packet manifest that includes a forbidden path invalidates that review; the runner rejects it and the review is repeated",
+  "independenceNote": "the critics are agents that did not write the artifact; cross_model_check is recorded from the file front matter and reported, not used as a pass criterion"
+}

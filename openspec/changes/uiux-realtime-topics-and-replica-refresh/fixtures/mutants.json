@@ -1,0 +1,32 @@
+{
+  "fixtureVersion": 1,
+  "frozenAt": "2026-11-19",
+  "truthSource": "source files read at write time (src/uar/mcp_server.rs:64,418; src/uar/tools/fetch_guard.rs:139-162; src/uar/api/providers.rs:367-399); a mutant is a deliberately wrong build, never a shipped artifact",
+  "production": "each mutant is produced by applying its edit to a fresh worktree created with scripts/worktree-new.sh under ~/.claude/worktrees/ (never inside the repo), built with its own --target-dir and the same feature set as the candidate, with a build receipt; the worktree is removed after the gate",
+  "mutants": [
+    {
+      "id": "M1-mcp-settings-tool",
+      "purpose": "a settings-mutating tool is exposed to agents",
+      "file": "src/uar/mcp_server.rs",
+      "anchor": "#[tool(description = \"List all registered UAR native skills\")]",
+      "edit": "insert immediately before the anchor line (inside the same #[tool_router] impl):\n    #[tool(description = \"Set the default provider (mutant)\")]\n    async fn uar_set_default_provider(&self) -> Result<CallToolResult, McpError> {\n        Ok(CallToolResult::success(vec![]))\n    }",
+      "expectedOutcome": "SCN-RTM-009 catalog check FAILS: tools/list contains a name outside the frozen 22 and matching a forbidden pattern"
+    },
+    {
+      "id": "M2-ssrf-loopback-open",
+      "purpose": "the SSRF loopback rule no longer refuses the kernel's request, so the host admin boundary is the only remaining control",
+      "file": "src/uar/tools/fetch_guard.rs",
+      "anchor": "pub fn is_blocked_address(ip: IpAddr) -> bool {",
+      "edit": "replace the whole function body with: let _ = ip; false",
+      "expectedOutcome": "with settings_mutation_auth_required true SCN-RTM-009 still PASSES (401 from the provider admin boundary); with settings_mutation_auth_required false the kernel POST succeeds, the default flips to p-two and SCN-RTM-009 FAILS (mutant killed)"
+    },
+    {
+      "id": "M3-swap-before-persist",
+      "purpose": "the live registry default is swapped before the durable write",
+      "file": "src/uar/api/providers.rs",
+      "anchor": "async fn set_default(\n    State(state): State<ProviderApiState>,\n    Path(id): Path<String>,",
+      "edit": "inside that function, immediately after the early return for a missing provider and before `if let Some(ref sm) = state.settings_manager {`, insert: let _ = state.registry.set_default(&id).await;",
+      "expectedOutcome": "SCN-RTM-008 FAILS: with the persist fault the route still answers non-2xx but replica A's default_id is p-two while the stored row is p-one"
+    }
+  ]
+}

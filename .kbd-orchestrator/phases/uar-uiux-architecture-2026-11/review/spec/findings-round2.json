@@ -1,0 +1,125 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "claude-opus-5-5",
+  "isolation_mode": "harness-native",
+  "producer_model": "claude-opus-5-5",
+  "cross_model_check": "same-model-collision",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": "openspec/changes/uiux-system-model-live-default/design.md",
+      "line": 257,
+      "claim": "The SCN-SYS-006 oracle is the main evidence for SAFE-PERSIST-BEFORE-PUBLISH, and a correct console cannot satisfy it. A console that ignores a failed write can.",
+      "evidence": "Production entry: console confirm of `sysp2`/`sys-m3` while the store is stopped. sys-oracle.json gives sysp2 `initialDefaultModel: sys-m4`, so the console must first write the provider's `default_model`. The spec requires 'writing the provider's `default_model` (when it differs) and then calling the live default route ... in that order' (provider-model-settings-certification/spec.md:5-7), and `expectedConsoleWrites.allowed` is {PUT /api/uar/providers/sysp2, POST .../sysp2/default}. `update_provider` persists first and returns `provider_persist_error` on failure (src/uar/api/providers.rs:289-290), so with the store down the PUT fails before the default route is called. The oracle requires the route's own '500, prefix `Failed to persist default provider`' (sys-oracle.json persistFailure). Two outcomes follow. A console that stops after the failed PUT (correct) never produces that body and FAILs. A console that ignores the PUT failure and calls the route anyway PASSes.",
+      "suggested_fix": "Select `sysp2`/`sys-m4` (no provider write is needed), or call the default route directly. Separately, assert that after a failed provider write the console does not call the default route, and observe the PUT's own error body."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 4730,
+      "claim": "The baseline commands cannot produce the baseline that runner-baseline-must-fail and about 15 baseline negative controls depend on. The boundary either stops forever, or the runner builds an unreceipted baseline of its own.",
+      "evidence": "(a) `create-baseline-worktree` runs scripts/worktree-new.sh, which does only `git worktree add` and copies settings.local.json (scripts/worktree-new.sh:57-68). No dependencies are installed. `vite` exists only in the untracked frontend/node_modules/.bin, so `build-baseline-frontend` (`pnpm --dir ~/.claude/worktrees/uiux-baseline/frontend build`) has no vite to run. (b) That argv and `runner-baseline-must-fail` pass a literal `~`, which is not expanded unless a shell runs them. (c) Only a baseline frontend is built. runner-baseline-must-fail (line 7261) requires 'every mandatory scenario that asserts new behavior to FAIL against the baseline worktree', which includes backend-only behavior (CFG LKG fallback, RTM topics, SET-002/003 422 and inert, SYS-007, TEAM adoption), and no baseline server binary is built. (d) If UAR_STATIC_DIR points at a baseline dist that was never built, `resolve_static_dir` silently serves ./static (src/server.rs:4421-4428), so the candidate bundle runs as the 'baseline'.",
+      "suggested_fix": "Add `pnpm install --frozen-lockfile` in the baseline worktree. Use absolute paths, or $HOME through an explicit shell. Add a baseline release build with its own --target-dir and a receipt. Have the runner check that the baseline static directory exists and refuse to start otherwise."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 7261,
+      "claim": "Round-1 critical 1 (runner integrity) is only partly fixed. The contract lists neither which scenarios must fail on the baseline nor what PASS means for a negative control, so the runner the implementer writes still decides both.",
+      "evidence": "The rule is 'every mandatory scenario that asserts new behavior', and no list of such scenarios exists anywhere in the contract. The contract itself records mandatory scenarios that pass on the baseline: SCN-IDN-001 limitation 'passes on the baseline for the REST path'. RTM-008 and RTM-009 re-check behavior already present in providers.rs:381-391 and fetch_guard.rs. The runner can therefore exclude any scenario from the baseline check. The round-1 fix asked for 'PASS only when the declared rejection is observed'. The contract adds only 'a negative control that did not run is BLOCKED' (stopConditions), and a control that runs without observing its rejection has no defined status. The self-check also asserts 'the runner reads expected values only from those files', which contradicts oracles whose truth is live product endpoints (SCN-PICK-003, -006, -007, SCN-IDN-002, SCN-IDN-004).",
+      "suggested_fix": "Freeze an explicit list `baselineMustFail: [SCN-...]` and a list `regressionOnly: [SCN-...]`. Define negative-control outcomes: PASS only when the named rejection is observed, FAIL otherwise. Name the live-endpoint truth sources as allowed exceptions."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 4527,
+      "claim": "The scenarios now mapped to SAFE-CAPABILITY-INVERSION and SAFE-PERSIST-BEFORE-PUBLISH use the scenario itself as the negative control. The lead's own round-1 rule R2 forbids this, and it means neither check can show that it rejects anything.",
+      "evidence": "SCN-RTM-009 (the only scenario for SAFE-CAPABILITY-INVERSION) has negative control 'the attempt is the control input' (realtime design.md:466). Its refusal comes from the existing SSRF loopback/private rule (fetch_guard.rs:142-160), and the design admits it: 'The refusal comes from the SSRF guard ... not from a settings-specific rule'. The scenario therefore passes on the pre-phase build. `web_fetch` accepts POST (src/uar/tools/web_fetch.rs:169,206), so a route reachable at a non-private address is not covered at all. SCN-RTM-008 has negative control 'the persist fault => non-2xx and no frame', which is the scenario's own input. The other SAFE-PERSIST-BEFORE-PUBLISH scenario, SCN-SYS-006, cannot pass for a correct console (finding 1). revision-round1.md R2: 'It may not be the scenario itself'.",
+      "suggested_fix": "RTM-008: add a mutant control, built like the frontend mutants, in which the route swaps the registry before it persists. It must fail the oracle. RTM-009: add a control that bypasses the SSRF rule (allowlisted host or non-loopback bind) and still must be refused by a host capability rule. If no such rule exists, narrow the safety check to the SSRF guarantee and state that."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "openspec/changes/uiux-model-identity-graph-ownership/design.md",
+      "line": 334,
+      "claim": "The SCN-IDN-004 oracle takes its expected truth from the system under test. It is the only mandatory evidence for build item 4 (retiring the duplicate Provider/Model stores).",
+      "evidence": "Oracle: 'truth source: the server response; comparator: equality of model list and default' after reload. Suppose an add-model action is dropped by the console or by the server. The UI after reload and GET /api/uar/providers then both lack the model, the two agree, and the oracle PASSes. The schema forbids this: expectedTruthSource is 'never the system under test (VLBV 06)'. The other evidence for item 4 is SCN-IDN-005, which is optional (static).",
+      "suggested_fix": "Freeze the add, default and remove sequence and its expected final model list and default in catalog-identity.json, and compare both the UI and the API against that file."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/uiux-design-context-and-settings-regroup/fixtures/settings-routes.json",
+      "claim": "The DSN-001 oracle compares page headings, but no frozen heading value exists. SET-005 freezes headings from the pre-redesign components for the same pages that the design change moves into new sections.",
+      "evidence": "DSN-001 comparator: 'URL and heading equality' with truth settings-routes.json. That file has palette labels and section paths but no heading field. admin-pages.json (SET-005) expects heading 'memory browser' for the memory page, while settings-routes.json moves /admin/memory to `knowledge/memory-records`, palette entry 'Memory records'. The runner author therefore picks DSN-001's expected headings, and the two changes may expect different text for one page.",
+      "suggested_fix": "Add an expected heading per section to settings-routes.json and make admin-pages.json agree with it."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/uiux-realtime-topics-and-replica-refresh/specs/realtime-replica-consistency/spec.md",
+      "line": 78,
+      "claim": "The realtime spec says the `llm.default_provider` row has two writers, while the settings and system-model changes keep boot seeding as a third.",
+      "evidence": "Realtime spec: 'That row SHALL be written only by the live default route and by deletion of the default provider'. Settings D12 and task 1.6: 'The live route and boot seeding write through SettingsManager directly and are unaffected'. System-model task 1.8: 'written only by the default route and the boot seed'. The seed writes it when absent (src/uar/settings/manager.rs:1018-1023).",
+      "suggested_fix": "Add the first-boot seed (when absent) to the realtime requirement's writer list."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 20,
+      "claim": "Carried from round 1, unresolved: the release claim says YAML never prevents startup in all three environments, while a mandatory negative control asserts that it does in the remote profile.",
+      "evidence": "userOperation: 'YAML changes never prevent startup'. supportedEnvironments include remote Surreal and Postgres replicas. SCN-CFG-002 negative: 'remote deployment profile YAML ... => non-zero exit, no listener'. This is recorded only as an explicitUnknown.",
+      "suggested_fix": "Get the operator decision before adoption, or narrow userOperation to local profiles."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 4490,
+      "claim": "Goal 2 (run the Impeccable CLI to update and initialize) and the 'Impeccable context is current' half of item 6 have no mandatory scenario.",
+      "evidence": "SCN-DSN-004 (DESIGN.md derives from docs/design), -005 (PRODUCT.md) and -006 (authority documents agree) are all mandatory: false. The only mandatory item-6 row is SCN-DSN-007, a critique-process check graded from LLM reviewer files. functionalScope still claims item 6 in full.",
+      "suggested_fix": "Drop 'Impeccable context is current' from functionalScope, or record an operator exception making DSN-004/005 supplemental evidence for item 6."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "claim": "Carried from round 1: 26 of the 105 spec requirements in the ten changes are cited by no scenario's sourceRequirement.",
+      "evidence": "Examples: 'Provider changes invalidate providers and models on every store', 'The registry default follows the stored default provider row on every replica', 'Cross-replica behavior is verified with at least two replicas on one remote store', 'The Postgres backend is built and verified', 'A rejected reload performs no write', 'Drift, reload and resolve responses never expose a secret' (exercised by CFG-008, but CFG-008 cites 'Drift is visible with both values'), 'Stored rows of removed namespaces remain inert by default', 'Primary navigation has one Settings destination', 'Configure uses the shared compact sheet host', 'The console displays what each saved setting actually does'. Evidence invalidation is keyed by scenario, so these requirements have no acceptance trace.",
+      "suggested_fix": "Allow a list of sourceRequirements per scenario, or record why each uncited requirement has no scenario."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/uiux-team-model-adoption-at-boundary/tasks.md",
+      "line": 39,
+      "claim": "Three changes edit the same two stub-model-server files, and no single writer is assigned. Frozen fixtures already rely on schema that today's stub CLI rejects.",
+      "evidence": "Persistence task 4.6 adds `stream_content`. Team task 7.1 adds `model: \"*\"`, `last_user_message_prefix` and `delay_ms`. Settings task 1.8 adds `/__recorded-auth`. All three edit src/bin/stub-llm.rs and tests/integration/live/stub_llm.rs. The 'For Plan' single-writer list in spec-open-decisions.md omits both files. Today's CLI requires `last_user_message` and knows only content, grounded_content and tool_call (src/bin/stub-llm.rs:27-51), so stub-a.hold.fixtures.json and stub-llm-pgl-long-stream.json fail to parse until all three edits merge.",
+      "suggested_fix": "Assign one writer for both stub files and merge the three schema extensions in one task."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 6051,
+      "claim": "The boundary packet does not provision the remote SurrealDB, the Postgres+pgvector store, the external identity proxy or the forwarder that the RTM, SYS-006/009 and TEAM scenarios need. The runner starts them with no receipts.",
+      "evidence": "expectedEffects lists only Rust, frontend, mutant and baseline builds. versions.toml:38 pins `surrealdb_image` but no command uses it, and there is no Postgres or pgvector pin. Realtime design.md:314-316: 'How that proxy is launched twice is UNVERIFIED; the runner reuses the existing launcher'. The forwarder is implementation task 5.5.",
+      "suggested_fix": "Add provisioning commands with pinned images, plus receipts for the stores, the proxy and the forwarder."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/uiux-schema-controls-and-pickers/fixtures/free-text-inventory.json",
+      "claim": "Mandatory scenarios depend on open operator decisions in ways that guarantee BLOCKED or allow a false console claim.",
+      "evidence": "SCN-PICK-003 is mandatory, but its embedding half is 'BLOCKED on D4'. optionSources.embeddingModels is UNVERIFIED (open decision 15), and C-002, C-004 and C-005 are blockedOn D4. SCN-SYS-005's negative control accepts the picker showing 'No usable system default' after the default provider is disabled. `resolve_default_model` still falls back to YAML `llm_config.model` (src/uar/runtime/manager.rs:11314-11331, open decision 4), so turns can still route while the console says no default is usable.",
+      "suggested_fix": "Get decisions 4 and 15 before adoption, or demote the affected rows and narrow the claims."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "claim": "SAFE-NO-TEST-CREDENTIALS has no check that can reject, and its literal wording contradicts SCN-SET-009.",
+      "evidence": "Description: 'no runner step creates, sends or renews a JWT, bearer token, API key ... Enforced by the independent runner review'. No scan or negative fixture exists. SCN-SET-009 has the runner enter a provider API key and compares the Authorization header the stub records.",
+      "suggested_fix": "Narrow the wording to UAR authentication credentials, which is the intent of the CLAUDE.md rule. Add a deterministic source scan of the runner, with a negative fixture."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "claim": "SCN-WRK-001 to -004 and -006 depend on asynchronous service-worker install, activate and claim ordering but are not declared nondeterministic.",
+      "evidence": "Only WRK-005, -007, -009 and -010 carry stochastic blocks. WRK-001: 'load A, B, C in turn, then list Cache Storage'.",
+      "suggested_fix": "Declare a deterministic wait (activated state plus controllerchange), or add a stochastic block."
+    }
+  ]
+}

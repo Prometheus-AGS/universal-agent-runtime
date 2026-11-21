@@ -1,10 +1,11 @@
+import { modelCatalogTransport } from "@/platform/entities";
 import type { CatalogModelsResponse, ProviderModelRow } from "@/types";
 
-export async function fetchModelsCatalog(): Promise<CatalogModelsResponse> {
-  const res = await fetch("/api/models");
-  if (!res.ok) throw new Error(`Models fetch failed: ${res.status}`);
-  return res.json() as Promise<CatalogModelsResponse>;
-}
+/**
+ * The catalog transport moved to the model-catalog platform domain; this re-export remains for
+ * callers that have not migrated to `loadModelCatalog` from `@/platform/entities`.
+ */
+export const fetchModelsCatalog = modelCatalogTransport.fetchModelsCatalog;
 
 export interface ResolveModelResult {
   ok: boolean;

@@ -1,0 +1,84 @@
+{
+  "title": "UAR User Goals & Settings Specification",
+  "version": "0.1",
+  "sourceSnapshot": "f2c9e36e",
+  "status": "proposed; not adopted or implementation-certified",
+  "branding": "Neutral UAR text wordmark; editorial colors, not an asserted official brand identity",
+  "libraries": [
+    {
+      "package": "htmx.org",
+      "version": "2.0.11",
+      "source": "https://registry.npmjs.org/htmx.org/-/htmx.org-2.0.11.tgz"
+    },
+    {
+      "package": "htmx-ext-sse",
+      "version": "2.2.4",
+      "source": "https://registry.npmjs.org/htmx-ext-sse/-/htmx-ext-sse-2.2.4.tgz"
+    },
+    {
+      "package": "alpinejs",
+      "version": "3.15.8",
+      "source": "https://github.com/alpinejs/alpine/releases/tag/v3.15.8",
+      "provenance": "reused previously staged pinned vendor asset"
+    }
+  ],
+  "assets": [
+    {
+      "file": "assets/LICENSE-alpinejs-3.15.8.md",
+      "sha256": "08b7502da6e7aa1d0bbdc97d220fbf669b9366c61bd0f072238283c89bc4773a",
+      "bytes": 1092
+    },
+    {
+      "file": "assets/LICENSE-htmx.txt",
+      "sha256": "d3d2456f76414f2456104660ebd65aff1c04cd7966b942bdabd63f3cdb316a38",
+      "bytes": 642
+    },
+    {
+      "file": "assets/LICENSE-sse.txt",
+      "sha256": "a17d224ce9afdc21ec9491b76a2f5d036d19aa641ac4f85ca29c21f9f7e54fdf",
+      "bytes": 670
+    },
+    {
+      "file": "assets/alpine-3.15.8.min.js",
+      "sha256": "899842782a7fd16fcc2d7a7c877ff9ec159394044c87b158b2ef132786606932",
+      "bytes": 46632
+    },
+    {
+      "file": "assets/document.css",
+      "sha256": "e5db6f0788f3badae542c8ce168a94020cef00f83ab3d72996a8387768bc48fc",
+      "bytes": 3591
+    },
+    {
+      "file": "assets/htmx-2.0.11.min.js",
+      "sha256": "d6fdc75f204e6bdefa99b69bf1e6d4ac69b8a364f77929f45c13476b4000f717",
+      "bytes": 52182
+    },
+    {
+      "file": "assets/icon-192.png",
+      "sha256": "93c2f90481fbe85b7fa9f09aeb0f439eada9fbf4e300e0ef3978cb123e3f2ef9",
+      "bytes": 2756
+    },
+    {
+      "file": "assets/icon-512.png",
+      "sha256": "72b3f9f82533f77dab91dd1311a53aa0c344814682b9e63b62dbc68bb9be1f95",
+      "bytes": 7750
+    },
+    {
+      "file": "assets/icon.svg",
+      "sha256": "6bfc1ec3473220e7039f9434f457964e45cff1758da40cb4c11dce5ef9084d4a",
+      "bytes": 258
+    },
+    {
+      "file": "assets/sse-2.2.4.js",
+      "sha256": "3b5992a541619babefc4c169505af474df5c3039da51e59b96ccf9241ecd61d2",
+      "bytes": 8921
+    }
+  ],
+  "scope": "publication documents only; no product source/configuration changed",
+  "limits": [
+    "PWA support packaged; origin scope, install and offline behavior unverified.",
+    "SSE extension bundled for support only; no live endpoint or stream configured."
+  ],
+  "openGraphPreview": "https://ipfs.prometheusags.ai/ipfs/bafkreifbqzuqi43rq7dkchfuyhgqtofj7drv7q62c2fqt3tiv65x6634vu",
+  "indexSha256": "77f1ad0a3eddeca5be8ea2926448fd4ea473e324c281cbc8da239fd0c638c594"
+}

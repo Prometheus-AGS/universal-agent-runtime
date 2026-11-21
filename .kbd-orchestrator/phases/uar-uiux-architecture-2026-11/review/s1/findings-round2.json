@@ -1,0 +1,121 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "claude-opus-5-5",
+  "isolation_mode": "harness-native",
+  "producer_model": "claude-opus-5-5",
+  "cross_model_check": "same-model-collision",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 918,
+      "claim": "Mutant M1 is the only negative control for SCN-SYS-015 and SCN-SYS-017, and it records a pass whenever the M1 run fails for any reason. M1 is built from the last commit rather than the candidate tree, its patch is neither recorded nor applied by any command, and 'FAIL on M1' is judged by exit status alone.",
+      "evidence": "(1) create-mutant-m1-worktree runs 'scripts/worktree-new.sh s1-mutant-receipt --base HEAD', and worktree-new.sh:42 runs a plain 'git worktree add \"$canon_target\" \"$base\"'. Uncommitted candidate work is therefore absent from M1: the served_model stub kind, the receipt UI, the S1 step definitions and the fixtures. design.md 'S1 scenario set' says '--base <candidate revision>', and the contract contains no commit step and no check that M1 equals the candidate plus one change. (2) No command applies a patch, and no patch file or digest is named. verify-mutant-m1-patch (:938) runs immediately after the submodule init and checks only 'test -n \"$(git diff --name-only)\"', so any edit passes. That includes deleting the receipt component or breaking the stub, which goes beyond the 'one change in the receipt data source' that expectedEffects describes. (3) neg-sys-015 (:1298) and neg-sys-017 (:1377) are the same bare Playwright --grep invocation of 'The receipt names the model the provider reported, not the one requested', with no reporter output: the receipt list names mutant-m1-receipt.json but no command writes it. Nothing records which step failed, and the packet has no expected-exit field to say that a non-zero exit is the desired outcome here. A port conflict under CI=1, 'No tests found' because the step definitions are not committed, the capability probe failing because the stub kind is missing, or a build that did not include the candidate all produce the 'observed rejection'.",
+      "suggested_fix": "Freeze the candidate as a commit, or name a stash or patch artifact, before create-mutant-m1-worktree, and assert that M1's tree equals the candidate plus exactly one recorded patch file, with its path and sha256 in the contract and an apply command. Run M1 with a JSON reporter into mutant-m1-receipt.json and require that every step before 'the answer's receipt names the serving model ...' passed, that this step failed, and that scenario 2 passes on M1, which proves M1 is otherwise healthy. Give each negativeControl command an explicit expected outcome."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 908,
+      "claim": "Round-1 C6 is not substantively resolved. baseline-check-supporting reduces every spec selected by a grep or a whole file with 'all(ok)'. Those selections include each scenario's own negative-control spec, which is expected to fail at the baseline, so a vacuous SCN-SET-003 or SCN-PICK-002 main test still meets the FAIL expectation.",
+      "evidence": "The check runs '-g SCN-SET-003', which also matches the spec 'SCN-SET-003 negative control' that neg-set-003 selects, and it runs the whole files e2e/model-catalog-identity.spec.ts and e2e/model-picker.spec.ts. The jq then compares '($s | map(.ok) | all) == (baselineVerdict == \"PASS\")'. The baseline FAIL basis for SCN-SET-003 is the control's own assertion: 'PUT llm.default_provider succeeds instead of 422' (boundary-baseline-expectations.json:90). The SET-003 control in uiux-settings-truthful-status-and-removals design.md B3 is 'Direct PUT llm.default_provider returns 422', and the baseline accepts that PUT (manager.rs:1247-1249). The control spec therefore always fails at the baseline, all(ok) is false, and the check passes even when the main spec passes trivially. The same holds for SCN-PICK-002, whose control ('no-match query ... baseline fails the search check') also fails at the baseline. Round 1 asked for the comparison to be 'keyed on the supporting runner's spec titles'. That keying is not done.",
+      "suggested_fix": "Key the comparison on the exact main-scenario spec title, for example select(.title == \"SCN-SET-003 <name>\"), and exclude control specs. Assert that the main spec's ok equals (verdict == PASS) and that exactly one such spec exists. Run the controls separately on the candidate only."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "tests/bdd/features/live-model-choice.feature",
+      "line": 26,
+      "claim": "'Then the confirmation appeared only after the runtime acknowledged the change' now claims coverage of R-07 and S1-R1, but neither the oracle nor the step contract defines an observation that could reject an optimistic UI, and no control delays or fails the acknowledgement. The known baseline defect, optimistic confirmation, therefore passes.",
+      "evidence": "s1-oracle.json:164 has only '\"confirmationAfterAcknowledgement\": true', with no comparator or mechanism. The design.md 'S1 step phrases' list the phrase with no observation method. The SCN-SYS-001 matrix oracle observes 'the console's confirmation timing' and nothing more. The step runs after the operator step has already waited for the live route's acknowledgement (step contract: 'records the harness-clock window around the confirm click and the live route's acknowledgement'). At that point both the response and the confirmation exist, so a step that checks 'confirmation visible after response' passes for a store that shows the confirmation on click, before the POST returns. That is the baseline behavior the requirement targets (providers-store.ts:156-176, cited in the baseline basis). R-07: 'Show confirmation only after registry/runtime acknowledgement.' No scenario holds or fails POST .../default and asserts that no confirmation is shown.",
+      "suggested_fix": "Pin the mechanism. The harness intercepts POST /api/uar/providers/{id}/default and holds it, asserts that no confirmation and no new live pair are visible while it is held, then releases it and asserts the confirmation. Add a control in which the held route is fulfilled with a 500, and require that no confirmation appears, an error is shown, and the registry read-back still returns openai."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1298,
+      "claim": "SCN-SYS-015's negative control (neg-sys-015) is the same M1 run as neg-sys-017. It runs scenario 10, not scenario 2, and changes only how the model is labelled, so nothing tests whether SCN-SYS-015's own observations (origin and change time) can be rejected by the command that gates SCN-SYS-015.",
+      "evidence": "scn-sys-015 greps 'A conversation without an override follows the new default and says so', while neg-sys-015 greps 'The receipt names the model the provider reported...' on M1. On M1, scenario 2 passes, because the stub echoes the request model, so requested and reported are the same. The only checks of scenario 2 that can fail on wrong input are its inline 'does not show the time ... openai/gpt-5.4-mini'. The origin label 'system default' is constant throughout scenario 2. Task 8.15 still says 'main scenarios 2 and 6 receipts', but scn-sys-015 greps only scenario 2.",
+      "suggested_fix": "Name the inline time exclusions plus the origin contrasts in scenarios 3 and 6 and control 012 as SCN-SYS-015's control evidence, or add an M2 mutant (time taken from the send or the current default) run against scenario 2. Align task 8.15 with the argv."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json",
+      "line": 371,
+      "claim": "The SCN-SYS-017 comparator requires the receipt's model field to equal the bare id 'claude-5-haiku-20261101' exactly. Task 7.3 and the other receipt steps require a qualified model in one element, so a correct product either fails, or the step author loosens the check to substring matching, under which 'does not name claude-5-haiku' can never pass.",
+      "evidence": "s1-oracle SCN-SYS-017.comparator: 'exact equality of the receipt's model field with the served id'; expectedReceiptModelField 'claude-5-haiku-20261101'. Task 7.3: 'render ... the qualified model that produced the response ... The receipt's model field must be a single identifiable element.' Scenario 2 asserts 'the answer's receipt names \"bdd-provider-b/claude-5-haiku\"', which is qualified. 'claude-5-haiku' is a prefix of 'claude-5-haiku-20261101'.",
+      "suggested_fix": "Freeze the field format: either the qualified 'bdd-provider-b/claude-5-haiku-20261101' compared exactly, or separate provider and model elements. State that the forbidden check is inequality of the whole field, not substring absence."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json",
+      "line": 150,
+      "claim": "The receipt-time truth for model A is the window around the Background harness set. The contract does not say whether a set that does not change anything (the default is already openai, as on the first sample after a fresh boot) counts as a change, so a correct product that records only real changes fails SCN-SYS-015 and SCN-SYS-014 depending on what state the previous sample left.",
+      "evidence": "timeComparator.rule defines t0 as 'before the operator's confirm click', but the Background step 'the system default model is \"openai/gpt-5.4-mini\"' is a harness route call with no confirm click (design.md step contract). The BDD config boots with UAR_LLM__MODEL 'openai/gpt-5.4-mini' and a fresh store for each run (playwright.config.ts:27,89). Samples 2 and 3 start with B from the previous sample, so their Background is a real change; sample 1 may not be. Task 7.2 leaves the time source open ('Choose the source ... and record the choice').",
+      "suggested_fix": "Define the harness window for harness sets, and make the Background set a real change, for example by setting a different provider first, or require in the spec that every successful POST .../default stamps a new activation time."
+    },
+    {
+      "severity": "WARNING",
+      "file": "tests/bdd/support/world.ts",
+      "line": 39,
+      "claim": "Under --repeat-each 3, the samples share one server, one store and the stub logs, but only the openai stub's log is reset before each test. The requirement 'exactly one request carrying the message' then fails on samples 2 and 3 for the B and C stubs, and agent and conversation setup accumulates across samples.",
+      "evidence": "world.ts:26-40 resets only `${STUB_BASE_URL}/_stub/requests`, which is instance A. PERSISTENCE_PATH is fixed when the config loads (playwright.config.ts:27), so every sample in a command shares it. s1-oracle messageRule: messages are 'unique within its scenario', so samples repeat them ('S1 r1 after change', 'S1 r3 override', ...), and the served-model steps 'require exactly one'. The oracle lists 'reset POST /_stub/requests' but does not say that every instance is reset before each test. 'an agent \"BDD Agent Aurora\" ... exists' is not declared idempotent, yet SCN-SYS-003 expects 'exactly' {Aurora, Cirrus}.",
+      "suggested_fix": "Require a reset of every stub instance's log and held queue before each test, and idempotent creation of agents and providers. Alternatively, append the sample index to each message."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 968,
+      "claim": "The candidate scenario and control commands run without CI=1, so every webServer uses reuseExistingServer:true and can attach to a server left running on 3002, 4600 or 8085 by an aborted baseline or M1 run, with a store that is not fresh. Task 8.18 names a different gate again: the package BDD script across all features with CI=1.",
+      "evidence": "playwright.config.ts:74,107,121 set 'reuseExistingServer: !process.env.CI'. scn-sys-001 and the other scenario argvs have no CI=1, while baseline-check-bdd and neg-sys-015 set it. Task 8.18 says to run the package BDD script for live-model-choice.feature and live-model-choice-controls.feature, each scenario with --repeat-each=3. package.json:15 runs every feature under one CI=1 invocation.",
+      "suggested_fix": "Set CI=1 on every candidate command, or fail when the ports are already bound, and make task 8.18 cite the contract's argv exactly."
+    },
+    {
+      "severity": "WARNING",
+      "file": "tests/bdd/features/live-model-choice-controls.feature",
+      "line": 69,
+      "claim": "Control 012 freezes the expectation 'configured fallback openai/gpt-5.4-mini' while open decision 4 (retiring the fallback) is unresolved. It also conflicts with task 7.11's conditional sentinel UAR_LLM__MODEL, under which the fallback would be the sentinel, not A.",
+      "evidence": "s1-oracle SCN-SYS-012.negativeControl.decisionNote: 'if the operator retires it (open decision 4) the expectation becomes: clear refused'. design.md Open decisions item 4 is still open. Task 7.11: 'When the S1 scenarios run in their own project, set UAR_LLM__MODEL to a sentinel outside the S1 set'. The control asserts the preview 'openai/gpt-5.4-mini' from 'configured fallback' and 'came from openai/gpt-5.4-mini'.",
+      "suggested_fix": "Get the operator's decision 4 before adoption, and either remove the sentinel option from 7.11 or make control 012 read the fallback from the configured value."
+    },
+    {
+      "severity": "WARNING",
+      "file": "tests/bdd/features/live-model-choice.feature",
+      "line": 111,
+      "claim": "SCN-SYS-016 cites the route requirement 'The default route rejects a disabled provider', but its refusal step observes only displayed text. A picker that hides or blocks disabled providers satisfies the scenario while POST .../default still accepts them (providers.rs:367-399 checks existence only), and the 409 in the oracle is never observed.",
+      "evidence": "s1-oracle SCN-SYS-016.disabledDefault.expectedStatus 409. The step phrase 'the change is refused with a reason mentioning \"disabled\"' has no route-status observation. R-06 tells the picker to 'explain unavailable choices', so a correct picker can refuse client-side. The step contract does not say whether 'the operator tries to change' must reach the route. The matrix sourceRequirement includes 'openspec:provider-model-settings-certification#The default route rejects a disabled provider'.",
+      "suggested_fix": "Add a direct-route step, 'a direct request sets the default provider to \"bdd-provider-off\"', that expects 409 with the registry and stored row unchanged, or remove the route requirement from SCN-SYS-016's sources."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 868,
+      "claim": "Round-1's baseline-build warning is only half fixed. The submodule init was added, but the baseline commands never build the entity-management workspace package, whose entrypoints are dist files, so build-baseline-frontend and the baseline vite dev server fail and the batch stops BLOCKED.",
+      "evidence": "frontend/packages/prometheus-entity-management/packages/entity-graph-core/package.json: 'main': './dist/index.mjs'. prepare-bdd builds the package with turbo (package.json:14), while install-baseline-deps and build-baseline-frontend run only the dependency install and the frontend vite build.",
+      "suggested_fix": "Add the same turbo build of the entity-management package for the baseline worktree, or run the full BDD prepare script there."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json",
+      "line": 32,
+      "claim": "The S1 content fixtures are keyed only by bare wire ids, but the repository's own fixture and steps record that the wire model is sometimes 'provider/model'. A correct product that takes such a path gets a 404 from the stub and fails, which invites the step author to weaken the reply-text check.",
+      "evidence": "s1Basic: 'cross product of every S1 message x models gpt-5.4-mini, claude-5-haiku, claude-5-sonnet, qwen-5-turbo'. tests/bdd/fixtures/bdd-chat.json carries both 'gpt-5.4-mini' (9 entries) and 'openai/gpt-5.4-mini' (8 entries) plus 'bdd-provider-b/claude-5-haiku'. agents.steps.ts:28-36: the wire model field 'is sometimes the bare model id and sometimes \"provider/model\"'.",
+      "suggested_fix": "Include both forms in live-model-choice.json, or pin the wire form for each provider and assert it."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary-baseline-expectations.json",
+      "line": 21,
+      "claim": "A frozen basis string is again cut off mid-word, which repeats round-1's suggestion.",
+      "evidence": "The SCN-SYS-001 basis ends with '(claude-5-sonn'. This file is frozen by sha256 b141545a... in expectedEffects.",
+      "suggested_fix": "Regenerate without truncation before the digest is frozen."
+    }
+  ],
+  "confidence": 78,
+  "what_would_change_this": "CRITICAL 1 would fall if the contract required the candidate to be committed before create-mutant-m1-worktree, named a patch file with a digest and an apply command, and judged M1 by the failing step in a JSON report. CRITICAL 2 would fall if the supporting jq selected the main spec by exact title, or if the SET-003 and PICK-002 control specs were shown to pass at the baseline, which their own baseline bases contradict. CRITICAL 3 would fall if the step contract or oracle specified a held or failed acknowledgement with an assertion that no confirmation is shown.",
+  "disconfirming": [
+    "Round-1 C1, C3, C4, C5 and C7 are fixed in the frozen artifacts. The time comparator has second precision, a 5 s separation and an A-not-B rule for the in-flight case. The hold/release stub is checked after the acknowledgement, from a second page. The new stub kinds are excluded from the baseline overlay, and SCN-SYS-013 is now NOT_RUNNABLE. B2 (claude-5-sonnet) makes the per-provider button unable to pass SCN-SYS-001, and a PUT-then-POST order assertion was added. Every command now has --repeat-each and --retries 0. The recorded sha256 digests of both feature files, the oracle and the expectations file match the files on disk.",
+    "An independent review of the step definitions is a required approval before any scenario command runs. It could catch the confirmation-timing step and the M1 judging if the reviewer applies this lens, though the contract does not direct it to.",
+    "Several of the M1 failure paths (missing worktree content, an unapplied patch) would more often stop the batch as BLOCKED through verify-mutant-m1-patch or the build, rather than pass. The false PASS needs an operator to edit the M1 tree by hand in a way that fails for an unrelated reason."
+  ]
+}

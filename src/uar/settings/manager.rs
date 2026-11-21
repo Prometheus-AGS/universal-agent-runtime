@@ -742,6 +742,14 @@ impl SettingsManager {
         self.effective.read().await.get(key).cloned()
     }
 
+    /// Record that `value` is now the value in effect for `key` in this
+    /// process. Call it only after the runtime owner of the setting has
+    /// applied the value (for example after the provider registry swapped its
+    /// default); a saved row alone does not make a value effective.
+    pub async fn record_effective(&self, key: &str, value: Value) {
+        self.effective.write().await.insert(key.to_string(), value);
+    }
+
     /// Reset only the revision the caller inspected.
     pub async fn reset_to_default_if_revision(
         &self,
@@ -2752,7 +2760,9 @@ fn build_core_schema(
                     "type": "string",
                     "title": "Default Model",
                     "description": "Model in provider/model format (e.g. openai/gpt-4o). See models.dev for the full list.",
-                    "x-control": "text"
+                    "x-control": "text",
+                    "x-uar-ui-hidden": true,
+                    "x-uar-ui-reason": "yaml-only"
                 },
                 "api_key": {
                     "type": ["string", "null"],
@@ -2852,7 +2862,9 @@ fn build_core_schema(
                     "type": "string",
                     "title": "Default LLM Provider ID",
                     "description": "Which registered provider is default (e.g. openai). Persisted with provider settings.",
-                    "x-control": "text"
+                    "x-control": "text",
+                    "x-uar-ui-hidden": true,
+                    "x-uar-ui-reason": "managed-by-registry"
                 },
                 "embedding.backend": {
                     "type": "string",

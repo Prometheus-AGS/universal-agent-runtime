@@ -1,0 +1,104 @@
+{
+  "kind": "kbd.oracle-live-exceptions",
+  "phaseId": "uar-uiux-architecture-2026-11",
+  "frozenAt": "2026-11-19",
+  "rule": "An oracle may read a live value from the running product only when it is listed here. The runner self-check rejects the runner if any oracle reads a live value that is not listed, or uses a listed one beyond its stated role.",
+  "exceptions": [
+    {
+      "scenarioId": "SCN-DSN-002",
+      "endpoint": "GET /api/uar/settings/types",
+      "role": "namespace universe only",
+      "whyNotTheSystemUnderTest": "The settings navigation UI is under test; the types route is the backend schema list the navigation is compared against, and the frozen settings-routes.json supplies the expected sections."
+    },
+    {
+      "scenarioId": "SCN-IDN-002",
+      "endpoint": "GET /api/models",
+      "role": "per-row reference",
+      "whyNotTheSystemUnderTest": "The realtime snapshot writer is under test; the REST catalog path is a separate reader that the row records as passing on the baseline (SCN-IDN-001), and frozen sample rows are compared first."
+    },
+    {
+      "scenarioId": "SCN-IDN-006",
+      "endpoint": "GET /api/uar/sessions",
+      "role": "reference list (optional scenario)",
+      "whyNotTheSystemUnderTest": "The sidebar thread mirror is under test; the sessions API is the server record it must mirror."
+    },
+    {
+      "scenarioId": "SCN-PICK-001",
+      "endpoint": "GET /api/uar/settings/{ns}",
+      "role": "read-back only",
+      "whyNotTheSystemUnderTest": "Expected control kinds and values come from schema-controls-oracle.json; the API read-back only confirms the saved value reached the server."
+    },
+    {
+      "scenarioId": "SCN-PICK-004",
+      "endpoint": "option endpoints named in free-text-inventory.json optionSources",
+      "role": "option-source equality",
+      "whyNotTheSystemUnderTest": "The free-text inventory is frozen; the endpoints only supply the option set each picker must equal."
+    },
+    {
+      "scenarioId": "SCN-PICK-005",
+      "endpoint": "GET /api/uar/skills",
+      "role": "read-back only (optional scenario)",
+      "whyNotTheSystemUnderTest": "Expected fields come from the frozen skill-import/valid/SKILL.md; the listing confirms the import was stored."
+    },
+    {
+      "scenarioId": "SCN-PICK-006",
+      "endpoint": "GET /api/tools",
+      "role": "upper bound",
+      "whyNotTheSystemUnderTest": "The built-in tool set has no committed source; tool options must be a subset of this list, so a wrong picker that offers a non-existent tool is caught, but one that drops a tool is not."
+    },
+    {
+      "scenarioId": "SCN-PICK-006",
+      "endpoint": "GET /api/agents",
+      "role": "upper bound",
+      "whyNotTheSystemUnderTest": "Agent filter options must contain the frozen seeded agents and be a subset of this list."
+    },
+    {
+      "scenarioId": "SCN-PGL-007",
+      "endpoint": "survivor tab's graph digest",
+      "role": "recorded live observation",
+      "whyNotTheSystemUnderTest": "After the owner closes, the stored row must equal the survivor's graph; the pre-edit digest is a recorded pre-action observation."
+    },
+    {
+      "scenarioId": "SCN-PGL-005",
+      "endpoint": "conversation count before the run",
+      "role": "recorded pre-action observation",
+      "whyNotTheSystemUnderTest": "Expected end count is this observation plus the frozen expectedCountDelta."
+    },
+    {
+      "scenarioId": "SCN-PGL-010",
+      "endpoint": "thread, message and entity counts from the baseline build before upgrade",
+      "role": "recorded pre-action observation",
+      "whyNotTheSystemUnderTest": "The upgrade must preserve what the previous build stored."
+    },
+    {
+      "scenarioId": "SCN-CFG-003",
+      "endpoint": "lkg/config.yaml digest before the refusal edit",
+      "role": "recorded pre-action observation",
+      "whyNotTheSystemUnderTest": "The refusal must leave the last-known-good file byte-identical."
+    },
+    {
+      "scenarioId": "SCN-CFG-005",
+      "endpoint": "the provider edited through the API before restart",
+      "role": "recorded pre-action observation",
+      "whyNotTheSystemUnderTest": "The surviving provider must keep the edit the runner made."
+    },
+    {
+      "scenarioId": "SCN-WRK-007",
+      "endpoint": "server event emission timestamp and the worker-unregistered run's latency",
+      "role": "measurement reference",
+      "whyNotTheSystemUnderTest": "Timing is compared with the same page with the worker unregistered; no expected value is taken from the worker under test."
+    },
+    {
+      "scenarioId": "SCN-WRK-010",
+      "endpoint": "main-thread filter output in the same page",
+      "role": "reference implementation (optional scenario)",
+      "whyNotTheSystemUnderTest": "The worker is under test; the main-thread functions are the reference it must equal."
+    },
+    {
+      "scenarioId": "SCN-SET-008",
+      "endpoint": "Agents and Skills pages' own save results",
+      "role": "reference surface (optional scenario)",
+      "whyNotTheSystemUnderTest": "The settings entry is under test; the owning page is the single editing surface it links to."
+    }
+  ]
+}

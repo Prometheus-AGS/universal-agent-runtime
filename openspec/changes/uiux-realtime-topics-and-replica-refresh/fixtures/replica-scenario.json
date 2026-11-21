@@ -1,0 +1,113 @@
+{
+  "fixtureVersion": 1,
+  "frozenAt": "2026-11-19",
+  "truthSource": "chosen here, before implementation; values are fabricated test data",
+  "replicas": 2,
+  "storeModes": [
+    "remote_surreal",
+    "postgres"
+  ],
+  "convergenceDeadlineSeconds": 10,
+  "forbiddenPorts": [
+    1906,
+    28000
+  ],
+  "providers": [
+    {
+      "id": "p-one",
+      "defaultModel": "m-one",
+      "baseUrl": "http://127.0.0.1:${STUB_LLM_PORT}/v1"
+    },
+    {
+      "id": "p-two",
+      "defaultModel": "m-two",
+      "baseUrl": "http://127.0.0.1:${STUB_LLM_PORT}/v1"
+    }
+  ],
+  "initialDefaultProvider": "p-one",
+  "unknownProviderId": "p-does-not-exist",
+  "markers": {
+    "m-one": "RTM-MARK-ONE",
+    "m-two": "RTM-MARK-TWO"
+  },
+  "userMessage": "RTM-PING",
+  "stubLlmFixtures": [
+    {
+      "model": "m-one",
+      "last_user_message": "RTM-PING",
+      "has_tools": false,
+      "has_tool_result": false,
+      "response": {
+        "kind": "content",
+        "text": "RTM-MARK-ONE"
+      }
+    },
+    {
+      "model": "m-two",
+      "last_user_message": "RTM-PING",
+      "has_tools": false,
+      "has_tool_result": false,
+      "response": {
+        "kind": "content",
+        "text": "RTM-MARK-TWO"
+      }
+    }
+  ],
+  "settingsChecks": {
+    "nextTurnKey": {
+      "key": "prompt_caching.enabled",
+      "before": true,
+      "after": false
+    },
+    "restartClassKey": {
+      "key": "memory.max_context_tokens",
+      "before": 2000,
+      "after": 1500,
+      "expectedApplicationStatus": "restart_required",
+      "classSource": "uiux-settings-truthful-status-and-removals design D3 (memory.* = restart; reader server.rs memory block)"
+    }
+  },
+  "samples": {
+    "orderingEdits": 20,
+    "crossReplicaChanges": 5,
+    "feedGapCycles": 3
+  },
+  "invalidPolicyBody": {
+    "agent_id": "<any existing agent id chosen by the runner>",
+    "model": "no-slash-model"
+  },
+  "invalidPolicyExpectedStatus": 400,
+  "invalidBindingNote": "a deployment binding that references a package id absent from the catalog; expected rejection status is taken from the collaboration route at implementation and recorded in the receipt, and must be a 4xx",
+  "invalidPolicyRoute": "POST /api/sessions/{id}/agent-config",
+  "baseline": {
+    "commit": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+    "mustFail": [
+      "SCN-RTM-001",
+      "SCN-RTM-002",
+      "SCN-RTM-003",
+      "SCN-RTM-004",
+      "SCN-RTM-005",
+      "SCN-RTM-006",
+      "SCN-RTM-007"
+    ],
+    "regressionOnly": [
+      "SCN-RTM-008",
+      "SCN-RTM-009"
+    ],
+    "note": "008 and 009 hold on the baseline (providers.rs:379-398 persists before the swap; no settings-mutating agent tool exists); they are guarded by mutants M3 and M1/M2 instead",
+    "verdictsFile": "fixtures/baseline-verdicts.json"
+  },
+  "persistOrdering": {
+    "positiveFlowControl": "after the store forwarder is restored the identical request returns 200, replica A's default_id becomes p-two and B's reader receives a settings frame within 10 s (baseline-neutral: the default is the llm.default_provider settings row)",
+    "faultExpected": {
+      "routeStatus": "non-2xx (500 body prefix 'Failed to persist default provider' expected from providers.rs:381-390; any non-2xx accepted)",
+      "defaultIdAandB": "p-one",
+      "storedLlmDefaultProvider": "p-one",
+      "framesOnB": 0
+    },
+    "mutantM3Expected": {
+      "scenarioVerdict": "FAIL (mutant killed)",
+      "observed": "A.default_id == p-two while the stored row == p-one"
+    }
+  }
+}

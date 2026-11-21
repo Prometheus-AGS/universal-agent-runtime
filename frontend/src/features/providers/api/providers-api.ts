@@ -1,78 +1,21 @@
-import type { CatalogResponse, ProvidersResponse, UarProvider } from "@/types";
-
-export async function fetchCatalog(): Promise<CatalogResponse> {
-  const res = await fetch("/api/catalog");
-  if (!res.ok) throw new Error(`Catalog fetch failed: ${res.status}`);
-  return res.json() as Promise<CatalogResponse>;
-}
-
-export async function fetchConfiguredProviders(): Promise<ProvidersResponse> {
-  const res = await fetch("/api/uar/providers");
-  if (!res.ok) throw new Error(`Providers fetch failed: ${res.status}`);
-  return res.json() as Promise<ProvidersResponse>;
-}
-
-export interface ProviderHealthEntry {
-  healthy: boolean;
-  consecutive_errors: number;
-  cooldown_remaining_secs: number | null;
-}
-
-export interface ProviderHealthResponse {
-  providers: Record<string, ProviderHealthEntry>;
-}
-
-export async function fetchProviderHealth(): Promise<ProviderHealthResponse> {
-  const res = await fetch("/api/uar/providers/health");
-  if (!res.ok) throw new Error(`Provider health fetch failed: ${res.status}`);
-  return res.json() as Promise<ProviderHealthResponse>;
-}
-
-export interface CreateProviderBody {
-  id: string;
-  display_name: string;
-  base_url: string;
-  api_key?: string;
-  protocol: string;
-  enabled: boolean;
-}
-
-/** POST /api/uar/providers — create a provider that is not already configured. */
-export async function createProvider(body: CreateProviderBody): Promise<Response> {
-  return fetch("/api/uar/providers", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
+import { modelCatalogTransport } from "@/platform/entities";
 
 /**
- * PUT /api/uar/providers/{id} — replace a provider's full configuration.
- *
- * The backend overwrites `id` from the path and re-enriches/persists the
- * config, returning the stored `ProviderConfig`. This is the single write
- * path used to enable/remove a model (mutate `models[]`) or change the
- * provider's `default_model` — there is no dedicated models write endpoint.
+ * The provider transport moved to the model-catalog platform domain
+ * (`platform/entities/model-catalog/api`). These re-exports remain for callers that have not
+ * migrated to the domain actions; new code calls `loadProviderRegistry`, `setSystemDefaultModel`
+ * and the other actions from `@/platform/entities`.
  */
-export async function updateProvider(
-  providerId: string,
-  body: UarProvider,
-): Promise<UarProvider> {
-  const res = await fetch(`/api/uar/providers/${providerId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`Update provider failed: ${res.status}`);
-  return res.json() as Promise<UarProvider>;
-}
+export type {
+  ProviderHealthEntry,
+  ProviderHealthResponse,
+} from "@/platform/entities";
+export type CreateProviderBody = modelCatalogTransport.CreateProviderBody;
 
-export async function setDefaultProvider(providerId: string): Promise<void> {
-  const res = await fetch(`/api/uar/providers/${providerId}/default`, { method: "POST" });
-  if (!res.ok) throw new Error(`Set default failed: ${res.status}`);
-}
-
-export async function deleteProvider(providerId: string): Promise<void> {
-  const res = await fetch(`/api/uar/providers/${providerId}`, { method: "DELETE" });
-  if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
-}
+export const fetchCatalog = modelCatalogTransport.fetchCatalog;
+export const fetchConfiguredProviders = modelCatalogTransport.fetchConfiguredProviders;
+export const fetchProviderHealth = modelCatalogTransport.fetchProviderHealth;
+export const createProvider = modelCatalogTransport.createProvider;
+export const updateProvider = modelCatalogTransport.updateProvider;
+export const setDefaultProvider = modelCatalogTransport.setDefaultProvider;
+export const deleteProvider = modelCatalogTransport.deleteProvider;

@@ -1,0 +1,96 @@
+{
+  "verdict": "BLOCK",
+  "counts": {"critical": 2, "warning": 5, "suggestion": 3},
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "area": "1 bind-candidate-tree",
+      "location": "adopted-contract.json:901 (bind-candidate-tree argv), :1747, :1805 (stopConditions 'fix at the source and rerun only that step'); tests/bdd/playwright.config.ts:117-121",
+      "claim": "The tree binding is checked once, as the first command, and nothing checks it again. The contract itself prescribes an edit that breaks the binding: a build error or warning means 'fix at the source and rerun only that step' (:1805), which leaves an uncommitted change and does not rerun bind. In shared-checkout runs any teammate edit after bind has the same effect. The claim at :1747 that bind makes 'the main scenarios and the mutants run the same step definitions, features and stub source' is not supported after the first command.",
+      "evidence": "Only bind-candidate-tree contains `git rev-parse HEAD` or `git status`. No scenario, control or mutant command re-checks the tree, and there is no end-of-run postcondition. The BDD frontend is served by `bun run dev` (vite dev, playwright.config.ts:117), live from frontend/src in the working tree. Step definitions, features and fixtures are read from the working tree on every Playwright invocation. verify-/apply-mutant-*-patch read the patch from the main working tree, not from the candidate commit.",
+      "failure_scenario": "Candidate C hits a vite warning, or SCN-SYS-001 fails. The lead fixes frontend/src (or a step file) in the working tree, reruns prepare-bdd and the scenario, and does not commit. The scenarios PASS against uncommitted source while the inventory and receipts name C. Mutants are built from C, which lacks the fix. Result: a false PASS of a mandatory scenario, certified against a commit that does not contain the code that passed.",
+      "suggested_fix": "Add the HEAD and clean-tree test (the same pathspecs) as a prefix to every scenario, negativeControl and mutant command, or as a final postcondition command whose failure voids the run. Change :1805 to say that a source fix requires a new commit plus the Repair rule (new candidateCommit, rebind), never a bare rerun."
+    },
+    {
+      "severity": "CRITICAL",
+      "area": "3 evidenceInvalidation",
+      "location": "adopted-contract.json:883; scenarioMatrix[SCN-SYS-001].invalidationKeys (:84-97); :148, :684, :743, :791; :1771 ('before any affected scenario ... reruns')",
+      "claim": "Reruns after a repair are chosen by per-scenario invalidationKeys ('only affected scenarios are invalidated', :883; 'affected scenario', :1771). Those keys leave out files that decide SCN-SYS-001's verdict. Several keys are prose, not paths. The rule also contradicts itself: keying on 'source revision' would invalidate everything on any new commit, which conflicts with 'only affected scenarios'. The Repair rule's 'evidence from an earlier commit never certifies the repaired tree' conflicts with carrying unaffected evidence forward.",
+      "evidence": "SCN-SYS-001's keys cover only frontend/src/features/providers/** on the client side. The PUT that saves B's model, step 1 of SCN-SYS-001's required write order, goes through frontend/src/features/models/model/models-store.ts:111-118 (setDefaultModel -> saveProvider -> updateProvider at :64). frontend/src/platform/entities/session-configuration/api/session-configuration-api.ts:122 reads /api/uar/providers. src/uar/settings/manager.rs (set_default_provider_id, called by providers.rs:381) persists the default. tests/bdd/fixtures/live-model-choice.json defines the stub providers' models. None of these is a key for SCN-SYS-001. Non-path keys such as 'agents read route files' (:148), 'api/providers.rs' (:684), 'src/server.rs /api/models route' (:743) and 'components/ui/** picker' (:791) cannot be matched mechanically.",
+      "failure_scenario": "SCN-SYS-001 passes on C1. A repair for SCN-SYS-007 edits models-store.ts so that the model save happens after the live POST, or not at all. Under the per-key reading SCN-SYS-001 is not 'affected', its C1 PASS stands, and the phase reports SCN-SYS-001 PASS for a tree that breaks it.",
+      "suggested_fix": "Pick one rule. Simplest: any change of candidateCommit invalidates every S1 scenario and control, so all of them rerun. Otherwise make the keys complete, real repo paths: add frontend/src/features/models/**, frontend/src/platform/entities/**, frontend/src/components/**, src/uar/settings/**, src/server.rs, tests/bdd/fixtures/**, package and lock files, and frontend/vite.config.ts. Remove the prose keys, and delete the contradicting sentence."
+    },
+    {
+      "severity": "WARNING",
+      "area": "1/4 bind-candidate-tree vs files the run writes (Repair rule)",
+      "location": "adopted-contract.json:901, :1747 (claims run outputs are git-ignored), :1771; package.json:14; frontend/vite.config.ts:13-14",
+      "claim": "prepare-bdd runs the root frontend build script, and vite with outDir ../static and emptyOutDir: true rewrites tracked files: static/index.html (content-hashed asset names) and static/.vite/markdown-engine-graph.json. They are not git-ignored and not excluded. The contract's list of run outputs (:1747) leaves them out.",
+      "evidence": "`git ls-files static` lists static/index.html and static/.vite/markdown-engine-graph.json. `git check-ignore static/index.html` returns no match. static/index.html:18 references /assets/index-BAMiIrHQ.js. The project rule forbids builds before the phase boundary, so the candidate commit cannot carry a freshly built static/ that matches its changed frontend sources.",
+      "failure_scenario": "The first run's prepare-bdd rewrites static/index.html. After any authorized repair, the Repair rule requires bind-candidate-tree to run again, and it fails on ` M static/index.html` for a correct repaired candidate. Passing needs an undeclared manual revert or commit of build output. Fails closed, but it blocks the repair path.",
+      "suggested_fix": "Either exclude ':(exclude)static' and state that static/ is a prepare-bdd output that BDD does not use (BDD serves through vite dev), or add a `git restore static` step before rebinding, and document it."
+    },
+    {
+      "severity": "WARNING",
+      "area": "1/5 pinned frozen inputs not enforced",
+      "location": "adopted-contract.json:1744-1745 (feature sha256s), s1-oracle pin (10 occurrences, 038ce389...); :901 checks only boundary-baseline-expectations.json",
+      "claim": "The contract pins sha256 values for live-model-choice.feature (4e648ea9...), live-model-choice-controls.feature (e22be426...) and s1-oracle.json (038ce389...). bind-candidate-tree checks only that the tree equals the candidate commit. The candidate commit itself can change these frozen truth sources and still pass bind.",
+      "evidence": "The only shasum in bind is for the expectations file (:901). All pins match disk today (shasum -a 256: 4e648ea9...209c, e22be426...590d, 038ce389...bb3a). No command checks them.",
+      "failure_scenario": "The candidate commit drops `Then no confirmation is shown yet` from SCN-SYS-001, or edits the oracle's expected writes. bind passes, and the scenario passes on the weakened Gherkin. Only the human step review stands in the way, and it is not told to hash the features.",
+      "suggested_fix": "Add shasum equality checks for both feature files and s1-oracle.json (and baseline-verdicts.json) to bind-candidate-tree."
+    },
+    {
+      "severity": "WARNING",
+      "area": "2 held acknowledgement",
+      "location": "s1-oracle.json scn.SCN-SYS-001.confirmationComparator.assertionsWhileHeld / heldArrivalCondition; design.md:750; live-model-choice.feature:27-30",
+      "claim": "The arrival condition itself is correct against source. providers-api.ts:71 sends `POST /api/uar/providers/${providerId}/default` with no body, providers.rs:52 and :367-370 extract only Path(id), and the PUT at providers-api.ts:61 is a different method and path. But the absence assertions are single snapshots taken right after the intercept, with no minimum hold. A UI that confirms after the POST is sent but without awaiting its response can render the confirmation milliseconds after the snapshot, so it passes.",
+      "evidence": "assertionsWhileHeld lists instant absences. Nothing requires the hold to last for a window, or a re-assertion of absence just before route.continue(). The 500 control has a 3 s window (heldRouteControl.expected.noFurtherWrite); the main scenario has none.",
+      "failure_scenario": "The console runs `await PUT; void POST; await GET /api/uar/providers; showConfirm()`. The step returns on the intercept, and the three absence checks plus the registry GET run in about 10-30 ms, before the GET round-trip through the vite proxy finishes. All checks pass. After route.continue() the confirmation is already there. SCN-SYS-001 passes for a UI that never waited for the acknowledgement, which is the case the comparator 'rejects'.",
+      "suggested_fix": "Hold the POST for a fixed window (for example 2 s) and assert absence at the end of the window, immediately before route.continue(). Or assert absence continuously, polling for the whole hold."
+    },
+    {
+      "severity": "WARNING",
+      "area": "4 Repair rule",
+      "location": "adopted-contract.json:1771, :1801, :1748, requiredApprovals",
+      "claim": "After a repair the rule rewrites the inventory and recreates the mutant worktrees. It does not require (a) the independent critic to re-confirm the M1/M2 patches and targetFile entries, (b) the step and runner review to be redone, or (c) the main-tree prepare-bdd to be rerun. The inventory sits under the excluded .kbd-orchestrator/ with no pinned digest, so its patchSha256 and targetFile can change with no review. 'builds are recreated' reads as the mutant builds only.",
+      "evidence": ":1771 names only the mutant worktrees, digest checks and builds. :1801's critic condition is stated once, for 'the inventory'. bind (:901) does not hash the inventory. target/debug binaries are not tied to HEAD by any check.",
+      "failure_scenario": "(a) The repair regenerates the M1 patch so that it breaks the receipt step for an unrelated reason, and the digest in the inventory is updated to match. neg-sys-017 shows the expected failing step, so the control is 'satisfied' with a patch nobody checked. (c) A Rust repair for one scenario breaks another affected scenario, which reruns against the stale pre-repair server binary and passes.",
+      "suggested_fix": "Add to the Repair rule: rerun prepare-bdd in the main tree; the critic re-confirms the patches and targetFile and records the inventory sha256; the step review is redone when tests/bdd/** changed. Pin the inventory digest in the receipts and check it in bind."
+    },
+    {
+      "severity": "WARNING",
+      "area": "4 stale artifacts across repair",
+      "location": "adopted-contract.json:970 (baseline-check-bdd), :980, neg-sys-015/neg-sys-017 argv",
+      "claim": "In baseline-check-bdd, `rsync ... && cd WT && bddgen ... && <playwright run> > baseline-bdd.json; cd \"$OLDPWD\" && jq ... baseline-bdd.json` skips the redirect whenever rsync or bddgen fails, and then judges whatever baseline-bdd.json is already in boundary/. That directory survives repairs. rsync runs without --delete, so a step file removed or renamed in a repair stays in the baseline worktree. The duplicate step definition then fails bddgen, and the stale report is read. The mutant controls have the same pattern: `(cd WT && ... > receipt; true) && jq receipt` (cd failure, carried over from round 4).",
+      "evidence": "Command strings at :970, and in the neg-sys-015/017 argv. bash -n passes, so these are logic defects, not syntax errors.",
+      "failure_scenario": "A repair renames a tests/bdd/steps file. The overlay leaves the old file, bddgen fails on duplicate steps, and jq evaluates the pre-repair baseline-bdd.json, which matches the expectations. The baseline gate 'passes' without the repaired steps ever running on the baseline. On the first run, the same no-delete overlay wrongly fails a correct candidate that deleted or renamed any tests/bdd file present at f2c9e36e.",
+      "suggested_fix": "Start each such command with `rm -f <report>`. Use `rsync -a --delete` (keeping the new-kinds exclude, with a protect filter for it). Chain the jq with `&&` after the run, or check that the report's mtime is newer than the command start."
+    },
+    {
+      "severity": "SUGGESTION",
+      "area": "1 prose vs command",
+      "location": "adopted-contract.json:1747, :1800 vs :901, :1772",
+      "claim": "The prose at :1747 and :1800 says the tree must be clean 'except the phase evidence directory .../boundary'. The command and :1772 exclude all of .kbd-orchestrator/, .prometheus/ and frontend/.prometheus/. This was raised in round 5 and is unchanged.",
+      "evidence": "Quoted text at the cited lines.",
+      "failure_scenario": "A reviewer or runner that implements the prose rejects runs that the command accepts, or the reverse.",
+      "suggested_fix": "Make :1747 and :1800 match :1772."
+    },
+    {
+      "severity": "SUGGESTION",
+      "area": "1 nested learning directories",
+      "location": "adopted-contract.json:901",
+      "claim": "Other tracked nested learning directories are not excluded: src-tauri/.prometheus, website/.prometheus, spikes/pglite-oxide-intel-mac-spike/.prometheus, workstreams/bauar/.prometheus and workstreams/bauar/.kbd-orchestrator. A hook write there fails bind. This fails closed only: no false PASS.",
+      "evidence": "`git ls-files | grep -E '(^|/)\\.prometheus/'` lists these paths. Pathspec excludes match by prefix from the repo root.",
+      "failure_scenario": "During the run, a hook appends to src-tauri/.prometheus/events.jsonl, and the rebind after a repair fails.",
+      "suggested_fix": "Use ':(exclude,glob)**/.prometheus/**' and ':(exclude,glob)**/.kbd-orchestrator/**', or document that only the top-level paths are written."
+    },
+    {
+      "severity": "SUGGESTION",
+      "area": "2 held acknowledgement",
+      "location": "s1-oracle.json heldArrivalCondition; design.md:750",
+      "claim": "The step must observe 'the preceding PUT has returned 2xx'. The contract says the route is armed before the click, but not the PUT response observation. If the step uses page.waitForResponse armed after the intercept signal, it misses the PUT that already completed and hangs.",
+      "evidence": "Only page.route is specified as armed before the confirm click.",
+      "failure_scenario": "A correct candidate times out in SCN-SYS-001 and in CTL-SYS-001-HELD-500. Fails closed.",
+      "suggested_fix": "State that a page response listener recording PUT /api/uar/providers/<id> status is attached before the confirm click."
+    }
+  ]
+}

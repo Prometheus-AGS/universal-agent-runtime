@@ -1,0 +1,326 @@
+{
+  "schemaVersion": 1,
+  "scope": "project",
+  "generation": "a70835fbf3cb17e04de72f7a074c449a92213a2b3a142cb5f00837f506eefefa",
+  "candidateCount": 14,
+  "byteCount": 28166,
+  "entries": [
+    {
+      "id": "karpathy-session-1d773055df1525b9",
+      "title": "Karpathy session 1d773055df15",
+      "content": "## Delta\n\nCodex finished — **21/21** — and I verified it rather than trusting the report.\n\n## What I checked, and why\n\nThe completion notification alone wasn't enough. Progress said 21/21 while **HEAD was still `a91cd5b`** — the same commit as when this session started. Twenty-one changes with zero new commits is exactly the shape of the C-06 failure earlier in this session, where a change was marked DONE with 0/3 tasks and no code.\n\nIt's not that. The work is real and **uncommitted**: 282 changed frontend files, 26 archived OpenSpec changes.\n\n## Verification — all run, all green\n\n| Gate | Result |\n|---|---|\n| `pnpm typecheck` | ✅ pass |\n| `pnpm lint` | ✅ pass |\n| `pnpm build` | ✅ built in 1.28s |\n| `pnpm test` | ✅ **331 tests / 69 files** |\n| Boundary gate | ✅ 0 production violations |\n\nTests went from **153 → 331**, more than doubling. The `eval` warnings in the build are from `pglite`'s vendored WASM, not our code.\n\n## One gate still fails, and it's the one that matters\n\n```\nERROR: Coverage for lines (33.68%) does not meet global threshold (60%)\nERROR: Coverage for functions (26.37%) does not meet global threshold (60%)\nERROR: Coverage for branches (24.59%) does not meet global threshold (60%)\n```\n\nCoverage improved from 19.45% to 33.68% — real movement, still **26 points short**. A migration that doubles the test count while leaving coverage at half the threshold means the new code outgrew the new tests. That's worth knowing before this is called done.\n\n## Two things needing your decision\n\n**The work is uncommitted.** 282 files sitting in the working tree is a lot to lose. I haven't committed since you haven't asked me to.\n\n**Phase 7 is now unblocked** — the frontend tree has settled, which was the only thing gating the doneness measurement. That's the measurement this whole session was building toward: does the runtime do what's specified, does the UI expose it, is the UI actually good.\n\nSay the word on either.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: claude-code\n- Session: 444a77f7-71ee-4a60-8ce1-1b19da7d22ab\n- Captured: 2026-08-08T08:56:55.689224Z\n- Project: /Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- ../.claude/settings.local.json\n- ../.github/workflows/ci.yml\n- ../.github/workflows/operational-resilience.yml\n- ../.github/workflows/release.yml\n- ../.github/workflows/storybook-visual-regression.yml\n- ../.gitmodules\n- ../.kbd-orchestrator/current-waypoint.json\n- ../.kbd-orchestrator/memory-outbox.jsonl\n- ../.kbd-orchestrator/model-preflight.json\n- ../.kbd-orchestrator/phases/add-push-channels-backend/progress.json\n- ../.kbd-orchestrator/phases/browser-smoke-providers-and-agents/progress.json\n- ../.kbd-orchestrator/phases/ci-frontend-tests/progress.json\n- ../.kbd-orchestrator/phases/direct-entity-migration-agents/progress.json\n- ../.kbd-orchestrator/phases/direct-entity-migration-models/progress.json\n- ../.kbd-orchestrator/phases/direct-entity-migration-providers/progress.json\n- ../.kbd-orchestrator/phases/fix-skills-page-utils-test-fixtures/progress.json\n- ../.kbd-orchestrator/phases/full-frontend-entity-mgmt-migration/progress.json\n- ../.kbd-orchestrator/phases/perform-the-soak-run-candidate-tag-external-installs-and-ga-promotion/progress.json\n- ../.kbd-orchestrator/phases/prometheus-package-integration/progress.json\n- ../.kbd-orchestrator/phases/readme-architecture-diagram/progress.json\n- ../.kbd-orchestrator/phases/runtime-image-polyglot-toolchain-completion/progress.json\n- ../.kbd-orchestrator/phases/settings-store-retirement/progress.json\n- ../.kbd-orchestrator/phases/submodule-entity-management-implementation/progress.json\n- ../.kbd-orchestrator/phases/submodule-skills-and-entity-devtools-expansion/progress.json\n- ../.kbd-orchestrator/phases/thread-topic-chat-sidebar/progress.json\n- ../.kbd-orchestrator/phases/uar-carryover-audit/progress.json\n- ../.kbd-orchestrator/phases/uar-dependabot-remediation-2026-07/progress.json\n- ../.kbd-orchestrator/phases/uar-final-production-hardening-2026-07/progress.json\n- ../.kbd-orchestrator/phases/uar-frontend-typecheck-cleanup/progress.json\n- ../.kbd-orchestrator/phases/uar-grade-a-upgrade-2026-07/progress.json\n- ../.kbd-orchestrator/phases/uar-hybrid-app-architecture/progress.json\n- ../.kbd-orchestrator/phases/uar-next-harness/progress.json\n- ../.kbd-orchestrator/phases/uar-post-dependabot-followup-2026-07/progress.json\n- ../.kbd-orchestrator/phases/uar-production-readiness-gaps/progress.json\n- ../.kbd-orchestrator/phases/uar-production-ready-uiux-2026-07/progress.json\n- ../.kbd-orchestrator/phases/uar-security-audit-alerts-gate-2026-07/progress.json\n- ../.kbd-orchestrator/phases/uar-security-deps-and-hygiene/progress.json\n- ../.kbd-orchestrator/phases/uar-spec-v2-and-polish/progress.json\n- ../.kbd-orchestrator/phases/uar-uiux-refinement-2026-08/progress.json\n- ../.kbd-orchestrator/phases/use-optimistic-patch-helper-extraction/progress.json\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "session:444a77f7-71ee-4a60-8ce1-1b19da7d22ab"
+        }
+      ],
+      "created_at": "2026-08-08T09:02:05.930072Z",
+      "updated_at": "2026-08-08T09:02:05.930072Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "generated_by": null,
+      "extra": {}
+    },
+    {
+      "id": "karpathy-session-2be223c5dead824d",
+      "title": "Karpathy session 2be223c5dead",
+      "content": "## Delta\n\nTwo of the three repair writers have reported back; the run-view writer is still working, so nothing has been re-checked yet.\n\n- **Domain layer:** all seven findings reported fixed in source. That covers the cancel retry, the retry button that ran more steps than it named, choosing a member that is not busy, tolerating one failed team read on page load, the watcher's dead-loop and after-unmount writes, and removing the unused actions and hooks.\n- **Page and sheets:** all ten reported fixed in source. That covers the unreachable \"execution owned by another incarnation\" state, stale check results in the install and binding sheets, conflicting model choices for one alias, a failed definitions load shown as \"not found\", focus after launch, and repeated check results.\n- **Readiness strip (mine):** it now collapses to a single line while all four facts are ready and expands in full when any is not.\n\nOne limit the domain writer flagged on the cancel fix: it recognises an already-committed cancel by the attempt still carrying the cancel reason. If the runtime later overwrites that reason, a retry would still get a conflict.\n\nWhen the run-view writer finishes I'll rerun type-check, lint and tests, rebuild, run the two design critiques, and do the second browser pass including package install.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: unknown\n- Session: a1da1304-ba13-46ed-9018-32c6d7cfa804\n- Captured: 2026-11-18T11:52:13.227876Z\n- Project: /Volumes/T7/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- No changed paths detected.\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "session:a1da1304-ba13-46ed-9018-32c6d7cfa804"
+        }
+      ],
+      "created_at": "2026-11-18T11:52:25.617093Z",
+      "updated_at": "2026-11-18T11:52:25.617093Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "generated_by": "pk/1.11.0",
+      "extra": {}
+    },
+    {
+      "id": "karpathy-session-2fb31f4256672e28",
+      "title": "Karpathy session 2fb31f425667",
+      "content": "## Delta\n\nAll three writers are done. Re-running the type-check, lint and tests over the combined repairs.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: claude-code\n- Session: a1da1304-ba13-46ed-9018-32c6d7cfa804\n- Captured: 2026-11-18T11:49:17.336621Z\n- Project: /Volumes/T7/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- No changed paths detected.\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "session:a1da1304-ba13-46ed-9018-32c6d7cfa804"
+        }
+      ],
+      "created_at": "2026-11-18T11:52:48.127738Z",
+      "updated_at": "2026-11-18T11:52:48.127738Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "generated_by": "pk/1.11.0",
+      "extra": {}
+    },
+    {
+      "id": "karpathy-session-313aea214470224e",
+      "title": "Karpathy session 313aea214470",
+      "content": "## Delta\n\nBoth blockers are background jobs, so I'm pausing here until they report:\n\n- **Test build:** the `a2ui_render` tests are still compiling (41 minutes in, release profile, cold cache). I can't commit until it finishes, because the repo's pre-commit hook also compiles in the same `target/` directory.\n- **Team support map:** a read-only agent is tracing the existing team backend (routes, domain model, runtime routing, per-member events) and the current frontend patterns. The UI design depends on what it finds.\n\nDesign context so far: this is an extension of the existing operator console, with the current implementation and the `docs/design/` prototypes as the visual reference. Those prototypes already describe an orchestrator conversation target and runs with sub-agent nesting, which the team work should line up with.\n\nWhen both finish I'll commit and open the schema-fix PR, then write the team UI brief and plan for your confirmation before any UI code.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: claude-code\n- Session: a1da1304-ba13-46ed-9018-32c6d7cfa804\n- Captured: 2026-11-18T06:12:18.682045Z\n- Project: /Volumes/T7/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- No changed paths detected.\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "session:a1da1304-ba13-46ed-9018-32c6d7cfa804"
+        }
+      ],
+      "created_at": "2026-11-18T06:15:51.036803Z",
+      "updated_at": "2026-11-18T06:15:51.036803Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "generated_by": "pk/1.11.0",
+      "extra": {}
+    },
+    {
+      "id": "karpathy-session-529dc1462949c0e1",
+      "title": "Karpathy session 529dc1462949",
+      "content": "## Delta\n\nW2's last fix is in: changing the default model no longer invalidates model approvals, so the next answer after a switch keeps working. Model approvals still depend on the endpoint, credential, protocol and model list. W2 also confirmed this change doesn't touch the provider save's conflict check. One cost on upgrade: approvals recorded by earlier versions go stale once, so each model needs one new check after upgrading.\n\nWhile W6 works, I wrote my two docs tasks.\n\n**Operator docs.** [docs/PROVIDER_CONFIGURATION.md](docs/PROVIDER_CONFIGURATION.md) has a new section, \"Choosing which model answers\". It covers:\n- how to change the system default, and that only the live route writes it;\n- which model answers when several levels name one: turn, then conversation, then agent, then system default, then the configured fallback;\n- pinned agents, the answer receipt, and model approvals, including the one-time re-check after upgrading.\n\nIt does not claim the global model setting is retired. That retirement isn't part of S1.\n\n**Decisions** are recorded in `.prometheus/decisions.md`:\n- the configured-fallback behavior;\n- why `default_model` was taken out of the approval fingerprint;\n- that only the live route writes the system default.\n\nBoth tasks are marked complete in KBD.\n\nW6 (the S1 screens) is the only writer still running. When it finishes I'll check its handoff, delete the old model selector once nothing uses it, and write the implementation inventory. After that comes your decision to open the boundary.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: claude-code\n- Session: a1da1304-ba13-46ed-9018-32c6d7cfa804\n- Captured: 2026-11-20T22:40:08.547639Z\n- Project: /Volumes/T7/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- No changed paths detected.\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "session:a1da1304-ba13-46ed-9018-32c6d7cfa804"
+        }
+      ],
+      "created_at": "2026-11-20T23:00:55.618052Z",
+      "updated_at": "2026-11-20T23:00:55.618052Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "generated_by": "pk/1.11.0",
+      "extra": {}
+    },
+    {
+      "id": "karpathy-session-5bfb2075e2703841",
+      "title": "Karpathy session 5bfb2075e270",
+      "content": "## Delta\n\n**The Flat 2.0 gate is real.** I planted a violation and it blocked:\n\n```\n1:43  error  Flat 2.0: separate by surface fill and spacing, not lines/shadows/blur  no-restricted-syntax\n```\n\nThat's the single most important verification in this phase — C-05's codemod is only safe behind a gate that actually fires, and I confirmed it does rather than trusting the change was marked DONE.\n\nFour more changes landed while I was checking. **7/21**, both stores in agreement.\n\n## Progress\n\n| | |\n|---|---|\n| Done | C-00, C-01, C-02, C-03, C-03b, C-03c, C-04 |\n| Next | **C-06** |\n| Canonical ↔ projection | agree at 7 |\n\nCodex is moving fast now — five changes in roughly the time C-02 alone took, which fits the earlier diagnosis: C-02's 13-minute stall was packet size, not a systemic problem.\n\n## One ordering note worth watching\n\nThe plan's next-in-sequence was **C-05** (the `hsl(var())` codemod), but the pointer says **C-06**. That's not necessarily wrong — the dependency graph allows C-06/C-07/C-08 to run parallel to C-05, and C-05 is now unblocked whenever it's picked up. But C-05 is the one I scoped down to *only* the 30 non-admin occurrences, precisely so it wouldn't collide with C-14a's admin-page rewrite.\n\nIf C-05 gets skipped rather than deferred, those 30 occurrences never get converted and the C-03 allowlist never shrinks. I'll flag it if we reach Wave 3 with C-05 still PENDING.\n\nNothing needs your attention. The interesting outstanding question is still whether trimming the review packet drops judge latency below the 300s window — C-06 through C-08 are large changes, so we should get a clean data point soon.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: claude-code\n- Session: 444a77f7-71ee-4a60-8ce1-1b19da7d22ab\n- Captured: 2026-08-07T17:45:00.648757Z\n- Project: /Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- No changed paths detected.\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "session:444a77f7-71ee-4a60-8ce1-1b19da7d22ab"
+        }
+      ],
+      "created_at": "2026-08-07T17:45:08.143652Z",
+      "updated_at": "2026-08-07T17:45:08.143652Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "generated_by": null,
+      "extra": {}
+    },
+    {
+      "id": "karpathy-session-6946394d39a97cfa",
+      "title": "Karpathy session 6946394d39a9",
+      "content": "## Delta\n\nThe page-and-sheets writer reports all ten of its findings fixed in source (unverified until I rerun the checks). While the other two writers finish, I'm taking the readiness strip layout, now that those files are free.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: unknown\n- Session: a1da1304-ba13-46ed-9018-32c6d7cfa804\n- Captured: 2026-11-18T11:48:16.244272Z\n- Project: /Volumes/T7/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- No changed paths detected.\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "session:a1da1304-ba13-46ed-9018-32c6d7cfa804"
+        }
+      ],
+      "created_at": "2026-11-18T11:48:53.560702Z",
+      "updated_at": "2026-11-18T11:48:53.560702Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "generated_by": "pk/1.11.0",
+      "extra": {}
+    },
+    {
+      "id": "karpathy-session-89a79288a54ecb45",
+      "title": "Karpathy session 89a79288a54e",
+      "content": "## Delta\n\nThe page-and-sheets writer reports all ten of its findings fixed in source (unverified until I rerun the checks). While the other two writers finish, I'm taking the readiness strip layout, now that those files are free.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: unknown\n- Session: a1da1304-ba13-46ed-9018-32c6d7cfa804\n- Captured: 2026-11-18T11:48:47.396310Z\n- Project: /Volumes/T7/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- No changed paths detected.\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "session:a1da1304-ba13-46ed-9018-32c6d7cfa804"
+        }
+      ],
+      "created_at": "2026-11-18T11:49:24.432166Z",
+      "updated_at": "2026-11-18T11:49:24.432166Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "generated_by": "pk/1.11.0",
+      "extra": {}
+    },
+    {
+      "id": "karpathy-session-94afb62ae177fb9e",
+      "title": "Karpathy session 94afb62ae177",
+      "content": "## Delta\n\nCodex finished — **21/21** — and I verified it rather than trusting the report.\n\n## What I checked, and why\n\nThe completion notification alone wasn't enough. Progress said 21/21 while **HEAD was still `a91cd5b`** — the same commit as when this session started. Twenty-one changes with zero new commits is exactly the shape of the C-06 failure earlier in this session, where a change was marked DONE with 0/3 tasks and no code.\n\nIt's not that. The work is real and **uncommitted**: 282 changed frontend files, 26 archived OpenSpec changes.\n\n## Verification — all run, all green\n\n| Gate | Result |\n|---|---|\n| `pnpm typecheck` | ✅ pass |\n| `pnpm lint` | ✅ pass |\n| `pnpm build` | ✅ built in 1.28s |\n| `pnpm test` | ✅ **331 tests / 69 files** |\n| Boundary gate | ✅ 0 production violations |\n\nTests went from **153 → 331**, more than doubling. The `eval` warnings in the build are from `pglite`'s vendored WASM, not our code.\n\n## One gate still fails, and it's the one that matters\n\n```\nERROR: Coverage for lines (33.68%) does not meet global threshold (60%)\nERROR: Coverage for functions (26.37%) does not meet global threshold (60%)\nERROR: Coverage for branches (24.59%) does not meet global threshold (60%)\n```\n\nCoverage improved from 19.45% to 33.68% — real movement, still **26 points short**. A migration that doubles the test count while leaving coverage at half the threshold means the new code outgrew the new tests. That's worth knowing before this is called done.\n\n## Two things needing your decision\n\n**The work is uncommitted.** 282 files sitting in the working tree is a lot to lose. I haven't committed since you haven't asked me to.\n\n**Phase 7 is now unblocked** — the frontend tree has settled, which was the only thing gating the doneness measurement. That's the measurement this whole session was building toward: does the runtime do what's specified, does the UI expose it, is the UI actually good.\n\nSay the word on either.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: claude-code\n- Session: 444a77f7-71ee-4a60-8ce1-1b19da7d22ab\n- Captured: 2026-08-08T08:56:51.488350Z\n- Project: /Users/gqadonis/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- No changed paths detected.\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "session:444a77f7-71ee-4a60-8ce1-1b19da7d22ab"
+        }
+      ],
+      "created_at": "2026-08-08T08:56:57.976703Z",
+      "updated_at": "2026-08-08T08:56:57.976703Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "generated_by": null,
+      "extra": {}
+    },
+    {
+      "id": "karpathy-session-95b0f404a334ad7c",
+      "title": "Karpathy session 95b0f404a334",
+      "content": "## Delta\n\nW2's last fix is in: changing the default model no longer invalidates model approvals, so the next answer after a switch keeps working. Model approvals still depend on the endpoint, credential, protocol and model list. W2 also confirmed this change doesn't touch the provider save's conflict check. One cost on upgrade: approvals recorded by earlier versions go stale once, so each model needs one new check after upgrading.\n\nWhile W6 works, I wrote my two docs tasks.\n\n**Operator docs.** [docs/PROVIDER_CONFIGURATION.md](docs/PROVIDER_CONFIGURATION.md) has a new section, \"Choosing which model answers\". It covers:\n- how to change the system default, and that only the live route writes it;\n- which model answers when several levels name one: turn, then conversation, then agent, then system default, then the configured fallback;\n- pinned agents, the answer receipt, and model approvals, including the one-time re-check after upgrading.\n\nIt does not claim the global model setting is retired. That retirement isn't part of S1.\n\n**Decisions** are recorded in `.prometheus/decisions.md`:\n- the configured-fallback behavior;\n- why `default_model` was taken out of the approval fingerprint;\n- that only the live route writes the system default.\n\nBoth tasks are marked complete in KBD.\n\nW6 (the S1 screens) is the only writer still running. When it finishes I'll check its handoff, delete the old model selector once nothing uses it, and write the implementation inventory. After that comes your decision to open the boundary.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: claude-code\n- Session: a1da1304-ba13-46ed-9018-32c6d7cfa804\n- Captured: 2026-11-20T22:42:13.159224Z\n- Project: /Volumes/T7/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- No changed paths detected.\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "session:a1da1304-ba13-46ed-9018-32c6d7cfa804"
+        }
+      ],
+      "created_at": "2026-11-20T23:13:55.762316Z",
+      "updated_at": "2026-11-20T23:13:55.762316Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "generated_by": null,
+      "extra": {}
+    },
+    {
+      "id": "karpathy-session-b687772022381ce7",
+      "title": "Karpathy session b68777202238",
+      "content": "## Delta\n\nThe claim holds: the server reads the hot-reloaded config only once, at `server.rs:490`. The model-switching agent is still running.\n\n## Root Cause\n\nNo explicit root-cause section was captured; preserve this as a session record, not an inferred diagnosis.\n\n## Corrective Actions\n\nReview and promote only reusable findings.\n\n## Session Metadata\n\n- Harness: claude-code\n- Session: a1da1304-ba13-46ed-9018-32c6d7cfa804\n- Captured: 2026-11-19T15:07:15.800669Z\n- Project: /Volumes/T7/Projects/prometheus/universal-agent-runtime/frontend\n\n## Changed Paths\n\n- No changed paths detected.\n",
+      "tags": [
+        "karpathy",
+        "session-learning"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "session:a1da1304-ba13-46ed-9018-32c6d7cfa804"
+        }
+      ],
+      "created_at": "2026-11-19T15:10:58.203021Z",
+      "updated_at": "2026-11-19T15:10:58.203021Z",
+      "revision": 0,
+      "entry_type": "SessionRecord",
+      "description": null,
+      "generated_by": "pk/1.11.0",
+      "extra": {}
+    },
+    {
+      "id": "uar-final-production-hardening-session-status-2026-07",
+      "title": "UAR Final Production Hardening Session Status 2026-07",
+      "content": "## Session Metadata\n\n- **Ended:** 2026-07-11T01:35:41Z\n- **Phase:** `uar-final-production-hardening-2026-07`\n- **Stage:** `executing`\n- **Last completed:** none\n- **Progress:** 0 of 0 changes done\n- **Next pending:** none\n\n## Status Summary\n\nNo changes were recorded as completed during this session. The session ended while the phase was still marked `executing`, but there were no pending changes listed.\n\n# Citations\n\n1. stdin",
+      "tags": [
+        "uar",
+        "production-hardening",
+        "session-status",
+        "release-process"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "stdin"
+        }
+      ],
+      "created_at": "2026-07-11T04:29:36.672151Z",
+      "updated_at": "2026-07-11T04:29:36.672151Z",
+      "revision": 0,
+      "entry_type": "Reference",
+      "description": null,
+      "generated_by": null,
+      "extra": {}
+    },
+    {
+      "id": "uar-grade-a-upgrade-session-completion-2026-07",
+      "title": "UAR Grade-A Upgrade Session Completion 2026-07",
+      "content": "## Session Metadata\n\n- **Phase:** `uar-grade-a-upgrade-2026-07`\n- **Status:** executor session complete\n- **Recorded change:** `unknown`\n\n## Status Summary\n\nThe executor session for the `uar-grade-a-upgrade-2026-07` phase completed, but the recorded change is unspecified (`unknown`). No additional completed changes, pending changes, timestamps, or stage metadata were provided.\n\nThis entry is related to the prior [UAR Final Production Hardening Session Status 2026-07](/uar-final-production-hardening-session-status-2026-07.md), which similarly records session-level status for a July 2026 UAR phase.\n\n# Citations\n\n1. stdin",
+      "tags": [
+        "uar",
+        "grade-a-upgrade",
+        "session-status",
+        "release-process"
+      ],
+      "links": [
+        "uar-final-production-hardening-session-status-2026-07"
+      ],
+      "sources": [
+        {
+          "resource": "stdin"
+        }
+      ],
+      "created_at": "2026-07-15T22:50:04.518582Z",
+      "updated_at": "2026-07-15T22:50:04.518582Z",
+      "revision": 0,
+      "entry_type": "Reference",
+      "description": null,
+      "generated_by": null,
+      "extra": {}
+    },
+    {
+      "id": "uar-ui-ux-migration-phase-status-flat-2-0-gate-verified",
+      "title": "UAR UI/UX Migration Phase Status: Flat 2.0 Gate Verified",
+      "content": "## Context\n\nExecutor session completed for phase `uar-uiux-full-migration-2026-08`; change status was reported as `unknown`.\n\n## Verification\n\nThe **Flat 2.0 gate** was manually verified by planting a violation. The rule correctly blocked the violation:\n\n```text\n1:43  error  Flat 2.0: separate by surface fill and spacing, not lines/shadows/blur  no-restricted-syntax\n```\n\nThis verification is important because **C-05** depends on the gate being active: the `hsl(var())` codemod is only safe if the lint gate actually fires. The check confirmed the gate behavior instead of relying solely on a `DONE` marker.\n\n## Migration Progress\n\nBoth canonical and projection stores agree at **7 completed changes out of 21**.\n\n| Status | Changes |\n|---|---|\n| Done | C-00, C-01, C-02, C-03, C-03b, C-03c, C-04 |\n| Next pointer | C-06 |\n| Canonical ↔ projection | agree at 7 |\n\n## Ordering Note\n\nThe plan's next sequential change was **C-05** for the `hsl(var())` codemod, but the current pointer indicates **C-06**.\n\nThis is not necessarily incorrect:\n\n- The dependency graph allows **C-06**, **C-07**, and **C-08** to run in parallel with **C-05**.\n- **C-05** is now unblocked because the Flat 2.0 gate has been verified.\n- **C-05** was intentionally scoped to only the **30 non-admin occurrences** to reduce collision risk.\n\n## Execution Observation\n\nCodex completed five changes in roughly the time that **C-02** alone previously took. This supports the earlier diagnosis that the C-02 delay was caused by packet size rather than a systemic throughput issue.\n\n# Citations\n\n1. stdin",
+      "tags": [
+        "uar-uiux",
+        "flat-2-0",
+        "codemod",
+        "lint-gate",
+        "migration-status"
+      ],
+      "links": [],
+      "sources": [
+        {
+          "resource": "stdin"
+        }
+      ],
+      "created_at": "2026-08-08T08:57:07.223414Z",
+      "updated_at": "2026-08-08T08:57:07.223414Z",
+      "revision": 0,
+      "entry_type": "Reference",
+      "description": null,
+      "generated_by": null,
+      "extra": {}
+    }
+  ]
+}

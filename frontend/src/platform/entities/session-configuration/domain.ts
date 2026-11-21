@@ -15,6 +15,7 @@ import type {
   AgentSessionField,
   SessionPromptCaching,
 } from "./contracts";
+import { clearSessionEffectiveModel, loadSessionEffectiveModel } from "./effective-model";
 import {
   fetchAgentSessionConfig,
   fetchSessionPromptCaching,
@@ -402,6 +403,10 @@ export async function saveAgentSessionDraft(draftId: string): Promise<boolean> {
       // failure must not turn it into an unconfirmed write or enable replay.
       try { await loadSessionPromptCaching(draft.session_id, controller.signal); }
       catch { graphStore.getState().removeEntity(SESSION_PROMPT_CACHING_ENTITY, draft.session_id); }
+      // The effective model can change with this save (override set or cleared). A refused save
+      // never reaches this point, so the previous value stays until the runtime confirms a new one.
+      try { await loadSessionEffectiveModel(draft.session_id, controller.signal); }
+      catch { clearSessionEffectiveModel(draft.session_id); }
       return committed;
     });
   } catch (error) {
@@ -503,6 +508,8 @@ export const agentSessionDraftActions = {
   loadAndOpen: loadAndOpenAgentSessionDraft,
   loadSession: loadAgentSession,
   loadPromptCaching: loadSessionPromptCaching,
+  loadEffectiveModel: loadSessionEffectiveModel,
+  clearEffectiveModel: clearSessionEffectiveModel,
   open: openAgentSessionDraft,
   readConfig: readAgentSessionDraftConfig,
   save: saveAgentSessionDraft,

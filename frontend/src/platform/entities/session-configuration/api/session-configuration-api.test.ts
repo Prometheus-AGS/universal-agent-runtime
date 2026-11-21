@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import {
+  SessionConfigurationSaveError,
+  SessionModelNotOfferedError,
   decodeAgentSessionConfig,
   decodeSessionPromptCaching,
   fetchAgentSessionConfig,
+  saveAgentSessionConfig,
 } from "./session-configuration-api";
 
 afterEach(() => {
@@ -55,5 +58,56 @@ describe("session configuration API", () => {
       user_override: true,
       global_default: false,
     });
+  });
+});
+
+describe("saveAgentSessionConfig refusal", () => {
+  const config = {
+    agent_id: "agent-one",
+    model: "bdd-provider-b/claude-5-retired",
+    tools: null,
+    skills: null,
+    knowledge_bases: null,
+    mcp_servers: null,
+    tool_approval: null,
+    prompt_caching_enabled: null,
+  };
+
+  test("surfaces the runtime's model_not_offered reason as a typed, certain failure", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: "Provider 'bdd-provider-b' does not offer model 'claude-5-retired'",
+            code: "model_not_offered",
+            provider_id: "bdd-provider-b",
+            model_id: "claude-5-retired",
+          }),
+          { status: 422 },
+        ),
+      ),
+    );
+
+    const failure = await saveAgentSessionConfig("s1", config).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(SessionModelNotOfferedError);
+    const refused = failure as SessionModelNotOfferedError;
+    expect(refused.message).toContain("not offered");
+    expect(refused.message).toContain("does not offer model 'claude-5-retired'");
+    expect(refused.uncertain).toBe(false);
+    expect(refused.modelId).toBe("claude-5-retired");
+  });
+
+  test("any other 422 stays a plain save failure", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: "bad" }), { status: 422 })),
+    );
+
+    const failure = await saveAgentSessionConfig("s1", config).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(SessionConfigurationSaveError);
+    expect(failure).not.toBeInstanceOf(SessionModelNotOfferedError);
   });
 });

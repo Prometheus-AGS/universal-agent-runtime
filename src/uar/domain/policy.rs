@@ -356,6 +356,61 @@ pub enum PolicyScope {
     Legacy,
 }
 
+/// Why the effective model route was chosen, as shown on a turn receipt.
+///
+/// This is a separate receipt field, not a [`PolicyScope`] variant: `PolicyScope`
+/// is a wire enum matched across the runtime and the system default is not a
+/// policy scope. It is `None` on an [`EffectiveRunPolicy`] when no origin can be
+/// stated truthfully (for example a route supplied by the retiring Global scope).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ModelOrigin {
+    /// The provider registry's system default (`llm.default_provider` plus that
+    /// provider's default model).
+    SystemDefault,
+    /// The conversation's own model override.
+    Conversation,
+    /// The selected agent's explicit model.
+    Agent,
+    /// A model named for this single turn.
+    Turn,
+    /// The configured `llm_config.model` used because the registry has no usable default.
+    ConfiguredFallback,
+}
+
+/// Settings key written only by the live default-provider route.
+pub const DEFAULT_PROVIDER_SETTING_KEY: &str = "llm.default_provider";
+
+/// Time the current system default became current, RFC 3339 at second precision.
+///
+/// Read from the update time of the `llm.default_provider` row that the live
+/// route writes, never from a client clock. The row is accepted only when it
+/// names the same provider the registry currently serves
+/// (`registry_default_id`); the route writes the row before it swaps the
+/// registry, so a mismatch means the two are mid-change and no time is claimed.
+pub async fn system_default_activation_time(
+    settings: Option<&SettingsManager>,
+    registry_default_id: Option<&str>,
+) -> Option<String> {
+    let row = settings?.get_with_meta(DEFAULT_PROVIDER_SETTING_KEY).await?;
+    let stored = row.setting.data.as_str()?;
+    if registry_default_id != Some(stored) {
+        return None;
+    }
+    let at = row.setting.updated_at.unwrap_or(row.setting.created_at);
+    Some(at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true))
+}
+
+/// The explicit model an agent keeps, resolved exactly as runtime policy
+/// resolution resolves the Agent scope: the artifact's `policy.provider.default`
+/// when provider and model are both non-empty, replaced by a model carried in
+/// `extensions["uar.run_policy"]`. `None` means the agent follows the system
+/// default.
+#[must_use]
+pub fn agent_explicit_model(agent: &AgentArtifact) -> Option<ModelRoute> {
+    policy_from_agent_artifact(agent).model
+}
+
 /// Resources enabled by configuration and available on the current runtime.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PolicyUniverse {
@@ -427,6 +482,15 @@ pub struct EffectiveRunPolicy {
     pub provenance: BTreeMap<String, PolicyScope>,
     /// Missing, disabled, or conflicting selections that were safely excluded.
     pub warnings: Vec<String>,
+    /// Why `model` was chosen. Absent when no origin can be stated truthfully
+    /// and in policies stored before this field existed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_origin: Option<ModelOrigin>,
+    /// When the system default became current (RFC 3339, second precision).
+    /// Present only when `model_origin` is `system_default`; captured once at
+    /// turn admission.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_origin_since: Option<String>,
 }
 
 /// Provider name of the built-in tool that lets the model activate a skill.
@@ -438,6 +502,38 @@ pub const ACTIVATE_SKILL_TOOL: &str = "activate_skill";
 pub const SEARCH_TOOLS_TOOL: &str = "search_tools";
 
 impl EffectiveRunPolicy {
+    /// Origin of the route when a policy scope named it. `None` when the route
+    /// is empty (the registry default or configured fallback decides it later)
+    /// or came from the Global or Legacy scope, which carry no receipt origin.
+    #[must_use]
+    pub fn scoped_model_origin(&self) -> Option<ModelOrigin> {
+        let named = self.model.as_ref().is_some_and(|route| {
+            !route.provider_id.trim().is_empty() && !route.model_id.trim().is_empty()
+        });
+        if !named {
+            return None;
+        }
+        match self.provenance.get("model")? {
+            PolicyScope::Agent => Some(ModelOrigin::Agent),
+            PolicyScope::Conversation => Some(ModelOrigin::Conversation),
+            PolicyScope::Turn => Some(ModelOrigin::Turn),
+            PolicyScope::Global | PolicyScope::Legacy => None,
+        }
+    }
+
+    /// Copy without the receipt-only origin fields. Checkpoint authorization
+    /// digests are taken over this view: the origin and its time describe why a
+    /// route was chosen, they do not widen or narrow what the run may do, and a
+    /// digest that included them would also reject checkpoints written before
+    /// the fields existed.
+    #[must_use]
+    pub fn authorization_view(&self) -> Self {
+        let mut view = self.clone();
+        view.model_origin = None;
+        view.model_origin_since = None;
+        view
+    }
+
     /// Whether a built-in model-control tool (`Exposure::ModelOnly`, such as
     /// `activate_skill`, the team tools or the agent controls) may be offered
     /// to the model on this run.
@@ -624,7 +720,7 @@ pub fn resolve_run_policy(input: PolicyResolutionInput) -> EffectiveRunPolicy {
         &mut warnings,
     );
 
-    EffectiveRunPolicy {
+    let mut effective = EffectiveRunPolicy {
         version: RUN_POLICY_VERSION,
         chat_mode,
         agent_id,
@@ -640,7 +736,11 @@ pub fn resolve_run_policy(input: PolicyResolutionInput) -> EffectiveRunPolicy {
         tool_approval,
         provenance,
         warnings,
-    }
+        model_origin: None,
+        model_origin_since: None,
+    };
+    effective.model_origin = effective.scoped_model_origin();
+    effective
 }
 
 /// Transport-free inputs shared by the service and embedded resolvers.

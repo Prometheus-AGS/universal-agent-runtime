@@ -1,14 +1,22 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { useGraphStore } from "@/platform/entities";
 
-import { fetchModelsCatalog } from "../api/models-api";
-import { fetchConfiguredProviders, updateProvider } from "@/features/providers/api";
+import {
+  fetchConfiguredProviders,
+  fetchModelsCatalog,
+  setDefaultProvider,
+  updateProvider,
+} from "@/platform/entities/model-catalog/api/model-catalog-api";
 import { useModelsStore } from "./models-store";
 import type { CatalogModelsResponse, UarProvider } from "@/types";
 
-vi.mock("../api/models-api", () => ({ fetchModelsCatalog: vi.fn() }));
-vi.mock("@/features/providers/api", () => ({
+// The stores reach the transport through the model-catalog platform domain, so the domain
+// transport module is what must be mocked (the feature api modules re-export from it).
+vi.mock("@/platform/entities/model-catalog/api/model-catalog-api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/platform/entities/model-catalog/api/model-catalog-api")>()),
+  fetchModelsCatalog: vi.fn(),
   fetchConfiguredProviders: vi.fn(),
+  setDefaultProvider: vi.fn(),
   updateProvider: vi.fn(),
 }));
 
@@ -51,6 +59,7 @@ beforeEach(() => {
   vi.mocked(fetchModelsCatalog).mockResolvedValue(catalog);
   vi.mocked(fetchConfiguredProviders).mockResolvedValue({ providers: [provider] });
   vi.mocked(updateProvider).mockImplementation(async (_id, value) => value);
+  vi.mocked(setDefaultProvider).mockResolvedValue();
 });
 
 describe("models store", () => {
@@ -104,7 +113,12 @@ describe("models store", () => {
       "stub",
       expect.objectContaining({ default_model: "second" }),
     );
+    expect(setDefaultProvider).toHaveBeenCalledWith("stub");
     expect(useModelsStore.getState().configuredProviders[0]?.default_model).toBe("second");
+    expect(useGraphStore.getState().entities.ProviderMeta?.current).toMatchObject({
+      default_id: "stub",
+      default_model: "second",
+    });
   });
 
   test("removes a model and clears a matching default", async () => {

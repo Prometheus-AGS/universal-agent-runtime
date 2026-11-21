@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useProviderModels } from "../model/use-provider-models";
 import { useProvidersAdmin } from "../model/use-providers-admin";
 import type { CatalogProviderSummary } from "@/types";
+import { SystemDefaultPanel } from "./system-default-panel";
 
 export const ProvidersPage: FC = () => {
   const {
@@ -96,7 +97,9 @@ export const ProvidersPage: FC = () => {
     });
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
+    <div className="flex flex-1 flex-col overflow-hidden">
+    <SystemDefaultPanel />
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
       {/* Provider list (left column) */}
       <div className={cn("flex shrink-0 flex-col border-b border-border bg-background md:w-72 md:border-b-0 md:border-r", selected ? "hidden md:flex" : "flex flex-1 md:flex-initial")}>
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -292,6 +295,7 @@ export const ProvidersPage: FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   );
 };

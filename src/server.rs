@@ -7096,6 +7096,38 @@ async fn resolve_requested_model(
     })
 }
 
+/// Resolve the route for a turn that no policy scope named a model for. The
+/// registry's system default serves it. Only when that default cannot be
+/// verified (no default, disabled provider, unverified model) does the
+/// configured `llm_config.model` serve it, and only when that model verifies
+/// itself; the flag is true in that case. If the fallback is unusable too, the
+/// original refusal stands. A route a scope named never comes through here, so
+/// a failing scoped model is never replaced.
+async fn resolve_unscoped_model(state: &AppState) -> Result<(ResolvedModel, bool), Response> {
+    let refusal = match resolve_requested_model(state, None).await {
+        Ok(model) => return Ok((model, false)),
+        Err(refusal) => refusal,
+    };
+    let Some((provider_id, model_id)) = state.run_manager.configured_fallback_model() else {
+        return Err(refusal);
+    };
+    match state
+        .run_manager
+        .target_sources()
+        .verified_model(&format!("{provider_id}/{model_id}"))
+        .await
+    {
+        Ok((route, _)) => Ok((
+            ResolvedModel {
+                provider_id: route.provider_id,
+                model_id: route.model_id,
+            },
+            true,
+        )),
+        Err(_) => Err(refusal),
+    }
+}
+
 /// Cursor for one runtime event and, optionally, one projected SSE frame.
 #[derive(Clone, Copy)]
 struct ChatStreamCursor {
@@ -7723,11 +7755,21 @@ pub(crate) async fn api_chat_completion(
                 .model
                 .as_ref()
                 .map(|model| format!("{}/{}", model.provider_id, model.model_id));
-            let resolved_model =
-                match resolve_requested_model(&state, effective_model_name.as_deref()).await {
-                    Ok(model) => model,
+            // No scope named a route: the registry's system default serves this
+            // turn. The model is resolved here, once, at admission, and bound into
+            // the policy below; a later default change cannot reach this turn.
+            let route_from_system_default = effective_model_name.is_none();
+            let (resolved_model, served_by_configured_fallback) = if route_from_system_default {
+                match resolve_unscoped_model(&state).await {
+                    Ok(resolved) => resolved,
                     Err(response) => return response,
-                };
+                }
+            } else {
+                match resolve_requested_model(&state, effective_model_name.as_deref()).await {
+                    Ok(model) => (model, false),
+                    Err(response) => return response,
+                }
+            };
             if selected_bound.is_none() {
                 agent.policy.provider.default.provider = resolved_model.provider_id.clone();
                 agent.policy.provider.default.model = resolved_model.model_id.clone();
@@ -7736,6 +7778,20 @@ pub(crate) async fn api_chat_completion(
                 provider_id: resolved_model.provider_id.clone(),
                 model_id: resolved_model.model_id.clone(),
             });
+            if served_by_configured_fallback {
+                effective_run_policy.model_origin =
+                    Some(uar::domain::policy::ModelOrigin::ConfiguredFallback);
+                effective_run_policy.model_origin_since = None;
+            } else if route_from_system_default {
+                effective_run_policy.model_origin =
+                    Some(uar::domain::policy::ModelOrigin::SystemDefault);
+                effective_run_policy.model_origin_since =
+                    uar::domain::policy::system_default_activation_time(
+                        state.settings_manager.as_deref(),
+                        Some(resolved_model.provider_id.as_str()),
+                    )
+                    .await;
+            }
             if target_receipt.is_none() {
                 let selector =
                     format!("{}/{}", resolved_model.provider_id, resolved_model.model_id);

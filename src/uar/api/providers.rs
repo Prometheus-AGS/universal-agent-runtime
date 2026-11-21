@@ -368,11 +368,23 @@ async fn set_default(
     State(state): State<ProviderApiState>,
     Path(id): Path<String>,
 ) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
-    if state.registry.get(&id).await.is_none() {
+    let Some(provider) = state.registry.get(&id).await else {
         return Err((
             StatusCode::NOT_FOUND,
             Json(ErrorResponse {
                 error: format!("Provider '{id}' not found"),
+            }),
+        ));
+    };
+
+    // The registry yields no default pair for a disabled default provider, so
+    // accepting one would leave agents without a model. Refuse before any
+    // persistence or registry swap.
+    if !provider.enabled {
+        return Err((
+            StatusCode::CONFLICT,
+            Json(ErrorResponse {
+                error: format!("Provider '{id}' is disabled"),
             }),
         ));
     }
@@ -396,6 +408,13 @@ async fn set_default(
             }),
         )
     })?;
+
+    // The registry now serves this default, so the saved row is also the
+    // value in effect. Recorded only after the swap succeeded.
+    if let Some(ref sm) = state.settings_manager {
+        sm.record_effective("llm.default_provider", serde_json::json!(id))
+            .await;
+    }
 
     Ok(StatusCode::OK)
 }
@@ -833,6 +852,42 @@ mod tests {
         .expect_err("an unregistered provider must be rejected");
 
         assert_eq!(error.0, StatusCode::NOT_FOUND);
+        assert_eq!(registry.default_id().await.as_deref(), Some("provider-a"));
+        assert_eq!(
+            settings_manager.get_default_provider_id().await,
+            durable_before
+        );
+    }
+
+    #[tokio::test]
+    async fn set_default_disabled_provider_is_refused_before_any_write() {
+        let (persistence, _dir) = test_persistence().await;
+        let settings_manager = Arc::new(SettingsManager::new(persistence));
+        let registry = registry_with_two_providers().await;
+        registry
+            .register(ProviderConfig {
+                enabled: false,
+                ..provider("provider-off")
+            })
+            .await
+            .expect("disabled provider must register");
+        let durable_before = settings_manager.get_default_provider_id().await;
+
+        let error = set_default(
+            State(ProviderApiState {
+                registry: Arc::clone(&registry),
+                settings_manager: Some(Arc::clone(&settings_manager)),
+                provider_service: None,
+                admin_auth_required: false,
+                admin_key: None,
+            }),
+            Path("provider-off".to_string()),
+        )
+        .await
+        .expect_err("a disabled provider must not become the default");
+
+        assert_eq!(error.0, StatusCode::CONFLICT);
+        assert_eq!(error.1.0.error, "Provider 'provider-off' is disabled");
         assert_eq!(registry.default_id().await.as_deref(), Some("provider-a"));
         assert_eq!(
             settings_manager.get_default_provider_id().await,

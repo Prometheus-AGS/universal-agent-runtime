@@ -1,6 +1,7 @@
 import { test as base } from 'playwright-bdd';
 import type { Page } from '@playwright/test';
 import { STUB_BASE_URL } from './ports';
+import { S1Context } from './s1';
 
 /**
  * Every request body the stub LLM has received so far (see
@@ -34,7 +35,14 @@ export function systemPromptOf(req: StubRequest): string {
 
 export const test = base.extend<{
   stub: { requests: () => Promise<StubRequest[]>; reset: () => Promise<void> };
+  /** S1 live-model-choice state; inert until the S1 Background step calls `begin()`. */
+  s1: S1Context;
 }>({
+  s1: async ({ page, context }, use) => {
+    const s1 = new S1Context(page, context);
+    await use(s1);
+    await s1.dispose();
+  },
   stub: async ({}, use) => {
     await resetStubRequests();
     await use({ requests: fetchStubRequests, reset: resetStubRequests });

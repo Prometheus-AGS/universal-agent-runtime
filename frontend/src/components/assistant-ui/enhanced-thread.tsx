@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ToolCallBlockWrapper } from "@/features/chat/components/tool-call-block";
 import { chatMessageAnchorId } from "@/features/chat/model/message-anchor";
+import { AnswerReceipt } from "@/features/chat/components/answer-receipt";
 import { AttachmentPreviewStrip } from "@/features/chat/components/attachment-preview";
 import { useAttachmentContext } from "@/features/chat/attachment-context";
 import { useMemoryContext } from "@/features/chat/memory-context";
@@ -493,6 +494,7 @@ const AssistantMessage: FC = () => {
     >
       <div data-slot="aui_assistant-message-content" className="px-2 leading-relaxed text-foreground wrap-break-word">
         <AssistantMessageBody />
+        <AnswerReceipt messageId={messageId} />
         <AssistantMessageCitations />
       </div>
       <div data-slot="aui_assistant-message-footer" className="ms-2 flex min-h-7.5 items-center pt-1.5">

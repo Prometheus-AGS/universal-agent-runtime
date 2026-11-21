@@ -1,0 +1,195 @@
+{
+  "fixtureVersion": 1,
+  "frozenAt": "2026-11-19",
+  "truthSource": "chosen here, before implementation; values are fabricated test data. Keys and classes come from src/uar/settings/manager.rs seeds and uiux-settings-truthful-status-and-removals design D1/D3, read at write time",
+  "forbiddenPorts": [
+    1906,
+    28000
+  ],
+  "lkg": {
+    "envSentinels": {
+      "UAR_SECURITY__JWT_SECRET": "UAR-SCN-CFG-001-SENTINEL-A",
+      "OPENAI_API_KEY": "UAR-SCN-CFG-001-SENTINEL-B",
+      "UAR_LLM__API_KEY": "UAR-SCN-CFG-001-SENTINEL-C"
+    },
+    "expectedFiles": [
+      "config.yaml",
+      "config.yaml.lkg.json"
+    ],
+    "recordKeys": [
+      "version",
+      "sha256",
+      "saved_at",
+      "source_path",
+      "format",
+      "binary_version"
+    ],
+    "fileMode": "0600",
+    "dirMode": "0700"
+  },
+  "bootYaml": {
+    "markerSetting": {
+      "key": "resilience.requests_per_second",
+      "lkgValue": 7
+    },
+    "brokenYamlBytes": "server: {port: [",
+    "refusalEdits": [
+      {
+        "id": "jwt-fallback-secret",
+        "yaml": {
+          "security": {
+            "jwt_required": true
+          }
+        },
+        "logMustContain": "uses the built-in fallback"
+      },
+      {
+        "id": "admin-key-missing",
+        "yaml": {
+          "security": {
+            "settings_mutation_auth_required": true
+          }
+        },
+        "logMustContain": "security.settings_admin_key must be configured"
+      }
+    ],
+    "deliberateSecretControl": {
+      "env": "UAR_SECURITY__JWT_SECRET",
+      "value": "UAR-SCN-CFG-003-DELIBERATE"
+    },
+    "expectedFailedSourcePath": "<scratch>/cfg-002/config.yaml (the --config argument, as given)"
+  },
+  "persistedRows": {
+    "embeddingBadType": {
+      "recordId": "llm_embedding_vector_dimension",
+      "data": "abc",
+      "expectedReason": "invalid_type"
+    },
+    "embeddingOutOfRange": {
+      "recordId": "llm_embedding_vector_dimension",
+      "data": 0,
+      "expectedReason": "out_of_range"
+    },
+    "providerUndecodable": {
+      "recordId": "provider_broken",
+      "key": "provider.broken",
+      "data": {
+        "id": "broken",
+        "api_key": 12345
+      },
+      "expectedReason": "undecodable",
+      "credentialSentinel": "UAR-SCN-CFG-005-SENTINEL-D"
+    },
+    "governanceMalformed": {
+      "recordId": "governance_enabled",
+      "data": "not-a-boolean",
+      "expectedBehavior": "governance enabled and mutation unavailable; not listed in embedding.ignored or providers.skipped"
+    }
+  },
+  "reload": {
+    "providerP1": {
+      "id": "p1",
+      "yamlDefaultModelInitial": "A",
+      "operatorDefaultModel": "B",
+      "yamlDefaultModelEdited": "C",
+      "yamlAddedModel": "M2"
+    },
+    "providerP2": {
+      "id": "p2",
+      "yamlDefaultModelInitial": "D",
+      "yamlDefaultModelEdited": "E",
+      "operatorEdited": false
+    },
+    "applied": {
+      "key": "resilience.requests_per_second",
+      "before": 7,
+      "after": 9
+    },
+    "restartRequired": {
+      "key": "memory.max_context_tokens",
+      "before": 2000,
+      "after": 1500
+    },
+    "notApplied": {
+      "key": "vision.auto_detect",
+      "yamlEdit": {
+        "before": true,
+        "after": false
+      },
+      "reason": "no reader in YAML or DB (settings change: vision.* inert, not read at all)"
+    },
+    "reportLists": [
+      "applied",
+      "retained_with_drift",
+      "restart_required",
+      "not_applied",
+      "skipped"
+    ],
+    "statusCodes": {
+      "rejectedReload": 422,
+      "resolveDefaultProvider": 409,
+      "resolveNoDrift": 404,
+      "resolveUnknownResolution": 400,
+      "resolveOk": 200
+    },
+    "yamlAtBoot": {
+      "key": "server.port",
+      "reportedAs": "restart_required",
+      "reason": "YAML read at boot; the next start applies a YAML edit"
+    },
+    "noReader": {
+      "key": "vision.auto_detect",
+      "yamlEdit": {
+        "before": true,
+        "after": false
+      },
+      "reason": "no reader in YAML or DB (settings change: vision.* inert, not read at all)"
+    },
+    "dbEditCrossCheck": {
+      "key": "server.port",
+      "route": "PUT /api/uar/settings/server.port",
+      "expectedApplicationStatus": "not_applied"
+    }
+  },
+  "driftMasking": {
+    "key": "memory.openai_api_key",
+    "yamlInitial": "UAR-SCN-CFG-008-SENTINEL-YAML1",
+    "operatorValue": "UAR-SCN-CFG-008-SENTINEL-OP",
+    "yamlEdited": "UAR-SCN-CFG-008-SENTINEL-YAML2",
+    "maskedForm": "***",
+    "mustNotAppearIn": [
+      "GET /api/uar/settings/drift",
+      "POST /api/uar/settings/reload response",
+      "POST /api/uar/settings/drift/{key}/resolve response",
+      "GET /api/uar/settings/memory.openai_api_key",
+      "process stdout and stderr"
+    ]
+  },
+  "bootStatusShape": {
+    "config": [
+      "mode",
+      "source_digest",
+      "fallback",
+      "last_known_good"
+    ],
+    "fallbackKeys": [
+      "class",
+      "key_path",
+      "failed_source_path",
+      "failed_source_digest",
+      "lkg_digest",
+      "lkg_saved_at",
+      "lkg_binary_version"
+    ],
+    "embedding": [
+      "ignored"
+    ],
+    "providers": [
+      "skipped"
+    ],
+    "forbidden": "any stored value, any substring of the broken YAML, any sentinel"
+  },
+  "samples": {
+    "watcherReload": 5
+  }
+}

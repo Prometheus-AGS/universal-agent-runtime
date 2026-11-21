@@ -15,6 +15,7 @@ import {
   CONFIGURED_PROVIDER_ENTITY,
   SESSION_PROMPT_CACHING_ENTITY,
 } from "./contracts";
+import { SESSION_EFFECTIVE_MODEL_ENTITY } from "./effective-model";
 import type {
   AgentSession,
   ConfiguredModel,
@@ -120,6 +121,7 @@ export function registerSessionConfigurationEntities(): void {
   registerSchema({ type: CONFIGURED_MODEL_ENTITY });
   registerSchema({ type: AGENT_SESSION_DRAFT_ENTITY });
   registerSchema({ type: SESSION_PROMPT_CACHING_ENTITY });
+  registerSchema({ type: SESSION_EFFECTIVE_MODEL_ENTITY });
   registerEntityTransport(
     CONFIGURED_PROVIDER_ENTITY,
     configuredProviderTransport,

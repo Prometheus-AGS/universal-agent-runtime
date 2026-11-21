@@ -1,0 +1,35 @@
+{
+ "baselineRevision": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+ "method": "Read from source at the baseline revision (the working tree has no frontend changes against it). No builds, no tests. Verdicts are source-derived.",
+ "scenarios": {
+  "SCN-IDN-001": {
+   "baseline": "PASS",
+   "kind": "regression-guard",
+   "evidence": "frontend/src/features/models/model/models-store.ts:26-52 keys every REST-hydrated Model as providerId/modelId, so 8,173 rows, one per provider and the slash id, hold at the baseline. Not trivially passing: the bare-id mutant (catalogModelId returns the bare model id) collapses 8,173 rows to about 3,830 and must FAIL the count; a mutant that passes makes the scenario BLOCKED."
+  },
+  "SCN-IDN-002": {
+   "baseline": "FAIL",
+   "kind": "new-behavior",
+   "evidence": "The value assertions pass at the baseline because upsert is a shallow merge (frontend/node_modules/@prometheus-ags/entity-graph-core/dist/index.d.ts:358,401) so REST-hydrated flat fields survive a snapshot. The negative control fails: frontend/src/lib/realtime/uar-sse-adapter.ts:258-271 validates only the id, so a record without model_id is ingested and no ingestion error is shown. Whole-scenario verdict FAIL."
+  },
+  "SCN-IDN-003": {
+   "baseline": "FAIL",
+   "kind": "new-behavior",
+   "evidence": "models-store.ts:26-52 issues one upsertEntity per row for about 8,170 models inside hydrateCatalog, and features/models/ui/models-page.tsx:326 mounts every filtered row. Source-derived; the runner measures the baseline and the row requires a long task above 200 ms in at least 3 of 5 samples, else BLOCKED."
+  },
+  "SCN-IDN-004": {
+   "baseline": "FAIL",
+   "kind": "new-behavior",
+   "evidence": "Steps 1-3 pass (models-store.ts:98-140 saves through updateProvider), but the configured list is useModelsStore.configuredProviders loaded only by load() (models-store.ts:86-90, use-models-admin.ts:17-19) and nothing refreshes it on a provider change made elsewhere, so the second page fails the external-add step. Dropped-add and dropped-remove mutants must fail the store read-back."
+  },
+  "SCN-IDN-007": {
+   "baseline": "FAIL",
+   "kind": "new-behavior",
+   "evidence": "features/models/ui/models-page.tsx:326 maps every filtered row into the DOM with no virtualization; with 8,173 models the page mounts more than 8,000 row elements against the cap of 200."
+  }
+ },
+ "notMandatory": {
+  "SCN-IDN-005": "supplemental static gate",
+  "SCN-IDN-006": "optional, may move to a child phase"
+ }
+}

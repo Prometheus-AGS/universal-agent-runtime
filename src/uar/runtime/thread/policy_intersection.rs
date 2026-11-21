@@ -15,8 +15,9 @@ use serde_json::Value;
 
 use crate::uar::domain::artifact::{AgentArtifact, ToolExecutionMode};
 use crate::uar::domain::policy::{
-    ChatMode, EffectiveResourceSelection, EffectiveRunPolicy, PolicyScope, RUN_POLICY_VERSION,
-    ResourceSelection, RunPolicy, SelectionMode, ToolApprovalPolicy, policy_from_agent_artifact,
+    ChatMode, EffectiveResourceSelection, EffectiveRunPolicy, ModelOrigin, PolicyScope,
+    RUN_POLICY_VERSION, ResourceSelection, RunPolicy, SelectionMode, ToolApprovalPolicy,
+    policy_from_agent_artifact,
 };
 
 use super::AgentThread;
@@ -583,11 +584,16 @@ impl ThreadPolicy {
             let inherited_model = self.effective.model.clone();
             self.effective.chat_mode = ChatMode::Agent;
             self.effective.agent_id = Some(artifact.id.clone());
-            self.effective.model = extension
+            let own_model = extension
                 .as_ref()
                 .and_then(|scope| scope.model.clone())
-                .or(base.model)
-                .or(inherited_model);
+                .or(base.model);
+            // A child that names its own model is not on its parent's origin or time.
+            if own_model.is_some() {
+                self.effective.model_origin = Some(ModelOrigin::Agent);
+                self.effective.model_origin_since = None;
+            }
+            self.effective.model = own_model.or(inherited_model);
             if let Some(strategy) = extension
                 .as_ref()
                 .and_then(|scope| scope.context_strategy.clone())

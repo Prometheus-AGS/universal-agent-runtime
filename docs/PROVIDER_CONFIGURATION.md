@@ -336,6 +336,31 @@ When **`persistence`** is enabled in config (`persistence.provider`: `postgres`,
 
 If persistence is **disabled**, provider API calls still update the in-memory registry for the lifetime of the process, but **nothing is written to a database**.
 
+### Choosing which model answers
+
+**The system default** is the default provider plus that provider's `default_model`. Change it in the console from the *System default model* panel at the top of **Providers** (or the command palette action *Change system default model*). The console saves the provider's `default_model` with `PUT /api/uar/providers/{id}`, then calls `POST /api/uar/providers/{id}/default`. The change applies to the next turn without a restart; the console shows it as `live` only after the runtime acknowledges.
+
+- `POST /api/uar/providers/{id}/default` is the only writer of `llm.default_provider`. The settings API refuses that key with `422 unsupported_setting` (single PUT, bulk PUT and reset). A bulk settings save that includes it is refused as a whole.
+- A disabled provider cannot become the default (`409`, `Provider '<id>' is disabled`); an unknown provider returns `404`.
+
+**Which model a turn uses**, first match wins:
+
+1. a one-turn override;
+2. the conversation's model override;
+3. the agent's explicit model (`policy.provider.default`, or the model in `extensions["uar.run_policy"]`);
+4. the system default;
+5. the configured fallback (`llm.model` from YAML or environment), used only when nothing above names a model and the system default cannot be served (for example, its provider was disabled after it became the default), and only if the fallback model itself is verified.
+
+A model named by an override or an agent that cannot be served fails the turn with a visible error; it is never replaced by another model. A turn binds its model when it starts, so a default change never affects a reply already being written.
+
+**Agents that keep their own model** do not follow the system default. The panel and the change result list them with their models and say how many agents follow the default. `GET /api/agents` exposes this as `runtime_agents[i].explicit_model`.
+
+**Each answer shows a receipt**: the model the provider reported as serving (not the requested id), why it was used (`system default`, `this conversation`, `agent`, `this turn` or `configured fallback`) and, for the system default, when it became the default. Note: for `google_ai` and `vertex_ai`, the reported id can equal the requested id when the provider omits `modelVersion`.
+
+**Model verification.** A turn and a conversation override save both require the model to be listed, enabled and verified (`POST /api/uar/providers/{id}/test` with `{ "model": "<model>" }`). Saving an override with a model its provider does not offer returns `422 model_not_offered` with the reason, and nothing is saved. Changing a provider's `default_model` does not invalidate its verifications. After upgrading to this release, verifications recorded by earlier versions are stale once: verify each model again before use.
+
+Sub-agent model inheritance is unchanged and still pending an operator decision: a child run uses its own model if it names one, otherwise its parent's effective model.
+
 ---
 
 ## Model Routing

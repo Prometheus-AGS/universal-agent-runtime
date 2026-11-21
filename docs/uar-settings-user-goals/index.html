@@ -1,0 +1,535 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>UAR User Goals & Settings Specification</title><meta name="description" content="Configure the work, not just the settings. A user-value specification for models, knowledge, skills, history and memory across UAR scopes."><meta property="og:type" content="article"><meta property="og:title" content="UAR: Configure the Work"><meta property="og:description" content="User goals, scoped settings and evidence that the agent follows your choices."><meta name="twitter:card" content="summary_large_image">
+<meta property="og:image" content="https://ipfs.prometheusags.ai/ipfs/bafkreifbqzuqi43rq7dkchfuyhgqtofj7drv7q62c2fqt3tiv65x6634vu">
+<meta property="og:image:secure_url" content="https://ipfs.prometheusags.ai/ipfs/bafkreifbqzuqi43rq7dkchfuyhgqtofj7drv7q62c2fqt3tiv65x6634vu">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Cover preview for UAR User Goals and Settings Specification">
+<meta name="twitter:image" content="https://ipfs.prometheusags.ai/ipfs/bafkreifbqzuqi43rq7dkchfuyhgqtofj7drv7q62c2fqt3tiv65x6634vu">
+<meta name="twitter:image:alt" content="Cover preview for UAR User Goals and Settings Specification"><!-- PUBLICATION HANDOFF: insert verified absolute og:image and twitter:image after screenshot upload/readback. No guessed URL. --><meta name="theme-color" content="#173f51"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="assets/icon.svg"><link rel="stylesheet" href="assets/document.css"><script src="assets/htmx-2.0.11.min.js" defer></script><script src="assets/sse-2.2.4.js" defer></script><script src="assets/alpine-3.15.8.min.js" defer></script></head><body x-data="{query:'',large:false}" :class="{'large':large}"><a class="skip" href="#document">Skip to specification</a><header><div><span class="mark">UAR</span> <span class="submark">Universal Agent Runtime</span></div><a href="specification.md">Source Markdown</a></header><section class="hero"><div class="eyebrow">User goals & settings specification · 19 November 2026</div><h1>Configure the work.<br>Trust the result.</h1><p>Your model. Your knowledge. Your skills. The right context, at the right scope, with a clear explanation of what the agent actually uses.</p><div class="badges"><span class="badge">30 settings families</span><span class="badge">19 management surfaces</span><span class="badge">Proposed · not yet certified</span></div></section><div class="layout"><aside x-data="{query:''}"><strong>Choose your depth</strong><p>Start with the workflows. Open the inventory when you need implementation detail.</p><label for="toc-search">Find a section</label><input id="toc-search" type="search" x-model="query" placeholder="Models, memory, evidence…"><nav aria-label="Contents"><a href="#start-with-the-person-not-the-panel" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Start with the person, not the panel</a><a href="#three-different-things-must-stay-different" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Three different things must stay different</a><a href="#scope-contract" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Scope contract</a><a href="#the-core-workflows" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">The core workflows</a><a href="#evidence-what-is-uncomfortable-today" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Evidence: what is uncomfortable today</a><a href="#complete-settings-family-inventory" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Complete settings-family inventory</a><a href="#navigation-and-management-coverage" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Navigation and management coverage</a><a href="#implementation-plan-the-shortest-useful-route" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Implementation plan: the shortest useful route</a><a href="#delivery-and-acceptance-examples" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Delivery and acceptance examples</a><a href="#walkthroughs-how-the-target-experience-should-feel" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Walkthroughs: how the target experience should feel</a><a href="#proposed-vlbv-behavior-contracts" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Proposed VLBV behavior contracts</a><a href="#definition-of-done-and-exit-contract" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Definition of Done and exit contract</a><a href="#seed-field-index-exact-source-labels" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Seed field index: exact source labels</a><a href="#source-ledger-and-confidence" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">Source ledger and confidence</a><a href="#what-done-looks-like" x-show="!query || $el.textContent.toLowerCase().includes(query.toLowerCase())">What done looks like</a></nav></aside><main id="document"><div class="notice"><strong>Now versus target</strong><br>This is a proposed specification backed by a source inventory, not a shipped-feature announcement. Each family distinguishes current evidence from intended behavior. No runtime tests were run for this paper.</div><div class="tools"><button type="button" @click="large=!large" :aria-pressed="large">Larger reading text</button><a class="button" href="reading-guide.html" hx-get="reading-guide.html" hx-target="#reading-guide" hx-select="#guide" hx-swap="innerHTML">Reading guide</a></div><div id="reading-guide" aria-live="polite"></div><p>Revision 0.1 · 19 November 2026 · Proposed specification, not implementation certification</p>
+<h2 id="start-with-the-person-not-the-panel">Start with the person, not the panel</h2>
+<p>A person should be able to set up their working world: choose the model for a conversation, equip an agent with the right knowledge and skills, establish shared defaults, and keep personal history private. An agent should be able to explain the configuration it actually used. A successful Save notification is not enough.</p>
+<p>This specification covers all 30 exposed Settings families, 19 administration surfaces, chat, developer-only controls and relevant backend schema surfaces identified in the source inventory. It describes intended behavior and meaningful use cases. It is not an adopted implementation contract, a claim that every control currently works, or a demand for an 80-scenario release gate. The source snapshot is f2c9e36e. Fine-grained dialogs and every individual setting consumer have not been exhaustively qualified.</p>
+<h2 id="three-different-things-must-stay-different">Three different things must stay different</h2>
+<p><strong>Preferences</strong> express what someone wants: a default model, enabled skill or presentation style. <strong>Policy</strong> determines what is permitted: provider eligibility, data access, tool grants and spending ceilings. <strong>Private records</strong> are the content itself: history, memories, documents and credentials. A preference never grants access. A global default never makes personal records globally readable.</p>
+<h2 id="scope-contract">Scope contract</h2>
+<p>G = global deployment defaults or operator policy. U = authenticated My Defaults. A = an agent. T = an agent team. C = a conversation/session. KB = an independently owned knowledge-base resource. These symbols describe proposed valid scopes, not proof of present support.</p>
+<p>R-01 · Resolve identity and permission on the server before reading records or accepting mutations. With JWT, use the verified user and tenant, not client-supplied user IDs. Without JWT, clearly identify the deployment’s actual operator/identity boundary; do not invent a shared personal identity or anonymous access grant.</p>
+<p>R-02 · Resolve each setting by its own supported scope rules. There is no universal precedence ladder. For model selection, the proposed order is explicit conversation override, applicable agent/team assignment, personal default where permitted, then system default. Conflicts between team and agent assignments must be defined by that run’s ownership contract and shown before launch. Policy filters every candidate.</p>
+<p>R-03 · Show requested value, effective value, origin, restrictions and activation timing. Label live, next-turn, new-run, restart-required, reindex-required and unavailable distinctly. Clearing an override previews the inherited result. Saving a record must not claim runtime activation.</p>
+<p>R-04 · An agent’s effective-configuration report contains the actual provider/model, enabled skills, permitted KBs, context strategy and provenance, but never credentials or unauthorized records. Resolve again at the operation boundary when policy or membership changes.</p>
+<p>R-05 · Every visible editing control has an operative path and a visible result. An unsupported surface is hidden or explicitly read-only with its actual source. Do not silently delete underlying configuration or unrelated working features.</p>
+<figure><svg viewBox="0 0 920 340" role="img" aria-labelledby="scope-title"><title id="scope-title">Setting resolution is scoped and constrained by policy</title><defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#2e637a"/></marker></defs><rect x="15" y="12" width="890" height="50" rx="10" fill="#173f51"/><text x="460" y="44" text-anchor="middle" fill="white">Identity + resource permissions + operator policy constrain every choice</text><g fill="#e3eff3" stroke="#aac4ce"><rect x="20" y="100" width="190" height="78" rx="10"/><rect x="250" y="100" width="190" height="78" rx="10"/><rect x="480" y="100" width="190" height="78" rx="10"/><rect x="710" y="100" width="190" height="78" rx="10"/></g><g fill="#173f51" text-anchor="middle"><text x="115" y="130">Global defaults</text><text x="115" y="155">deployment owner</text><text x="345" y="130">My Defaults</text><text x="345" y="155">verified user</text><text x="575" y="130">Agent / team</text><text x="575" y="155">assigned behavior</text><text x="805" y="130">Conversation</text><text x="805" y="155">explicit override</text></g><g stroke="#2e637a" stroke-width="2" marker-end="url(#a)"><path d="M115 180L390 250"/><path d="M345 180L430 250"/><path d="M575 180L490 250"/><path d="M805 180L530 250"/></g><rect x="265" y="250" width="390" height="65" rx="10" fill="#173f51"/><text x="460" y="277" text-anchor="middle" fill="white">Feature-specific resolution</text><text x="460" y="300" text-anchor="middle" fill="white">effective value + origin + activation</text></svg><figcaption>Not one universal inheritance ladder. Resolve supported scopes for the specific feature; enforce policy before any operation. Private records are not inherited defaults.</figcaption></figure><h2 id="the-core-workflows">The core workflows</h2>
+<p>R-06 · <strong>One model picker, wherever a model is chosen.</strong> Search a provider-grouped catalog by recognizable name. Filter by capability and availability; explain unavailable choices. Use the same component for the system default, personal default, agent/team assignment, conversation override and supported model-specific features. No raw provider/model ID typing for normal use. Advanced identifiers remain inspectable. The provider banner must report the authoritative default, not the first catalog entry.</p>
+<p>R-07 · <strong>Change the system default without restarting the world.</strong> An authorized operator uses the dedicated live configuration path. Show confirmation only after registry/runtime acknowledgement. New eligible turns follow the new default; explicit chat overrides remain in effect. Do not silently interrupt in-flight generation. A chat override changes that conversation, not the whole server. Always show which provider/model actually served the turn, including approved fallback.</p>
+<p>R-08 · <strong>Embeddings belong to indexes.</strong> Put authoritative embedding configuration in one discoverable place. A personal preference can select an eligible embedding profile for resources the user may create or own; it cannot re-embed another owner’s shared KB. Show model, dimensions and index version/readiness. Changing the default affects eligible future work; existing vectors retain their original embedding contract until an explicit migration/reindex completes. Never mix incompatible vectors silently.</p>
+<p>R-09 · <strong>Knowledge bases are named resources, not magic text boxes.</strong> Create/manage a KB centrally, process authorized documents, display readiness and assign it to an agent, team or conversation. Permission and assignment are separate. Retrieval returns evidence/citations from authorized sources. Removing an assignment blocks subsequent use through that assignment without deleting shared resources. Already generated history remains governed by its own retention rules.</p>
+<p>R-10 · <strong>Chunking is understandable.</strong> Offer sensible supported defaults, explain the strategy in plain language, and preview a representative authorized document. Advanced size, overlap and semantic thresholds show units and constraints. Display the index rebuild consequence before committing. A user default is a preference for eligible new work, not authority over existing shared content.</p>
+<p>R-11 · <strong>Skills are visible at the point of work.</strong> A Skills control in chat, Skills sections on agents/teams, a global catalog and My Defaults show enabled, inherited, disabled and unavailable states. Matching selects only from the allowed enabled catalog. Explain the selected skill and why; keep algorithm parameters advanced. Enabling a skill does not grant its preferred tools, model, network or filesystem privileges.</p>
+<p>R-12 · <strong>History and memory have owners.</strong> Separate capture/injection preferences from records and sharing grants. Show which permitted sources contributed context. Conversation, agent and team scope cannot silently pool everyone’s memories. Changing a preference does not erase records or retroactively rewrite history. Deletion, export and sharing remain explicit operations with the required authority.</p>
+<p>R-13 · <strong>Progress is truthful and recoverable.</strong> Long indexing, ingestion and approval operations show their real state and failures. SSE can deliver live status when the server supports it; reconnect reconciles against authoritative state, not invented success. Loading, disabled, unavailable and denied are distinct. Keyboard and screen-reader users can complete the same workflows.</p>
+<h2 id="evidence-what-is-uncomfortable-today">Evidence: what is uncomfortable today</h2>
+<p>The visible UI is ahead of some runtime wiring. Source inspection found rejected duplicate RAG embedding writes, a generic provider setting with boot-only hydration, a default-provider banner reading the first model rather than the effective default, and four namespaces without established settings consumers. Namespace availability is not proof that a control works. These gaps directly undermine the user’s ability to configure the system; they are not merely cosmetic defects.</p>
+<p>Source findings are not fresh runtime reproductions. Eleven families include boot-configured fields rather than demonstrated Settings-DB consumers. Some families mix operative and non-operative fields; classifications below must not be generalized to every key. Existing evidence is preserved and only affected behavior should be requalified when implementation changes.</p>
+<figure><svg viewBox="0 0 920 280" role="img" aria-labelledby="wire-title"><title id="wire-title">Resources, preferences and runtime effects have distinct owners</title><g fill="#e3eff3" stroke="#aac4ce"><rect x="20" y="20" width="245" height="85" rx="10"/><rect x="340" y="20" width="245" height="85" rx="10"/><rect x="660" y="20" width="240" height="85" rx="10"/><rect x="340" y="175" width="245" height="85" rx="10"/></g><g text-anchor="middle" fill="#173f51"><text x="142" y="53">Owned resources</text><text x="142" y="80">KBs · indexes · skills</text><text x="462" y="53">Allowed assignments</text><text x="462" y="80">user · agent · team · chat</text><text x="780" y="53">Actual runtime</text><text x="780" y="80">retrieval · model · tools</text><text x="462" y="207">Visible evidence</text><text x="462" y="234">citations · model · receipt</text></g><g stroke="#2e637a" stroke-width="2" fill="none" marker-end="url(#a)"><path d="M265 62H335"/><path d="M585 62H655"/><path d="M780 108V215H590"/></g></svg><figcaption>Choosing a preference does not mutate a shared resource. Assignment does not grant access. A runtime receipt, cited result or actual artifact closes the loop.</figcaption></figure><h2 id="complete-settings-family-inventory">Complete settings-family inventory</h2>
+<h3>F-01 · Models &amp; embeddings (<code>llm</code>)</h3>
+<p>Actor: User, agent owner, operator.</p>
+<p>Proposed scope: G / U / A / C preferences; credentials and embedding resources restricted.</p>
+<p>Visible effect / intent: Choose a provider-grouped model, change the live default, or override one chat. Display requested and effective model, source and activation timing. Embedding settings describe target index consequences.</p>
+<p>Current source evidence: Mixed: generic default-provider hydration is boot-time; llm.model database value lacks a consumer; llm.embedding.* has a validated live-swap path. Other knobs need per-key tracing.</p>
+<p>Behavior case F-01: A user chooses a reasoning model for one complex chat; the next eligible turn reports that model while other chats retain their defaults. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-02 · Provider connections (<code>provider</code>)</h3>
+<p>Actor: Operator; users with delegated connection authority.</p>
+<p>Proposed scope: G connection; U only for explicitly owned connections.</p>
+<p>Visible effect / intent: Manage protocol, endpoints and secret references separately from model selection. Show configured, healthy and eligible states.</p>
+<p>Current source evidence: Provider service and registry exist; source analysis identifies an existing-YAML merge defect. Persistence does not prove live registry state.</p>
+<p>Behavior case F-02: An operator adds a provider and sees whether it is usable before an agent can select its models. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-03 · Vision (<code>vision</code>)</h3>
+<p>Actor: User / agent owner when supported.</p>
+<p>Proposed scope: G / U / A / C only after runtime support.</p>
+<p>Visible effect / intent: Offer image capability only when the effective model/runtime supports it; otherwise explain unavailability.</p>
+<p>Current source evidence: Model override and auto-detect controls exist; no settings consumer established. Hide unsupported editing.</p>
+<p>Behavior case F-03: An agent receiving an image must disclose that its current model cannot process it rather than pretend a vision toggle enabled it. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-04 · Context configuration (legacy surface) (<code>context_management</code>)</h3>
+<p>Actor: Operator.</p>
+<p>Proposed scope: Read-only until connected; no promised overrides.</p>
+<p>Visible effect / intent: Explain context capacity and summarization; do not maintain a second inert configuration surface.</p>
+<p>Current source evidence: Strategy, token/message thresholds and summarizer controls exist without an established consumer.</p>
+<p>Behavior case F-04: A user cannot be told a larger context limit is active merely because Save succeeded. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-05 · Conversation context strategy (<code>context_strategy</code>)</h3>
+<p>Actor: User / agent owner.</p>
+<p>Proposed scope: G / U / A / C where supported.</p>
+<p>Visible effect / intent: Use plain-language supported trimming strategies, visible consequences and advanced configuration.</p>
+<p>Current source evidence: Runtime conversation trimming consumes this namespace; exact per-scope behavior remains to be implemented or qualified.</p>
+<p>Behavior case F-05: A long conversation shows when older context is summarized or omitted and preserves the current task. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-06 · Chunking &amp; retrieval preparation (<code>rag</code>)</h3>
+<p>Actor: Knowledge-base owner; authorized user.</p>
+<p>Proposed scope: G / U defaults; KB resource configuration; A / C selection of compatible resources.</p>
+<p>Visible effect / intent: Preview chunks on an authorized sample; show strategy, size and overlap, plus reindex impact. Link to authoritative embedding settings.</p>
+<p>Current source evidence: Chunking consumers exist. rag.embedding_* writes are explicitly rejected and can reject co-edited values.</p>
+<p>Behavior case F-06: A KB owner previews a contract split before committing a new indexing configuration; existing vectors are not portrayed as changed. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-07 · Knowledge-base defaults (<code>knowledge_bases</code>)</h3>
+<p>Actor: User / KB owner / agent owner.</p>
+<p>Proposed scope: G / U defaults; KB ownership; A / T / C assignments.</p>
+<p>Visible effect / intent: Manage named KBs centrally; assign allowed ready KBs to agents/teams/chats; show requested and effective assignments.</p>
+<p>Current source evidence: Mixed defaults and real resource records; all default-field effects are not independently traced.</p>
+<p>Behavior case F-07: An agent assigned Product Manual retrieves cited material from that KB; removing its assignment affects subsequent retrieval without deleting shared documents. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-08 · Memory behavior &amp; storage (<code>memory</code>)</h3>
+<p>Actor: User for personal behavior; operator for storage.</p>
+<p>Proposed scope: G policy/default; U private records; A / T / C explicitly authorized use.</p>
+<p>Visible effect / intent: Separate capture/injection preferences and relevance budget from storage credentials and shared namespaces. Show restart-required changes honestly.</p>
+<p>Current source evidence: Memory service startup configuration and explicit restart-required handling exist; not a blanket hot-swap path.</p>
+<p>Behavior case F-08: Two signed-in users can choose memory differently without exposing either user’s private records to the other. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-09 · Local model files (<code>models</code>)</h3>
+<p>Actor: Operator.</p>
+<p>Proposed scope: G resource configuration; authorized resource owner.</p>
+<p>Visible effect / intent: Manage model/tokenizer directories and matching thresholds, separate from the provider catalog picker.</p>
+<p>Current source evidence: Exposed directory and vector-match controls; consumers not independently traced in this review.</p>
+<p>Behavior case F-09: A user selecting a model sees availability, not an editable server filesystem path. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-10 · File intake (<code>file_processing</code>)</h3>
+<p>Actor: Operator; uploading user.</p>
+<p>Proposed scope: G capability/policy; U / A / C preferences within limits.</p>
+<p>Visible effect / intent: Show supported formats and size/count limits before upload; report actual processing status.</p>
+<p>Current source evidence: YAML-at-boot path; Settings-DB edits not established as operative.</p>
+<p>Behavior case F-10: A user uploading a large scan sees the actual limit and a useful correction, not an upload silently governed by a different value. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-11 · Unstructured integration (<code>unstructured</code>)</h3>
+<p>Actor: Operator.</p>
+<p>Proposed scope: G approved integration.</p>
+<p>Visible effect / intent: Configure endpoint and secret reference privately; report effective ingestion availability.</p>
+<p>Current source evidence: YAML ingestion configuration, not established as DB-driven.</p>
+<p>Behavior case F-11: A KB owner sees that the required parser is unavailable before assuming an upload is searchable. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-12 · OCR model integration (<code>mistral_ocr</code>)</h3>
+<p>Actor: Operator; authorized resource owner.</p>
+<p>Proposed scope: G integration; KB processing choice when supported.</p>
+<p>Visible effect / intent: Use a supported model picker and secret reference; distinguish provider processing from local processing.</p>
+<p>Current source evidence: API key/model controls are backed by boot-time YAML ingestion configuration.</p>
+<p>Behavior case F-12: A user handling restricted documents sees whether OCR would leave the approved environment. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-13 · Document extraction (<code>kreuzberg</code>)</h3>
+<p>Actor: Operator / KB owner.</p>
+<p>Proposed scope: G processing defaults; KB resource config.</p>
+<p>Visible effect / intent: Explain OCR, language, tables, metadata and output; avoid conflicting chunk policies in two places.</p>
+<p>Current source evidence: Boot-time YAML extraction/OCR configuration; no established settings-DB activation.</p>
+<p>Behavior case F-13: A scanned table uses the selected extractor, and the KB preview shows actual extracted text before indexing. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-14 · Reliability &amp; retry limits (<code>resilience</code>)</h3>
+<p>Actor: Operator; agent owner within policy.</p>
+<p>Proposed scope: G ceiling; A / T / C narrower budgets where supported.</p>
+<p>Visible effect / intent: Offer meaningful limits with advanced retry details; expose remaining deadline and terminal failure.</p>
+<p>Current source evidence: Policy consumers exist; not every rate, delay, backoff and retry key has been independently traced.</p>
+<p>Behavior case F-14: A throttled provider retries within the remaining budget without replaying an already completed external action. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-15 · Server operation (<code>server</code>)</h3>
+<p>Actor: Operator.</p>
+<p>Proposed scope: G deployment only.</p>
+<p>Visible effect / intent: Show actual address, ports and logging source; separate saved configuration from running process state.</p>
+<p>Current source evidence: YAML boot path; legacy shutdown timeout explicitly unused.</p>
+<p>Behavior case F-15: An operator sees a restart requirement instead of believing a saved port edit moved the live server. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-16 · Storage infrastructure (<code>persistence</code>)</h3>
+<p>Actor: Operator.</p>
+<p>Proposed scope: G deployment resource.</p>
+<p>Visible effect / intent: Display effective storage backend and health; protect credentials; never offer per-user database replacement as a preference.</p>
+<p>Current source evidence: YAML boot configuration, including database, vector and cache settings.</p>
+<p>Behavior case F-16: A user changes personal memory capture without changing everyone’s database or vector dimensions. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-17 · Execution environment (<code>sandbox</code>)</h3>
+<p>Actor: Operator; agent chooses eligible capabilities.</p>
+<p>Proposed scope: G infrastructure policy; A / T / C constraints only.</p>
+<p>Visible effect / intent: Show the effective runner and limits; unavailable environments remain unavailable.</p>
+<p>Current source evidence: Runtime selection is environment-driven; no consumer established for the editable settings namespace.</p>
+<p>Behavior case F-17: An agent denied network access cannot gain it by toggling its sandbox preference. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-18 · Task routing (<code>intent_classifier</code>)</h3>
+<p>Actor: Operator / agent owner.</p>
+<p>Proposed scope: G defaults; A / T configuration within policy.</p>
+<p>Visible effect / intent: Describe routing intent, confidence and alternatives; put numeric thresholds in advanced controls.</p>
+<p>Current source evidence: Runtime classifier exists; per-key hot activation is unconfirmed.</p>
+<p>Behavior case F-18: An ambiguous task shows the selected route and uncertainty rather than silently launching the wrong workflow. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-19 · Authentication &amp; mutation authority (<code>security</code>)</h3>
+<p>Actor: Operator/security administrator.</p>
+<p>Proposed scope: G policy only.</p>
+<p>Visible effect / intent: Show verified identity and enforcement mode; keep JWT and mutation controls outside ordinary user preferences.</p>
+<p>Current source evidence: YAML boot/security boundary. Optional JWT does not remove authorization requirements.</p>
+<p>Behavior case F-19: An authenticated user can save My Defaults but cannot change tenant-wide authentication. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-20 · Allowed actions &amp; approvals (<code>governance</code>)</h3>
+<p>Actor: Policy administrator; agent subject to policy.</p>
+<p>Proposed scope: G / tenant policy; narrower A / T / C restrictions.</p>
+<p>Visible effect / intent: Explain what needs approval and why; preferences cannot expand allowed actions.</p>
+<p>Current source evidence: Explicit live governance path exists; individual policy outcomes still require behavior evidence.</p>
+<p>Behavior case F-20: An agent proposes a restricted action and waits for the correct approval rather than treating a skill toggle as permission. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-21 · Response review policy (<code>sycophancy</code>)</h3>
+<p>Actor: Operator / policy owner.</p>
+<p>Proposed scope: G policy; narrower supported agent choices.</p>
+<p>Visible effect / intent: Explain review behavior and log-only versus enforcing mode without implying an unsupported live switch.</p>
+<p>Current source evidence: YAML boot consumer.</p>
+<p>Behavior case F-21: A response flagged for unsupported agreement is handled according to the effective review policy, not the last saved inert setting. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-22 · Agent behavior defaults (<code>agent_config</code>)</h3>
+<p>Actor: Agent/team owner.</p>
+<p>Proposed scope: G defaults; U defaults for owned resources; A / T; C overrides when supported.</p>
+<p>Visible effect / intent: Edit agent context, orchestration, governance, tools, budgets and resilience in one authoritative place.</p>
+<p>Current source evidence: Agent-default controls duplicate agent editor; full per-key effect unconfirmed.</p>
+<p>Behavior case F-22: An owner changes a team’s tool budget and sees which new runs inherit it and which existing run remains unchanged. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-23 · Presentation ceiling (<code>presentation_policy</code>)</h3>
+<p>Actor: Operator; user chooses within ceiling.</p>
+<p>Proposed scope: G ceiling; U / A / T / C preferences.</p>
+<p>Visible effect / intent: Separate permitted templates from preferred format; explain when policy constrains a choice.</p>
+<p>Current source evidence: Dedicated global assignment/run-policy route requires admin authority.</p>
+<p>Behavior case F-23: A chat requests a rich presentation but receives an allowed format with a clear policy reason. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-24 · Skill activation (<code>skill_config</code>)</h3>
+<p>Actor: User / agent/team owner.</p>
+<p>Proposed scope: G catalog/defaults; U / A / T / C enablement.</p>
+<p>Visible effect / intent: Show named enabled, inherited, disabled and unavailable skills; explain selection; keep permission checks separate.</p>
+<p>Current source evidence: Skill configuration/reconciliation exists; exact per-field activation not fully traced.</p>
+<p>Behavior case F-24: A user enables a writing skill for this chat; the agent names the chosen skill, and other chats do not silently change. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-25 · Native tool access (<code>native_tools</code>)</h3>
+<p>Actor: Operator; agent/user within grants.</p>
+<p>Proposed scope: G capability boundary; A / T / C narrowing.</p>
+<p>Visible effect / intent: Show filesystem, web and terminal permissions and session-search limits without revealing private paths to unauthorized users.</p>
+<p>Current source evidence: Native tool controls exist; per-key timing not independently verified.</p>
+<p>Behavior case F-25: A team can read its allowed project but cannot search a different user’s private chat history. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-26 · Automatic skill improvement (<code>skill_evolution</code>)</h3>
+<p>Actor: Operator; authorized skill owner.</p>
+<p>Proposed scope: Unsupported editor until connected; future policy-owned scope.</p>
+<p>Visible effect / intent: Explain proposed reflection/update/delete behavior and require actual implementation before enabling controls.</p>
+<p>Current source evidence: Runtime initializes defaults; no settings consumer established.</p>
+<p>Behavior case F-26: A user cannot be told that automatic skill deletion is disabled by a setting the runtime never reads. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-27 · ACP connectivity (<code>acp</code>)</h3>
+<p>Actor: Operator.</p>
+<p>Proposed scope: G protocol deployment.</p>
+<p>Visible effect / intent: Report real endpoint availability, authentication and session lifetime; distinguish saved settings from running service.</p>
+<p>Current source evidence: YAML boot path.</p>
+<p>Behavior case F-27: A coding client sees a reachable authorized connection rather than a toggle that has not started any endpoint. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-28 · Model failover (<code>llm_failover</code>)</h3>
+<p>Actor: Operator; user selects allowed preferences.</p>
+<p>Proposed scope: G routing policy; A / T / C authorized candidate set.</p>
+<p>Visible effect / intent: Show eligible fallback models and restrictions; no implicit cross-provider data sharing.</p>
+<p>Current source evidence: YAML boot controls; not an established live Settings-DB switch.</p>
+<p>Behavior case F-28: A failed primary may use only an authorized alternative; the turn reports the actual provider/model used. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-29 · Prompt caching (<code>prompt_caching</code>)</h3>
+<p>Actor: Operator / user within privacy policy.</p>
+<p>Proposed scope: G policy; U / A / T / C preferences where supported.</p>
+<p>Visible effect / intent: Explain cache scope, lifetime and provider implications; cache is not shared personal memory.</p>
+<p>Current source evidence: Dedicated cache settings exist; exact activation not independently traced.</p>
+<p>Behavior case F-29: A user disables eligible caching for a sensitive chat without assuming the provider’s retention policy changed. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h3>F-30 · My Defaults (<code>user_settings</code>)</h3>
+<p>Actor: Verified authenticated user.</p>
+<p>Proposed scope: U; anonymous deployment/operator scope separately labeled.</p>
+<p>Visible effect / intent: Support applicable preference families with server-enforced user/tenant identity; show inherit/on/off semantics.</p>
+<p>Current source evidence: Dedicated user settings API/UI exists; not evidence that every requested family is implemented.</p>
+<p>Behavior case F-30: A signed-in user saves preferences, signs out, and another user cannot inherit the first user’s private history or personal defaults. Governing rules: R-01–R-05; applicable workflow rules R-06–R-13.</p>
+<h2 id="navigation-and-management-coverage">Navigation and management coverage</h2>
+<p>These are exposed routes, not a claim that every action is qualified. All must be discoverable to the appropriate actor, searchable by purpose and absent or read-only when unauthorized.</p>
+<h3>M-01 · Run cockpit (<code>runtime</code>)</h3>
+<p>Actor: Operator / authorized user. Case: Observe runtime availability and eligible controls; show real connection state. Governing rules R-01, R-03, R-05.</p>
+<h3>M-02 · Runs (<code>runs</code>)</h3>
+<p>Actor: Run owner / authorized supervisor. Case: Inspect progress, cancellation and outcomes without gaining another user’s private payloads. Governing rules R-01, R-03, R-05.</p>
+<h3>M-03 · Approvals (<code>approvals</code>)</h3>
+<p>Actor: Authorized approver. Case: Review a specific action with destination, effect and current authority; stale approval cannot authorize a different action. Governing rules R-01, R-03, R-05.</p>
+<h3>M-04 · Protocols (<code>protocols</code>)</h3>
+<p>Actor: Operator. Case: Inspect effective protocol bindings and authentication, not simulated connectivity. Governing rules R-01, R-03, R-05.</p>
+<h3>M-05 · Providers (<code>providers</code>)</h3>
+<p>Actor: Operator / delegated owner. Case: Manage eligible connections and the live authoritative default. Governing rules R-01, R-03, R-05.</p>
+<h3>M-06 · Credentials (<code>credentials</code>)</h3>
+<p>Actor: Credential owner / operator. Case: Create or rotate authorized references with masked values; agents never receive raw secret values through settings reports. Governing rules R-01, R-03, R-05.</p>
+<h3>M-07 · Model catalog (<code>models</code>)</h3>
+<p>Actor: User / operator. Case: Search provider-grouped models and capabilities, availability and effective selection. Governing rules R-01, R-03, R-05.</p>
+<h3>M-08 · Skills (<code>skills</code>)</h3>
+<p>Actor: Skill owner / user. Case: Import, create, edit, enable and delete within authority; inspect title, version, keywords, preferred tools, model override, description and prompt overlay. Governing rules R-01, R-03, R-05.</p>
+<h3>M-09 · Presentations (<code>presentations</code>)</h3>
+<p>Actor: User / template owner. Case: Choose a template within the global ceiling; distinguish assignment from permission. Governing rules R-01, R-03, R-05.</p>
+<h3>M-10 · Agents (<code>agents</code>)</h3>
+<p>Actor: Agent owner. Case: Configure behavior and resource bindings; identify activation on new versus existing runs. Governing rules R-01, R-03, R-05.</p>
+<h3>M-11 · Agent teams (<code>teams</code>)</h3>
+<p>Actor: Team owner. Case: Assign members and shared resources explicitly; team membership does not merge private memories. Governing rules R-01, R-03, R-05.</p>
+<h3>M-12 · Tools (<code>tools</code>)</h3>
+<p>Actor: Operator / authorized user. Case: Discover MCP/native capabilities and grants; unavailable tools explain their cause. Governing rules R-01, R-03, R-05.</p>
+<h3>M-13 · Authentication (<code>auth</code>)</h3>
+<p>Actor: Operator/security administrator. Case: Inspect identity and enforcement; personal preference cannot disable policy. Governing rules R-01, R-03, R-05.</p>
+<h3>M-14 · Knowledge (<code>knowledge</code>)</h3>
+<p>Actor: KB owner / authorized user. Case: Manage documents, indexing/readiness, assignments and citations. Governing rules R-01, R-03, R-05.</p>
+<h3>M-15 · Memory records (<code>memory</code>)</h3>
+<p>Actor: Record owner / explicitly authorized user. Case: Inspect, correct or remove permitted memory; distinguish record lifecycle from capture preferences. Governing rules R-01, R-03, R-05.</p>
+<h3>M-16 · Skill/package compiler (<code>compiler</code>)</h3>
+<p>Actor: Authorized author. Case: Prepare a valid skill/package with clear diagnostics; compilation is not deployment or permission. Governing rules R-01, R-03, R-05.</p>
+<h3>M-17 · Settings (<code>settings</code>)</h3>
+<p>Actor: Actor appropriate to each family. Case: Discover supported controls and their source, scope, activation and effect. Governing rules R-01, R-03, R-05.</p>
+<h3>M-18 · MCP health (<code>mcp-health</code>)</h3>
+<p>Actor: Operator / authorized user. Case: Diagnose approved tool connections with redacted health details. Governing rules R-01, R-03, R-05.</p>
+<h3>M-19 · Cost &amp; budgets (<code>cost</code>)</h3>
+<p>Actor: Owner / authorized supervisor. Case: See usage attributed to scope; distinguish estimates, actual costs and enforced limits. Governing rules R-01, R-03, R-05.</p>
+<h3>Additional entry points and backend-only surfaces</h3>
+<p>M-20 · Chat (<code>/threads</code>): the user sees conversation model, skills and resources together with effective inheritance. Case: override one chat, clear the override and see the restored effective value without modifying other chats. Rules R-02, R-06, R-11, R-12.</p>
+<p>M-21 · About (<code>/about</code>): display actual version/build and relevant diagnostics without secrets. Case: a user reports a settings mismatch with enough version information to reproduce it. Rules R-03, R-05.</p>
+<p>M-22 · Developer A2UI testing: explicitly development-only, not a production capability or customer requirement. Case: a developer inspects a synthetic UI component without introducing live mutations. Rules R-01, R-05.</p>
+<p>B-01 · Harness assembly/skill activation/reattachment belongs to agent/runtime setup. Case: an agent resumes an authorized session with its actual configuration and does not gain grants from reattachment.</p>
+<p>B-02 · <code>skills.matching.engine</code> belongs to Skills advanced matching, not a new confusing Settings destination. Case: the selected algorithm chooses only eligible enabled skills and explains its result.</p>
+<p>B-03 · <code>mcp.servers</code> belongs to Tools/Connections and MCP Health. Case: a tool can be configured but remains unavailable until its connection and authorization are valid.</p>
+<p>B-04 · <code>tools.definitions</code> belongs to the permitted tool catalog. Case: adding a definition does not automatically enable the tool for every user or agent.</p>
+<p>B-05 · <code>run_policy.global</code> belongs to operator policy. Case: a personal preference cannot raise a global action or budget ceiling. Backend schema presence alone does not prove any of these controls is exposed or operative. Rules R-01–R-05, R-11.</p>
+<h2 id="implementation-plan-the-shortest-useful-route">Implementation plan: the shortest useful route</h2>
+<p>1. <strong>Map control to effect.</strong> For each existing exposed control, identify its authoritative owner, supported scopes, read/write path, runtime consumer and activation timing. Reuse the present routes and services; do not redesign the build or release process. Inert fields become truthful read-only operational information or disappear from editing until wired. 2. <strong>Deliver one coherent configuration experience.</strong> Implement the shared catalog picker, authoritative live system default, conversation override and effective model reporting. Include authenticated personal defaults and agent/team assignment where supported, with explicit conflict handling. This is the first useful outcome, not completion of all families. 3. <strong>Connect resources coherently.</strong> Make embeddings discoverable; remove duplicate inert RAG selectors while preserving chunking. Add named KB assignment/readiness, authorized chunk preview, visible scope-aware skill enablement and matching explanations. Use existing resource permissions and explicit reindex operations. 4. <strong>Make private context safe and legible.</strong> Apply user/session/agent/team boundaries to history and memory preferences and records. Make restart-required storage changes clear. Do not mistake a settings UI change for a new security boundary. 5. <strong>Close the remaining exposed surface.</strong> Resolve each inventory row to operative, restricted read-only or not offered. Give appropriate actors navigation to protocols, authentication, cost, memory, compiler, credentials, models and MCP health; those eight pages lacked navigation/palette/in-app discoverability in the inspected source. Runtime and approvals already had links despite lacking primary navigation. 6. <strong>Qualify the meaningful workflow, then stop.</strong> At the authorized phase boundary use end-to-end behavior evidence tied to the changed outcome: user can configure the intended scope, agent uses the effective value, unauthorized records remain inaccessible, and reset/reload preserves the correct result. Preserve accepted evidence. After an observed failure, repair and rerun only the affected authorized slice. Do not turn this inventory into mandatory tests for every field or an endless review loop.</p>
+<h2 id="delivery-and-acceptance-examples">Delivery and acceptance examples</h2>
+<p><strong>Model selection:</strong> An operator sets a system default; a user applies a chat override; the next eligible turn reports the actual model. Clearing the override shows the inherited effective value. Another chat retains its own valid configuration.</p>
+<p><strong>Knowledge and skills:</strong> An owner assigns a ready KB and enables a skill for an agent. The agent retrieves cited authorized evidence and names the skill used. An unavailable skill explains its missing capability; it does not bypass policy.</p>
+<p><strong>Private context:</strong> Two authenticated users have different defaults and private memories. Each sees only authorized history/memory; a shared agent does not collapse those boundaries. A non-JWT deployment reports its real identity model rather than promising per-user isolation it does not provide.</p>
+<p><strong>Resource change:</strong> A KB owner previews chunking or selects a new embedding profile. The interface explains which index changes, when it becomes usable, and what remains on the prior configuration. A personal preference cannot silently rebuild a shared KB.</p>
+<p>These examples are a proposed acceptance focus, not adopted execution authority. Counts are coverage indexes, not a new release gate. No production code, runtime configuration or deployment was changed to produce this document.</p>
+<h2 id="walkthroughs-how-the-target-experience-should-feel">Walkthroughs: how the target experience should feel</h2>
+<p><strong>Not a shipped how-to.</strong> These walkthroughs specify the intended experience. The evidence inventory identifies what currently exists and what is not yet operative. Screens, labels and scope support must be confirmed in the released build before these become product instructions.</p>
+<p><strong>Choose the right model for this conversation.</strong> Prerequisite: an authorized available provider and a supported chat override. Open the conversation model control, search by recognizable model name, inspect capabilities and select. Success is the next eligible response naming that actual model, not just a selected label. If denied or unavailable, keep the previous effective setting and show a usable reason. Choose Inherit to see and restore the valid default.</p>
+<p><strong>Equip an agent for a document task.</strong> Prerequisite: access to a ready, indexed KB and an allowed skill. Assign the named KB and enable the skill on that agent. Ask a realistic question whose answer is in the corpus. Success is relevant cited evidence from that KB and an explicit selected skill. If indexing is pending, show progress and allow retry when ready; do not invent a corpus-backed answer. Removing assignment stops future use through that binding.</p>
+<p><strong>Make it personal without making it public.</strong> Prerequisite: verified identity and supported personal defaults. Open My Defaults, choose applicable model, knowledge, chunking, skill and memory preferences, and inspect their effective scope. Success is that eligible work inherits them while another user does not acquire your records or preferences. If a shared resource constrains your choice, explain the resource owner’s configuration and the authorized alternative.</p>
+<p><strong>Change an index deliberately.</strong> Prerequisite: ownership or explicit configuration rights. Preview chunking on an authorized sample, inspect boundaries and choose an eligible embedding profile. Success means a new index becomes ready and compatible retrieval uses it; merely saving configuration does not meet the goal. On rebuild failure, show the state and any still-usable previous index, without implying a successful migration.</p>
+<h2 id="proposed-vlbv-behavior-contracts">Proposed VLBV behavior contracts</h2>
+<p>These are proposed contracts to adopt for the agreed value slice. They have not been executed for this specification. Use real end-to-end observations at the authorized phase boundary, not mocks or schema validity as substitutes. Each contract is parameterized by the actual supported scopes and permitted fixtures; do not add an arbitrary Cartesian matrix.</p>
+<h3>V-01 · Model choice governs the next eligible response</h3>
+<p>Goal/rules: choose the appropriate model without changing unrelated work; R-02, R-03, R-06, R-07. Actor: authorized operator and chat user. Starting state: two eligible catalog models and two conversations, one with an explicit override. Action: change the system default, send a new message in each chat, then clear the overridden chat’s selection and send again. Observable result: the actual inference route for each response agrees with visible effective configuration; clearing restores the correct inherited value. Evidence: displayed selection/origin plus correlated turn/provider/model receipt, not a catalog label alone. Control: unavailable or unauthorized selection is rejected without falsely changing effective state. In-flight work is not silently restarted.</p>
+<h3>V-02 · An assigned resource produces authorized evidence</h3>
+<p>Goal/rules: equip an agent with useful knowledge; R-01, R-09. Actor: KB and agent owner. Starting state: a ready synthetic corpus with a uniquely identifiable fact and a second unassigned corpus. Action: assign the named KB, ask the agent for the fact, then remove assignment and ask in a fresh eligible retrieval context. Observable result: the first response cites authorized source evidence; subsequent retrieval does not use the removed binding or the unassigned corpus. Evidence: answer/citation plus scoped retrieval receipt. Control: pending indexing is reported rather than represented as an empty or ready corpus. Existing conversation text is not falsely claimed erased.</p>
+<h3>V-03 · Skill selection is visible and bounded</h3>
+<p>Goal/rules: use the intended skill at the current scope; R-01, R-11. Actor: user and agent. Starting state: an allowed catalog with one usable skill and one requiring an unavailable capability. Action: enable the usable skill in one conversation, perform its realistic task, inspect the selection explanation, then attempt the unavailable skill. Observable result: the chosen enabled skill affects the task and is named; another conversation remains unchanged; unavailable capability does not become authorized. Evidence: resulting artifact/action and skill-selection/grant receipt. Control: clearing the override restores the documented inherited set.</p>
+<h3>V-04 · Private context stays private across identities</h3>
+<p>Goal/rules: personal assistance without cross-user disclosure; R-01, R-12. Actor: two distinct authenticated users and a shared agent. Starting state: separate synthetic private memories/history plus an explicitly shared item. Action: each user interacts with the same agent and requests the other’s private fact/history. Observable result: private access is denied and absent from retrieval/output; only permitted shared context is available. Evidence: server-side access decision and scoped retrieval result, not just the model declining to answer. Control: a client-supplied user identifier cannot bypass the authenticated identity. Non-JWT deployment claims must match its actual supported identity boundary.</p>
+<h3>V-05 · Index changes mean usable new retrieval</h3>
+<p>Goal/rules: understandable chunking and embedding changes; R-08, R-10. Actor: authorized KB owner. Starting state: a ready index with a recorded embedding profile/dimensions and an authorized representative document. Action: preview a supported chunk change and request the approved reindex. Observable result: preview is understandable, migration state is visible, and compatible retrieval uses the ready new version only after completion. Evidence: preview, job/index-version receipt and cited retrieval. Control: a non-owner personal default cannot rebuild shared content; a failed rebuild does not masquerade as a successful change.</p>
+<h3>V-06 · Every shipped control tells the truth</h3>
+<p>Goal/rules: remove dead-end configuration; R-03, R-05, R-13. Actor: appropriate user/operator. Starting state: the agreed release’s exposed family inventory with known unsupported or boot-only fields. Action: discover the feature by goal, edit an operative control, inspect effective state, and inspect a restart-required or unsupported control. Observable result: operative behavior is observable; boot-only/unsupported surfaces are accurately read-only, hidden or labeled, never false live saves. Evidence: affected UI path plus actual consumer outcome or operational-state source. Control: one invalid field does not quietly make valid co-edits appear accepted.</p>
+<h2 id="definition-of-done-and-exit-contract">Definition of Done and exit contract</h2>
+<p>The following is a reusable exit contract for the agreed user-value slice, not a declaration that this work has passed it.</p>
+<div class="table-wrap"><table>
+<tr><th>Exit dimension</th><th>Required evidence</th><th>Not sufficient</th></tr>
+<tr><td>Agreed goal</td><td>Named person/agent can complete the intended workflow at the agreed scopes</td><td>A count of settings fields or completed tasks</td></tr>
+<tr><td>Business rule</td><td>Relevant R/F/M/V identifiers and ownership/permission rules are explicit</td><td>A generic claim that configuration is flexible</td></tr>
+<tr><td>Behavior</td><td>Actual end-to-end result, effective consumer and visible state agree</td><td>Save success, compile success or a mocked response</td></tr>
+<tr><td>Privacy and authority</td><td>Relevant identity, resource and action boundaries enforced server-side</td><td>A UI hidden from one user or an LLM refusal alone</td></tr>
+<tr><td>Guidance and recovery</td><td>Prerequisites, steps, observable success, limits and recovery match the released build</td><td>A proposed spec presented as shipped instructions</td></tr>
+<tr><td>Availability</td><td>Intended users can reach the released feature through the established delivery process</td><td>Code on a branch or a standalone renderer demonstration</td></tr>
+<tr><td>Remaining limits</td><td>Unsupported scopes, partial results and blockers are named; user confirms acceptance of material tradeoffs</td><td>Marking an unexercised case PASS</td></tr>
+</table></div>
+<p><strong>Review-ready</strong> means the proposed specification or implementation can be reviewed: sources and gaps are clear. <strong>Delivery complete</strong> means the agreed workflow is available and its exit evidence has passed at the authorized VLBV boundary, with usable guidance and known limitations. Neither label proves users are happy. Invite representative users to perform the workflow and ask: Can you find it? Do you understand what changed? Does the agent do what you intended? Can you recover without specialist help?</p>
+<p>Preserve PASS evidence unless an affected source, fixture or environment changes. Report PASS, FAIL, BLOCKED and NOT_EXERCISED distinctly. After an observed failure, obtain the required repair authorization and rerun affected behavior only. No additional tests, runtime changes or process redesign are authorized by this document.</p>
+<h2 id="seed-field-index-exact-source-labels">Seed field index: exact source labels</h2>
+<p>The following 167 unique seed keys and labels are mechanically extracted from the settings source at f2c9e36e. This is a navigation/reference appendix, not runtime qualification, not the complete nested-schema or dialog inventory, and not a test mandate. Values and secrets are excluded. Scope and activation must follow the owning family above.</p>
+<div class="table-wrap"><table>
+<tr><th>Source key</th><th>Display label</th></tr>
+<tr><td>server.port</td><td>Port</td></tr>
+<tr><td>server.host</td><td>Host</td></tr>
+<tr><td>server.shutdown_timeout_secs</td><td>Legacy Shutdown Timeout (unused)</td></tr>
+<tr><td>server.log_format</td><td>Log Format</td></tr>
+<tr><td>server.grpc_port</td><td>A2A gRPC Port</td></tr>
+<tr><td>security.jwt_required</td><td>JWT Required</td></tr>
+<tr><td>security.jwt_secret</td><td>JWT Secret</td></tr>
+<tr><td>security.settings_mutation_auth_required</td><td>Require Admin Key for Settings Mutation</td></tr>
+<tr><td>resilience.rate_limit_enabled</td><td>Rate Limiting</td></tr>
+<tr><td>resilience.requests_per_second</td><td>Req/s</td></tr>
+<tr><td>resilience.burst_size</td><td>Burst Size</td></tr>
+<tr><td>resilience.request_timeout_ms</td><td>Request Timeout (ms)</td></tr>
+<tr><td>resilience.stream_start_timeout_ms</td><td>Stream Start Timeout (ms)</td></tr>
+<tr><td>resilience.stream_idle_timeout_ms</td><td>Stream Idle Timeout (ms)</td></tr>
+<tr><td>resilience.retries_enabled</td><td>Retries Enabled</td></tr>
+<tr><td>resilience.retry_max_attempts</td><td>Max Retry Attempts</td></tr>
+<tr><td>resilience.retry_base_delay_ms</td><td>Retry Base Delay (ms)</td></tr>
+<tr><td>resilience.retry_backoff_multiplier</td><td>Retry Backoff Multiplier</td></tr>
+<tr><td>resilience.retry_max_delay_ms</td><td>Retry Max Delay (ms)</td></tr>
+<tr><td>resilience.retry_jitter_mode</td><td>Retry Jitter Mode</td></tr>
+<tr><td>resilience.retry_respect_retry_after</td><td>Respect Retry-After</td></tr>
+<tr><td>resilience.retryable_http_statuses</td><td>Retryable HTTP Statuses</td></tr>
+<tr><td>resilience.retryable_transport_errors</td><td>Retryable Transport Errors</td></tr>
+<tr><td>resilience.retry_budget_ms</td><td>Retry Budget (ms)</td></tr>
+<tr><td>resilience.timeout_disabled</td><td>Timeout Disabled</td></tr>
+<tr><td>harness.mode</td><td>Assembly Mode</td></tr>
+<tr><td>harness.skill_activation_mode</td><td>Skill Activation Mode</td></tr>
+<tr><td>harness.skill_reattachment</td><td>Skill Reattachment Budget</td></tr>
+<tr><td>persistence.provider</td><td>Provider</td></tr>
+<tr><td>persistence.database_url</td><td>Database URL</td></tr>
+<tr><td>persistence.vector_dimension</td><td>Vector Dimension</td></tr>
+<tr><td>persistence.external_cache_enabled</td><td>External Cache Enabled</td></tr>
+<tr><td>persistence.surreal_user</td><td>SurrealDB User</td></tr>
+<tr><td>persistence.surreal_pass</td><td>SurrealDB Password</td></tr>
+<tr><td>file_processing.provider</td><td>Provider</td></tr>
+<tr><td>file_processing.upload_dir</td><td>Upload Directory</td></tr>
+<tr><td>file_processing.max_files_per_prompt</td><td>Max Files Per Prompt</td></tr>
+<tr><td>file_processing.max_file_size</td><td>Max File Size</td></tr>
+<tr><td>file_processing.max_total_size</td><td>Max Total Size</td></tr>
+<tr><td>file_processing.allowed_mime_types</td><td>Allowed MIME Types</td></tr>
+<tr><td>vision.model</td><td>Model Override</td></tr>
+<tr><td>vision.auto_detect</td><td>Auto-detect</td></tr>
+<tr><td>models.models_dir</td><td>Models Directory</td></tr>
+<tr><td>models.vector_threshold</td><td>Vector Match Threshold</td></tr>
+<tr><td>knowledge_bases.default</td><td>Default KB</td></tr>
+<tr><td>knowledge_bases.named</td><td>Named KBs</td></tr>
+<tr><td>knowledge_bases.named_keys</td><td>Named KB Keys</td></tr>
+<tr><td>skills.matching.engine</td><td>Matching Engine</td></tr>
+<tr><td>intent_classifier.backend</td><td>Backend</td></tr>
+<tr><td>intent_classifier.topk</td><td>Top-K</td></tr>
+<tr><td>intent_classifier.accept_threshold</td><td>Accept Threshold</td></tr>
+<tr><td>intent_classifier.margin_threshold</td><td>Margin Threshold</td></tr>
+<tr><td>intent_classifier.wasm_component_path</td><td>WASM Path</td></tr>
+<tr><td>unstructured.api_url</td><td>API URL</td></tr>
+<tr><td>unstructured.api_key</td><td>API Key</td></tr>
+<tr><td>mistral_ocr.api_key</td><td>API Key</td></tr>
+<tr><td>mistral_ocr.ocr_model</td><td>OCR Model</td></tr>
+<tr><td>kreuzberg.ocr_enabled</td><td>OCR Enabled</td></tr>
+<tr><td>kreuzberg.force_ocr</td><td>Force OCR</td></tr>
+<tr><td>kreuzberg.ocr_backend</td><td>OCR Backend</td></tr>
+<tr><td>kreuzberg.ocr_language</td><td>OCR Language</td></tr>
+<tr><td>kreuzberg.pdf_dpi</td><td>PDF DPI</td></tr>
+<tr><td>kreuzberg.extract_tables</td><td>Extract Tables</td></tr>
+<tr><td>kreuzberg.extract_metadata</td><td>Extract Metadata</td></tr>
+<tr><td>kreuzberg.output_format</td><td>Output Format</td></tr>
+<tr><td>kreuzberg.chunking.max_characters</td><td>Chunk Max Characters</td></tr>
+<tr><td>kreuzberg.chunking.overlap</td><td>Chunk Overlap</td></tr>
+<tr><td>context_management.strategy</td><td>Strategy</td></tr>
+<tr><td>context_management.max_tokens</td><td>Max Tokens</td></tr>
+<tr><td>context_management.trigger_threshold</td><td>Trigger Threshold</td></tr>
+<tr><td>context_management.max_messages</td><td>Max Messages</td></tr>
+<tr><td>context_management.summary_budget</td><td>Summary Budget</td></tr>
+<tr><td>context_management.summarization_model</td><td>Summarization Model</td></tr>
+<tr><td>context_strategy.type</td><td>Strategy</td></tr>
+<tr><td>context_strategy.config</td><td>Strategy Config</td></tr>
+<tr><td>rag.chunking_strategy</td><td>Chunking Strategy</td></tr>
+<tr><td>rag.chunk_size</td><td>Chunk Size</td></tr>
+<tr><td>rag.chunk_tokens</td><td>Chunk Tokens</td></tr>
+<tr><td>rag.semantic_threshold</td><td>Semantic Threshold</td></tr>
+<tr><td>rag.embedding_provider</td><td>Embedding Provider</td></tr>
+<tr><td>rag.embedding_model</td><td>Embedding Model</td></tr>
+<tr><td>agent_config.orchestrated</td><td>Orchestrated Agent</td></tr>
+<tr><td>memory.enabled</td><td>Enable Memory</td></tr>
+<tr><td>memory.auto_capture</td><td>Auto-capture</td></tr>
+<tr><td>memory.inject_context</td><td>Inject Context</td></tr>
+<tr><td>memory.injection_min_similarity</td><td>Minimum Injection Similarity</td></tr>
+<tr><td>memory.embedding_provider</td><td>Embedding Provider</td></tr>
+<tr><td>memory.embedding_model</td><td>Embedding Model</td></tr>
+<tr><td>memory.openai_api_key</td><td>OpenAI API Key</td></tr>
+<tr><td>memory.cohere_api_key</td><td>Cohere API Key</td></tr>
+<tr><td>memory.max_context_tokens</td><td>Max Context Tokens</td></tr>
+<tr><td>memory.vector_weight</td><td>Vector Weight</td></tr>
+<tr><td>memory.bm25_weight</td><td>BM25 Weight</td></tr>
+<tr><td>memory.db_path</td><td>DB Path</td></tr>
+<tr><td>memory.mcp_http_enabled</td><td>MCP HTTP Enabled</td></tr>
+<tr><td>memory.mcp_http_path</td><td>MCP HTTP Path</td></tr>
+<tr><td>memory.namespace</td><td>Namespace</td></tr>
+<tr><td>memory.database</td><td>Database</td></tr>
+<tr><td>memory.surreal_endpoint</td><td>SurrealDB Endpoint</td></tr>
+<tr><td>memory.surreal_user</td><td>SurrealDB User</td></tr>
+<tr><td>memory.surreal_pass</td><td>SurrealDB Password</td></tr>
+<tr><td>llm.model</td><td>Default Model</td></tr>
+<tr><td>llm.api_key</td><td>API Key</td></tr>
+<tr><td>llm.base_url</td><td>Base URL</td></tr>
+<tr><td>llm.protocol</td><td>Protocol</td></tr>
+<tr><td>llm.timeout_secs</td><td>Timeout (s)</td></tr>
+<tr><td>llm.max_retries</td><td>Max Retries</td></tr>
+<tr><td>llm.parallel_tool_calls</td><td>Parallel Tool Calls</td></tr>
+<tr><td>llm.cost_tracking</td><td>Cost Tracking</td></tr>
+<tr><td>llm.tracing</td><td>OTEL Tracing</td></tr>
+<tr><td>llm.cooldown_secs</td><td>Cooldown (s)</td></tr>
+<tr><td>llm.health_check_secs</td><td>Health Check Interval (s)</td></tr>
+<tr><td>llm.thinking_budget</td><td>Thinking Budget</td></tr>
+<tr><td>llm.cache</td><td>Response Cache</td></tr>
+<tr><td>llm.budget</td><td>Budget</td></tr>
+<tr><td>llm.rate_limit</td><td>Rate Limit</td></tr>
+<tr><td>llm.default_provider</td><td>Default LLM Provider ID</td></tr>
+<tr><td>llm.embedding.backend</td><td>Embedding Backend</td></tr>
+<tr><td>llm.embedding.model</td><td>Embedding Model</td></tr>
+<tr><td>llm.embedding.vector_dimension</td><td>Embedding Vector Dimension</td></tr>
+<tr><td>llm.embedding.send_dimensions</td><td>Send Embedding Dimensions</td></tr>
+<tr><td>llm_failover.enabled</td><td>Enabled</td></tr>
+<tr><td>llm_failover.strategy</td><td>Strategy</td></tr>
+<tr><td>llm_failover.error_threshold</td><td>Error Threshold</td></tr>
+<tr><td>llm_failover.cooldown_secs</td><td>Cooldown (seconds)</td></tr>
+<tr><td>llm_failover.fallback_models</td><td>Fallback Models</td></tr>
+<tr><td>sandbox.runner</td><td>Runner</td></tr>
+<tr><td>sandbox.remote_url</td><td>Remote URL</td></tr>
+<tr><td>sandbox.default_memory_mib</td><td>Default Memory (MiB)</td></tr>
+<tr><td>sandbox.default_timeout_secs</td><td>Default Timeout (s)</td></tr>
+<tr><td>sandbox.network_enabled</td><td>Network Enabled</td></tr>
+<tr><td>sandbox.max_concurrent</td><td>Max Concurrent Sessions</td></tr>
+<tr><td>sycophancy.enabled</td><td>Enabled</td></tr>
+<tr><td>sycophancy.strictness</td><td>Strictness</td></tr>
+<tr><td>sycophancy.auto_correct_threshold</td><td>Auto-correct Threshold</td></tr>
+<tr><td>sycophancy.reflect_threshold</td><td>Reflect Threshold</td></tr>
+<tr><td>sycophancy.log_only</td><td>Log Only</td></tr>
+<tr><td>native_tools.file_tools_enabled</td><td>File Tools Enabled</td></tr>
+<tr><td>native_tools.file_allowed_paths</td><td>Allowed File Paths</td></tr>
+<tr><td>native_tools.file_max_size_kb</td><td>Max Read Size (KB)</td></tr>
+<tr><td>native_tools.file_write_max_kb</td><td>Max Write Size (KB)</td></tr>
+<tr><td>native_tools.web_fetch_enabled</td><td>Web Fetch Enabled</td></tr>
+<tr><td>native_tools.web_fetch_timeout_secs</td><td>Web Fetch Timeout (s)</td></tr>
+<tr><td>native_tools.web_fetch_max_size_kb</td><td>Web Fetch Max Size (KB)</td></tr>
+<tr><td>native_tools.web_fetch_allowed_domains</td><td>Allowed Domains</td></tr>
+<tr><td>native_tools.terminal_exec_enabled</td><td>Terminal Exec Enabled</td></tr>
+<tr><td>native_tools.terminal_shell</td><td>Shell</td></tr>
+<tr><td>native_tools.terminal_timeout_secs</td><td>Terminal Timeout (s)</td></tr>
+<tr><td>native_tools.terminal_use_sandbox</td><td>Use Sandbox</td></tr>
+<tr><td>native_tools.session_search_enabled</td><td>Session Search Enabled</td></tr>
+<tr><td>native_tools.session_search_max_results</td><td>Max Search Results</td></tr>
+<tr><td>mcp.servers</td><td>Configured MCP Servers</td></tr>
+<tr><td>tools.definitions</td><td>Stored Tool Definitions</td></tr>
+<tr><td>skill_evolution.enabled</td><td>Enabled</td></tr>
+<tr><td>skill_evolution.trigger_model</td><td>Trigger Model</td></tr>
+<tr><td>skill_evolution.min_tool_calls</td><td>Min Tool Calls to Trigger</td></tr>
+<tr><td>skill_evolution.max_skills_per_run</td><td>Max Skills per Run</td></tr>
+<tr><td>skill_evolution.allow_update</td><td>Allow Updating Skills</td></tr>
+<tr><td>skill_evolution.allow_deletion</td><td>Allow Deleting Skills</td></tr>
+<tr><td>skill_evolution.min_executions_before_delete</td><td>Min Executions Before Delete</td></tr>
+<tr><td>skill_evolution.reflection_prompt</td><td>Reflection Prompt</td></tr>
+<tr><td>acp.enabled</td><td>Enabled</td></tr>
+<tr><td>acp.path</td><td>Mount Path</td></tr>
+<tr><td>acp.auth_required</td><td>Auth Required</td></tr>
+<tr><td>acp.session_ttl_secs</td><td>Session TTL (seconds)</td></tr>
+<tr><td>run_policy.global</td><td>Global Run Policy</td></tr>
+<tr><td>prompt_caching.enabled</td><td>Enable Prompt Caching (Global Default)</td></tr>
+</table></div>
+<h3>Additional parseable schema properties</h3>
+<p>Supplementary literal JSON schema properties, deduplicated against the seed list. Array entries use []. Rust-composed schemas that cannot be mechanically parsed are omitted; this is not a claim of exhaustive nested-schema coverage.</p>
+<div class="table-wrap"><table>
+<tr><th>Source property</th><th>Source label</th></tr>
+<tr><td>harness.skill_reattachment.per_skill_tokens</td><td>per_skill_tokens</td></tr>
+<tr><td>harness.skill_reattachment.total_tokens</td><td>total_tokens</td></tr>
+<tr><td>provider.id</td><td>ID</td></tr>
+<tr><td>provider.display_name</td><td>Display Name</td></tr>
+<tr><td>provider.base_url</td><td>Base URL</td></tr>
+<tr><td>provider.api_key</td><td>API Key</td></tr>
+<tr><td>provider.protocol</td><td>Protocol</td></tr>
+<tr><td>provider.enabled</td><td>Enabled</td></tr>
+<tr><td>provider.default_model</td><td>Default Model</td></tr>
+<tr><td>provider.models</td><td>Models</td></tr>
+<tr><td>provider.models[].id</td><td>id</td></tr>
+<tr><td>provider.models[].display_name</td><td>display_name</td></tr>
+<tr><td>provider.models[].enabled</td><td>enabled</td></tr>
+<tr><td>provider.models[].context_window</td><td>context_window</td></tr>
+<tr><td>provider.models[].max_output_tokens</td><td>max_output_tokens</td></tr>
+<tr><td>provider.models[].capabilities</td><td>capabilities</td></tr>
+<tr><td>provider.models[].capabilities.supports_vision</td><td>Vision</td></tr>
+<tr><td>provider.models[].capabilities.supports_tools</td><td>Tool Use</td></tr>
+<tr><td>provider.models[].capabilities.supports_reasoning</td><td>Reasoning</td></tr>
+<tr><td>provider.models[].capabilities.supports_embeddings</td><td>Embeddings</td></tr>
+<tr><td>provider.models[].capabilities.supports_audio_input</td><td>Audio Input</td></tr>
+<tr><td>provider.models[].capabilities.supports_audio_output</td><td>Audio Output</td></tr>
+<tr><td>provider.models[].capabilities.supports_image_generation</td><td>Image Generation</td></tr>
+<tr><td>provider.models[].capabilities.supports_streaming</td><td>Streaming</td></tr>
+<tr><td>provider.models[].capabilities.supports_parallel_tool_calls</td><td>Parallel Tools</td></tr>
+<tr><td>provider.models[].capabilities.supports_structured_output</td><td>JSON Output</td></tr>
+<tr><td>provider.models[].capabilities.supports_prompt_caching</td><td>Prompt Caching</td></tr>
+<tr><td>provider.models[].capabilities.supports_fine_tuning</td><td>Fine-Tuning</td></tr>
+<tr><td>provider.models[].pricing</td><td>pricing</td></tr>
+<tr><td>provider.models[].pricing.input_per_1m</td><td>Input/1M</td></tr>
+<tr><td>provider.models[].pricing.output_per_1m</td><td>Output/1M</td></tr>
+<tr><td>provider.models[].pricing.cached_input_per_1m</td><td>Cached/1M</td></tr>
+<tr><td>provider.models[].pricing.reasoning_per_1m</td><td>Reasoning/1M</td></tr>
+<tr><td>provider.models[].pricing.embedding_per_1m</td><td>Embedding/1M</td></tr>
+<tr><td>provider.models[].pricing.image_input_per_1m</td><td>Image/1M</td></tr>
+<tr><td>provider.models[].pricing.audio_input_per_1m</td><td>Audio/1M</td></tr>
+<tr><td>provider.models[].pricing.currency</td><td>currency</td></tr>
+<tr><td>skill_config.enabled</td><td>Enabled</td></tr>
+<tr><td>skill_config.description</td><td>Description (override)</td></tr>
+<tr><td>llm_failover.fallback_models[].model</td><td>model</td></tr>
+<tr><td>llm_failover.fallback_models[].api_key</td><td>api_key</td></tr>
+<tr><td>llm_failover.fallback_models[].base_url</td><td>base_url</td></tr>
+</table></div>
+<h2 id="source-ledger-and-confidence">Source ledger and confidence</h2>
+<p>Source snapshot: UAR commit f2c9e36e, reviewed 19 November 2026. Inventory: 30 Settings namespaces; 19 administration routes; chat, About and developer-only A2UI. Detailed field-level completeness and current runtime behavior remain unverified where stated.</p>
+<p class="source-item">Settings navigation: <a href="https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/frontend/src/features/settings/ui/settings-navigation.tsx" rel="noreferrer">https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/frontend/src/features/settings/ui/settings-navigation.tsx</a></p>
+<p class="source-item">Administration routes: <a href="https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/frontend/src/pages/admin-page.tsx" rel="noreferrer">https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/frontend/src/pages/admin-page.tsx</a></p>
+<p class="source-item">Settings schema: <a href="https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/src/uar/settings/manager.rs" rel="noreferrer">https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/src/uar/settings/manager.rs</a></p>
+<p class="source-item">Settings mutation behavior: <a href="https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/src/uar/api/settings.rs" rel="noreferrer">https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/src/uar/api/settings.rs</a></p>
+<p class="source-item">Provider banner: <a href="https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/frontend/src/features/providers/ui/providers-page.tsx" rel="noreferrer">https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/frontend/src/features/providers/ui/providers-page.tsx</a></p>
+<p class="source-item">Runtime initialization: <a href="https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/src/uar/runtime/manager.rs" rel="noreferrer">https://github.com/Prometheus-AGS/universal-agent-runtime/blob/f2c9e36e/src/uar/runtime/manager.rs</a></p>
+<p>Repository links may require authorized access. User requirements were supplied for this specification; private conversation records and operational notes are deliberately excluded. Recommendations are labeled proposed and must be adopted before implementation scope is treated as approved.</p>
+<h2 id="what-done-looks-like">What done looks like</h2>
+<p>Not more settings. Not more green checks. A person can set up the right model, knowledge, skills and context for the work in front of them, understand what will happen, and trust that the agent follows those choices within policy. The interface and the runtime tell the same story.</p></main></div><footer>UAR · Proposed specification 0.1 · Source snapshot f2c9e36e<br>Portable HTML + Markdown. No backend connection, credentials or private records. <a href="specification.md">Read the source document</a>.</footer><script>if(location.protocol==='https:' && 'serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}</script></body></html>

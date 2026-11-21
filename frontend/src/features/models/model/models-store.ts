@@ -1,10 +1,8 @@
 import { create } from "zustand";
-import { useGraphStore } from "@/platform/entities";
+import { loadModelCatalog, setSystemDefaultModel } from "@/platform/entities";
 
-import type { ModelEntity } from "@/entities/types";
-import { fetchModelsCatalog } from "../api/models-api";
 import { fetchConfiguredProviders, updateProvider } from "@/features/providers/api";
-import type { CatalogModelsResponse, UarModel, UarProvider } from "@/types";
+import type { UarModel, UarProvider } from "@/types";
 
 interface ModelsState {
   configuredProviders: UarProvider[];
@@ -22,34 +20,6 @@ interface ModelsActions {
 }
 
 export type ModelsStore = ModelsState & ModelsActions;
-
-function hydrateCatalog(data: CatalogModelsResponse): void {
-  const graph = useGraphStore.getState();
-  for (const [providerId, providerData] of Object.entries(data)) {
-    for (const [modelId, model] of Object.entries(providerData.models ?? {})) {
-      const id = `${providerId}/${modelId}`;
-      const entity: ModelEntity & Record<string, unknown> = {
-        id,
-        name: model.name ?? modelId,
-        provider_id: providerId,
-        context: model.limit?.context ?? 0,
-        tool_call: model.tool_call === true,
-        reasoning: model.reasoning === true,
-        vision: model.modalities?.input?.includes("image") === true,
-        model_id: modelId,
-        provider_name: providerData.display_name ?? providerId,
-        provider_configured: providerData.configured === true,
-        cost_input: model.cost?.input ?? 0,
-        cost_output: model.cost?.output ?? 0,
-        modalities_input: model.modalities?.input ?? [],
-        modalities_output: model.modalities?.output ?? [],
-        family: model.family,
-        benchmarks: model.benchmarks ?? [],
-      };
-      graph.upsertEntity("Model", id, entity);
-    }
-  }
-}
 
 export const useModelsStore = create<ModelsStore>((set, get) => {
   const saveProvider = async (next: UarProvider): Promise<void> => {
@@ -82,11 +52,8 @@ export const useModelsStore = create<ModelsStore>((set, get) => {
     load: async () => {
       set({ refreshing: true, error: null });
       try {
-        const [catalog, configured] = await Promise.all([
-          fetchModelsCatalog(),
-          fetchConfiguredProviders(),
-        ]);
-        hydrateCatalog(catalog);
+        // The catalog is ingested by one domain action; a failed fetch leaves the graph unchanged.
+        const [configured] = await Promise.all([fetchConfiguredProviders(), loadModelCatalog()]);
         set({ configuredProviders: configured.providers });
       } catch (error) {
         set({ error: (error as Error).message });
@@ -109,12 +76,21 @@ export const useModelsStore = create<ModelsStore>((set, get) => {
     },
 
     setDefaultModel: async (providerId, modelId) => {
-      const provider = get().configuredProviders.find((item) => item.id === providerId);
-      if (!provider) throw new Error(`Configured provider not found: ${providerId}`);
       const key = `${providerId}/${modelId}`;
-      set({ busyModelKey: key });
+      set({ busyModelKey: key, error: null });
       try {
-        await saveProvider({ ...provider, default_model: modelId });
+        // The star changes the system default: the same domain action as the Providers page and
+        // the system default picker. It saves the provider's default model, then the default
+        // provider, and publishes the pair to the graph once.
+        const result = await setSystemDefaultModel(providerId, modelId);
+        set((state) => ({
+          configuredProviders: state.configuredProviders.map((provider) =>
+            provider.id === result.provider.id ? result.provider : provider,
+          ),
+        }));
+      } catch (error) {
+        set({ error: (error as Error).message });
+        throw error;
       } finally {
         set({ busyModelKey: null });
       }

@@ -1,0 +1,46 @@
+{
+  "baselineRevision": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+  "note": "HEAD equals the baseline revision for src/, migrations/ and Cargo.toml (git diff --stat f2c9e36e -- src migrations Cargo.toml is empty), so the cited lines are the baseline lines; read only, nothing built or run.",
+  "scenarios": {
+    "SCN-CFG-001": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "src/config_manager.rs:42-75 loads and watches the file but keeps no copy; grep finds no last-known-good directory, record or GET /api/uar/settings/boot-status route (src/uar/api/settings.rs router :88-135 has /drift but no boot-status). The oracle requires lkg/config.yaml and its record; the baseline produces none."
+    },
+    "SCN-CFG-002": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "src/main.rs:94-99 returns 'Failed to load configuration' and exits when ConfigManager::load fails; no fallback exists. The oracle requires readiness on the saved copy after the broken YAML."
+    },
+    "SCN-CFG-003": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "the refusal itself behaves as required at the baseline (src/config.rs:931-946 refuses, src/main.rs:99 exits non-zero, no fallback exists), but the fixture precondition fails: the first start must save an LKG whose digest the oracle compares after the second start, and the baseline never saves one (see SCN-CFG-001). The runner records the setup failure. The two-refusal control still rejects, so the runner is not trivially passing the refusal half."
+    },
+    "SCN-CFG-004": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "src/server.rs:1250-1267: get_typed::<usize>(..).await? and anyhow::ensure! on the dimension abort start_server for a stored non-number or out-of-range value (get_typed returns Err on decode failure, src/uar/settings/manager.rs:492-497). The oracle requires readiness and a boot-status entry; the baseline exits and has no boot-status route."
+    },
+    "SCN-CFG-005": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "src/uar/settings/manager.rs:1168-1187 fails the whole batch on the first undecodable provider row, so hydration of every provider is skipped (logged only, src/server.rs:1173-1180); there is no providers.skipped status. The oracle requires the operator-edited provider to be registered with its edit and the bad row listed."
+    },
+    "SCN-CFG-006": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "src/uar/settings/manager.rs:976-978 skips every existing provider row, so YAML model M2 never merges; :997 stamps seeded rows updated_at so p2 is treated as operator-owned and never follows the YAML; src/config_manager.rs:103-130 swaps config but nothing reconciles settings or providers on reload; no POST /api/uar/settings/reload route and no config_value in /drift."
+    },
+    "SCN-CFG-007": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "no POST /api/uar/settings/reload and no POST /api/uar/settings/drift/{key}/resolve route in src/uar/api/settings.rs (router :88-135); the well-known reload (src/server.rs:3726-3752) returns the schema and has no effect on settings. The oracle's five report lists and the 409/404/400 controls cannot be produced (404 from the router instead)."
+    },
+    "SCN-CFG-008": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "GET /api/uar/settings/drift exists and masks the stored value (src/uar/api/settings.rs:1239-1252, masked_response :557-597), but it has no config_value, and the reload and resolve calls the scenario requires do not exist at the baseline, so the sequence cannot complete. The masking of the stored value alone would pass; the scenario as a whole fails on the missing routes."
+    }
+  }
+}

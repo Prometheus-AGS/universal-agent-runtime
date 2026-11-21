@@ -4,7 +4,16 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@playwright/test';
 import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
-import { APP_PORT, APP_BASE_URL, STUB_PORT, STUB_BASE_URL } from './support/ports';
+import {
+  APP_PORT,
+  APP_BASE_URL,
+  STUB_PORT,
+  STUB_BASE_URL,
+  STUB_PORT_B,
+  STUB_BASE_URL_B,
+  STUB_PORT_C,
+  STUB_BASE_URL_C,
+} from './support/ports';
 
 // Mirrors the root tests/e2e/playwright.config.ts pattern (single `cargo run`
 // serving the built frontend + API at 127.0.0.1:3001), plus a second
@@ -19,6 +28,14 @@ import { APP_PORT, APP_BASE_URL, STUB_PORT, STUB_BASE_URL } from './support/port
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const STUB_FIXTURES = path.resolve(__dirname, 'fixtures/bdd-chat.json');
+// S1 live model choice (phase uar-uiux-architecture-2026-11): content-only
+// fixtures for every S1 message, and the hold_content / served_model entries
+// that only a stub with the extended kinds can parse. The new kinds travel in
+// STUB_LLM_EXTRA_FIXTURES, which a stub built before the extension ignores, so
+// that stub still starts with the basic files.
+const S1_STUB_FIXTURES = path.resolve(__dirname, 'fixtures/live-model-choice.json');
+const S1_STUB_NEW_KINDS = path.resolve(__dirname, 'fixtures/live-model-choice-new-kinds.json');
+const STUB_BINARY = path.join(REPO_ROOT, 'target/debug/stub-llm');
 
 // Fresh embedded SurrealKV store per run, same mechanism
 // tests/integration/live/harness.rs uses for the Rust-side integration
@@ -67,10 +84,34 @@ export default defineConfig({
       // startup timeout). `test:bdd`'s package.json script runs `cargo
       // build --bin stub-llm --bin universal-agent-runtime` first so both
       // binaries already exist by the time webServer starts them.
-      command: `${path.join(REPO_ROOT, 'target/debug/stub-llm')} ${STUB_FIXTURES}`,
+      //
+      // Stub A: the `openai` provider's stub. It keeps the shared chat
+      // fixtures and also serves the S1 messages; it needs the extended kinds
+      // (the held reply of scenario 6).
+      command: `${STUB_BINARY} ${STUB_FIXTURES} ${S1_STUB_FIXTURES}`,
       cwd: REPO_ROOT,
-      env: { STUB_LLM_PORT: String(STUB_PORT) },
+      env: { STUB_LLM_PORT: String(STUB_PORT), STUB_LLM_EXTRA_FIXTURES: S1_STUB_NEW_KINDS },
       url: `${STUB_BASE_URL}/v1/models`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+    },
+    {
+      // Stub B: behind `bdd-provider-b`. It needs the extended kinds (the
+      // served-model reply of the last S1 scenario).
+      command: `${STUB_BINARY} ${S1_STUB_FIXTURES}`,
+      cwd: REPO_ROOT,
+      env: { STUB_LLM_PORT: String(STUB_PORT_B), STUB_LLM_EXTRA_FIXTURES: S1_STUB_NEW_KINDS },
+      url: `${STUB_BASE_URL_B}/v1/models`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+    },
+    {
+      // Stub C: behind `bdd-provider-c` (and the never-called, disabled
+      // `bdd-provider-off`). Basic content fixtures only.
+      command: `${STUB_BINARY} ${S1_STUB_FIXTURES}`,
+      cwd: REPO_ROOT,
+      env: { STUB_LLM_PORT: String(STUB_PORT_C) },
+      url: `${STUB_BASE_URL_C}/v1/models`,
       reuseExistingServer: !process.env.CI,
       timeout: 30_000,
     },

@@ -1,0 +1,102 @@
+{
+ "frozenAt": "2026-11-19",
+ "purpose": "Frozen action sequence and expected end state for SCN-IDN-004. The expected values are written here; they are not read from the system under test. Read-back is from the stopped scratch store, not through the API under test.",
+ "catalogSnapshot": {
+  "path": "catalog/provider_catalog.json",
+  "sha256": "ea7e74b3ba7d335e5710aec713e88972aa18825512f2c16030b9aeab95694276"
+ },
+ "provider": "nano-gpt",
+ "config": "openspec/changes/uiux-model-identity-graph-ownership/fixtures/provider-model-config.yaml",
+ "models": {
+  "M0": "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond",
+  "M1": "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0",
+  "M2": "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.1",
+  "rule": "the first three catalog model ids of nano-gpt in ascending order, all present in the catalog snapshot"
+ },
+ "initialState": {
+  "models": [
+   "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond"
+  ],
+  "default_model": "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond"
+ },
+ "steps": [
+  {
+   "n": 1,
+   "actor": "operator via /admin/models",
+   "action": "add catalog model",
+   "model": "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0",
+   "expectedModels": [
+    "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond",
+    "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0"
+   ],
+   "expectedDefault": "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond"
+  },
+  {
+   "n": 2,
+   "actor": "operator via /admin/models",
+   "action": "set default",
+   "model": "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0",
+   "expectedModels": [
+    "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond",
+    "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0"
+   ],
+   "expectedDefault": "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0"
+  },
+  {
+   "n": 3,
+   "actor": "operator via /admin/models",
+   "action": "remove model",
+   "model": "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond",
+   "expectedModels": [
+    "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0"
+   ],
+   "expectedDefault": "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0"
+  },
+  {
+   "n": 4,
+   "actor": "harness, a second browser page left open and not reloaded, and a REST write that does not go through the console",
+   "action": "PUT /api/uar/providers/nano-gpt adding model",
+   "model": "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.1",
+   "expectedModels": [
+    "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0",
+    "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.1"
+   ],
+   "expectedDefault": "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0"
+  }
+ ],
+ "finalExpected": {
+  "models": [
+   "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0",
+   "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.1"
+  ],
+  "default_model": "EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0",
+  "comparison": "model ids compared as a set; default_model exact"
+ },
+ "storeReadBack": {
+  "tool": "cargo example surrealql_store_runner (Cargo.toml:155-158), run on the STOPPED embedded store",
+  "usage": "surrealql_store_runner <endpoint> <namespace> <database> < query.surql, endpoint of the form surrealkv:///<scratch>/memory.db (scripts/acceptance/fixtures/surrealql_store_runner.rs:6-8)",
+  "query": "SELECT key, data FROM settings WHERE key = 'provider.nano-gpt'; (provider rows are stored as settings rows keyed provider.{id}, src/uar/settings/manager.rs:975,1050; the exact table and field names are UNVERIFIED and the lead confirms them when binding the runner)",
+  "fields": "data.models[].id and data.default_model"
+ },
+ "uiExpected": {
+  "rows": "exactly the configured-model rows for nano-gpt/EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0 and nano-gpt/EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.1 (data-testid configured-model-<provider>/<model>, models-page.tsx:579), the default marker on EVA-UNIT-01/EVA-LLaMA-3.33-70B-v0.0, and no row for Doctor-Shotgun/MS3.2-24B-Magnum-Diamond",
+  "secondPageWithoutReload": "after step 4 the second page shows the M2 row without a reload within 15 seconds"
+ },
+ "wrongBuilds": [
+  {
+   "id": "baseline",
+   "how": "the pre-phase tree f2c9e36efe088e06a17c5d880ada877e25f2ad52 in a worktree from scripts/worktree-new.sh",
+   "expectedOutcome": "FAIL at step 4: the page's configured list is the Zustand useModelsStore.configuredProviders loaded once (models-store.ts:86-90), so the second page keeps the stale list"
+  },
+  {
+   "id": "mutant-dropped-remove",
+   "how": "the candidate tree at the implementation-complete commit in a worktree, with the domain action that removes a provider model changed to update the graph and return without calling the provider update API; the patch is written by the independent reviewer, not the implementer",
+   "expectedOutcome": "FAIL at the store read-back after step 3: M0 is still in the store"
+  },
+  {
+   "id": "mutant-dropped-add",
+   "how": "as above with the add action dropping the provider update call",
+   "expectedOutcome": "FAIL at step 1: M1 absent from the store"
+  }
+ ]
+}

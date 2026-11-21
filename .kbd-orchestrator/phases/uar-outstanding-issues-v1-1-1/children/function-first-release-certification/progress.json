@@ -2,20 +2,22 @@
   "schemaVersion": "2",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 3195,
-  "derivedRevision": 3195,
+  "sourceRevision": 3466,
+  "derivedRevision": 3466,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 2626,
-    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 165,
+    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 200,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
+    "69a03744-cffe-4e18-b1bd-6821b298ec92": 63,
     "80130eb1-95f8-4039-8976-71bdce23779c": 61,
     "8396a972-8cd7-4344-858e-c2ae8c6dbcbd": 1,
     "85d42f31-ddd7-43e1-b8a1-7b6653824183": 1,
     "92789c82-5e3e-48e5-b31a-ba6dad42d637": 15,
     "97ebf967-3be8-4123-a4ac-06a0caeede59": 12,
     "af186a6c-4b8c-4fba-bf44-abcabf91ec8a": 22,
+    "d3573b69-1cf2-4add-b88f-58e073847140": 173,
     "e877b940-2222-4e2f-bdfa-a034d544640b": 2,
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
@@ -23,7 +25,7 @@
   "phase": "function-first-release-certification",
   "phaseId": "uar-outstanding-issues-v1-1-1::function-first-release-certification",
   "parentPhase": "uar-outstanding-issues-v1-1-1",
-  "last_updated": "2026-10-21T09:33:08.114999Z",
+  "last_updated": "2026-11-19T19:01:20.147355Z",
   "last_updated_by": "kbd-runtime",
   "changes_total": 2,
   "changes_completed": 1,
@@ -61,9 +63,9 @@
     "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
     "primaryCounter": "implementation",
     "implementation": {
-      "completed": 138,
-      "total": 153,
-      "status": "IN_PROGRESS"
+      "completed": 143,
+      "total": 161,
+      "status": "BLOCKED"
     },
     "evidence": {
       "status": "IN_PROGRESS",
@@ -112,6 +114,16 @@
       "changes_total": 0,
       "implementation_completed": 0,
       "implementation_total": 0,
+      "certification_status": "NOT_TRACKED",
+      "handoff": null,
+      "completed_at": null
+    },
+    "kubo-native-tool-identity-pr13": {
+      "status": "PENDING",
+      "changes_completed": 1,
+      "changes_total": 2,
+      "implementation_completed": 1,
+      "implementation_total": 2,
       "certification_status": "NOT_TRACKED",
       "handoff": null,
       "completed_at": null

@@ -402,12 +402,19 @@ pub(super) async fn session_projection(
                 "model":policy.model,"memory_enabled":policy.memory_enabled,
                 "prompt_caching_enabled":policy.prompt_caching_enabled,
                 "context_strategy":policy.context_strategy,"tool_approval":policy.tool_approval,
-                "provenance":policy.provenance})
+                "provenance":policy.provenance,
+                "model_origin":policy.model_origin,"model_origin_since":policy.model_origin_since})
             });
         let mut partial_text = String::new();
         let mut sources = Vec::new();
         let mut rag_citations = Vec::new();
         let mut usage = None;
+        // Stored with the run at completion; the durable event below, when
+        // present, is the same value and wins.
+        let mut model_receipt = run
+            .context
+            .get(crate::uar::runtime::manager::MODEL_RECEIPT_KEY)
+            .cloned();
         let mut event_history_available = false;
         let mut events_truncated = false;
         let mut approvals = Vec::new();
@@ -469,6 +476,15 @@ pub(super) async fn session_projection(
                         } if event_run == run_id => {
                             usage = found.and_then(|usage| serde_json::to_value(usage).ok());
                         }
+                        NormalizedEvent::Artifact {
+                            run_id: event_run,
+                            artifact,
+                        } if event_run == run_id
+                            && artifact.artifact_type
+                                == crate::uar::runtime::manager::MODEL_RECEIPT_ARTIFACT_TYPE =>
+                        {
+                            model_receipt = Some(artifact.metadata);
+                        }
                         _ => {}
                     }
                 }
@@ -523,6 +539,7 @@ pub(super) async fn session_projection(
             "sources_availability":if events_truncated {"truncated"} else if event_history_available {"available"} else {"unavailable"},
             "usage_availability":if events_truncated {"truncated"} else if usage.is_some() {"available"} else {"unavailable"},"usage":usage,
             "policy_availability":if policy.is_some() {"available"} else {"unavailable"},"policy":policy,
+            "model_receipt":model_receipt,
             "approvals_availability":if approvals_available {"available"} else {"unavailable"},"approvals":approvals
         }));
     }

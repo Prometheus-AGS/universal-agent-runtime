@@ -1,0 +1,18 @@
+{
+  "$comment": "Frozen expectations for the supplemental gates SG-DSN-004, 005, 006 (SCN-DSN-004..006 are classified supplemental, not acceptance). Token values are copied from docs/design/brand-spec.md at the start of the phase.",
+  "brandTokensDark": {
+    "bg": "oklch(16.7% 0.012 254)", "surface": "oklch(20.0% 0.022 264)", "fg": "oklch(94.4% 0.010 253)",
+    "muted": "oklch(75.4% 0.020 256)", "border": "transparent", "accent": "oklch(70.4% 0.192 37)",
+    "raised": "oklch(26.4% 0.033 262)", "hover": "oklch(28.9% 0.042 263)", "input": "oklch(30.9% 0.039 262)",
+    "emberSoft": "oklch(23.9% 0.028 27)"
+  },
+  "stateColors": {"success": "#22C55E", "warning": "#F59E0B", "error": "#EF4444", "streaming": "#00C2DC"},
+  "radius": {"cardsAndPanels": "12px", "controls": "8px"},
+  "fonts": {"display": "Space Grotesk", "body": "Inter", "mono": "JetBrains Mono"},
+  "motionMs": {"fast": 120, "base": 200, "slow": 320},
+  "productMdMustNotContain": ["does not redesign"],
+  "productMdMustContain": ["Presentation", "normalized entity graph", "trusted host", "development-only A2UI tester", "declarative UI"],
+  "authorityDocMustContain": ["docs/design", "DESIGN.md", "UI_DESIGN.md", "admin-aesthetic-spec.md", "D1"],
+  "retiredDocs": ["docs/UI_DESIGN.md", "docs/admin-aesthetic-spec.md"],
+  "retiredNoticeMustContain": "docs/design"
+}

@@ -7,6 +7,7 @@
 export * from "./runtime";
 
 export * from "./session-configuration";
+export * from "./model-catalog";
 export * from "./presentations";
 export * from "./presentation-assignments";
 export * from "./presentation-provenance";

@@ -1,0 +1,1023 @@
+{
+  "schemaVersion": 1,
+  "phaseId": "uar-uiux-architecture-2026-11",
+  "slice": "S1",
+  "contractDigest": "6477e9a141d59effe2c68ecc8b277a672a6355fd2baac668a6ebbba920d98b04",
+  "status": "implementation-complete-pending-candidate-commit",
+  "candidateCommit": null,
+  "candidateCommitNote": "Set when the operator authorizes committing the candidate; BIND requires HEAD == candidateCommit and a clean tree outside .kbd-orchestrator/, .prometheus/ and static/.",
+  "implementationTasks": {
+    "uiux-system-model-live-default": [
+      "1.1",
+      "1.2",
+      "1.3",
+      "1.4",
+      "1.5",
+      "1.6",
+      "1.7",
+      "1.8",
+      "1.9",
+      "2.1",
+      "2.2",
+      "4.1",
+      "4.2",
+      "4.3",
+      "4.4",
+      "6.1",
+      "6.2",
+      "7.1",
+      "7.2",
+      "7.3",
+      "7.4",
+      "7.5",
+      "7.6",
+      "7.7",
+      "7.8",
+      "7.9",
+      "7.10",
+      "7.11",
+      "7.12",
+      "7.13",
+      "7.14"
+    ],
+    "uiux-settings-truthful-status-and-removals": [
+      "1.3 (S1 part: live route records effective; restart/inert part needs SET 1.2, outside S1)",
+      "1.4 (P-5 scope)",
+      "1.6",
+      "2.2"
+    ],
+    "uiux-model-identity-graph-ownership": [
+      "1.1",
+      "1.2",
+      "1.3",
+      "1.4",
+      "1.5",
+      "2.1",
+      "2.2",
+      "2.3",
+      "2.4"
+    ],
+    "uiux-schema-controls-and-pickers": [
+      "1.1",
+      "1.2",
+      "1.3",
+      "1.4",
+      "1.5",
+      "1.6",
+      "2.1",
+      "2.2",
+      "2.3",
+      "2.4"
+    ]
+  },
+  "unrequestedScopeKept": [
+    "IDN 4.5 (providers-store) and IDN 5.1 hooks (W4)",
+    "W2 edits to chat_turns.rs, summarizer.rs, intent/mod.rs, policy_intersection.rs",
+    "W6 effective-model entity in platform/entities/session-configuration"
+  ],
+  "leadFixes": [
+    "scripts/acceptance/cases_agents.py and scripts/behaviors/steps/rest-model-restart.steps.mjs follow the 422 refusal",
+    "frontend/src/features/settings/model/use-settings.ts drops registry-managed fields from bulk saves"
+  ],
+  "mutants": {
+    "M1": {
+      "patch": "openspec/changes/uiux-system-model-live-default/fixtures/m1-receipt-from-request.patch",
+      "patchSha256": "0073d40c677e8504ecf60da4e07b1c4eb612e2e1c8359a4a1d5be31dc1055aac",
+      "targetFile": "src/uar/runtime/manager.rs",
+      "effect": "receipt served_model reads the requested model id (run_llm_config.model, provider segment stripped) instead of the provider-reported id"
+    },
+    "M2": {
+      "patch": "openspec/changes/uiux-system-model-live-default/fixtures/m2-receipt-time-from-send.patch",
+      "patchSha256": "e527ad4eca6ca3002470bc48dedd589176c8e8a208e8a7e1476edf4b17010764",
+      "targetFile": "src/uar/domain/policy.rs",
+      "effect": "receipt model_origin_since reads the turn admission (send) time instead of the llm.default_provider row time"
+    }
+  },
+  "handoffs": [
+    "review/s1/handoffs/W1.md",
+    "W2.md",
+    "W3.md",
+    "W4.md",
+    "W5.md",
+    "W6.md"
+  ],
+  "unverified": "Nothing compiled, type-checked, linted or run. Every claim is from source reading.",
+  "changedPaths": [
+    {
+      "status": "M",
+      "path": "AGENTS.md"
+    },
+    {
+      "status": "M",
+      "path": "docs/PROVIDER_CONFIGURATION.md"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/app/shell/command-palette.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/components/assistant-ui/enhanced-thread.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/components/ui/combobox.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/entities/schemas.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/entities/types.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/agents/ui/agent-editor.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/agents/ui/agents-page.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/chat/session-config-panel.test.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/chat/session-config-panel.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/chat/ui/chunks/chunk-renderer.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/models/api/models-api.ts"
+    },
+    {
+      "status": "D",
+      "path": "frontend/src/features/models/model-selector.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/models/model/models-store.test.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/models/model/models-store.ts"
+    },
+    {
+      "status": "D",
+      "path": "frontend/src/features/models/model/use-model-selector.ts"
+    },
+    {
+      "status": "D",
+      "path": "frontend/src/features/models/ui/model-selector.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/models/ui/models-page.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/providers/api/providers-api.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/providers/model/providers-store.test.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/providers/model/providers-store.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/providers/ui/providers-page.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/settings/model/use-settings.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/settings/ui/generic-schema-panel.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/settings/ui/panels/ai-settings-panels.test.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/settings/ui/panels/ai-settings-panels.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/settings/ui/settings-primitives.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/skills/ui/skills-page.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/teams/ui/binding-model-step.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/platform/entities/index.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/platform/entities/session-configuration/api/session-configuration-api.test.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/platform/entities/session-configuration/api/session-configuration-api.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/platform/entities/session-configuration/domain.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/platform/entities/session-configuration/index.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/platform/entities/session-configuration/registration.ts"
+    },
+    {
+      "status": "M",
+      "path": "scripts/acceptance/cases_agents.py"
+    },
+    {
+      "status": "M",
+      "path": "scripts/behaviors/steps/rest-model-restart.steps.mjs"
+    },
+    {
+      "status": "M",
+      "path": "src/bin/stub-llm.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/llm/liter_driver.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/server.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/uar/api/chat_turns.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/uar/api/discovery.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/uar/api/model_verification.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/uar/api/providers.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/uar/api/settings.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/uar/domain/policy.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/uar/runtime/context/summarizer.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/uar/runtime/manager.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/uar/runtime/matching/intent/mod.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/uar/runtime/thread/policy_intersection.rs"
+    },
+    {
+      "status": "M",
+      "path": "src/uar/settings/manager.rs"
+    },
+    {
+      "status": "M",
+      "path": "tests/bdd/playwright.config.ts"
+    },
+    {
+      "status": "M",
+      "path": "tests/bdd/steps/common.steps.ts"
+    },
+    {
+      "status": "M",
+      "path": "tests/bdd/support/api.ts"
+    },
+    {
+      "status": "M",
+      "path": "tests/bdd/support/ports.ts"
+    },
+    {
+      "status": "M",
+      "path": "tests/bdd/support/world.ts"
+    },
+    {
+      "status": "M",
+      "path": "tests/integration/live/stub_llm.rs"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/assets/LICENSE-alpinejs-3.15.8.md"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/assets/LICENSE-htmx.txt"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/assets/LICENSE-sse.txt"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/assets/alpine-3.15.8.min.js"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/assets/document.css"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/assets/htmx-2.0.11.min.js"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/assets/icon-192.png"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/assets/icon-512.png"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/assets/icon.svg"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/assets/sse-2.2.4.js"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/build-manifest.json"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/index.html"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/manifest.webmanifest"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/reading-guide.html"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/specification.md"
+    },
+    {
+      "status": "??",
+      "path": "docs/uar-settings-user-goals/sw.js"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/app/shell/command-palette.test.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/components/ui/combobox-picker-model.test.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/components/ui/combobox-picker-model.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/components/ui/combobox-picker.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/components/ui/multi-picker.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/components/ui/single-picker.test.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/components/ui/single-picker.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/agents/model/explicit-model.test.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/agents/model/explicit-model.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/chat/components/answer-receipt.test.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/chat/components/answer-receipt.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/chat/model/model-receipt.test.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/chat/model/model-receipt.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/chat/model/use-answer-receipt.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/chat/session-model-view.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/models/pickers.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/models/ui/catalog-model-picker.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/models/ui/model-picker.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/models/ui/picker-options.test.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/models/ui/picker-options.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/models/ui/provider-model-picker.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/models/ui/provider-picker.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/providers/model/pinned-agents.test.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/providers/model/pinned-agents.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/providers/model/use-system-default-data.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/providers/ui/system-default-panel.test.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/providers/ui/system-default-panel.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/features/providers/ui/system-default-parts.tsx"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/platform/entities/model-catalog/api/model-catalog-api.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/platform/entities/model-catalog/contracts.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/platform/entities/model-catalog/domain.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/platform/entities/model-catalog/index.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/platform/entities/model-catalog/projection.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/platform/entities/model-catalog/registration.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/platform/entities/model-catalog/system-default.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/platform/entities/model-catalog/use-model-catalog.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/platform/entities/session-configuration/effective-model.test.ts"
+    },
+    {
+      "status": "??",
+      "path": "frontend/src/platform/entities/session-configuration/effective-model.ts"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-config-boot-safety-and-live-reload/.openspec.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-config-boot-safety-and-live-reload/design.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-config-boot-safety-and-live-reload/fixtures/baseline-verdicts.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-config-boot-safety-and-live-reload/fixtures/cfg-oracle.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-config-boot-safety-and-live-reload/proposal.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-config-boot-safety-and-live-reload/specs/configuration-boot-safety/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-config-boot-safety-and-live-reload/specs/provider-model-settings-certification/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-config-boot-safety-and-live-reload/tasks.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/.openspec.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/design.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/fixtures/baseline-verdicts.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/fixtures/critique-gate.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/fixtures/design-context.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/fixtures/section-controls.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/fixtures/settings-routes.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/proposal.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/specs/frontend-app-shell/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/specs/frontend-design-authority/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/specs/runtime-console-ux/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-design-context-and-settings-regroup/tasks.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-local-first-persistence-worker/.openspec.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-local-first-persistence-worker/design.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-local-first-persistence-worker/fixtures/baseline-verdicts.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-local-first-persistence-worker/fixtures/pgl-oracle.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-local-first-persistence-worker/fixtures/stub-llm-pgl-long-stream.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-local-first-persistence-worker/fixtures/stub-llm-pgl.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-local-first-persistence-worker/proposal.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-local-first-persistence-worker/specs/frontend-local-first-persistence/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-local-first-persistence-worker/tasks.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-model-identity-graph-ownership/.openspec.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-model-identity-graph-ownership/design.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-model-identity-graph-ownership/fixtures/baseline-verdicts.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-model-identity-graph-ownership/fixtures/catalog-identity.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-model-identity-graph-ownership/fixtures/collision-config.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-model-identity-graph-ownership/fixtures/provider-model-config.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-model-identity-graph-ownership/fixtures/provider-model-sequence.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-model-identity-graph-ownership/proposal.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-model-identity-graph-ownership/specs/frontend-react-entity-guardrails/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-model-identity-graph-ownership/tasks.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-realtime-topics-and-replica-refresh/.openspec.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-realtime-topics-and-replica-refresh/design.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-realtime-topics-and-replica-refresh/fixtures/baseline-verdicts.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-realtime-topics-and-replica-refresh/fixtures/capability-inversion.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-realtime-topics-and-replica-refresh/fixtures/mutants.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-realtime-topics-and-replica-refresh/fixtures/replica-scenario.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-realtime-topics-and-replica-refresh/fixtures/topic-routing.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-realtime-topics-and-replica-refresh/proposal.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-realtime-topics-and-replica-refresh/specs/embedded-sse-sync/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-realtime-topics-and-replica-refresh/specs/realtime-replica-consistency/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-realtime-topics-and-replica-refresh/tasks.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/.openspec.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/design.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/fixtures/baseline-verdicts.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/fixtures/free-text-inventory.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/fixtures/numeric-bounds-oracle.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/fixtures/picker-config.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/fixtures/picker-oracle.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/fixtures/provider-options.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/fixtures/schema-controls-oracle.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/fixtures/skill-import/invalid/SKILL.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/fixtures/skill-import/valid/SKILL.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/proposal.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/specs/frontend-configuration-surfaces/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-schema-controls-and-pickers/tasks.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/.openspec.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/design.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/fixtures/admin-pages.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/fixtures/baseline-verdicts.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/fixtures/config-screens.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/fixtures/ingest-document.txt"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/fixtures/removed-settings.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/fixtures/retained-settings.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/fixtures/scratch-config.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/fixtures/secret-roundtrip.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/proposal.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/specs/frontend-configuration-surfaces/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/specs/remaining-admin-surface-certification/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/specs/settings-apply-status/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-settings-truthful-status-and-removals/tasks.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/.openspec.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/design.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/fixtures/baseline-verdicts.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/fixtures/m1-receipt-from-request.patch"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/fixtures/m2-receipt-time-from-send.patch"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/fixtures/stub-llm-sys.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/fixtures/sys-oracle.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/proposal.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/specs/provider-model-settings-certification/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/specs/session-configuration/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-system-model-live-default/tasks.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-team-model-adoption-at-boundary/.openspec.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-team-model-adoption-at-boundary/design.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-team-model-adoption-at-boundary/fixtures/baseline-verdicts.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-team-model-adoption-at-boundary/fixtures/stub-a.fixtures.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-team-model-adoption-at-boundary/fixtures/stub-a.hold.fixtures.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-team-model-adoption-at-boundary/fixtures/stub-b.fixtures.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-team-model-adoption-at-boundary/fixtures/team-adoption-oracle.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-team-model-adoption-at-boundary/proposal.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-team-model-adoption-at-boundary/specs/multi-agent-orchestration/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-team-model-adoption-at-boundary/tasks.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-workers-and-pwa-cache/.openspec.yaml"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-workers-and-pwa-cache/design.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-workers-and-pwa-cache/fixtures/baseline-verdicts.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-workers-and-pwa-cache/fixtures/wrk-oracle.json"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-workers-and-pwa-cache/proposal.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-workers-and-pwa-cache/specs/frontend-web-workers/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-workers-and-pwa-cache/specs/pwa-offline/spec.md"
+    },
+    {
+      "status": "??",
+      "path": "openspec/changes/uiux-workers-and-pwa-cache/tasks.md"
+    },
+    {
+      "status": "??",
+      "path": "tests/bdd/features/live-model-choice-controls.feature"
+    },
+    {
+      "status": "??",
+      "path": "tests/bdd/features/live-model-choice.feature"
+    },
+    {
+      "status": "??",
+      "path": "tests/bdd/fixtures/live-model-choice-new-kinds.json"
+    },
+    {
+      "status": "??",
+      "path": "tests/bdd/fixtures/live-model-choice.json"
+    },
+    {
+      "status": "??",
+      "path": "tests/bdd/steps/live-model-choice.steps.ts"
+    },
+    {
+      "status": "??",
+      "path": "tests/bdd/support/s1-ui.ts"
+    },
+    {
+      "status": "??",
+      "path": "tests/bdd/support/s1.ts"
+    },
+    {
+      "status": "??",
+      "path": "tests/bdd/support/stubs.ts"
+    }
+  ]
+}

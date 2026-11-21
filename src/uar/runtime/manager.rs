@@ -11,10 +11,10 @@ use crate::uar::domain::{
     artifact::AgentArtifact,
     events::{ArtifactPayload, CitationSource, MemoryItem, NormalizedEvent, StatePatchOp},
     policy::{
-        ChatMode, ConversationPolicyRecord, EffectiveRunPolicy, ModelRoute,
+        ChatMode, ConversationPolicyRecord, EffectiveRunPolicy, ModelOrigin, ModelRoute,
         PolicyResolutionContext, PolicyResolutionInput, PolicyUniverse, RunPolicy, SelectionMode,
         ToolApprovalPolicy, policy_from_agent_artifact, resolve_effective_run_policy_core,
-        resolve_run_policy,
+        resolve_run_policy, system_default_activation_time,
     },
     runs::{Run, RunStatus},
 };
@@ -450,6 +450,29 @@ fn redacted_checkpoint_dialogue(session: &crate::session::Session) -> RunDialogu
     state.messages.clear();
     state.system_prompt = None;
     RunDialogue(crate::session::Session::from_state(state))
+}
+
+/// Artifact type, and run-context key, of the per-turn model receipt.
+pub(crate) const MODEL_RECEIPT_ARTIFACT_TYPE: &str = "model_receipt";
+pub(crate) const MODEL_RECEIPT_KEY: &str = "model_receipt";
+
+/// The receipt shown under one assistant turn. `served_provider` and
+/// `served_model` come from the provider's own response; `model_origin` and
+/// `model_origin_since` come from the policy frozen at admission, and the time
+/// is present only for `system_default`.
+pub(crate) fn model_receipt_value(
+    served_provider: Option<&str>,
+    served_model: &str,
+    origin: Option<ModelOrigin>,
+    origin_since: Option<&str>,
+) -> serde_json::Value {
+    serde_json::json!({
+        "version": 1,
+        "served_provider": served_provider,
+        "served_model": served_model,
+        "model_origin": origin,
+        "model_origin_since": origin_since.filter(|_| origin == Some(ModelOrigin::SystemDefault)),
+    })
 }
 
 fn pre_resolved_policy_for_run(
@@ -5121,7 +5144,9 @@ impl RunManager {
 
         let checkpoint_authorization_valid = match checkpoint_authorization_digest.as_deref() {
             Some(expected) => {
-                crate::uar::runtime::checkpoint::authorization_digest(&effective_policy) == expected
+                crate::uar::runtime::checkpoint::authorization_digest(
+                    &effective_policy.authorization_view(),
+                ) == expected
             }
             None => !is_checkpoint_resume,
         };
@@ -8565,6 +8590,23 @@ impl RunManager {
         // Capture the resolved model id so the final RunDoneWithUsage event can
         // report which model actually answered (moved into the spawned task below).
         let run_model = run_llm_config.model.clone();
+        // Why this route was admitted, frozen with the run: a later default change
+        // must not alter the origin or activation time of a turn already started.
+        // Availability routing or a skill's preferred model can replace the
+        // admitted route; the origin then describes a model that is not serving,
+        // so no origin is claimed.
+        let admitted_route_serves = effective_policy.model.as_ref().is_some_and(|route| {
+            format!("{}/{}", route.provider_id, route.model_id)
+                == run_llm_config.qualified_model_name()
+        });
+        let model_origin_receipt = if admitted_route_serves {
+            (
+                effective_policy.model_origin,
+                effective_policy.model_origin_since.clone(),
+            )
+        } else {
+            (None, None)
+        };
         // The effective run setting still controls terminal cost events and alerts.
         let cost_tracking_enabled = run_llm_config.cost_tracking;
         // Saved-agent connection resolution can omit the operator's metric setting.
@@ -9208,7 +9250,9 @@ impl RunManager {
                 source,
                 verified_owner.as_ref(),
                 self.tool_runtime_epoch.clone(),
-                crate::uar::runtime::checkpoint::authorization_digest(&effective_policy),
+                crate::uar::runtime::checkpoint::authorization_digest(
+                    &effective_policy.authorization_view(),
+                ),
                 run_cancellation.clone(),
                 emitter.secret_scrubber.clone(),
                 collaboration_binding.clone(),
@@ -9319,7 +9363,9 @@ impl RunManager {
                         cost_tracking: cost_tracking_enabled,
                     });
                 let checkpoint_authorization_digest =
-                    crate::uar::runtime::checkpoint::authorization_digest(&effective_policy);
+                    crate::uar::runtime::checkpoint::authorization_digest(
+                        &effective_policy.authorization_view(),
+                    );
                 let graph_ctx = crate::uar::runtime::graph::GraphContext {
                     run_id: execute_run_id.clone(),
                     checkpoint_authorization_digest: checkpoint_authorization_digest.clone(),
@@ -9568,6 +9614,9 @@ impl RunManager {
             let mut accumulated_content = String::new();
             let mut run_cancelled = false;
             let mut run_failed = false;
+            // `(serving provider id, model id the provider reported)` of the last
+            // completed model call; absent until a provider reports one.
+            let mut served_model_report: Option<(Option<String>, String)> = None;
             let mut orchestrator_completed = false;
             let mut accumulated_tool_calls: Vec<crate::llm::ToolCall> = Vec::new();
             let mut tool_call_indices: HashMap<String, usize> = HashMap::new();
@@ -9808,6 +9857,32 @@ impl RunManager {
                                     manifests.push(payload.clone());
                                 }
                             }
+                        }
+                        if let crate::normalized::NormalizedEvent::Custom {
+                            source,
+                            event_name,
+                            payload,
+                        } = &base_event
+                            && crate::llm::liter_driver::is_served_model_event(source, event_name)
+                        {
+                            // The provider's own report of the model that answered. The
+                            // last completed call produced the final answer. It is held
+                            // for the one receipt emitted at completion and is not
+                            // forwarded as a generic provider event.
+                            if let Some(model) = payload
+                                .get("model")
+                                .and_then(serde_json::Value::as_str)
+                                .filter(|model| !model.trim().is_empty())
+                            {
+                                served_model_report = Some((
+                                    payload
+                                        .get("provider")
+                                        .and_then(serde_json::Value::as_str)
+                                        .map(str::to_owned),
+                                    model.to_owned(),
+                                ));
+                            }
+                            continue;
                         }
                         // Map base NormalizedEvent to domain NormalizedEvent with run_id
                         let uar_event = match base_event {
@@ -10368,6 +10443,38 @@ impl RunManager {
                     }
                 };
                 emitter.emit(diagnostic).await;
+            }
+
+            // One receipt per completed turn, built only from what the provider
+            // reported. A refused, failed or cancelled turn never claims a model.
+            if !run_failed
+                && !run_cancelled
+                && let Some((served_provider, served_model)) = served_model_report.take()
+            {
+                let receipt = model_receipt_value(
+                    served_provider.as_deref(),
+                    &served_model,
+                    model_origin_receipt.0,
+                    model_origin_receipt.1.as_deref(),
+                );
+                if let Some(state) = runs_for_completion.write().await.get_mut(&execute_run_id)
+                    && let Some(context) = state.run.context.as_object_mut()
+                {
+                    context.insert(MODEL_RECEIPT_KEY.into(), receipt.clone());
+                }
+                emitter
+                    .emit(NormalizedEvent::Artifact {
+                        run_id: execute_run_id.clone(),
+                        artifact: ArtifactPayload {
+                            artifact_id: format!("model-receipt-{execute_run_id}"),
+                            artifact_type: MODEL_RECEIPT_ARTIFACT_TYPE.to_string(),
+                            title: "Model receipt".to_string(),
+                            content: receipt.to_string(),
+                            language: Some("json".to_string()),
+                            metadata: receipt,
+                        },
+                    })
+                    .await;
             }
 
             let completed_active_skills = activation_context
@@ -11312,24 +11419,37 @@ impl RunManager {
     /// or `None` if neither a provider registry entry nor a global `llm_config.model`
     /// is configured.
     pub async fn resolve_default_model(&self) -> Option<(String, String)> {
+        self.default_model_source().await.map(|(route, _)| route)
+    }
+
+    /// The default model together with the origin that supplies it: the provider
+    /// registry's system default, or the configured `llm_config.model` fallback
+    /// when the registry has no usable default (no default provider, a disabled
+    /// provider, or no default model).
+    async fn default_model_source(&self) -> Option<((String, String), ModelOrigin)> {
         // 1. Try the provider registry default.
         if let Some(registry) = &self.provider_registry {
             if let Some((provider_id, model_id)) = registry.default_model().await {
-                return Some((provider_id, model_id));
+                return Some(((provider_id, model_id), ModelOrigin::SystemDefault));
             }
         }
 
         // 2. Fall back to the global llm_config.
-        let model = self.llm_config.model.trim().to_string();
-        if !model.is_empty() {
-            let slash = model.find('/');
-            return Some(match slash {
-                Some(i) => (model[..i].to_string(), model[i + 1..].to_string()),
-                None => ("default".to_string(), model),
-            });
-        }
+        self.configured_fallback_model()
+            .map(|route| (route, ModelOrigin::ConfiguredFallback))
+    }
 
-        None
+    /// The configured `llm_config.model` as `(provider_id, model_id)`, or `None`
+    /// when none is configured.
+    pub(crate) fn configured_fallback_model(&self) -> Option<(String, String)> {
+        let model = self.llm_config.model.trim().to_string();
+        if model.is_empty() {
+            return None;
+        }
+        Some(match model.find('/') {
+            Some(i) => (model[..i].to_string(), model[i + 1..].to_string()),
+            None => ("default".to_string(), model),
+        })
     }
 
     /// Backfill the model route so a resolved [`EffectiveRunPolicy`] reports the
@@ -11342,12 +11462,29 @@ impl RunManager {
     /// `llm_config.model` on service builds, so this yields the true executing
     /// route on every deployment mode. A route that already names a non-empty
     /// provider and model is left untouched, preserving precedence.
+    ///
+    /// The backfill also records why the route was chosen: `system_default`
+    /// (with the time the registry default became current) or
+    /// `configured_fallback`. A route a policy scope named keeps the origin
+    /// policy resolution gave it.
     pub(crate) async fn backfill_effective_model(&self, policy: &mut EffectiveRunPolicy) {
         let needs_backfill = policy.model.as_ref().is_none_or(|route| {
             route.provider_id.trim().is_empty() || route.model_id.trim().is_empty()
         });
-        if needs_backfill && let Some((provider_id, model_id)) = self.resolve_default_model().await
+        if needs_backfill
+            && let Some(((provider_id, model_id), origin)) = self.default_model_source().await
         {
+            policy.model_origin_since = match origin {
+                ModelOrigin::SystemDefault => {
+                    system_default_activation_time(
+                        self.settings_manager.as_deref(),
+                        Some(provider_id.as_str()),
+                    )
+                    .await
+                }
+                _ => None,
+            };
+            policy.model_origin = Some(origin);
             policy.model = Some(ModelRoute {
                 provider_id,
                 model_id,

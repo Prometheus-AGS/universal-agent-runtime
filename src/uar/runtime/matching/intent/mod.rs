@@ -261,6 +261,9 @@ pub async fn classify_skills_with_driver(
             // Liter emits this request metadata before generated content; accounting stays in the driver.
             NormalizedEvent::Custom { source, event_name, .. }
                 if source == "uar.request" && event_name == "budget_receipt" => {},
+            // The provider's served-model report follows the content; ranking does not use it.
+            NormalizedEvent::Custom { source, event_name, .. }
+                if crate::llm::liter_driver::is_served_model_event(&source, &event_name) => {},
             NormalizedEvent::Done => { complete = true; break; },
             _ => anyhow::bail!("skill_classifier_stream_invalid"),
         }

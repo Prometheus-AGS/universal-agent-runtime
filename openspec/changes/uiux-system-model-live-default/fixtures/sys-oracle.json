@@ -1,0 +1,296 @@
+{
+  "schema": "uar-frozen-oracle/1",
+  "change": "uiux-system-model-live-default",
+  "frozenAt": "2026-11-19",
+  "adoptionRule": "Values are fixed before implementation and are not read from implementation code, route tables, classifiers or the system under test. Entries may change only together with design.md before the phase contract is adopted; after adoption every value is immutable.",
+  "stub": {
+    "binary": "target/debug/stub-llm",
+    "argv": [
+      "target/debug/stub-llm",
+      "openspec/changes/uiux-system-model-live-default/fixtures/stub-llm-sys.json"
+    ],
+    "env": {
+      "STUB_LLM_PORT": "<ephemeral port chosen by the runner>"
+    },
+    "requestLog": "GET /_stub/requests returns {requests:[raw chat-completion bodies]}; POST /_stub/requests resets it",
+    "source": "src/bin/stub-llm.rs (header comment and main); tests/integration/live/stub_llm.rs:186-203",
+    "userMessage": "uar-sys-ping-001",
+    "modelMatchRule": "A logged request matches model M when body.model equals M or equals '<providerId>/' + M. Bare model ids are unique across providers in this fixture, so the match is unambiguous.",
+    "replyTextRule": "reply text is 'uar-sys-reply-' + bare model id"
+  },
+  "providers": [
+    {
+      "id": "sysp1",
+      "enabled": true,
+      "models": [
+        "sys-m1",
+        "sys-m2"
+      ],
+      "initialDefaultModel": "sys-m1"
+    },
+    {
+      "id": "sysp2",
+      "enabled": true,
+      "models": [
+        "sys-m3",
+        "sys-m4"
+      ],
+      "initialDefaultModel": "sys-m4"
+    },
+    {
+      "id": "sysp3",
+      "enabled": false,
+      "models": [
+        "sys-m5"
+      ],
+      "initialDefaultModel": "sys-m5",
+      "purpose": "disabled-provider rejection control (SCN-SYS-006)"
+    },
+    {
+      "id": "sysp4",
+      "enabled": true,
+      "models": [
+        "sys-m6"
+      ],
+      "initialDefaultModel": "sys-m6",
+      "purpose": "provider whose credential is not granted to the delegating thread (SCN-SYS-008 control); how the grant is withheld is UNVERIFIED"
+    }
+  ],
+  "initialSystemDefault": {
+    "providerId": "sysp1",
+    "modelId": "sys-m1"
+  },
+  "selectedSystemDefault": {
+    "providerId": "sysp2",
+    "modelId": "sys-m3",
+    "note": "used by SCN-SYS-002 and SCN-SYS-006 (sysp vocabulary); S1 rows use fixtures/s1-oracle.json"
+  },
+  "agents": [
+    {
+      "id": "sys-agent-a",
+      "model": null,
+      "pinned": false
+    },
+    {
+      "id": "sys-agent-b",
+      "artifactDefault": {
+        "provider": "sysp1",
+        "model": "sys-m2"
+      },
+      "pinned": true
+    },
+    {
+      "id": "sys-agent-c",
+      "artifactDefault": {
+        "provider": "",
+        "model": ""
+      },
+      "extension": {
+        "key": "uar.run_policy",
+        "model": {
+          "provider_id": "sysp2",
+          "model_id": "sys-m4"
+        }
+      },
+      "pinned": true
+    }
+  ],
+  "scn": {
+    "SCN-SYS-001": {
+      "movedTo": "fixtures/s1-oracle.json#scn.SCN-SYS-001",
+      "reason": "S1 slice uses one vocabulary (bdd-provider-*, BDD Agent *) shared with tests/bdd/features/live-model-choice*.feature"
+    },
+    "SCN-SYS-002": {
+      "afterRestart": {
+        "providerId": "sysp2",
+        "modelId": "sys-m3"
+      },
+      "conflictingYaml": "scratch YAML lists sysp1 first with default_model sys-m1 and sets llm.model to sysp1/sys-m1",
+      "expectedWinner": "DB value (sysp2/sys-m3)"
+    },
+    "SCN-SYS-003": {
+      "movedTo": "fixtures/s1-oracle.json#scn.SCN-SYS-003",
+      "reason": "S1 slice uses one vocabulary (bdd-provider-*, BDD Agent *) shared with tests/bdd/features/live-model-choice*.feature"
+    },
+    "SCN-SYS-004": {
+      "storedGlobalModel": {
+        "provider_id": "sysp2",
+        "model_id": "sys-m4"
+      },
+      "seedMethod": "written directly into the scratch store before the service starts, by the store runner defined in uiux-config-boot-safety-and-live-reload; never through the settings API",
+      "precondition": "GET /api/uar/settings/presentation-policy returns policy.model equal to the stored route",
+      "registryDefault": {
+        "providerId": "sysp1",
+        "modelId": "sys-m1"
+      },
+      "expectedTurnModel": "sys-m1",
+      "forbiddenTurnModel": "sys-m4",
+      "negativeControl": {
+        "conversationModel": {
+          "provider_id": "sysp1",
+          "model_id": "sys-m2"
+        },
+        "expectedTurnModel": "sys-m2"
+      },
+      "afterTurn": "the stored value still reads back unchanged"
+    },
+    "SCN-SYS-005": {
+      "maxInteractions": 2,
+      "widthsPx": [
+        320,
+        1440
+      ],
+      "paletteActionLabel": "Change system default model",
+      "noUsableDefaultText": "No usable system default",
+      "negativeControl": "sysp2 set as default then disabled through PUT /api/uar/providers/sysp2 with enabled=false; picker must show the no-usable-default text and must not show the pair sysp2/sys-m3 as live"
+    },
+    "SCN-SYS-006": {
+      "replicas": 2,
+      "fault": "stop the scratch remote Surreal store process after the picker has loaded and before the confirm (no product fault hook)",
+      "partA_routePersistFails": {
+        "seed": "sysp2.default_model = sys-m3 written to the scratch store beforehand, so the console's only write is POST /api/uar/providers/sysp2/default",
+        "selection": {
+          "providerId": "sysp2",
+          "modelId": "sys-m3"
+        },
+        "expectedConsoleWrites": [
+          "POST /api/uar/providers/sysp2/default"
+        ],
+        "expectedStatus": 500,
+        "expectedBodyPrefix": "Failed to persist default provider",
+        "sourceOfBody": "src/uar/api/providers.rs set_default persist error text",
+        "stateAfter": "live default_id is sysp1 on replica 1 and replica 2; after the store is restored the llm.default_provider row equals sysp1 and sysp2 default_model equals sys-m3; the console shows the error and does not show sysp2/sys-m3 as live (optimistic value rolled back)",
+        "invalidation": "after the store is restored, no /api/live invalidation frame for topic providers or settings caused by the failed attempt is received on either replica within 10 seconds"
+      },
+      "partB_saveFails": {
+        "seed": "sysp2.default_model = sys-m4 (initial), selection sysp2/sys-m3 so the console must PUT first",
+        "expectedConsoleWrites": [
+          "PUT /api/uar/providers/sysp2"
+        ],
+        "forbiddenConsoleWrites": [
+          "POST /api/uar/providers/sysp2/default"
+        ],
+        "expectedStatus": 500,
+        "expectedBodyPrefix": "provider_persist_failed",
+        "sourceOfBody": "src/uar/api/providers.rs provider_persist_error",
+        "stateAfter": "live default_id is sysp1 on both replicas; the console shows the save error and names that the default was not changed; no default-route call was issued"
+      },
+      "negativeControl": {
+        "directRoute": "POST /api/uar/providers/sysp3/default with sysp3 disabled, store healthy",
+        "expectedStatus": 409,
+        "expectedBody": "{\"error\":\"Provider 'sysp3' is disabled\"}",
+        "stateAfter": "default pair unchanged in the registry and in the store",
+        "rejectsWhichWrongImplementation": "a route without the disabled-provider check (the pre-phase baseline accepts it with 200 and swaps the live default, src/uar/api/providers.rs set_default checks existence only)",
+        "whyNotBaselineForPartsAB": "the pre-phase route already persists before swapping (providers.rs set_default) and the baseline console rolls the optimistic default back (frontend/src/lib/realtime/optimistic.ts), so the baseline passes parts A and B and cannot discriminate there; those parts are failed by a console that shows the pair as live after the failure, calls the default route after a failed save, or an implementation that swaps the registry before persisting"
+      }
+    },
+    "SCN-SYS-007": {
+      "movedTo": "fixtures/s1-oracle.json#scn.SCN-SYS-007",
+      "reason": "S1 slice uses one vocabulary (bdd-provider-*, BDD Agent *) shared with tests/bdd/features/live-model-choice*.feature"
+    },
+    "SCN-SYS-008": {
+      "conversationModel": {
+        "provider_id": "sysp1",
+        "model_id": "sys-m2"
+      },
+      "children": [
+        {
+          "id": "sys-agent-child-own",
+          "artifactDefault": {
+            "provider": "sysp2",
+            "model": "sys-m4"
+          },
+          "expectedModel": "sys-m4"
+        },
+        {
+          "id": "sys-agent-child-none",
+          "model": null,
+          "expectedModel": "sys-m2"
+        }
+      ],
+      "root": {
+        "id": "sys-agent-root",
+        "model": null,
+        "expectedModel": "sys-m2"
+      },
+      "negativeControl": {
+        "id": "sys-agent-child-nocred",
+        "artifactDefault": {
+          "provider": "sysp4",
+          "model": "sys-m6"
+        },
+        "expected": "delegation fails with a visible error and the stub log holds no request for sys-m6 and none for any substitute model from that delegation"
+      }
+    },
+    "SCN-SYS-009": {
+      "agent": "sys-agent-a",
+      "before": "sys-m1",
+      "editedModel": {
+        "provider": "sysp2",
+        "model": "sys-m4"
+      },
+      "afterEdit": "sys-m4",
+      "replicas": 2,
+      "editedOn": "replica 1",
+      "nextTurnOn": "replica 2",
+      "negativeControl": {
+        "editedModel": {
+          "provider": "sysp2",
+          "model": "sys-no-such-model"
+        },
+        "expected": "the next turn reports an error and the stub log gains no request; the system default model sys-m1 is not substituted"
+      }
+    },
+    "SCN-SYS-010": {
+      "query": "claude-opus",
+      "expectedMatchCount": 347,
+      "emptyQuery": {
+        "query": "zzzz-no-match",
+        "expectedMatchCount": 0
+      }
+    }
+  },
+  "samples": {
+    "perNondeterministicScenario": 3,
+    "stoppingRule": "fixed N=3, every sample must pass"
+  },
+  "catalogScale": {
+    "catalogSnapshot": {
+      "path": "catalog/provider_catalog.json",
+      "sha256": "ea7e74b3ba7d335e5710aec713e88972aa18825512f2c16030b9aeab95694276",
+      "providerModelPairs": 8170,
+      "providers": 343,
+      "identityFixture": "openspec/changes/uiux-model-identity-graph-ownership/fixtures/catalog-identity.json"
+    },
+    "derivedBy": "counted from the committed catalog snapshot only (provider id + '/' + model id, case-insensitive substring); no frontend or server output used",
+    "searchRule": "case-insensitive substring over provider_id + '/' + model_id; for the chosen query the count is identical over the bare model id and over the display name",
+    "searchCases": {
+      "claude-opus": 347,
+      "zzzz-no-match": 0
+    },
+    "frozenQuery": "claude-opus",
+    "expectedMatchCount": 347,
+    "expectedCountText": "347 models",
+    "optionsPresentedUnfiltered": "at least 8170 (catalog pairs plus configured custom models); not asserted exactly",
+    "thresholds": {
+      "virtualizeAboveOptions": 1000,
+      "maxLongTaskMs": 200,
+      "maxOptionElementsInDom": 200,
+      "budgetStatus": "proposed (from uiux-schema-controls-and-pickers picker-oracle.json thresholds)"
+    },
+    "unusableRows": "rows of providers that are not configured and enabled, or models absent from the provider's models, are listed but not selectable; selecting one stores nothing",
+    "negativeControl": {
+      "build": "pre-phase baseline bundle",
+      "baselineRevision": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+      "worktree": "scripts/worktree-new.sh sys-baseline --base f2c9e36efe088e06a17c5d880ada877e25f2ad52 (path ~/.claude/worktrees/sys-baseline), removed afterwards with scripts/worktree-rm.sh",
+      "surface": "/admin/models (Models page, full-catalog list), same frozen query",
+      "expectedRejection": "the same measurement reports more than 200 rendered rows or a long task above 200 ms; if the baseline passes both, the scenario is BLOCKED because it cannot discriminate",
+      "bundleSelection": "UNVERIFIED; bound by the lead"
+    },
+    "samples": {
+      "candidate": 5,
+      "control": 3,
+      "stoppingRule": "fixed N, every sample must pass (candidate) / every sample must show the rejection (control)"
+    }
+  }
+}

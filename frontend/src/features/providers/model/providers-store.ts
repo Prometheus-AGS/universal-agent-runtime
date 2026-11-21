@@ -1,18 +1,15 @@
 import { create } from "zustand";
 import {
-  serializeKey,
-  useGraphStore,
+  loadProviderHealth,
+  loadProviderRegistry,
+  setSystemDefaultProvider,
 } from "@/platform/entities";
 
-import type { ProviderEntity } from "@/entities/types";
-import { optimisticRemove, optimisticUpsert } from "@/lib/realtime/optimistic";
+import { optimisticRemove } from "@/lib/realtime/optimistic";
 import {
   createProvider,
   deleteProvider,
-  fetchCatalog,
   fetchConfiguredProviders,
-  fetchProviderHealth,
-  setDefaultProvider,
   updateProvider,
   type ProviderHealthEntry,
 } from "../api/providers-api";
@@ -46,57 +43,6 @@ interface ProvidersActions {
 
 export type ProvidersStore = ProvidersState & ProvidersActions;
 
-async function hydrateProviders(): Promise<void> {
-  const [catalog, configured] = await Promise.all([
-    fetchCatalog(),
-    fetchConfiguredProviders(),
-  ]);
-  const graph = useGraphStore.getState();
-  const configuredIds = new Set(configured.providers.map((provider) => provider.id));
-  const providerIds = new Set<string>();
-
-  for (const provider of catalog.providers) {
-    providerIds.add(provider.id);
-    const entity: ProviderEntity = {
-      id: provider.id,
-      display_name: provider.display_name,
-      base_url: provider.base_url,
-      configured: configuredIds.has(provider.id) || provider.configured,
-      auth_env_var: provider.auth_env_var,
-      endpoints: provider.endpoints,
-      model_count: provider.model_count,
-      status: provider.status,
-      status_detail: provider.status_detail,
-    };
-    graph.upsertEntity("Provider", provider.id, entity);
-  }
-
-  for (const provider of configured.providers) {
-    providerIds.add(provider.id);
-    if (catalog.providers.some((candidate) => candidate.id === provider.id)) continue;
-    graph.upsertEntity("Provider", provider.id, {
-      id: provider.id,
-      display_name: provider.display_name ?? provider.id,
-      base_url: provider.base_url,
-      configured: true,
-      endpoints: [],
-      model_count: provider.models?.length ?? 0,
-    });
-  }
-
-  const defaultProvider = configured.providers.find(
-    (provider) => provider.id === configured.default_id,
-  );
-  graph.upsertEntity("ProviderMeta", "current", {
-    id: "current",
-    default_id: configured.default_id ?? null,
-    default_model: defaultProvider?.default_model ?? null,
-  });
-  graph.setListResult(serializeKey(["providers", "", "[]"]), [...providerIds], {
-    total: providerIds.size,
-  });
-}
-
 export const useProvidersStore = create<ProvidersStore>((set) => ({
   loaded: false,
   refreshing: false,
@@ -110,7 +56,7 @@ export const useProvidersStore = create<ProvidersStore>((set) => ({
   load: async () => {
     set({ refreshing: true, error: null });
     try {
-      await hydrateProviders();
+      await loadProviderRegistry();
       set({ loaded: true });
     } catch (error) {
       set({ error: (error as Error).message });
@@ -143,7 +89,7 @@ export const useProvidersStore = create<ProvidersStore>((set) => ({
           throw new Error(detail || `Configure provider failed: ${response.status}`);
         }
       }
-      await hydrateProviders();
+      await loadProviderRegistry();
       set({ loaded: true });
     } catch (error) {
       set({ error: (error as Error).message });
@@ -156,23 +102,12 @@ export const useProvidersStore = create<ProvidersStore>((set) => ({
   setDefault: async (providerId) => {
     set({ error: null });
     try {
-      await optimisticUpsert(
-        "ProviderMeta",
-        "current",
-        { id: "current", default_id: providerId, default_model: null },
-        () => setDefaultProvider(providerId),
-      );
+      // One write path: the same domain action the system default picker uses. It publishes the
+      // default pair to the graph once, after the server confirmed it.
+      await setSystemDefaultProvider(providerId);
     } catch (error) {
-      set({ error: `Failed to set default: ${(error as Error).message}` });
+      set({ error: (error as Error).message });
       throw error;
-    }
-    try {
-      await hydrateProviders();
-      set({ loaded: true });
-    } catch (error) {
-      set({
-        error: `Default changed, but provider metadata refresh failed: ${(error as Error).message}`,
-      });
     }
   },
 
@@ -191,25 +126,8 @@ export const useProvidersStore = create<ProvidersStore>((set) => ({
   loadHealth: async () => {
     set({ healthLoading: true, healthError: null });
     try {
-      const response = await fetchProviderHealth();
+      const response = await loadProviderHealth();
       set({ healthByProvider: response.providers });
-      const graph = useGraphStore.getState();
-      const updatedAt = new Date().toISOString();
-      for (const [providerId, health] of Object.entries(response.providers)) {
-        graph.upsertEntity("RuntimeProviderHealth", providerId, {
-          id: providerId,
-          provider_id: providerId,
-          status: health.healthy
-            ? "healthy"
-            : health.cooldown_remaining_secs
-              ? "degraded"
-              : "offline",
-          error: health.consecutive_errors
-            ? `${health.consecutive_errors} consecutive error(s)`
-            : undefined,
-          updated_at: updatedAt,
-        });
-      }
     } catch (error) {
       set({ healthError: (error as Error).message });
       throw error;

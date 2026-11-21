@@ -1,0 +1,16 @@
+--- a/src/uar/runtime/manager.rs
++++ b/src/uar/runtime/manager.rs
+@@ -10449,11 +10449,11 @@
+             // reported. A refused, failed or cancelled turn never claims a model.
+             if !run_failed
+                 && !run_cancelled
+-                && let Some((served_provider, served_model)) = served_model_report.take()
++                && let Some((served_provider, _served_model)) = served_model_report.take()
+             {
+                 let receipt = model_receipt_value(
+                     served_provider.as_deref(),
+-                    &served_model,
++                    run_model.split_once('/').map_or(run_model.as_str(), |(_, model)| model),
+                     model_origin_receipt.0,
+                     model_origin_receipt.1.as_deref(),
+                 );
