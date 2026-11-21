@@ -1,0 +1,115 @@
+{
+  "reviewer": "artifact-critic (fresh context)",
+  "reviewedAt": "2026-11-21T09:28:44Z",
+  "inventoryConfirmed": false,
+  "inventoryNotes": [
+    "Task 1a PASS: inventory candidateCommit f7795b71fef67f8a19149c860938f80a46928b4e equals `git rev-parse HEAD`.",
+    "Task 1b FAIL: `git diff --name-status HEAD~1 HEAD` adds production source file frontend/src/components/ui/combobox-picker-namespace.ts (24 lines, imported by frontend/src/components/ui/single-picker.tsx:10 and multi-picker.tsx:3). It is missing from inventory.changedPaths. decision-log.md (\"Candidate commit attempt 1 blocked by pre-commit\") records that it was created as a lint fix after the inventory was written, and the inventory was not renewed. All 238 inventory paths are present in the commit, and their statuses (M/D, and ?? recorded as A) match the commit.",
+    "Task 1b note: the commit also adds frontend/.prometheus/knowledge/.prompt-snapshots/** (12 files) and frontend/.prometheus/knowledge/wiki/** (9 files), none of them in changedPaths. These are not production source. The project rules call the .prompt-snapshots cache regenerable and exclude it from history.",
+    "Task 1c PASS: shasum -a 256 m1-receipt-from-request.patch = 0073d40c677e8504ecf60da4e07b1c4eb612e2e1c8359a4a1d5be31dc1055aac and m2-receipt-time-from-send.patch = e527ad4eca6ca3002470bc48dedd589176c8e8a208e8a7e1476edf4b17010764, both equal to the inventory. M1 touches only src/uar/runtime/manager.rs and M2 only src/uar/domain/policy.rs, matching targetFile. `git apply --check` succeeds for both at HEAD.",
+    "Task 1d PASS: all five frozen digests in the boundary commands' printf/shasum block match HEAD (boundary-baseline-expectations.json, both live-model-choice feature files, s1-oracle.json, baseline-verdicts.json). All 50 commands carry the same five digests.",
+    "Inventory claim contradicted by the record: inventory.unverified says \"Nothing compiled, type-checked, linted or run\". decision-log.md records that the pre-commit hook ran `cargo test --locked --no-default-features --features minimal --lib --no-run`, and that `pnpm -C frontend typecheck` and `pnpm -C frontend lint` were each run twice before the candidate commit. The commit message says one hook step was skipped. The inventory should state what was actually run.",
+    "Because Task 1b failed, candidateCommit and inventorySha256 are omitted. bind-candidate-tree and every later boundary command therefore cannot open. To fix: add the missing path to changedPaths (and correct `unverified`), then get a fresh confirmation. Any edit to the inventory changes its sha256."
+  ],
+  "stepDefinitionReview": {
+    "verdict": "BLOCK",
+    "findings": [
+      {
+        "severity": "CRITICAL",
+        "file": "frontend/playwright.installed-settings-truth.config.ts; frontend/e2e/model-catalog-identity.spec.ts; frontend/e2e/model-picker.spec.ts",
+        "line": 0,
+        "claim": "The supporting-scenario runners named by boundary commands baseline-check-supporting, scn-set-003, neg-set-003, scn-idn-001, neg-idn-001, scn-pick-002 and neg-pick-002 do not exist at HEAD. `git ls-files` lists none of the three files, and no file in the repository contains a test titled 'SCN-SET-003 ...', 'SCN-IDN-001 ...' or 'SCN-PICK-002 ...' or a '... negative control' variant. The contract requires an independent review of the runner configs and control scenarios before any scenario command. Files that do not exist cannot be reviewed. plan.md lists SET 5.3, IDN 8.1 and PICK 9.2 as 'B4 only' boundary tasks. Authoring these files after the candidate commit would leave frontend/ dirty, and the binding prefix of every command rejects a dirty tree.",
+        "falsePassOrFail": "Guaranteed false-fail of the whole batch. baseline-check-supporting runs `cp frontend/playwright.real-server.config.ts frontend/playwright.installed-settings-truth.config.ts ...`, and cp fails on the missing file. That command is 9th of 50, so the 'any baseline verdict differs' stop condition halts the batch before either mutant is built and before any SCN-SYS scenario runs. Even if that step were skipped, the six scn/neg supporting commands would end in 'No tests found' or a missing-config error.",
+        "suggestedFix": "Author and commit the three runner files (with tests titled exactly as the commands grep), then take a new candidate commit and inventory before the boundary. Otherwise, move SCN-SET-003, SCN-IDN-001 and SCN-PICK-002 out of the S1 boundary through a signed contract amendment, removing the commands and their baseline checks."
+      },
+      {
+        "severity": "CRITICAL",
+        "file": "frontend/playwright.real-server.config.ts",
+        "line": 25,
+        "claim": "The real-server config used by scn-idn-001, neg-idn-001, scn-pick-002 and neg-pick-002 has a JSON reporter writing to ../openspec/changes/a11y-and-responsive-certification/receipts/real-server-playwright.json. That file is not tracked and not git-ignored (`git check-ignore` gives no match). The contract's runnerOutputGlobs cover only .kbd-orchestrator/phases/.../boundary/** and tests/bdd/.features-gen/**.",
+        "falsePassOrFail": "Guaranteed void run once the specs exist. After scn-idn-001 writes the file, the next command's prefix (`git status --porcelain --untracked-files=all` must be empty outside .kbd-orchestrator, .prometheus and static) fails. neg-idn-001 and every later command become BLOCKED, and rebind-postcondition fails, which voids every scenario including the already-passed SCN-SYS ones.",
+        "suggestedFix": "Have the boundary commands pass --reporter (overriding the config reporter) with output under .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/, or have the supporting config write to an ignored path."
+      },
+      {
+        "severity": "CRITICAL",
+        "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+        "line": 0,
+        "claim": "The candidate supporting commands scn-idn-001, neg-idn-001, scn-pick-002, neg-pick-002, scn-set-003 and neg-set-003 do not set UAR_STATIC_DIR. The baseline-check-supporting counterparts do. frontend/playwright.real-server.config.ts does not set it either. The contract stop condition says: 'UAR_STATIC_DIR is not set explicitly for a supporting real-server start or index.html is absent there: that scenario is BLOCKED'.",
+        "falsePassOrFail": "By the contract's own rule, SCN-IDN-001 and SCN-PICK-002 can never be PASS as the commands are written, even with the runner files present.",
+        "suggestedFix": "Prefix each supporting candidate command with UAR_STATIC_DIR=\"$PWD/static\" (the static/ directory built by prepare-bdd), as the baseline commands do. Changing the commands requires the contract's amendment path."
+      },
+      {
+        "severity": "WARNING",
+        "file": "tests/bdd/steps/live-model-choice.steps.ts",
+        "line": 574,
+        "claim": "expectEffectiveView takes testid-or-fallback branches right after openEffectiveView. openEffectiveView waits only for [data-testid=session-config-effective], and that element is already visible during the aria-busy 'Checking which model answers...' state (frontend/src/features/chat/session-model-view.tsx:98-110). The count() checks therefore usually see 0 and fall back to `toContainText` on the whole block. The block always contains the 'Requested' value, and when nothing is stored it also contains 'Nothing is saved for this conversation yet, so it follows its agent, then the system default.' (session-model-view.tsx:121-124).",
+        "falsePassOrFail": "In SCN-SYS-011 and neg-sys-016, requested and effective are both bdd-provider-c/qwen-5-turbo. A build whose effective model never resolves (the 'No model can answer' branch) passes on the requested text alone. In SCN-SYS-016, the origin 'system default' is matched by the explanatory sentence, so a build that reports origin 'configured fallback' or no origin passes. The contract comparator for SCN-SYS-011 is 'exact labels'.",
+        "suggestedFix": "Wait for the block's aria-busy to become 'false', then require session-config-effective-model, session-config-effective-origin and (when expected) session-config-requested by testid with exact text. Remove the whole-block fallback."
+      },
+      {
+        "severity": "WARNING",
+        "file": "tests/bdd/steps/live-model-choice.steps.ts",
+        "line": 663,
+        "claim": "'the change is refused with a reason mentioning {string}' joins every refusal text and checks two things separately: some text matches /HTTP 4\\d\\d/, and some text contains the needle. For the override case, tryOverride (tests/bdd/support/s1-ui.ts:319-342) pushes the picker option's visible text before the HTTP result. It also builds the POST body by spreading the whole GET agent-config response, which may be rejected for reasons unrelated to the model.",
+        "falsePassOrFail": "Suppose the picker labels claude-5-retired 'not offered' but the server returns, say, 400 for a body-shape error, and would actually accept an unoffered model. The step still passes, and the later steps (effective model openai, no claude-5-retired request) are consistent with that. The server-side refusal of SCN-SYS-016 is then never proven.",
+        "suggestedFix": "Assert on the HTTP refusal alone: status 422 and a body containing the needle (or the error code model_not_offered). Use a minimal body {agent_id, model} so that the only reason for a refusal is the model."
+      },
+      {
+        "severity": "WARNING",
+        "file": "tests/bdd/steps/live-model-choice.steps.ts",
+        "line": 739,
+        "claim": "'the console wrote none of the settings ...' runs right after operatorChange returns, which happens once the confirmation is visible (steps:205-207). Nothing waits for a settle window, unlike the 3 s NO_WRITE_WINDOW_MS used for CTL-SYS-001. The ordered-write check (steps:731-737) also stops at changeWritesTo.",
+        "falsePassOrFail": "SCN-SYS-007 passes for a build that writes llm.default_provider, llm.model or run_policy.global asynchronously after the acknowledgement, for example in an effect fired by the confirmation. That is exactly the competing write the scenario exists to exclude.",
+        "suggestedFix": "Before asserting, wait NO_WRITE_WINDOW_MS after the acknowledgement, then check both the forbidden-key list and the full write list from changeWritesFrom to the end of the log."
+      },
+      {
+        "severity": "WARNING",
+        "file": "tests/bdd/steps/live-model-choice.steps.ts",
+        "line": 505,
+        "claim": "Receipt model assertions require an exact whitespace token equal to 'provider/model'. The receipt renders `${served_provider}/${served_model}` (frontend/src/features/chat/components/answer-receipt.tsx:25-27), and served_model is whatever the stub echoes as the request's model (tests/integration/live/stub_llm.rs:390-401). The harness itself allows the wire model to be bare or provider-prefixed (tests/bdd/support/stubs.ts:80-83), and tests/bdd/fixtures/bdd-chat.json keys 8 fixtures on 'openai/gpt-5.4-mini'.",
+        "falsePassOrFail": "False-fail on a correct build. On any resolution path that sends the prefixed id, the receipt shows 'openai/openai/gpt-5.4-mini' and 'the answer's receipt names \"openai/gpt-5.4-mini\"' fails. This includes the M1/M2 health scenarios, which would turn those controls INVALID.",
+        "suggestedFix": "Establish from source which wire form each S1 path sends and pin it in the oracle. Otherwise, normalise the provider prefix in the product's receipt or in the comparison, applying the same rule wireModelMatches already uses."
+      },
+      {
+        "severity": "WARNING",
+        "file": "tests/bdd/support/s1-ui.ts",
+        "line": 391,
+        "claim": "newestReceipt takes page.getByTestId('answer-receipt').last() and waits only for it to be visible. It is not tied to the message just sent. The callers then read innerText once, with no retry (steps:505, 548, 557). 'no answer's receipt names {string}' (steps:560-563) reads allInnerTexts with no wait at all.",
+        "falsePassOrFail": "If the new turn's receipt has not rendered yet, the previous turn's receipt is read, a false-fail in SCN-SYS-012 and SCN-SYS-015. In SCN-SYS-016, the two 'no answer's receipt names' checks pass trivially when no receipt has rendered yet.",
+        "suggestedFix": "Wait until the number of answer-receipt elements exceeds the count noted at send time, or scope the receipt to the assistant message holding the captured reply. Use retrying assertions (toHaveText or toContainText). For the negative receipt checks, first require one receipt per sent message."
+      },
+      {
+        "severity": "SUGGESTION",
+        "file": "tests/bdd/support/s1-ui.ts",
+        "line": 127,
+        "claim": "Conversation names ('Chat X', 'Chat Y') are reused across scenarios and across --repeat-each samples on one server and persistence store. threadRow(...).getByRole('button').first() picks the first sidebar row with that name. If the thread list includes server-persisted threads from earlier samples (not confirmed by this review), it can select a stale thread.",
+        "falsePassOrFail": "A message can go to the wrong conversation in SCN-SYS-013 and neg-sys-013. Most outcomes are false-fails, but a stale X whose override was already cleared could still answer from the default.",
+        "suggestedFix": "Add a per-sample suffix to thread names (for example the test's repeatEachIndex), or select the thread by the session id recorded at creation."
+      },
+      {
+        "severity": "SUGGESTION",
+        "file": "tests/bdd/playwright.config.ts",
+        "line": 57,
+        "claim": "The config sets `retries: process.env.CI ? 1 : 0` and trace 'on-first-retry'. Every boundary command passes `--retries 0`, which overrides the config, so the boundary meets the contract. A CI=1 run without the flag would quietly allow one retry.",
+        "falsePassOrFail": "No effect on the boundary as written. Outside the boundary, a sample that passes only on retry would be reported as passed.",
+        "suggestedFix": "Set retries: 0 unconditionally for this suite."
+      },
+      {
+        "severity": "SUGGESTION",
+        "file": "tests/bdd/features/live-model-choice.feature",
+        "line": 24,
+        "claim": "The contract's SCN-SYS-001 expectedTruthSource includes 'writes PUT then POST', but the SCN-SYS-001 scenario never asserts the browser write list. Only SCN-SYS-007 does.",
+        "falsePassOrFail": "SCN-SYS-001 can pass even if the held-acknowledgement path issues an extra or reordered write. SCN-SYS-007 still catches this on the non-held path.",
+        "suggestedFix": "After release, add the existing ordered-writes step to SCN-SYS-001, or record in the contract that SCN-SYS-007 carries that comparator."
+      }
+    ],
+    "reviewedWithoutDefect": [
+      "Auth-off: no step or support file sends Authorization, bearer, JWT or API-key headers (tests/bdd/support/api.ts directRequest and fetch calls send at most Content-Type). The env in tests/bdd/playwright.config.ts:122-147 (UAR_SECURITY__JWT_REQUIRED=false, SETTINGS_MUTATION_AUTH_REQUIRED=false, a dummy stub UAR_LLM__API_KEY, a JWT secret that is never used to mint a token, CREDENTIAL_ENCRYPTION_KEY) configures the system under test. It is not credential plumbing in the tests.",
+      "M1 (manager.rs:10452-10458, run_model with the provider segment stripped): on 'The receipt names the model the provider reported...' the receipt shows claude-5-haiku. Step 'names the serving model \"claude-5-haiku-20261101\"' then fails at modelIdOfToken/toContain, and the step before it (stub log) is unaffected. The health scenario's served model equals the requested one because the content fixtures echo it, so it passes. The control discriminates.",
+      "M2 (policy.rs:400, Utc::now() at admission, reached through server.rs:7789 and manager.rs:11479): the scenario waits at least 5.25 s after A's window (steps:141-146), and the comparator tolerance is 2 s (support/s1.ts:178-201). So the r2-before receipt time falls outside A's window, and the first failing step is the expected one. The health scenario has no since-time step. The control discriminates. The candidate's row time comes from set_value's updated_at = Utc::now() inside the harness window (settings/manager.rs set_value_locked), so the candidate itself passes.",
+      "The neg-sys-015 and neg-sys-017 jq judgements require every result to be status failed, the named step to be the first step with an error, every earlier step to be error-free, and the health scenario to pass with no skip or fixme annotations. That is not vacuous.",
+      "Positive and negative scenario commands rely on Playwright's exit code with --retries 0 and --repeat-each 3 (5 for PICK). A grep that matches nothing exits non-zero. No skip, fixme or only paths exist in the S1 steps, features or support. forbidOnly is on under CI.",
+      "Mutant diff check: scripts/worktree-new.sh keeps the tracked .claude/settings.local.json, so `git add -N . && git diff --name-only $C` lists only the patched file."
+    ]
+  }
+}

@@ -131,7 +131,7 @@ static/assets
 #
 # Only the regenerable LLM prompt cache is excluded: hash-named snapshots that
 # are ~37M of the directory's ~38M and are rebuilt on demand.
-.prometheus/knowledge/.prompt-snapshots/
+**/.prometheus/knowledge/.prompt-snapshots/
 
 # Eval harness: per-invocation timestamped run results are local artifacts;
 # only the committed baseline (evals/results/<suite>.baseline.json) is shared.

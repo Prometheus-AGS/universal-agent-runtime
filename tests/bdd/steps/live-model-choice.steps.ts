@@ -26,10 +26,12 @@ import {
   confirmClearOverride,
   conversationSection,
   createConversation,
+  errorCodeOf,
   finishSend,
   openEffectiveView,
   openSystemDefaultPanel,
-  newestReceipt,
+  receiptModelsInConversation,
+  receiptOfLastMessage,
   selectSystemDefault,
   sendWithoutWaiting,
   setOverride,
@@ -40,6 +42,7 @@ import {
   tokensOf,
   tryOverride,
 } from '../support/s1-ui';
+import type { RefusalObservation } from '../support/s1-ui';
 import {
   S1_STUBS,
   heldCount,
@@ -61,6 +64,53 @@ const { Given, When, Then } = createBdd(test);
 const HOLD_WINDOW_MS = 2_000;
 /** `timeComparator.separationSeconds` margin so a window never overlaps its predecessor. */
 const NO_WRITE_WINDOW_MS = 3_000;
+/**
+ * SCN-SYS-007: how long after the live route's acknowledgement the browser is still watched
+ * for a forbidden settings write (for example one fired by an effect of the confirmation).
+ * Same length as the no-write window of CTL-SYS-001-HELD-500.
+ */
+const POST_ACK_SETTLE_MS = NO_WRITE_WINDOW_MS;
+/** SCN-SYS-016: the runtime's refusal of an override its provider does not offer. */
+const OVERRIDE_REFUSAL_STATUS = 422;
+const OVERRIDE_REFUSAL_CODE = 'model_not_offered';
+
+/** The latest refused change of a scenario, recorded by the When step that made it. */
+const refusals = new WeakMap<S1Context, RefusalObservation>();
+
+/** A refused live-route request sent the way the console would send it. */
+function liveRouteRefusal(providerId: string, status: number, body: string, uiText: string | null): RefusalObservation {
+  return { target: 'live-default-route', requested: providerId, status, body, code: errorCodeOf(body), uiText, persisted: null };
+}
+
+/** A refusal reason in comparable words: lower case, with `model_not_offered` read as "model not offered". */
+function reasonWords(body: string): string {
+  return body.toLowerCase().replace(/_/g, ' ');
+}
+
+interface ReceiptModel {
+  provider: string;
+  served: string;
+}
+
+/** Splits a receipt model label `<served provider>/<served model>` at its first slash. */
+function parseReceiptModel(label: string): ReceiptModel {
+  const text = label.trim();
+  const slash = text.indexOf('/');
+  expect(slash, `a "<provider>/<model>" receipt label, got "${text}"`).toBeGreaterThan(0);
+  return { provider: text.slice(0, slash), served: text.slice(slash + 1) };
+}
+
+/**
+ * The served model id with the serving provider's own registry prefix removed. The stub
+ * reports the wire model it was asked for, which is either bare or `<provider>/<model>`
+ * (the rule `wireModelMatches` applies to the stub log), so a correct build may render
+ * `openai/openai/gpt-5.4-mini`. Only that exact prefix is removed; any other text stays and
+ * is compared as it is.
+ */
+function servedModelId(receipt: ReceiptModel): string {
+  const prefix = `${receipt.provider}/`;
+  return receipt.served.startsWith(prefix) ? receipt.served.slice(prefix.length) : receipt.served;
+}
 
 function livePath(providerId: string): string {
   return `/api/uar/providers/${providerId}/default`;
@@ -318,22 +368,20 @@ When('the operator tries to change the system default to {string}', async ({ s1 
   const { providerId } = splitQualifiedModel(target);
   const operator = await s1.operatorPage();
   await openSystemDefaultPanel(operator);
-  s1.refusalTexts = [];
   s1.changeWritesFrom = s1.writes.length;
   const offered = await systemDefaultOptionState(operator, target);
   // The picker must not let the operator choose it; a build that offers it fails here.
   expect(offered.state, `the system default picker must not offer ${target} (it showed: ${offered.text})`).not.toBe('selectable');
-  if (offered.text) s1.refusalTexts.push(offered.text);
   // The harness then sends the request the console would, so the runtime's own refusal
-  // and its reason are observed.
+  // and its reason are observed. Only that response can satisfy the refusal step.
   const direct = await directRequest('POST', livePath(providerId));
-  s1.refusalTexts.push(`HTTP ${direct.status} ${direct.text}`);
+  refusals.set(s1, liveRouteRefusal(providerId, direct.status, direct.text, offered.text || null));
   s1.changeWritesTo = s1.writes.length;
 });
 
 When('a direct request sets the default provider to {string}', async ({ s1 }, providerId: string) => {
   const response = await directRequest('POST', livePath(providerId));
-  s1.refusalTexts = [`HTTP ${response.status} ${response.text}`];
+  refusals.set(s1, liveRouteRefusal(providerId, response.status, response.text, null));
 });
 
 When(
@@ -387,7 +435,7 @@ When('I set the model override of this conversation to {string}', async ({ page,
 });
 
 When('I try to set the model override of this conversation to {string}', async ({ page, s1 }, model: string) => {
-  s1.refusalTexts = await tryOverride(page, s1, model);
+  refusals.set(s1, await tryOverride(page, s1, model));
 });
 
 When('I confirm the change', async ({ page, s1 }) => {
@@ -498,19 +546,20 @@ Then('the stub holds no reply', async ({}) => {
 // Receipts and views
 // ---------------------------------------------------------------------------
 
-Then("the answer's receipt names {string} and the origin {string}", async ({ page }, model: string, origin: string) => {
-  const receipt = await newestReceipt(page);
-  const modelField = receipt.getByTestId(TID.receiptModel);
-  await expect(modelField).toBeVisible();
-  expect(tokensOf(await modelField.innerText()), 'the receipt model field').toContain(model);
-  await expect(receipt.getByTestId(TID.receiptOrigin)).toHaveText(exactly(origin));
+Then("the answer's receipt names {string} and the origin {string}", async ({ page, s1 }, model: string, origin: string) => {
+  const { providerId, modelId } = splitQualifiedModel(model);
+  const receipt = await receiptOfLastMessage(page, s1);
+  const shown = parseReceiptModel(receipt.model);
+  expect(shown.provider, `the serving provider in the receipt "${receipt.model}"`).toBe(providerId);
+  expect(servedModelId(shown), `the served model in the receipt "${receipt.model}"`).toBe(modelId);
+  expect(receipt.origin, 'the receipt shows an origin').not.toBeNull();
+  expect(receipt.origin ?? '', 'the receipt origin').toMatch(exactly(origin));
 });
 
 Then("the answer's receipt shows the time the system default became {string}", async ({ page, s1 }, pair: string) => {
-  const receipt = await newestReceipt(page);
-  const since = receipt.getByTestId(TID.receiptSince);
-  await expect(since).toBeVisible();
-  const shown = await since.innerText();
+  const receipt = await receiptOfLastMessage(page, s1);
+  expect(receipt.since, 'the receipt shows since when the system default applies').not.toBeNull();
+  const shown = receipt.since ?? '';
   const clock = parseClock(shown);
   expect(clock, `a HH:MM:SS time in the receipt, got "${shown}"`).not.toBeNull();
   const window = s1.latestWindowFor(pair);
@@ -525,10 +574,9 @@ Then("the answer's receipt shows the time the system default became {string}", a
 Then(
   "the answer's receipt does not show the time the system default became {string}",
   async ({ page, s1 }, pair: string) => {
-    const receipt = await newestReceipt(page);
-    const since = receipt.getByTestId(TID.receiptSince);
-    await expect(since).toBeVisible();
-    const shown = await since.innerText();
+    const receipt = await receiptOfLastMessage(page, s1);
+    expect(receipt.since, 'the receipt shows since when the system default applies').not.toBeNull();
+    const shown = receipt.since ?? '';
     const clock = parseClock(shown);
     expect(clock, `a HH:MM:SS time in the receipt, got "${shown}"`).not.toBeNull();
     if (clock === null) return;
@@ -540,25 +588,27 @@ Then(
 
 Then(
   "the answer's receipt names the serving model {string} on {string}",
-  async ({ page }, servedModel: string, providerId: string) => {
-    const receipt = await newestReceipt(page);
-    const modelField = receipt.getByTestId(TID.receiptModel);
-    await expect(modelField).toBeVisible();
-    const text = await modelField.innerText();
-    expect(tokensOf(text).map(modelIdOfToken), 'model ids in the receipt model field').toContain(servedModel);
-    expect(text, 'the serving provider in the receipt model field').toContain(providerId);
+  async ({ page, s1 }, servedModel: string, providerId: string) => {
+    const receipt = await receiptOfLastMessage(page, s1);
+    const shown = parseReceiptModel(receipt.model);
+    expect(shown.provider, `the serving provider in the receipt "${receipt.model}"`).toBe(providerId);
+    // Exact: the provider-reported id, never the requested id (M1 renders the requested one).
+    expect(servedModelId(shown), `the served model in the receipt "${receipt.model}"`).toBe(servedModel);
   },
 );
 
-Then("the answer's receipt does not name {string} as the serving model", async ({ page }, modelId: string) => {
-  const receipt = await newestReceipt(page);
-  const modelField = receipt.getByTestId(TID.receiptModel);
-  await expect(modelField).toBeVisible();
-  expect(tokensOf(await modelField.innerText()).map(modelIdOfToken), 'model ids in the receipt model field').not.toContain(modelId);
+Then("the answer's receipt does not name {string} as the serving model", async ({ page, s1 }, modelId: string) => {
+  const receipt = await receiptOfLastMessage(page, s1);
+  const shown = parseReceiptModel(receipt.model);
+  // Strict: the last path segment of the served model, so no prefix form can hide the id.
+  expect(modelIdOfToken(shown.served), `the served model in the receipt "${receipt.model}"`).not.toBe(modelId);
 });
 
-Then("no answer's receipt names {string}", async ({ page }, modelId: string) => {
-  const fields = await page.getByTestId(TID.receiptModel).allInnerTexts();
+Then("no answer's receipt names {string}", async ({ page, s1 }, modelId: string) => {
+  // The answer to the message just sent must have rendered its receipt first, so this
+  // cannot pass merely because no receipt has rendered yet.
+  await receiptOfLastMessage(page, s1);
+  const fields = await receiptModelsInConversation(page);
   expect(fields.join('\n'), 'receipt model fields in this conversation').not.toContain(modelId);
 });
 
@@ -570,18 +620,15 @@ async function expectEffectiveView(
 ): Promise<void> {
   await closeSessionSheet(page);
   await switchToConversation(page, s1, name);
+  // Returns once the block has left its loading state (aria-busy="false").
   const view = await openEffectiveView(page);
   try {
-    const effectiveModel = view.getByTestId(TID.sessionEffectiveModel);
-    if ((await effectiveModel.count()) > 0) await expect(effectiveModel).toHaveText(exactly(expected.effective));
-    else await expect(view).toContainText(expected.effective);
-    const origin = view.getByTestId(TID.sessionEffectiveOrigin);
-    if ((await origin.count()) > 0) await expect(origin).toHaveText(exactly(expected.origin));
-    else await expect(view).toContainText(expected.origin);
+    // Each value is read from its own field, never from the block's whole text: the block
+    // also shows the requested model and, with nothing saved, a sentence naming the system default.
+    await expect(view.getByTestId(TID.sessionEffectiveModel), 'the effective model field').toHaveText(exactly(expected.effective));
+    await expect(view.getByTestId(TID.sessionEffectiveOrigin), 'the effective origin field').toHaveText(exactly(expected.origin));
     if (expected.requested !== undefined) {
-      const requested = view.getByTestId(TID.sessionRequested);
-      if ((await requested.count()) > 0) await expect(requested).toHaveText(exactly(expected.requested));
-      else await expect(view).toContainText(expected.requested);
+      await expect(view.getByTestId(TID.sessionRequested), 'the requested model field').toHaveText(exactly(expected.requested));
     }
   } finally {
     await closeSessionSheet(page);
@@ -660,11 +707,27 @@ Then('an error says the system default was not changed', async ({ s1 }) => {
   await expect(error).toContainText(/not changed/i);
 });
 
+/**
+ * Judged on the response to the specific refused request only; the picker's label never
+ * counts. An override refusal (SCN-SYS-016) must be the runtime's 422 `model_not_offered`
+ * and must leave the conversation's saved model unchanged.
+ */
 Then('the change is refused with a reason mentioning {string}', async ({ s1 }, needle: string) => {
-  const texts = s1.refusalTexts;
-  expect(texts.length, 'the refused request or visible refusal was recorded').toBeGreaterThan(0);
-  expect(texts.join('\n'), 'a request was refused with a 4xx status').toMatch(/HTTP 4\d\d/);
-  expect(texts.join('\n').toLowerCase(), 'the refusal reason').toContain(needle.toLowerCase());
+  const refusal = refusals.get(s1);
+  expect(refusal, 'a refused change was recorded earlier in this scenario').toBeDefined();
+  if (!refusal) return;
+  const shown = `HTTP ${refusal.status} ${refusal.body} (requested ${refusal.requested}; picker showed "${refusal.uiText ?? ''}")`;
+  expect(refusal.status, `the refused request answered a client error: ${shown}`).toBeGreaterThanOrEqual(400);
+  expect(refusal.status, `the refused request answered a client error: ${shown}`).toBeLessThan(500);
+  if (refusal.target === 'conversation-override') {
+    expect(refusal.status, `the override save status: ${shown}`).toBe(OVERRIDE_REFUSAL_STATUS);
+    expect(refusal.code, `the override save error code: ${shown}`).toBe(OVERRIDE_REFUSAL_CODE);
+    expect(refusal.persisted, 'the saved model was read around the refused save').not.toBeNull();
+    const persisted = refusal.persisted ?? { before: null, after: null };
+    expect(persisted.after, 'the model saved for the conversation after the refused save').toBe(persisted.before);
+    expect(persisted.after, 'the refused model was not saved').not.toBe(refusal.requested);
+  }
+  expect(reasonWords(refusal.body), `the reason in the refused response: ${shown}`).toContain(needle.toLowerCase());
 });
 
 Then(
@@ -739,6 +802,13 @@ Then(
 Then(
   'the console wrote none of the settings {string}, {string} and {string}',
   async ({ s1 }, first: string, second: string, third: string) => {
+    // Watch for a settle window after the acknowledgement, so a forbidden write sent
+    // shortly after it (for example by an effect of the confirmation) is recorded too.
+    const acknowledgedAt = s1.latestChangeEnd();
+    expect(acknowledgedAt, 'the live route was acknowledged earlier in this scenario').toBeDefined();
+    const remaining = (acknowledgedAt ?? 0) + POST_ACK_SETTLE_MS - Date.now();
+    if (remaining > 0) await (await s1.operatorPage()).waitForTimeout(remaining);
+    // The whole write log of the scenario, through the end of the settle window.
     for (const key of [first, second, third]) {
       const offending = s1.writes.filter(
         (write) =>

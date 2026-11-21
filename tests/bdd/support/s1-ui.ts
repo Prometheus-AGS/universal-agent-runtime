@@ -38,6 +38,23 @@ export const TID = {
 const CONVERSATION = 'section[aria-label="Conversation"]';
 const THREAD_LIST = '[aria-label="Thread list"]';
 const REPLY_PATTERN = /bdd-reply-[A-Za-z0-9._-]+/g;
+/** Root of one assistant turn in the transcript (`enhanced-thread.tsx` AssistantMessage). */
+const ASSISTANT_TURN = '[data-role="assistant"]';
+/** How long a receipt may take to render under the answer to the message just sent. */
+const RECEIPT_TIMEOUT_MS = 15_000;
+const RECEIPT_POLL_MS = 100;
+
+/**
+ * The message most recently sent in a scenario and the assistant turns the transcript held
+ * just before it was sent, so its receipt is read from its own answer and never from an
+ * earlier turn. Kept here, keyed by the scenario's context, so `S1Context` stays unchanged.
+ */
+interface SentMessage {
+  readonly message: string;
+  readonly assistantIdsBefore: ReadonlySet<string>;
+}
+
+const lastSent = new WeakMap<S1Context, SentMessage>();
 
 // ---------------------------------------------------------------------------
 // Transcript
@@ -61,9 +78,14 @@ export async function newestReply(page: Page): Promise<string | null> {
   return repliesIn(await conversationText(page)).at(-1) ?? null;
 }
 
-/** Notes how many replies the transcript already holds, before a message is sent. */
+/**
+ * Notes how many replies the transcript already holds, and which assistant turns it shows,
+ * before a message is sent.
+ */
 export async function noteRepliesBefore(page: Page, s1: S1Context, message: string): Promise<void> {
   s1.replyCountBefore.set(message, repliesIn(await conversationText(page)).length);
+  const ids = (await assistantTurns(page)).map((turn) => turn.id).filter((id): id is string => id !== null);
+  lastSent.set(s1, { message, assistantIdsBefore: new Set(ids) });
 }
 
 /**
@@ -279,6 +301,8 @@ function sessionModelTrigger(sheet: Locator): Locator {
 }
 
 const AGENT_CONFIG_PATH = /^\/api\/uar\/sessions\/[^/]+\/agent-config$/;
+/** The same path, capturing the (encoded) session id. */
+const AGENT_CONFIG_SESSION = /^\/api\/uar\/sessions\/([^/]+)\/agent-config$/;
 
 /** Sets the current conversation's model override through the sheet; returns the save response. */
 async function saveOverrideThroughSheet(
@@ -310,36 +334,116 @@ export async function setOverride(page: Page, s1: S1Context, qualified: string):
 }
 
 /**
- * Tries to set an override the provider does not offer. The picker must show the
- * model absent or non-selectable (a build that offers it fails here); the harness
- * then sends the agent-config request the sheet would send, so the runtime's own
- * refusal and its reason are observed. Returns every text the refusal produced
- * and leaves the sheet open, so the previous effective value stays reachable.
+ * What one refused change produced: the response to the specific refused request and,
+ * for a conversation override, the model saved for the conversation before and after it.
+ * The picker's visible text is kept for messages only; it never proves a refusal.
  */
-export async function tryOverride(page: Page, s1: S1Context, qualified: string): Promise<string[]> {
+export interface RefusalObservation {
+  readonly target: 'live-default-route' | 'conversation-override';
+  /** The provider-qualified model or provider the refused request asked for. */
+  readonly requested: string;
+  readonly status: number;
+  readonly body: string;
+  /** The `code` field of a JSON error body, or null. */
+  readonly code: string | null;
+  readonly uiText: string | null;
+  /** Conversation override only: `model` of `GET .../agent-config` around the refused save. */
+  readonly persisted: { readonly before: string | null; readonly after: string | null } | null;
+}
+
+/** The `code` field of a JSON error body, or null when the body is not such an object. */
+export function errorCodeOf(body: string): string | null {
+  try {
+    const parsed: unknown = JSON.parse(body);
+    if (parsed && typeof parsed === 'object' && 'code' in parsed) {
+      const code = (parsed as { code: unknown }).code;
+      return typeof code === 'string' ? code : null;
+    }
+  } catch {
+    // A plain-text body has no code.
+  }
+  return null;
+}
+
+function postedModelOf(postData: string | null): string | null {
+  if (postData === null) return null;
+  try {
+    const parsed: unknown = JSON.parse(postData);
+    const model = parsed && typeof parsed === 'object' ? (parsed as { model?: unknown }).model : null;
+    return typeof model === 'string' ? model : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Tries to set an override the provider does not offer. The picker must show the
+ * model absent or non-selectable (a build that offers it fails here). The harness
+ * then sends the agent-config save the sheet would send, with a minimal body
+ * `{agent_id, model}` so the model is the only possible reason for a refusal, and
+ * observes that exact request's response through `page.waitForResponse`. It reads
+ * the conversation's saved model before and after the save, so a refusal that still
+ * persisted the model is caught. Leaves the sheet open, so the previous effective
+ * value stays reachable.
+ */
+export async function tryOverride(page: Page, s1: S1Context, qualified: string): Promise<RefusalObservation> {
   const sheet = await openSessionSheet(page);
   const offered = await optionState(page, sessionModelTrigger(sheet), qualified);
   expect(offered.state, `the picker must not offer ${qualified} (it showed: ${offered.text})`).not.toBe('selectable');
-  const texts: string[] = [];
-  if (offered.text) texts.push(offered.text);
   const sessionId = s1.lastSessionId;
   if (!sessionId) throw new Error('no session id was observed, so the override request cannot be sent');
-  const sent = await page.evaluate(
+  const saved = page.waitForResponse(
+    (response) => {
+      const request = response.request();
+      const match = AGENT_CONFIG_SESSION.exec(new URL(response.url()).pathname);
+      return (
+        request.method() === 'POST' &&
+        match !== null &&
+        decodeURIComponent(match[1] ?? '') === sessionId &&
+        postedModelOf(request.postData()) === qualified
+      );
+    },
+    { timeout: 15_000 },
+  );
+  const persisted = await page.evaluate(
     async ({ id, model }) => {
       const url = `/api/uar/sessions/${encodeURIComponent(id)}/agent-config`;
-      const current = await fetch(url);
-      const config = current.ok && current.status !== 204 ? await current.json() : { agent_id: 'default-agent' };
-      const response = await fetch(url, {
+      const readSaved = async (): Promise<{ status: number; agentId: string | null; model: string | null }> => {
+        const response = await fetch(url);
+        if (response.status !== 200) return { status: response.status, agentId: null, model: null };
+        const config = (await response.json()) as { agent_id?: unknown; model?: unknown };
+        return {
+          status: response.status,
+          agentId: typeof config.agent_id === 'string' ? config.agent_id : null,
+          model: typeof config.model === 'string' ? config.model : null,
+        };
+      };
+      const before = await readSaved();
+      await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...config, model }),
+        body: JSON.stringify({ agent_id: before.agentId ?? 'default-agent', model }),
       });
-      return { status: response.status, text: await response.text() };
+      const after = await readSaved();
+      return { before, after };
     },
     { id: sessionId, model: qualified },
   );
-  texts.push(`HTTP ${sent.status} ${sent.text}`);
-  return texts;
+  const response = await saved;
+  const body = await response.text();
+  for (const [when, read] of [['before', persisted.before], ['after', persisted.after]] as const) {
+    // 200 is a saved config and 204 is none; anything else means the saved model is unknown.
+    expect([200, 204], `GET agent-config ${when} the refused save answered ${read.status}`).toContain(read.status);
+  }
+  return {
+    target: 'conversation-override',
+    requested: qualified,
+    status: response.status(),
+    body,
+    code: errorCodeOf(body),
+    uiText: offered.text || null,
+    persisted: { before: persisted.before.model, after: persisted.after.model },
+  };
 }
 
 /** Starts clearing the current conversation's override and returns the open sheet's preview. */
@@ -375,11 +479,17 @@ export async function confirmClearOverride(page: Page, s1: S1Context): Promise<v
   if (conversation) conversation.override = null;
 }
 
-/** Opens the sheet on the current conversation and returns its effective-model block. */
+/**
+ * Opens the sheet on the current conversation and returns its effective-model block once
+ * the runtime's answer has loaded. The block is visible while it still says "Checking which
+ * model answers…" (`aria-busy="true"`), so the wait is for `aria-busy="false"`. The failure
+ * state (Retry alert) carries no `aria-busy` and therefore fails here.
+ */
 export async function openEffectiveView(page: Page): Promise<Locator> {
   const sheet = await openSessionSheet(page);
   const effective = sheet.getByTestId(TID.effective);
   await expect(effective).toBeVisible({ timeout: 10_000 });
+  await expect(effective, 'the effective model has loaded').toHaveAttribute('aria-busy', 'false', { timeout: 15_000 });
   return effective;
 }
 
@@ -387,11 +497,83 @@ export async function openEffectiveView(page: Page): Promise<Locator> {
 // Receipts
 // ---------------------------------------------------------------------------
 
-/** The receipt under the newest assistant turn. */
-export async function newestReceipt(page: Page): Promise<Locator> {
-  const receipt = page.getByTestId(TID.receipt).last();
-  await expect(receipt).toBeVisible({ timeout: 15_000 });
-  return receipt;
+/** The text of one rendered receipt's fields; a field the receipt does not render is null. */
+export interface ReceiptFields {
+  /** `answer-receipt-model`: `<served provider>/<served model>` as the product renders it. */
+  readonly model: string;
+  readonly origin: string | null;
+  readonly since: string | null;
+}
+
+interface AssistantTurn {
+  readonly id: string | null;
+  readonly text: string;
+  readonly receipts: readonly ReceiptFields[];
+}
+
+/**
+ * One atomic snapshot of the assistant turns in the transcript: each turn's message id, its
+ * text, and the fields of every receipt rendered inside it. Read in one browser call, so a
+ * turn's id, text and receipt always belong together.
+ */
+async function assistantTurns(page: Page): Promise<AssistantTurn[]> {
+  return conversationSection(page)
+    .locator(ASSISTANT_TURN)
+    .evaluateAll(
+      (nodes, ids) =>
+        nodes.map((node) => ({
+          id: node.getAttribute('data-message-id'),
+          text: node.textContent ?? '',
+          receipts: Array.from(node.querySelectorAll(`[data-testid="${ids.receipt}"]`)).map((receipt) => ({
+            model: receipt.querySelector(`[data-testid="${ids.model}"]`)?.textContent ?? '',
+            origin: receipt.querySelector(`[data-testid="${ids.origin}"]`)?.textContent ?? null,
+            since: receipt.querySelector(`[data-testid="${ids.since}"]`)?.textContent ?? null,
+          })),
+        })),
+      { receipt: TID.receipt, model: TID.receiptModel, origin: TID.receiptOrigin, since: TID.receiptSince },
+    );
+}
+
+/**
+ * The answer to the message just sent: the newest assistant turn that was not in the
+ * transcript when the message was sent and that shows the reply text captured for it.
+ */
+function answerTurnOf(turns: readonly AssistantTurn[], sent: SentMessage, reply: string): AssistantTurn | null {
+  return turns.filter((turn) => turn.id !== null && !sent.assistantIdsBefore.has(turn.id) && turn.text.includes(reply)).at(-1) ?? null;
+}
+
+/**
+ * The receipt under the answer to the message most recently sent in this scenario. Waits
+ * until that answer's own receipt has rendered (an earlier turn's receipt never stands in
+ * for it) and requires exactly one receipt there. Fails when the answer shows no receipt.
+ */
+export async function receiptOfLastMessage(page: Page, s1: S1Context): Promise<ReceiptFields> {
+  const sent = lastSent.get(s1);
+  if (!sent) throw new Error('no message was sent in this scenario, so there is no answer receipt to read');
+  const reply = s1.replyShown.get(sent.message);
+  if (!reply) throw new Error(`the reply to "${sent.message}" was not captured, so its answer cannot be identified`);
+  const deadline = Date.now() + RECEIPT_TIMEOUT_MS;
+  for (;;) {
+    const answer = answerTurnOf(await assistantTurns(page), sent, reply);
+    if (answer && answer.receipts.length > 1) {
+      throw new Error(`the answer to "${sent.message}" shows ${answer.receipts.length} receipts, expected one`);
+    }
+    const receipt = answer?.receipts[0];
+    if (receipt) return receipt;
+    if (Date.now() > deadline) {
+      throw new Error(
+        answer
+          ? `the answer to "${sent.message}" rendered no receipt within ${RECEIPT_TIMEOUT_MS} ms`
+          : `no new assistant turn showing "${reply}" for "${sent.message}" within ${RECEIPT_TIMEOUT_MS} ms`,
+      );
+    }
+    await page.waitForTimeout(RECEIPT_POLL_MS);
+  }
+}
+
+/** The model field of every receipt rendered in the current conversation's transcript. */
+export async function receiptModelsInConversation(page: Page): Promise<string[]> {
+  return (await assistantTurns(page)).flatMap((turn) => turn.receipts.map((receipt) => receipt.model));
 }
 
 /** Whitespace-separated tokens of an element's text. */
