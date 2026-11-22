@@ -55,6 +55,17 @@ if [ "$arch" = x86_64 ]; then
     tar -xOzf cargo-wasi.crate "$crate-0.1.28/src/binary" > "$CARGO_HOME/bin/cargo-wasi"
     chmod 0755 "$CARGO_HOME/bin/cargo-wasi"
 else
-    # Resolve a current rustix for the published source fallback on this nightly.
-    cargo install --version '=0.1.28' cargo-wasi
+    # The published lock's rustix does not build on this nightly, so resolve afresh, but
+    # hold filetime at 0.2.29: 0.2.30 (2026-11-16) needs `fs_set_times`, which is still
+    # unstable on the pinned toolchain.
+    curl --proto '=https' -fsSLo cargo-wasi.crate \
+        "https://static.crates.io/crates/cargo-wasi/cargo-wasi-0.1.28.crate"
+    printf '%s\n' '359b344de1f1da05c5baa1a66ec9765b0942c781d69530ecf47a0fb01cbe05a6  cargo-wasi.crate' | sha256sum -c -
+    tar -xzf cargo-wasi.crate
+    (
+        cd cargo-wasi-0.1.28
+        cargo generate-lockfile
+        cargo update --package filetime --precise 0.2.29
+        cargo install --locked --path .
+    )
 fi
