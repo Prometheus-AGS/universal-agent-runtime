@@ -1,0 +1,430 @@
+[
+  {
+    "description": "  As the people who rely on live model choice\n  I want each promise to be checked against an input a wrong build would get wrong\n  So that a pass means the behaviour is real and the checks can tell right from wrong",
+    "elements": [
+      {
+        "description": "",
+        "id": "live-model-choice,-negative-controls;two-conversations-sharing-one-agent-stay-independent",
+        "keyword": "Scenario",
+        "line": 99,
+        "name": "Two conversations sharing one agent stay independent",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 16,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 237000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 11000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 100,
+            "name": "the system default model is \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 23000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 101,
+            "name": "the conversation \"Chat X\" and the conversation \"Chat Y\" both use the agent \"Default Assistant\"",
+            "result": {
+              "status": "passed",
+              "duration": 1537000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 102,
+            "name": "I switch to the conversation \"Chat X\"",
+            "result": {
+              "status": "passed",
+              "duration": 116000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 103,
+            "name": "I set the model override of this conversation to \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 818000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 104,
+            "name": "I switch to the conversation \"Chat Y\"",
+            "result": {
+              "status": "passed",
+              "duration": 113000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 105,
+            "name": "I send the message \"S1 c013\"",
+            "result": {
+              "status": "failed",
+              "duration": 124930000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice-controls.feature.spec.js:89:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 106,
+            "name": "the reply to \"S1 c013\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 107,
+            "name": "the agent \"Default Assistant\" still has no model of its own",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 108,
+            "name": "the global policy still has no model",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 7857000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 7915000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice,-negative-controls;two-conversations-sharing-one-agent-stay-independent",
+        "keyword": "Scenario",
+        "line": 99,
+        "name": "Two conversations sharing one agent stay independent",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 16,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 187000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 10000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 100,
+            "name": "the system default model is \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 21000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 101,
+            "name": "the conversation \"Chat X\" and the conversation \"Chat Y\" both use the agent \"Default Assistant\"",
+            "result": {
+              "status": "passed",
+              "duration": 1693000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 102,
+            "name": "I switch to the conversation \"Chat X\"",
+            "result": {
+              "status": "passed",
+              "duration": 99000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 103,
+            "name": "I set the model override of this conversation to \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 757000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 104,
+            "name": "I switch to the conversation \"Chat Y\"",
+            "result": {
+              "status": "passed",
+              "duration": 109000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 105,
+            "name": "I send the message \"S1 c013\"",
+            "result": {
+              "status": "failed",
+              "duration": 125006000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice-controls.feature.spec.js:89:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 106,
+            "name": "the reply to \"S1 c013\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 107,
+            "name": "the agent \"Default Assistant\" still has no model of its own",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 108,
+            "name": "the global policy still has no model",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 8006000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 8070000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice,-negative-controls;two-conversations-sharing-one-agent-stay-independent",
+        "keyword": "Scenario",
+        "line": 99,
+        "name": "Two conversations sharing one agent stay independent",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 16,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 200000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 10000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 100,
+            "name": "the system default model is \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 23000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 101,
+            "name": "the conversation \"Chat X\" and the conversation \"Chat Y\" both use the agent \"Default Assistant\"",
+            "result": {
+              "status": "passed",
+              "duration": 1709000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 102,
+            "name": "I switch to the conversation \"Chat X\"",
+            "result": {
+              "status": "passed",
+              "duration": 132000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 103,
+            "name": "I set the model override of this conversation to \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 776000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 104,
+            "name": "I switch to the conversation \"Chat Y\"",
+            "result": {
+              "status": "passed",
+              "duration": 106000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 105,
+            "name": "I send the message \"S1 c013\"",
+            "result": {
+              "status": "failed",
+              "duration": 124620000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice-controls.feature.spec.js:89:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 106,
+            "name": "the reply to \"S1 c013\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 107,
+            "name": "the agent \"Default Assistant\" still has no model of its own",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 108,
+            "name": "the global policy still has no model",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 7700000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 7765000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "live-model-choice,-negative-controls",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Live model choice, negative controls",
+    "tags": [],
+    "uri": "features/live-model-choice-controls.feature"
+  }
+]

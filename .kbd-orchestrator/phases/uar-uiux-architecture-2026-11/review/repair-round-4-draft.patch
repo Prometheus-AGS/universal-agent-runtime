@@ -1,0 +1,25 @@
+--- a/tests/bdd/support/s1-ui.ts
++++ b/tests/bdd/support/s1-ui.ts
+@@ -66,8 +66,21 @@
+   return page.locator(CONVERSATION);
+ }
+ 
++/**
++ * The transcript's shown text, one line per text node. Not innerText: that omits an answer
++ * the browser skips off-screen (`content-visibility: auto`), so the reply count would not
++ * grow when a new reply pushes an older one away. checkVisibility() still excludes
++ * display:none text and, by default, treats such a skipped answer as shown.
++ */
+ async function conversationText(page: Page): Promise<string> {
+-  return page.locator(CONVERSATION).innerText();
++  return page.locator(CONVERSATION).evaluate((root) => {
++    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
++    const lines: string[] = [];
++    while (walker.nextNode()) {
++      if (walker.currentNode.parentElement?.checkVisibility()) lines.push(walker.currentNode.nodeValue ?? '');
++    }
++    return lines.join('\n');
++  });
+ }
+ 
+ function repliesIn(text: string): string[] {

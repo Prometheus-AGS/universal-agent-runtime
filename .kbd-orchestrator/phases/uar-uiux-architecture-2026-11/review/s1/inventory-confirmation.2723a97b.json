@@ -1,0 +1,61 @@
+{
+  "candidateCommit": "2723a97bff615292802cf66925031b2862d87c9c",
+  "inventorySha256": "089cf63c830bd199d2a472e4ab17cc7b62226758a7b00ff9ff41ca212eda9a3d",
+  "inventoryConfirmed": true,
+  "inventoryNotes": [
+    "Check 1 PASS: candidateCommit equals HEAD (git rev-parse HEAD = 2723a97bff615292802cf66925031b2862d87c9c). `git status --porcelain --untracked-files=all -- . ':(exclude,glob)**/.kbd-orchestrator/**' ':(exclude,glob)**/.prometheus/**' ':(exclude)static'` returns empty.",
+    "Check 2 PASS: changedPaths (246 entries: 184 A, 3 D, 59 M; no duplicates, no renames) equals `git diff --name-status f2c9e36 HEAD -- . ':(exclude,glob)**/.kbd-orchestrator/**' ':(exclude,glob)**/.prometheus/**'`, status and path. A sorted diff of the two lists is empty. frontend/e2e/model-catalog-identity.spec.ts is still A against f2c9e36, so its status correctly does not change.",
+    "Check 3 PASS: `git diff --name-status ae01b21c HEAD` (no exclusions at all) is exactly `M frontend/e2e/model-catalog-identity.spec.ts`, 2 insertions and 2 deletions at lines 108-109. This matches leadFixes[-1] and supersededCandidates[-1]. git diff --stat ae01b21c HEAD over src, frontend/src, Cargo.toml/Cargo.lock, every package.json and the pnpm lockfiles is empty. No product source changed.",
+    "Check 4 PASS: recomputed with jq from catalog/provider_catalog.json (343 providers, every models field an array, every id a string). Provider/model pairs whose model id contains '/' = 4628. Distinct model ids containing '/' = 2207. The oracle catalog-identity.json expectedFromCatalog.modelIdsContainingSlash = 2207, so it denotes the distinct count. design.md:150 says the same ('2,207 ids containing a slash', counted alongside '3,827 distinct bare model ids'). The repaired expression `[...providersPerBareId.keys()].filter((modelId) => modelId.includes(\"/\")).length` counts distinct keys of the map built from every pair, so it computes 2207. sha256(catalog/provider_catalog.json) = ea7e74b3ba7d335e5710aec713e88972aa18825512f2c16030b9aeab95694276 = CATALOG_SNAPSHOT_SHA256 (frozen-fixtures.ts:36-37). The blob is identical at f2c9e36 and HEAD (12ea07b1), so the baseline worktree loads the same catalog.",
+    "Check 4, beyond the changed line: at attempt 1 the step failed at line 110 and never reached its last assertion. I recomputed it now. All three sharedBareIdSamples (claude-opus-5: 19 providers, claude-opus-4-6: 17, claude-fable-5: 21) match the catalog exactly as sorted sets. The step's other counts also recompute: 8170 pairs, 3827 distinct, 1123 shared by two or more providers. All four frozen fixture copies match FROZEN_SHA256, and catalog-identity.json is byte-identical to the openspec original (e63d3424...). Statically, the whole first step of SCN-IDN-001 now agrees with the frozen oracle.",
+    "contractDigest is now c172da51303538855fa553086a0b139422369785ea11e2920f8426be267a4486. That equals adopted-contract.json identity.contractDigest, the normalized digest of adopted-contract.json (jq -S -c 'del(.identity.contractDigest) | del(.identity.planRevision)' | shasum -a 256 = c172da51...), and the newest file in adopted/. The ae01b21c WARNING about the stale 6477e9a1 digest is closed.",
+    "WARNING (inventory text, does not change the verdict): inventory.unverified still reads 'No scenario, test, mutant or boundary command has run'. That is false now. Boundary attempt 1 ran commands 0-8 against ae01b21c (boundary/run.jsonl; supersededCandidates[-1] itself records it). The field also says nothing about pre-commit hooks at 2723a97b. The error understates verification rather than overstating it, and no boundary command reads the field, so it cannot cause a false PASS. It still makes the record self-contradictory.",
+    "NOTE: supersededCandidates[-1] says 'commands 0-7 PASS'. run.jsonl shows command 7 exiting 5, then 1, then 0 across two contract amendments (911b6abd, c172da51). decision-log.md records the reruns, but the inventory summary drops that qualification."
+  ],
+  "mutants": {
+    "M1": {
+      "patchShaMatches": true,
+      "appliesCleanly": true,
+      "touchesOnlyTarget": true,
+      "notes": "sha256 0073d40c677e8504ecf60da4e07b1c4eb612e2e1c8359a4a1d5be31dc1055aac matches the inventory, both on disk and at HEAD (git show HEAD:<patch> | shasum). The patch blob is identical at ae01b21c, HEAD and on disk (e69b913b). The target src/uar/runtime/manager.rs is byte-identical at ae01b21c, HEAD and on disk (blob 73b128dd). `git apply --check` (read-only, main tree, src clean) passes. `git apply --numstat` is 2/2 on src/uar/runtime/manager.rs only."
+    },
+    "M2": {
+      "patchShaMatches": true,
+      "appliesCleanly": true,
+      "touchesOnlyTarget": true,
+      "notes": "sha256 e527ad4eca6ca3002470bc48dedd589176c8e8a208e8a7e1476edf4b17010764 matches, both on disk and at HEAD. The patch blob is identical at ae01b21c, HEAD and on disk (22f45556). The target src/uar/domain/policy.rs is byte-identical at ae01b21c, HEAD and on disk (blob 5e31edb0). `git apply --check` passes. numstat is 1/1 on src/uar/domain/policy.rs only."
+    }
+  },
+  "dryWalk": {
+    "firstMechanicalFailure": null,
+    "notes": [
+      "Frozen inputs: all five sha256 values in the command prefix check OK at HEAD (shasum -a 256 -c). The bind clean-tree status returns empty. Once this file is written, its inventorySha256 and candidateCommit equal the values that commands 7, 8, 38 and 42 compare.",
+      "Commands 0-7 do not reference frontend/e2e or model-catalog-identity (I searched each command's argv). prepare-bdd builds frontend/src into static/ and the Rust binary. Neither includes frontend/e2e/. So decision-log.md's claim holds: 'Commands 0-7 exercised no input this change touches'. Command 0 is not rerun, but each later command repeats the HEAD == candidateCommit and clean-tree check inline, so the binding is re-established at 2723a97b at command 8.",
+      "Command 8 rsyncs the candidate's frontend/e2e/ into the baseline worktree, so the repaired spec reaches the baseline run. It deletes each baseline-scn-*.json with rm -f before the Playwright redirect, so the attempt-1 files still in P/boundary/ cannot be read as attempt-2 results. The test title passed to -g and the jq selector (spec line 76) did not change, so title matching is unaffected.",
+      "Hazard for a restart from index 0 or 2 (the planned resume point is index 8): ~/.claude/worktrees/uiux-baseline now exists, detached at f2c9e36e (git worktree list). scripts/worktree-new.sh:41 dies with 'target already exists', so a full rerun would fail mechanically at command 2 unless the worktree is removed first. The ae01b21c record's statement 'No uiux-baseline ... worktree exists' is no longer true.",
+      "Unchanged from the ae01b21c review and not mechanically judgeable from source: whether SCN-IDN-001 baseline PASS (later steps: GET /api/models against the f2c9e36 runtime, rendered row counts) completes within its 300 s timeout; whether mutant builds are warning-free apart from the ruled messages."
+    ]
+  },
+  "stepDefinitionReview": {
+    "verdict": "PASS",
+    "scope": "Only the repair diff ae01b21c..2723a97b (frontend/e2e/model-catalog-identity.spec.ts lines 108-109) is reviewed here. Everything else is carried forward from review/s1/inventory-confirmation.ae01b21c.json; no other S1 file changed between the two commits.",
+    "findings": [],
+    "changeReview": [
+      "frontend/e2e/model-catalog-identity.spec.ts:108-109: the assertion now counts distinct keys of providersPerBareId whose id contains '/'. The map is keyed by model.id over every provider's models array (lines 88-96), so its key set is exactly the distinct model ids. The count is 2207, which equals oracle.expectedFromCatalog.modelIdsContainingSlash. The oracle's meaning is confirmed independently by design.md:150 and by its sibling field distinctBareModelIds (3827, also a distinct count).",
+      "This is not a weakening. The pair count (8170) is still asserted exactly at line 97, and the slash check still pins a frozen number. The step is a fixture-to-catalog self-check that reads no product code, so the change cannot hide a product defect. It is identical on baseline and candidate, so it adds no false pass and removes the false FAIL observed in attempt 1 (Expected 2207, Received 4628).",
+      "The spread of a Map iterator follows the existing `[...providersPerBareId.values()]` at line 104, so it introduces no new type or transpile requirement. Only the assertion message text changed; no boundary comparator reads assertion messages."
+    ]
+  },
+  "carriedForward": [
+    "From the ae01b21c confirmation, unaffected by the repair: the step definition review of model-catalog-identity.spec.ts (negative-control error-text trace), both Playwright configs, and live-model-choice.steps.ts.",
+    "WARNING 1 (open): baseline-check-bdd only checks ok==false; a baseline FAIL cannot be told apart from NOT_RUNNABLE or a harness-setup failure. SCN-SYS-012's frozen basis is recorded as inaccurate in decision-log.md.",
+    "WARNING 5 (open): negative controls are judged by Playwright exit status, so BLOCKED and FAIL are indistinguishable without manual mapping.",
+    "WARNING 6 (open): the SCN-PICK-002 requirement that all 5 samples stay under 200 ms on a debug-profile runtime may fail falsely from timing variance.",
+    "WARNING (ae01b21c, open in substance): P/boundary/ is still created outside the packet; no command runs mkdir. It now exists and holds attempt-1 outputs, so it is present in this checkout.",
+    "Previous WARNING 4: the index.html guard covers only a missing file; bundle freshness still rests on command order.",
+    "Recorded open in decision-log.md: the embedded-store snapshot path does not apply projectCatalogModel. The lead later traced it as unreachable against the current server (no Rust emitter of entity.snapshot/entity.change).",
+    "CLOSED: the ae01b21c WARNING about inventory.contractDigest naming a superseded contract. It now names c172da51, the adopted contract.",
+    "CLOSED: the ae01b21c governance note about an unsigned amendment manifest. Every amendment under amendments/ now has a .sig, and decision-log.md records adoption through c172da51 (revision 6)."
+  ],
+  "verdict": "PASS"
+}

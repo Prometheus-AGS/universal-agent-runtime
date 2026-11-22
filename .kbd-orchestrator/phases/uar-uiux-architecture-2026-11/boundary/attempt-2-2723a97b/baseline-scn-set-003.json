@@ -1,0 +1,187 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.the-boss/commands/node",
+      "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/node_modules/@playwright/test/cli.js",
+      "test",
+      "-c",
+      "playwright.installed-settings-truth.config.ts",
+      "-g",
+      "SCN-SET-003 System default has one live control",
+      "--retries",
+      "0",
+      "--reporter=json"
+    ],
+    "configFile": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/playwright.installed-settings-truth.config.ts",
+    "rootDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results/settings-truth",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "settings-truth.spec.ts"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results/settings-truth",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+        "snapshotDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": "settings-truth.spec.ts",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:3013",
+          "headless": true,
+          "serviceWorkers": "block",
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "settings-truth.spec.ts",
+      "file": "settings-truth.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "SCN-SET-003 System default has one live control",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 4418,
+                  "error": {
+                    "message": "Error: {\"status\":\"updated\",\"key\":\"llm.default_provider\",\"namespace\":\"llm\",\"setting\":{\"id\":\"97c5f0a9-e9f1-4f07-bc87-132d05e9bff0\",\"settings_type_id\":\"4b42a423-d3f9-45ee-a19b-2efcbac5a263\",\"name\":\"Default LLM Provider ID\",\"key\":\"llm.default_provider\",\"data\":\"openai\",\"saved\":\"openai\",\"effective\":\"openai\",\"revision\":\"2026-11-21T20:32:25.999687000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-11-21T20:32:09.296878Z\",\"updated_at\":\"2026-11-21T20:32:25.999687Z\",\"source\":\"Api\",\"is_drift\":false}}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m422\u001b[39m\nReceived: \u001b[31m200\u001b[39m",
+                    "stack": "Error: {\"status\":\"updated\",\"key\":\"llm.default_provider\",\"namespace\":\"llm\",\"setting\":{\"id\":\"97c5f0a9-e9f1-4f07-bc87-132d05e9bff0\",\"settings_type_id\":\"4b42a423-d3f9-45ee-a19b-2efcbac5a263\",\"name\":\"Default LLM Provider ID\",\"key\":\"llm.default_provider\",\"data\":\"openai\",\"saved\":\"openai\",\"effective\":\"openai\",\"revision\":\"2026-11-21T20:32:25.999687000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-11-21T20:32:09.296878Z\",\"updated_at\":\"2026-11-21T20:32:25.999687Z\",\"source\":\"Api\",\"is_drift\":false}}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m422\u001b[39m\nReceived: \u001b[31m200\u001b[39m\n    at expectDefaultProviderWriteRefused (/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/settings-truth.spec.ts:95:35)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/settings-truth.spec.ts:175:3",
+                    "location": {
+                      "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/settings-truth.spec.ts",
+                      "column": 35,
+                      "line": 95
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 93 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 94 |\u001b[39m   \u001b[36mconst\u001b[39m text \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m response\u001b[33m.\u001b[39mtext()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 95 |\u001b[39m   expect(response\u001b[33m.\u001b[39mstatus()\u001b[33m,\u001b[39m text)\u001b[33m.\u001b[39mtoBe(\u001b[33mDEFAULT_PROVIDER_WRITE\u001b[39m\u001b[33m.\u001b[39mstatus)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 96 |\u001b[39m   \u001b[36mconst\u001b[39m body \u001b[33m=\u001b[39m \u001b[33mJSON\u001b[39m\u001b[33m.\u001b[39mparse(text) \u001b[36mas\u001b[39m \u001b[33mRecord\u001b[39m\u001b[33m<\u001b[39m\u001b[33mstring\u001b[39m\u001b[33m,\u001b[39m unknown\u001b[33m>\u001b[39m\u001b[33m;\u001b[39m\n \u001b[90m 97 |\u001b[39m   expect(body\u001b[33m.\u001b[39merror)\u001b[33m.\u001b[39mtoBe(\u001b[33mDEFAULT_PROVIDER_WRITE\u001b[39m\u001b[33m.\u001b[39mbody\u001b[33m.\u001b[39merror)\u001b[33m;\u001b[39m\n \u001b[90m 98 |\u001b[39m   expect(body\u001b[33m.\u001b[39mkey)\u001b[33m.\u001b[39mtoBe(\u001b[33mDEFAULT_PROVIDER_WRITE\u001b[39m\u001b[33m.\u001b[39mbody\u001b[33m.\u001b[39mkey)\u001b[33m;\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/settings-truth.spec.ts",
+                        "column": 35,
+                        "line": 95
+                      },
+                      "message": "Error: {\"status\":\"updated\",\"key\":\"llm.default_provider\",\"namespace\":\"llm\",\"setting\":{\"id\":\"97c5f0a9-e9f1-4f07-bc87-132d05e9bff0\",\"settings_type_id\":\"4b42a423-d3f9-45ee-a19b-2efcbac5a263\",\"name\":\"Default LLM Provider ID\",\"key\":\"llm.default_provider\",\"data\":\"openai\",\"saved\":\"openai\",\"effective\":\"openai\",\"revision\":\"2026-11-21T20:32:25.999687000Z\",\"apply\":\"next_turn\",\"application_status\":\"effective\",\"parent_id\":null,\"created_at\":\"2026-11-21T20:32:09.296878Z\",\"updated_at\":\"2026-11-21T20:32:25.999687Z\",\"source\":\"Api\",\"is_drift\":false}}\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m422\u001b[39m\nReceived: \u001b[31m200\u001b[39m\n\n  93 |   });\n  94 |   const text = await response.text();\n> 95 |   expect(response.status(), text).toBe(DEFAULT_PROVIDER_WRITE.status);\n     |                                   ^\n  96 |   const body = JSON.parse(text) as Record<string, unknown>;\n  97 |   expect(body.error).toBe(DEFAULT_PROVIDER_WRITE.body.error);\n  98 |   expect(body.key).toBe(DEFAULT_PROVIDER_WRITE.body.key);\n    at expectDefaultProviderWriteRefused (/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/settings-truth.spec.ts:95:35)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/settings-truth.spec.ts:175:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-21T20:32:21.750Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results/settings-truth/settings-truth-SCN-SET-003-61bfd-efault-has-one-live-control/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results/settings-truth/settings-truth-SCN-SET-003-61bfd-efault-has-one-live-control/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results/settings-truth/settings-truth-SCN-SET-003-61bfd-efault-has-one-live-control/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/settings-truth.spec.ts",
+                    "column": 35,
+                    "line": 95
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "5c0f90a730b69bceca34-bdbaaa7b7183d4da14d0",
+          "file": "settings-truth.spec.ts",
+          "line": 129,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-21T20:32:03.716Z",
+    "duration": 23327.355,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

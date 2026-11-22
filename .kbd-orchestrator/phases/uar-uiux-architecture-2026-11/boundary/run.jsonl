@@ -1,0 +1,74 @@
+{"index": 0, "id": "bind-candidate-tree", "kind": "run", "exit": 0, "seconds": 1.3}
+{"index": 1, "id": "prepare-bdd", "kind": "build", "exit": 0, "seconds": 1960.2, "ruledLinkerLines": 1, "generatedSummaries": ["warning: `universal-agent-runtime` (bin \"universal-agent-runtime\") generated 1 warning"], "warningStop": ["(!) Some chunks are larger than 1100 kB after minification. Consider:"]}
+{"index": 2, "id": "create-baseline-worktree", "kind": "run", "exit": 0, "seconds": 17.0}
+{"index": 3, "id": "init-baseline-submodules", "kind": "run", "exit": 0, "seconds": 254.1}
+{"index": 4, "id": "install-baseline-deps", "kind": "run", "exit": 0, "seconds": 36.3}
+{"index": 5, "id": "build-baseline-frontend", "kind": "build", "exit": 0, "seconds": 10.7, "ruledFrontendNotices": 5, "ruledLinkerLines": 0, "generatedSummaries": []}
+{"index": 6, "id": "build-baseline-server", "kind": "build", "exit": 0, "seconds": 1637.7, "ruledFrontendNotices": 0, "ruledLinkerLines": 1, "generatedSummaries": ["warning: `universal-agent-runtime` (bin \"universal-agent-runtime\") generated 1 warning"]}
+{"index": 7, "id": "baseline-check-bdd", "kind": "run", "exit": 5, "seconds": 4.4}
+{"index": 7, "id": "baseline-check-bdd", "kind": "run", "exit": 1, "seconds": 15.3}
+{"index": 7, "id": "baseline-check-bdd", "kind": "run", "exit": 0, "seconds": 29.8}
+{"index": 8, "id": "baseline-check-supporting", "kind": "run", "exit": 1, "seconds": 36.0}
+{"index": 8, "id": "baseline-check-supporting", "kind": "run", "exit": 0, "seconds": 195.0}
+{"index": 9, "id": "create-mutant-m1-worktree", "kind": "run", "exit": 0, "seconds": 12.6}
+{"index": 10, "id": "init-mutant-m1-submodules", "kind": "run", "exit": 0, "seconds": 361.6}
+{"index": 11, "id": "verify-mutant-m1-patch-digest", "kind": "run", "exit": 0, "seconds": 1.5}
+{"index": 12, "id": "apply-mutant-m1-patch", "kind": "run", "exit": 0, "seconds": 1.3}
+{"index": 13, "id": "verify-mutant-m1-diff", "kind": "run", "exit": 0, "seconds": 6.0}
+{"index": 14, "id": "install-mutant-m1-deps", "kind": "run", "exit": 1, "seconds": 42.7}
+{"index": 14, "id": "install-mutant-m1-deps", "kind": "run", "exit": 0, "seconds": 11.6}
+{"index": 15, "id": "build-mutant-m1", "kind": "build", "exit": 0, "seconds": 6062.0, "ruledFrontendNotices": 5, "ruledLinkerLines": 1, "generatedSummaries": ["warning: `universal-agent-runtime` (bin \"universal-agent-runtime\") generated 1 warning"]}
+{"index": 16, "id": "create-mutant-m2-worktree", "kind": "run", "exit": 0, "seconds": 67.6}
+{"index": 17, "id": "init-mutant-m2-submodules", "kind": "run", "exit": 0, "seconds": 757.5}
+{"index": 18, "id": "verify-mutant-m2-patch-digest", "kind": "run", "exit": 0, "seconds": 2.4}
+{"index": 19, "id": "apply-mutant-m2-patch", "kind": "run", "exit": 0, "seconds": 1.5}
+{"index": 20, "id": "verify-mutant-m2-diff", "kind": "run", "exit": 0, "seconds": 12.6}
+{"index": 21, "id": "install-mutant-m2-deps", "kind": "run", "exit": 0, "seconds": 126.7}
+{"index": 22, "id": "build-mutant-m2", "kind": "build", "exit": 0, "seconds": 3637.3, "ruledFrontendNotices": 5, "ruledLinkerLines": 1, "generatedSummaries": ["warning: `universal-agent-runtime` (bin \"universal-agent-runtime\") generated 1 warning"]}
+{"index": 23, "id": "scn-sys-001", "kind": "scenario", "exit": 1, "seconds": 203.0}
+{"index": 23, "id": "scn-sys-001", "kind": "scenario", "exit": 1, "seconds": 165.0}
+{"index": 0, "id": "bind-candidate-tree", "kind": "run", "exit": 0, "seconds": 1.3, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T01:14:33-0600"}
+{"index": 1, "id": "prepare-bdd", "kind": "build", "exit": 0, "seconds": 17.3, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T01:14:50-0600", "ruledFrontendNotices": 5, "ruledLinkerLines": 1, "generatedSummaries": ["warning: `universal-agent-runtime` (bin \"universal-agent-runtime\") generated 1 warning"]}
+{"index": 7, "id": "baseline-check-bdd", "kind": "run", "exit": 0, "seconds": 25.6, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T01:15:16-0600"}
+{"index": 8, "id": "baseline-check-supporting", "kind": "run", "exit": 0, "seconds": 177.1, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T01:18:13-0600"}
+{"index": 23, "id": "scn-sys-001", "kind": "scenario", "exit": 1, "seconds": 153.8, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T01:20:47-0600"}
+{"index": 43, "id": "scn-set-003", "kind": "scenario", "exit": 1, "seconds": 33.5, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T03:43:06-0600"}
+{"index": 44, "id": "neg-set-003", "kind": "negativeControl", "exit": 1, "seconds": 34.4, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T03:51:32-0600"}
+{"index": 45, "id": "scn-idn-001", "kind": "scenario", "exit": 0, "seconds": 182.8, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T03:55:34-0600"}
+{"index": 46, "id": "neg-idn-001", "kind": "negativeControl", "exit": 0, "seconds": 58.4, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T03:56:33-0600"}
+{"index": 47, "id": "scn-pick-002", "kind": "scenario", "exit": 1, "seconds": 715.8, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T04:08:29-0600"}
+{"index": 48, "id": "neg-pick-002", "kind": "negativeControl", "exit": 0, "seconds": 200.0, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T04:11:49-0600"}
+{"index": 49, "id": "rebind-postcondition", "kind": "run", "exit": 0, "seconds": 1.3, "commit": "c8eb9e23", "contract": "acce8cf2", "endedAt": "2026-11-22T04:11:50-0600"}
+{"index": 0, "id": "bind-candidate-tree", "kind": "run", "exit": 0, "seconds": 1.7, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T07:27:11-0600"}
+{"index": 1, "id": "prepare-bdd", "kind": "build", "exit": 0, "seconds": 547.6, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T07:36:19-0600", "ruledFrontendNotices": 5, "ruledLinkerLines": 1, "generatedSummaries": ["warning: `universal-agent-runtime` (bin \"universal-agent-runtime\") generated 1 warning"]}
+{"index": 7, "id": "baseline-check-bdd", "kind": "run", "exit": 0, "seconds": 649.7, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T07:47:08-0600"}
+{"index": 8, "id": "baseline-check-supporting", "kind": "run", "exit": 0, "seconds": 181.3, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T07:50:10-0600"}
+{"index": 23, "id": "scn-sys-001", "kind": "scenario", "exit": 0, "seconds": 98.5, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T07:52:06-0600"}
+{"index": 9, "id": "create-mutant-m1-worktree", "kind": "run", "exit": 0, "seconds": 40.7, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T07:52:46-0600"}
+{"index": 10, "id": "init-mutant-m1-submodules", "kind": "run", "exit": 0, "seconds": 400.0, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T07:59:26-0600"}
+{"index": 11, "id": "verify-mutant-m1-patch-digest", "kind": "run", "exit": 0, "seconds": 2.8, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T07:59:29-0600"}
+{"index": 12, "id": "apply-mutant-m1-patch", "kind": "run", "exit": 0, "seconds": 1.8, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T07:59:31-0600"}
+{"index": 13, "id": "verify-mutant-m1-diff", "kind": "run", "exit": 0, "seconds": 10.9, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T07:59:42-0600"}
+{"index": 14, "id": "install-mutant-m1-deps", "kind": "run", "exit": 0, "seconds": 88.5, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T08:01:10-0600"}
+{"index": 15, "id": "build-mutant-m1", "kind": "build", "exit": 0, "seconds": 979.3, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T08:17:30-0600", "ruledFrontendNotices": 5, "ruledLinkerLines": 1, "generatedSummaries": ["warning: `universal-agent-runtime` (bin \"universal-agent-runtime\") generated 1 warning"]}
+{"index": 16, "id": "create-mutant-m2-worktree", "kind": "run", "exit": 0, "seconds": 27.3, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T08:17:57-0600"}
+{"index": 17, "id": "init-mutant-m2-submodules", "kind": "run", "exit": 0, "seconds": 823.7, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T08:31:41-0600"}
+{"index": 18, "id": "verify-mutant-m2-patch-digest", "kind": "run", "exit": 0, "seconds": 7.0, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T08:31:48-0600"}
+{"index": 19, "id": "apply-mutant-m2-patch", "kind": "run", "exit": 0, "seconds": 1.1, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T08:31:49-0600"}
+{"index": 20, "id": "verify-mutant-m2-diff", "kind": "run", "exit": 0, "seconds": 161.5, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T08:34:30-0600"}
+{"index": 21, "id": "install-mutant-m2-deps", "kind": "run", "exit": 0, "seconds": 171.0, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T08:37:21-0600"}
+{"index": 22, "id": "build-mutant-m2", "kind": "build", "exit": 0, "seconds": 5792.5, "commit": "9ad39030", "contract": "45f441e0", "endedAt": "2026-11-22T10:13:54-0600", "ruledFrontendNotices": 5, "ruledLinkerLines": 1, "generatedSummaries": ["warning: `universal-agent-runtime` (bin \"universal-agent-runtime\") generated 1 warning"], "warningStop": ["[PLUGIN_TIMINGS] JavaScript callbacks ran for 6.8s of this 8.9s build (76%)."]}
+{"index": 24, "id": "neg-sys-001", "kind": "negativeControl", "exit": 0, "seconds": 170.7, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T10:26:59-0600"}
+{"index": 25, "id": "scn-sys-003", "kind": "scenario", "exit": 1, "seconds": 248.0, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T10:31:07-0600"}
+{"index": 26, "id": "neg-sys-003", "kind": "negativeControl", "exit": 0, "seconds": 40.4, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T11:15:44-0600"}
+{"index": 27, "id": "scn-sys-007", "kind": "scenario", "exit": 0, "seconds": 43.8, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T11:16:41-0600"}
+{"index": 28, "id": "neg-sys-007", "kind": "negativeControl", "exit": 0, "seconds": 32.0, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T11:17:22-0600"}
+{"index": 29, "id": "scn-sys-011", "kind": "scenario", "exit": 1, "seconds": 435.5, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T11:24:50-0600"}
+{"index": 30, "id": "neg-sys-011", "kind": "negativeControl", "exit": 1, "seconds": 433.8, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T11:32:14-0600"}
+{"index": 31, "id": "scn-sys-012", "kind": "scenario", "exit": 1, "seconds": 405.7, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T11:39:08-0600"}
+{"index": 32, "id": "neg-sys-012", "kind": "negativeControl", "exit": 1, "seconds": 406.1, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T11:46:07-0600"}
+{"index": 33, "id": "scn-sys-013", "kind": "scenario", "exit": 1, "seconds": 406.4, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T11:53:00-0600"}
+{"index": 34, "id": "neg-sys-013", "kind": "negativeControl", "exit": 1, "seconds": 405.9, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T11:59:54-0600"}
+{"index": 35, "id": "scn-sys-014", "kind": "scenario", "exit": 1, "seconds": 434.9, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T12:07:14-0600"}
+{"index": 36, "id": "neg-sys-014", "kind": "negativeControl", "exit": 1, "seconds": 435.7, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T12:14:40-0600"}
+{"index": 37, "id": "scn-sys-015", "kind": "scenario", "exit": 1, "seconds": 405.6, "commit": "9ad39030", "contract": "215f15bd", "endedAt": "2026-11-22T12:21:35-0600"}

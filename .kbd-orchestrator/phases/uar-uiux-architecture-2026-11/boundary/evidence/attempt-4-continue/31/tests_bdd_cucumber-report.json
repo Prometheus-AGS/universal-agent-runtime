@@ -1,0 +1,520 @@
+[
+  {
+    "description": "  As an operator choosing the system default model, and a person chatting\n  I want a change of model to apply to the next answer without a restart,\n  and to see which model answered, why, and since when\n  So that I can trust the model I chose is the model that served the reply",
+    "elements": [
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;clearing-an-override-shows-what-the-conversation-will-inherit",
+        "keyword": "Scenario",
+        "line": 61,
+        "name": "Clearing an override shows what the conversation will inherit",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 238000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 9000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 62,
+            "name": "the system default model is \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 20000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 63,
+            "name": "a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 2242000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 64,
+            "name": "I clear the model override of this conversation",
+            "result": {
+              "status": "passed",
+              "duration": 343000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 65,
+            "name": "the preview says this conversation will answer with \"bdd-provider-b/claude-5-haiku\" from \"system default\"",
+            "result": {
+              "status": "passed",
+              "duration": 5000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 66,
+            "name": "I cancel the change",
+            "result": {
+              "status": "passed",
+              "duration": 335000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 67,
+            "name": "I send the message \"S1 r4 cancel\"",
+            "result": {
+              "status": "failed",
+              "duration": 124530000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:57:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 68,
+            "name": "the reply to \"S1 r4 cancel\" came from \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 69,
+            "name": "I clear the model override of this conversation",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 70,
+            "name": "I confirm the change",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 71,
+            "name": "I send the message \"S1 r4 confirm\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 72,
+            "name": "the reply to \"S1 r4 confirm\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 73,
+            "name": "the answer's receipt names \"bdd-provider-b/claude-5-haiku\" and the origin \"system default\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 7784000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 7839000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;clearing-an-override-shows-what-the-conversation-will-inherit",
+        "keyword": "Scenario",
+        "line": 61,
+        "name": "Clearing an override shows what the conversation will inherit",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 191000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 10000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 62,
+            "name": "the system default model is \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 22000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 63,
+            "name": "a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 2279000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 64,
+            "name": "I clear the model override of this conversation",
+            "result": {
+              "status": "passed",
+              "duration": 323000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 65,
+            "name": "the preview says this conversation will answer with \"bdd-provider-b/claude-5-haiku\" from \"system default\"",
+            "result": {
+              "status": "passed",
+              "duration": 5000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 66,
+            "name": "I cancel the change",
+            "result": {
+              "status": "passed",
+              "duration": 335000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 67,
+            "name": "I send the message \"S1 r4 cancel\"",
+            "result": {
+              "status": "failed",
+              "duration": 124500000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:57:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 68,
+            "name": "the reply to \"S1 r4 cancel\" came from \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 69,
+            "name": "I clear the model override of this conversation",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 70,
+            "name": "I confirm the change",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 71,
+            "name": "I send the message \"S1 r4 confirm\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 72,
+            "name": "the reply to \"S1 r4 confirm\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 73,
+            "name": "the answer's receipt names \"bdd-provider-b/claude-5-haiku\" and the origin \"system default\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 7781000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 7834000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;clearing-an-override-shows-what-the-conversation-will-inherit",
+        "keyword": "Scenario",
+        "line": 61,
+        "name": "Clearing an override shows what the conversation will inherit",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 185000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 10000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 62,
+            "name": "the system default model is \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 22000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 63,
+            "name": "a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 2270000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 64,
+            "name": "I clear the model override of this conversation",
+            "result": {
+              "status": "passed",
+              "duration": 334000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 65,
+            "name": "the preview says this conversation will answer with \"bdd-provider-b/claude-5-haiku\" from \"system default\"",
+            "result": {
+              "status": "passed",
+              "duration": 7000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 66,
+            "name": "I cancel the change",
+            "result": {
+              "status": "passed",
+              "duration": 337000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 67,
+            "name": "I send the message \"S1 r4 cancel\"",
+            "result": {
+              "status": "failed",
+              "duration": 124519000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:57:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 68,
+            "name": "the reply to \"S1 r4 cancel\" came from \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 69,
+            "name": "I clear the model override of this conversation",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 70,
+            "name": "I confirm the change",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 71,
+            "name": "I send the message \"S1 r4 confirm\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 72,
+            "name": "the reply to \"S1 r4 confirm\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 73,
+            "name": "the answer's receipt names \"bdd-provider-b/claude-5-haiku\" and the origin \"system default\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 7781000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 7840000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "live-model-choice-governs-the-next-eligible-response",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Live model choice governs the next eligible response",
+    "tags": [],
+    "uri": "features/live-model-choice.feature"
+  }
+]

@@ -1,0 +1,90 @@
+{
+  "candidateCommit": "ae01b21c3675266b402bd9297862e293b6c1c7a0",
+  "inventorySha256": "11ae71b44105a099025b698ef2b58e662990d2b435d57f445b4fcd8812c26f7b",
+  "inventoryConfirmed": true,
+  "inventoryNotes": [
+    "candidateCommit equals HEAD (git rev-parse HEAD = ae01b21c3675266b402bd9297862e293b6c1c7a0).",
+    "changedPaths (246 entries) equals `git diff --name-status f2c9e36efe088e06a17c5d880ada877e25f2ad52 ae01b21c`, status and path, once every path under a .kbd-orchestrator/ or .prometheus/ directory at any depth is excluded. A sorted diff of the two lists is empty. No renames are reported. Statuses are now 184 A, 3 D, 59 M, so the earlier '??' defect is fixed. The four files changed since a66d119b are present with correct statuses: model-catalog-identity.spec.ts A, playwright.installed-settings-truth.config.ts A, live-model-choice.steps.ts A, playwright.real-server.config.ts M.",
+    "inventory.contractDigest is still 6477e9a1..., the superseded digest. The amended contract normalizes (digestNormalization: jq -S -c 'del(.identity.contractDigest) | del(.identity.planRevision)') to 623ec830b96a4948d2e2f90a6eaf72497e68f59c7a652b5bcba59bf798f0de86, which matches amendments/2026-11-21-worktree-installs.json newContractDigest. No boundary command reads inventory.contractDigest. See findings.",
+    "Frozen inputs: all five sha256 values in the command prefix check OK at HEAD (shasum -a 256 -c). The bind clean-tree status command returns empty. No uiux-baseline or s1-mutant-* worktree exists under ~/.claude/worktrees."
+  ],
+  "mutants": {
+    "M1": {
+      "patchShaMatches": true,
+      "appliesCleanly": true,
+      "touchesOnlyTarget": true,
+      "notes": "sha256 0073d40c677e8504ecf60da4e07b1c4eb612e2e1c8359a4a1d5be31dc1055aac matches the inventory, both on disk and at ae01b21c. In a throwaway worktree (/private/tmp/claude-501/uar-apply-check-ae01b21c, detached at ae01b21c, since removed with git worktree remove --force and pruned), both `git apply --check` and `git apply --cached --check` pass. numstat is 2/2 on src/uar/runtime/manager.rs only. No Rust file changed between a66d119b and ae01b21c."
+    },
+    "M2": {
+      "patchShaMatches": true,
+      "appliesCleanly": true,
+      "touchesOnlyTarget": true,
+      "notes": "sha256 e527ad4eca6ca3002470bc48dedd589176c8e8a208e8a7e1476edf4b17010764 matches. In the same throwaway worktree, both `git apply --check` and `git apply --cached --check` pass. numstat is 1/1 on src/uar/domain/policy.rs only."
+    }
+  },
+  "dryWalk": {
+    "firstMechanicalFailure": null,
+    "notes": [
+      "Previous CRITICAL re-checked: P/boundary/ now exists as an empty directory (created 07:56). It is untracked and not gitignored, and it sits inside the clean-tree exclusion. Every writer has it available, as long as nothing removes it before the run: commands 7 baseline-check-bdd ($R=main root), 8 baseline-check-supporting ($OLDPWD=main root), 38 neg-sys-015 ($R) and 42 neg-sys-017 ($R). No command in the packet runs git clean, rm -rf, or rsync --delete against the main tree; the rsync --delete targets are inside the baseline worktree. The contract was not amended to create the directory, so the fix lives only in this checkout (see findings).",
+      "Command 0 bind-candidate-tree: HEAD == candidateCommit, the tree is clean under the exclusions, and the frozen sha256 values match. inventorySha256 in this file equals the inventory sha, and candidateCommit matches. Bind does not read inventoryConfirmed or the verdict.",
+      "index.html guards: they cannot break any boundary command. static/index.html is tracked at both f2c9e36 and ae01b21c (blob c9e6931c), and frontend/vite.config.ts has outDir ../static with emptyOutDir true at both commits. So index.html exists before and after each build. Commands 43-48 rely on the fallback repoRoot/static (main root); command 8 copies both configs into the baseline frontend/ and sets UAR_STATIC_DIR to the baseline worktree static/. Both configs import only node builtins, @playwright/test, and (real-server only) ./e2e/support/frozen-fixtures, which command 8's rsync of frontend/e2e/ provides. Both configs pass UAR_STATIC_DIR=staticDir to the server env (real-server:67, settings-truth:134).",
+      "Not mechanically judgeable from source, unchanged from the previous review: network installs; whether the baseline (f2c9e36) and mutant cargo builds are warning-free apart from the ruled linker message; whether SCN-IDN-001 baseline PASS is reachable in 90 s.",
+      "Pre-run governance, not a packet command: the contract amendment manifest is unsigned (no signature next to amendments/2026-11-21-worktree-installs.json). decision-log.md says the runtime's bind-contract refuses the new digest until the owner signs. The boundary cannot be bound before that.",
+      "During this review a stale 0-byte .git/index.lock appeared, dated 07:58:38, with no git process alive (ps showed none). It was removed. git status afterwards left none. This is the fourth such lock today, according to decision-log.md."
+    ]
+  },
+  "stepDefinitionReview": {
+    "verdict": "PASS",
+    "findings": [
+      {
+        "severity": "WARNING",
+        "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+        "line": "boundaryPacket.commands[7], [8], [38], [42]",
+        "claim": "The previous CRITICAL is closed only operationally. P/boundary/ was created as an empty untracked directory, and the packet still has no mkdir. Git does not record empty directories, so the precondition is absent in any other checkout, after git clean -fd, or after any tooling that prunes empty directories under .kbd-orchestrator/.",
+        "falsePassOrFail": "If the directory is gone at run time, command 7 fails falsely in the way described before: the redirect fails, '; true' hides it, and jq exits 2. In this checkout today, there is none.",
+        "suggestedFix": "Fold `mkdir -p .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary` into commands 7, 8, 38 and 42 in the pending (still unsigned) amendment before the owner signs it, or verify the directory exists immediately before command 0.",
+        "kind": "contract"
+      },
+      {
+        "severity": "WARNING",
+        "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json",
+        "line": "contractDigest",
+        "claim": "The inventory binds to contract digest 6477e9a1..., which the 2026-11-21 amendment supersedes. The amended contract's normalized digest is 623ec830.... The inventory was regenerated for ae01b21c, but this field was not updated.",
+        "falsePassOrFail": "No boundary command reads it, so no run outcome changes. The implementation-complete record does name a contract that is no longer the one the packet will execute.",
+        "suggestedFix": "Set contractDigest to 623ec830b96a4948d2e2f90a6eaf72497e68f59c7a652b5bcba59bf798f0de86 after the owner signs the amendment, then get a fresh confirmation, because the inventory sha changes.",
+        "kind": "contract"
+      },
+      {
+        "severity": "SUGGESTION",
+        "file": "frontend/playwright.real-server.config.ts",
+        "line": "24-28 (and frontend/playwright.installed-settings-truth.config.ts:25-29)",
+        "claim": "The new index.html guard is correct and harmless, but it can never fire in this packet. static/index.html is tracked at both commits, and vite's emptyOutDir rebuild rewrites it. What actually guarantees a fresh bundle is command order (prepare-bdd before 23-48; build-baseline-frontend before 8), not the guard. If the guard did fire, it would throw at config load, Playwright would exit non-zero, and under the exit-status judging in previous WARNING 5 that reads as FAIL, not the BLOCKED the stopConditions require.",
+        "falsePassOrFail": "Neither, in this packet. The guard closes previous WARNING 4 for the missing-file case only. It does not detect a stale bundle.",
+        "suggestedFix": "Optional: also check that an asset hash referenced by index.html exists. When reporting, map a config-load throw to BLOCKED.",
+        "kind": "harness"
+      },
+      {
+        "severity": "SUGGESTION",
+        "file": "tests/bdd/steps/live-model-choice.steps.ts",
+        "line": "369, 861",
+        "claim": "Stamping failedAt before route.fulfill closes previous WARNING 3. The late-write filter still uses a strict `write.at > failedAt` with millisecond resolution, so a write whose request event lands in the same millisecond as the stamp is not counted. That is practically unreachable, because the event needs a CDP round trip after fulfill.",
+        "falsePassOrFail": "Theoretical false pass only.",
+        "suggestedFix": "Use `write.at >= failedAt`. The held POST's own request event precedes the stamp, so it is not affected.",
+        "kind": "harness"
+      }
+    ],
+    "changeReview": [
+      "model-catalog-identity.spec.ts: the error-text assertion matches the product. Trace: the server's /api/live/models/snapshot (src/server/lifecycle_snapshot.rs:165-192) sets string provider_id, model_id and id=provider/model on every record. topics.ts:41 passes projectCatalogModel(record) with no options, so projection.ts:79 has no modelId fallback. projection.ts:81-84 throws `Catalog model record for provider '${providerId}' has no model_id`, where providerId is raw.provider_id unchanged (nonEmptyString does not trim, projection.ts:36-38). uar-sse-adapter.ts:391-397 catches it, then onSnapshotOutcome({ok:false,error}), topics.ts:26-29, domain.ts:58-60, recordLoadFailure, and errorMessage = error.message (domain.ts:44-46). models-ingestion-error.tsx renders 'ERR-MODELS Model catalog update rejected: <message>. Showing the previous catalog.' So toContainText(`'${strippedProviderId}'`) matches the correct build. A build that rejects record 0 for any reason names records[0].provider_id, which the selection loop guarantees differs, so the control now fails that build as intended. The rejection is first-throw-wins in record order, and only the stripped record lacks model_id, so the correct build names the stripped provider. The selection needs at least two providers in the snapshot; the S1 harness configures several, and the custom collision provider is among them.",
+      "Playwright configs: see the dryWalk notes and the SUGGESTION. No boundary command can break.",
+      "live-model-choice.steps.ts: the only change is moving the stamp before fulfill. The held POST's own request event was logged earlier, so it is not counted as late. No new false fail."
+    ]
+  },
+  "carriedForward": [
+    "WARNING 1 (open, documented limit): baseline-check-bdd only checks ok==false, so a FAIL verdict cannot be told apart from NOT_RUNNABLE or a harness-setup failure at baseline. decision-log.md also records that SCN-SYS-012's frozen basis is inaccurate (it fails in its Given at f2c9e36).",
+    "WARNING 5 (open): negative controls are judged by Playwright exit status, so did-not-run (BLOCKED) and ran-but-missed (FAIL) are indistinguishable unless the lead maps them by hand from runner output.",
+    "WARNING 6 (open): the SCN-PICK-002 requirement that all 5 samples stay under 200 ms on a debug-profile runtime may fail falsely from timing variance.",
+    "Previous WARNING 4 (index.html not asserted) is closed for absent-file only; bundle freshness still rests on command order.",
+    "Not a carried WARNING, but recorded open in decision-log.md: the embedded-store snapshot path (frontend/src/entities/sync.ts:235) does not apply projectCatalogModel, and neg-idn-001 runs only in remote mode, so that path's model_id rejection is untested."
+  ],
+  "verdict": "PASS"
+}

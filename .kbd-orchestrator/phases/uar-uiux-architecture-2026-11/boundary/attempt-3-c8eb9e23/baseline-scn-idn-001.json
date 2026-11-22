@@ -1,0 +1,179 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.the-boss/commands/node",
+      "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/node_modules/@playwright/test/cli.js",
+      "test",
+      "-c",
+      "playwright.real-server.config.ts",
+      "e2e/model-catalog-identity.spec.ts",
+      "-g",
+      "SCN-IDN-001 Catalog model identity survives shared bare model ids",
+      "--retries",
+      "0",
+      "--reporter=json"
+    ],
+    "configFile": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/playwright.real-server.config.ts",
+    "rootDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+        "snapshotDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:3003",
+          "headless": true,
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "model-catalog-identity.spec.ts",
+      "file": "model-catalog-identity.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "SCN-IDN-001 Catalog model identity survives shared bare model ids",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 67550,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "the frozen oracle agrees with the committed catalog snapshot",
+                      "duration": 10
+                    },
+                    {
+                      "title": "the runtime's GET /api/models agrees with the frozen rows",
+                      "duration": 323
+                    },
+                    {
+                      "title": "the page reports every provider's model, not one per bare id",
+                      "duration": 26787
+                    },
+                    {
+                      "title": "each frozen row shows its own provider, context, capabilities and price",
+                      "duration": 36765
+                    },
+                    {
+                      "title": "the two idn-shared-model rows are both listed, with their own values",
+                      "duration": 163
+                    },
+                    {
+                      "title": "clearing the filter restores the whole catalog",
+                      "duration": 3264
+                    }
+                  ],
+                  "startTime": "2026-11-22T07:15:49.477Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "api-models-digest.json",
+                      "contentType": "application/json",
+                      "body": "eyJzaGEyNTYiOiJiNjY4MmYwZmFkZGQwODEwZDFmYzExM2EwMzM3NTMxZjA3YmZjMDIxMDEwZWVjOWIyYTA4MGE4MzVkMWE5OWY2IiwicGFpcnMiOjgxNzMsInByb3ZpZGVycyI6MzQ1fQ=="
+                    }
+                  ]
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "45793acda2be7d6d561c-747ce77e234ac888ab91",
+          "file": "model-catalog-identity.spec.ts",
+          "line": 76,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-22T07:15:36.685Z",
+    "duration": 80637.156,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

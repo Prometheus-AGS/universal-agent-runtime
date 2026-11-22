@@ -1,0 +1,2 @@
+undefined
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command was killed with SIGTERM (Termination): env -u UAR_STATIC_DIR 'CI=1' 'UAR_SERVER__GRPC_PORT=50061' 'UAR_SERVER__INGEST_DIRECTORY=/var/folders/ln/0wnpd96j26z2qhvx9m6hwt2r0000gn/T/tmp.BQgEtf13EP' playwright test -c tests/bdd/playwright.config.ts --grep 'A conversation without an override follows the new default and says so|A conversation override keeps answering on its own model' --repeat-each 3 --retries 0 '--reporter=json'

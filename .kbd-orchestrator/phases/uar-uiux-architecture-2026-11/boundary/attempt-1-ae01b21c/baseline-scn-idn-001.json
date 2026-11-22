@@ -1,0 +1,203 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.the-boss/commands/node",
+      "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/node_modules/@playwright/test/cli.js",
+      "test",
+      "-c",
+      "playwright.real-server.config.ts",
+      "e2e/model-catalog-identity.spec.ts",
+      "-g",
+      "SCN-IDN-001 Catalog model identity survives shared bare model ids",
+      "--retries",
+      "0",
+      "--reporter=json"
+    ],
+    "configFile": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/playwright.real-server.config.ts",
+    "rootDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+        "snapshotDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 60000,
+        "use": {
+          "baseURL": "http://127.0.0.1:3003",
+          "headless": true,
+          "trace": "retain-on-failure",
+          "screenshot": "only-on-failure"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "model-catalog-identity.spec.ts",
+      "file": "model-catalog-identity.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "SCN-IDN-001 Catalog model identity survives shared bare model ids",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 300000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 192,
+                  "error": {
+                    "message": "Error: model ids containing a slash\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2207\u001b[39m\nReceived: \u001b[31m4628\u001b[39m",
+                    "stack": "Error: model ids containing a slash\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2207\u001b[39m\nReceived: \u001b[31m4628\u001b[39m\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/model-catalog-identity.spec.ts:110:7\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/model-catalog-identity.spec.ts:87:3",
+                    "location": {
+                      "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/model-catalog-identity.spec.ts",
+                      "column": 7,
+                      "line": 110
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 108 |\u001b[39m       pairs\u001b[33m.\u001b[39mfilter((pair) \u001b[33m=>\u001b[39m pair\u001b[33m.\u001b[39mmodelId\u001b[33m.\u001b[39mincludes(\u001b[32m\"/\"\u001b[39m))\u001b[33m.\u001b[39mlength\u001b[33m,\u001b[39m\n \u001b[90m 109 |\u001b[39m       \u001b[32m\"model ids containing a slash\"\u001b[39m\u001b[33m,\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 110 |\u001b[39m     )\u001b[33m.\u001b[39mtoBe(oracle\u001b[33m.\u001b[39mexpectedFromCatalog\u001b[33m.\u001b[39mmodelIdsContainingSlash)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 111 |\u001b[39m     \u001b[36mfor\u001b[39m (\u001b[36mconst\u001b[39m [bareId\u001b[33m,\u001b[39m providers] \u001b[36mof\u001b[39m \u001b[33mObject\u001b[39m\u001b[33m.\u001b[39mentries(oracle\u001b[33m.\u001b[39msharedBareIdSamples)) {\n \u001b[90m 112 |\u001b[39m       expect([\u001b[33m...\u001b[39m(providersPerBareId\u001b[33m.\u001b[39m\u001b[36mget\u001b[39m(bareId) \u001b[33m?\u001b[39m\u001b[33m?\u001b[39m [])]\u001b[33m.\u001b[39msort()\u001b[33m,\u001b[39m \u001b[32m`providers of ${bareId}`\u001b[39m)\u001b[33m.\u001b[39mtoEqual(\n \u001b[90m 113 |\u001b[39m         [\u001b[33m...\u001b[39mproviders]\u001b[33m.\u001b[39msort()\u001b[33m,\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/model-catalog-identity.spec.ts",
+                        "column": 7,
+                        "line": 110
+                      },
+                      "message": "Error: model ids containing a slash\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2207\u001b[39m\nReceived: \u001b[31m4628\u001b[39m\n\n  108 |       pairs.filter((pair) => pair.modelId.includes(\"/\")).length,\n  109 |       \"model ids containing a slash\",\n> 110 |     ).toBe(oracle.expectedFromCatalog.modelIdsContainingSlash);\n      |       ^\n  111 |     for (const [bareId, providers] of Object.entries(oracle.sharedBareIdSamples)) {\n  112 |       expect([...(providersPerBareId.get(bareId) ?? [])].sort(), `providers of ${bareId}`).toEqual(\n  113 |         [...providers].sort(),\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/model-catalog-identity.spec.ts:110:7\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/model-catalog-identity.spec.ts:87:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "steps": [
+                    {
+                      "title": "the frozen oracle agrees with the committed catalog snapshot",
+                      "duration": 10,
+                      "error": {
+                        "message": "Error: model ids containing a slash\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2207\u001b[39m\nReceived: \u001b[31m4628\u001b[39m",
+                        "stack": "Error: model ids containing a slash\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m2207\u001b[39m\nReceived: \u001b[31m4628\u001b[39m\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/model-catalog-identity.spec.ts:110:7\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/model-catalog-identity.spec.ts:87:3",
+                        "location": {
+                          "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/model-catalog-identity.spec.ts",
+                          "column": 7,
+                          "line": 110
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 108 |\u001b[39m       pairs\u001b[33m.\u001b[39mfilter((pair) \u001b[33m=>\u001b[39m pair\u001b[33m.\u001b[39mmodelId\u001b[33m.\u001b[39mincludes(\u001b[32m\"/\"\u001b[39m))\u001b[33m.\u001b[39mlength\u001b[33m,\u001b[39m\n \u001b[90m 109 |\u001b[39m       \u001b[32m\"model ids containing a slash\"\u001b[39m\u001b[33m,\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 110 |\u001b[39m     )\u001b[33m.\u001b[39mtoBe(oracle\u001b[33m.\u001b[39mexpectedFromCatalog\u001b[33m.\u001b[39mmodelIdsContainingSlash)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 111 |\u001b[39m     \u001b[36mfor\u001b[39m (\u001b[36mconst\u001b[39m [bareId\u001b[33m,\u001b[39m providers] \u001b[36mof\u001b[39m \u001b[33mObject\u001b[39m\u001b[33m.\u001b[39mentries(oracle\u001b[33m.\u001b[39msharedBareIdSamples)) {\n \u001b[90m 112 |\u001b[39m       expect([\u001b[33m...\u001b[39m(providersPerBareId\u001b[33m.\u001b[39m\u001b[36mget\u001b[39m(bareId) \u001b[33m?\u001b[39m\u001b[33m?\u001b[39m [])]\u001b[33m.\u001b[39msort()\u001b[33m,\u001b[39m \u001b[32m`providers of ${bareId}`\u001b[39m)\u001b[33m.\u001b[39mtoEqual(\n \u001b[90m 113 |\u001b[39m         [\u001b[33m...\u001b[39mproviders]\u001b[33m.\u001b[39msort()\u001b[33m,\u001b[39m\u001b[0m"
+                      }
+                    }
+                  ],
+                  "startTime": "2026-11-21T20:08:53.679Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results/model-catalog-identity-SCN-abc7a-vives-shared-bare-model-ids/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results/model-catalog-identity-SCN-abc7a-vives-shared-bare-model-ids/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/test-results/model-catalog-identity-SCN-abc7a-vives-shared-bare-model-ids/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/frontend/e2e/model-catalog-identity.spec.ts",
+                    "column": 7,
+                    "line": 110
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "45793acda2be7d6d561c-747ce77e234ac888ab91",
+          "file": "model-catalog-identity.spec.ts",
+          "line": 76,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-21T20:08:40.420Z",
+    "duration": 13799.733,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

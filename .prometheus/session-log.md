@@ -7369,3 +7369,6 @@ exact-tree VLBV, and fresh OSV remain pending.
 ## 2026-11-14 — RC5 protocol migration
 
 The previous #469-only release chain was stopped before publication after the scope expanded. RC5 now includes the final AG-UI and A2UI 1.0 protocol support and PEM 5.0.0. KBD execution lives in .kbd-orchestrator/phases/rc5-agui-a2ui-1. Earlier package version and workflow exclusions were preserved. Local verification starts after all implementation lanes hand off and the exact source inventory is recorded.
+
+## 2026-11-22 12:30 CST — rc.6 assembly and S1 boundary attempt 4
+Assembled 1.4.0-rc.6 locally at 9ad39030 (main, #539, S1 round 3, image fixes). Boundary attempt 4 ended for an account handoff: 2 provisional PASS, 6 FAIL, 5 NOT_EXERCISED. Delta from plan: the run found a dead thread Rename/Delete (product) and a broken reply counter (harness), both missed by every earlier review; repair round 4 is not granted. Handoff: .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/handoffs/2026-11-22-account-handoff.md

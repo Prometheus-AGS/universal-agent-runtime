@@ -1,0 +1,136 @@
+{
+  "candidateCommit": "a66d119b7269937741f44a8a87b7144f000ccedd",
+  "inventorySha256": "c00fb9a12d665ff4ad51d1edc0327fd45947971a5c8a8985127b13df43e46130",
+  "inventoryConfirmed": false,
+  "inventoryNotes": [
+    "Path set: changedPaths (246 entries) equals `git diff --name-status f2c9e36efe088e06a17c5d880ada877e25f2ad52 a66d119b` with every .kbd-orchestrator/ and .prometheus/ directory excluded at any depth (the 11 extra git paths are all under frontend/.prometheus/, which the contract's clean-tree scope also excludes). No path is missing and none is extra.",
+    "Status codes do not match: 171 entries say \"??\" (untracked) where git reports \"A\" (added in the commit). The inventory was written before the commit and its statuses were never regenerated against candidateCommit. This is the only reason inventoryConfirmed is false. Fix: regenerate changedPaths from git diff --name-status against the candidate, then get a fresh confirmation (the edit changes the inventory sha256).",
+    "Tasks: implementationTasks matches plan.md Scope (S1 54 tasks) plus IDN 3.1/3.2, which were added after the second review. Source for IDN 3.1/3.2 is present (frontend/src/lib/realtime/uar-sse-adapter.ts:72,391-393 projectRecord; topics.ts:6-8,42 projectCatalogModel and snapshot outcome). No openspec tasks.md checkbox is ticked for any change, so the ledger is the only record of done-ness.",
+    "Frozen inputs: all five sha256 values in the command prefix match the files at HEAD (boundary-baseline-expectations.json b141545a..., live-model-choice.feature 4e648ea9..., live-model-choice-controls.feature e22be426..., s1-oracle.json 39a2d8c2..., baseline-verdicts.json 4346f0a5...). The frontend/e2e/support/fixtures copies match their openspec originals and FROZEN_SHA256; catalog/provider_catalog.json matches CATALOG_SNAPSHOT_SHA256 at both HEAD and f2c9e36.",
+    "No Rust file, Cargo.toml or Cargo.lock changed between f7795b71 and a66d119b, so the clean compile reported at f7795b71 still applies to the Rust source. It was `cargo test --no-run`, though, not prepare-bdd's `cargo build --locked --bin stub-llm --bin universal-agent-runtime --features server-full`. Whether that build is warning-free is unverified."
+  ],
+  "mutants": {
+    "M1": {
+      "patchShaMatches": true,
+      "appliesCleanly": true,
+      "touchesOnlyTarget": true,
+      "notes": "sha256 0073d40c...1055aac matches the inventory. `git apply --check` passes on src/uar/runtime/manager.rs at a66d119b in a throwaway worktree, which has since been removed; numstat shows 2/2 lines, that file only. The target is correct: manager.rs:10449-10459 is the only place model_receipt_value gets served_model (task 7.3 data source). `run_model` (manager.rs:8592) is borrowed there before its later move at :10618, and `_served_model` triggers no unused-variable warning, so the mutant should build cleanly (not compiled)."
+    },
+    "M2": {
+      "patchShaMatches": true,
+      "appliesCleanly": true,
+      "touchesOnlyTarget": true,
+      "notes": "sha256 e527ad4eca6ca3002470bc48dedd589176c8e8a208e8a7e1476edf4b17010764 matches the inventory. `git apply --check` passes on src/uar/domain/policy.rs; numstat shows 1/1 lines, that file only. The target is correct: system_default_activation_time (policy.rs:385-402) is the receipt change-time source of task 7.2. The settings set_value path rewrites updated_at on every write (settings/manager.rs:643-647), so the correct build's time comes from the live route's POST inside the harness window, and the mutant's Utc::now() at admission falls outside that window by the 5.25 s wait."
+    }
+  },
+  "dryWalk": {
+    "firstMechanicalFailure": {
+      "commandIndex": 7,
+      "id": "baseline-check-bdd",
+      "reason": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/ does not exist (ls: No such file or directory), and none of the 50 commands creates it (no mkdir in any argv). In command 7, `rm -f` passes; the redirect `> \"$R/.../boundary/baseline-bdd.json\"` fails, so playwright never runs; the trailing `; true` hides that; then `jq -e ... boundary/baseline-bdd.json` exits 2 because the file is missing. Commands 8, 38 and 42 write to the same directory. This happens only if nothing outside the packet creates boundary/ before command 7. One example would be writing the boundary/step-review.md receipt, but the packet does not order that. singleRun is true, so this failure consumes the run, and stopConditions would read it as a baseline mismatch."
+    },
+    "notes": [
+      "Commands 0-6 contain no mechanical defect visible from source. bind: HEAD equals candidateCommit, the tree is clean under the exclusion pathspecs (checked with the same git status command), and the frozen sha256 values match. prepare-bdd: scripts/validate-static-bundle.mjs, the turbo, bddgen and playwright binaries all exist. Every S1 Gherkin step resolves to exactly one step definition, so bddgen will not stop on missing or ambiguous steps. Build outputs go to gitignored paths (target/, static/ excluded, .features-gen/, test-results/, playwright-report/, cucumber-report.json; the submodule ignores dist/ and .turbo/). ~/.claude/worktrees has no uiux-baseline or s1-mutant-* entry, so worktree-new.sh will not refuse. Network installs and submodule clones are environmental and not judged here.",
+      "Mutant commands 9-22: .claude/settings.local.json is tracked, so worktree-new.sh keeps the candidate copy and `git add -N . && git diff --name-only $C` should list only the target file. .cargo/config.toml sets target-dir = \"target\" relative to each worktree, so mutant and baseline builds do not overwrite the main tree's target/debug.",
+      "Command 7 (once boundary/ exists): the baseline stub (f2c9e36 src/bin/stub-llm.rs:86-90) reads only argv[1] and ignores STUB_LLM_EXTRA_FIXTURES, so it does not panic. Stub A then loads only bdd-chat.json, and no stub has /_stub/capabilities. Every BDD scenario fails at baseline, which matches the expectations, but for harness reasons (see the findings).",
+      "Command 8: the SCN-IDN-001 baseline PASS expectation has never been observed (inventory.unverified: no scenario has run). If the baseline /admin/models page cannot reach 8,173 + extra rows within waitForCatalogTotal's 90 s, or if the baseline /api/models count differs, baseline-check-supporting rejects the runner. Source reading cannot settle this.",
+      "Every --grep and -g title matches exactly one Scenario or test title (checked against every Feature/Scenario line under tests/bdd/features and every test() in the three specs). No grep string is a substring of a Feature title. The baseline-check-bdd grep matches the main feature's Feature title, as intended. The ten bdd titles in boundary-baseline-expectations.json equal the scenario names exactly.",
+      "Commands 43-48 set UAR_STATIC_DIR only through the config fallback (repoRoot/static). No runner asserts that index.html exists, which the contract's expectedEffects requires."
+    ]
+  },
+  "stepDefinitionReview": {
+    "verdict": "BLOCK",
+    "findings": [
+      {
+        "severity": "CRITICAL",
+        "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+        "line": "boundaryPacket.commands[7] (also [8], [38], [42])",
+        "claim": "The packet writes JSON reports into boundary/, which does not exist, and no command creates it.",
+        "falsePassOrFail": "False fail of the whole single run at command 7: the redirect fails, `; true` hides it, and jq then fails on the missing file. stopConditions would attribute this to the runner or step definitions (baseline mismatch). Masked only if something outside the packet happens to create boundary/ first.",
+        "suggestedFix": "Before bind-candidate-tree, run `mkdir -p .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary` (inside the clean-tree exclusion; this needs no inventory change), or prefix commands 7, 8, 38 and 42 with that mkdir through a contract amendment.",
+        "kind": "contract"
+      },
+      {
+        "severity": "WARNING",
+        "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json",
+        "line": "changedPaths",
+        "claim": "171 committed files are labelled \"??\" (untracked) instead of \"A\". The path set is exact.",
+        "falsePassOrFail": "No command reads the status field, so no run outcome changes. The inventory misstates the candidate, though, and was evidently not regenerated at commit time.",
+        "suggestedFix": "Regenerate changedPaths from `git diff --name-status f2c9e36 <candidateCommit>` and obtain a fresh confirmation.",
+        "kind": "contract"
+      },
+      {
+        "severity": "WARNING",
+        "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+        "line": "boundaryPacket.commands[7] jq; boundary-baseline-expectations.json verdictVocabulary",
+        "claim": "baseline-check-bdd only checks spec.ok == false, and every bdd expectation is FAIL or NOT_RUNNABLE. At baseline, stub A loads only bdd-chat.json (the old stub reads argv[1] only) and has no /_stub/capabilities, so every S1 scenario fails in setup for a harness reason. FAIL ('the oracle rejects it', e.g. SCN-SYS-012) is never told apart from NOT_RUNNABLE.",
+        "falsePassOrFail": "False pass of the baseline gate: it cannot detect a step definition that would fail for the wrong reason, or a scenario that only fails because its fixture is missing. It proves only that each title exists and does not pass.",
+        "suggestedFix": "For FAIL-verdict scenarios, assert the failing step index or title in the JSON (as the mutant checks already do), or run the baseline stub A with live-model-choice.json as argv[1] so the S1 fixtures load.",
+        "kind": "contract"
+      },
+      {
+        "severity": "WARNING",
+        "file": "frontend/e2e/model-catalog-identity.spec.ts",
+        "line": "216, 249-265",
+        "claim": "neg-idn-001 strips model_id from the first record that has one (usually index 0). It passes if any visible error mentions model_id and the REST-fed row count is unchanged. No S1 check ever shows a valid snapshot being accepted (SCN-IDN-001 runs in embedded mode, with rows from REST).",
+        "falsePassOrFail": "False pass: a build whose snapshot projection rejects every record (for example, it reads the wrong field) throws 'Catalog model record for provider X has no model_id' on record 0, the same message as the correct rejection, and both SCN-IDN-001 and neg-idn-001 pass.",
+        "suggestedFix": "In the control, first deliver the unmodified snapshot and assert no models-ingestion-error. Then deliver the stripped one, and assert the error names the stripped record's provider_id. Alternatively, strip a record that is not first in the list.",
+        "kind": "harness"
+      },
+      {
+        "severity": "WARNING",
+        "file": "tests/bdd/steps/live-model-choice.steps.ts",
+        "line": "362-374, 853-861",
+        "claim": "CTL-SYS-001-HELD-500 sets held.failedAt only after `await route.fulfill(...)` resolves, and counts only writes with `at > failedAt`.",
+        "falsePassOrFail": "False pass: a fallback write fired as soon as the browser sees the 500 can be recorded before fulfill() resolves in Node, so it is not counted. A retried live-route POST is still caught by the registry read-back, but a settings-API fallback write would be refused by the server, leave the registry unchanged, and pass.",
+        "suggestedFix": "Record failedAt = Date.now() before calling route.fulfill, or count every write after the held POST's own entry in s1.writes.",
+        "kind": "harness"
+      },
+      {
+        "severity": "WARNING",
+        "file": "frontend/playwright.real-server.config.ts",
+        "line": "22 (and frontend/playwright.installed-settings-truth.config.ts:24)",
+        "claim": "UAR_STATIC_DIR is passed to the server, but no runner asserts that index.html exists there, which the contract's expectedEffects and stopConditions require. In the baseline worktree, static/index.html is tracked, so a stale committed index.html is present even before the build.",
+        "falsePassOrFail": "A missing or failed build does not make the scenario BLOCKED as the contract says. It runs against the resolve_static_dir fallback or a stale index.html.",
+        "suggestedFix": "In both configs, throw if !fs.existsSync(path.join(staticDir, 'index.html')). For the baseline, also check that an asset the build emits exists.",
+        "kind": "harness"
+      },
+      {
+        "severity": "WARNING",
+        "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+        "line": "boundaryPacket.expectedEffects 'Negative-control rule' vs commands[24..48]",
+        "claim": "Negative controls are judged by Playwright exit status. A control that did not run (for example, neg-idn-001's snapshot never delivered, or a webServer that failed to start) and a control that ran without seeing the rejection give the same failure.",
+        "falsePassOrFail": "The contract's distinction between BLOCKED and FAIL cannot be recorded. A did-not-run control will be reported as FAIL.",
+        "suggestedFix": "Have the executor read the JSON or list output and map a failure at a precondition step (snapshot delivered, stub capabilities, setup) to BLOCKED. Alternatively, accept that this distinction is out of reach and say so in the contract.",
+        "kind": "contract"
+      },
+      {
+        "severity": "WARNING",
+        "file": "frontend/e2e/model-picker.spec.ts",
+        "line": "261-275",
+        "claim": "SCN-PICK-002 requires the longest long task to stay under 200 ms in all 5 samples, while 597 options render without virtualization (VIRTUALIZE_ABOVE_OPTIONS = 1000) against a debug-profile runtime on a dev host.",
+        "falsePassOrFail": "False fail from timing variance in one of five samples, with no product defect.",
+        "suggestedFix": "Keep the threshold, since the oracle freezes it, but record host load and browser in the receipt so a single failing sample can be told apart from a regression.",
+        "kind": "harness"
+      },
+      {
+        "severity": "SUGGESTION",
+        "file": "frontend/e2e/model-picker.spec.ts",
+        "line": "203-210 vs 278-306",
+        "claim": "neg-pick-002 repeats a check that SCN-PICK-002 already makes: the main test asserts zzzz-no-match gives 0 options and 'No matching models.'.",
+        "falsePassOrFail": "No wrong build passes SCN-PICK-002 and fails neg-pick-002, so the control adds no discriminating power.",
+        "suggestedFix": "Point the control at a property the main test does not cover, for example a query whose match set is non-empty but excludes the currently highlighted option.",
+        "kind": "contract"
+      },
+      {
+        "severity": "SUGGESTION",
+        "file": "tests/bdd/support/s1.ts",
+        "line": "116",
+        "claim": "The write log listens at the context level, so SCN-SYS-007's exact list [PUT, POST] (steps.ts:820-826) also includes any write the chat page makes during the change.",
+        "falsePassOrFail": "Possible false fail if the chat page issues an unrelated /api/uar write during the operator change. Nothing observed confirms this happens.",
+        "suggestedFix": "Filter writes by request.frame().page() === operator page for the console-write assertions.",
+        "kind": "harness"
+      }
+    ]
+  }
+}
