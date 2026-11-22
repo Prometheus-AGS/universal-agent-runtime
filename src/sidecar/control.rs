@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex, mpsc};
 use futures::FutureExt as _;
 use secrecy::zeroize::Zeroize as _;
 use tokio_util::{sync::CancellationToken, task::TaskTracker};
-use universal_agent_runtime::server::{LifecycleRequest, ServerLifecycleControl};
+use crate::server::{LifecycleRequest, ServerLifecycleControl};
 
 use super::inherited_input::AsyncInput;
 

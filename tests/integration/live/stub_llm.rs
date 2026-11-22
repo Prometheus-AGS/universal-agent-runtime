@@ -35,6 +35,10 @@ pub enum FixtureResponse {
     Content(String),
     /// Hold a real HTTP model request after it reaches the stub, so the live
     /// UAR integration gate can inspect and cancel an occupied turn.
+    #[allow(
+        dead_code,
+        reason = "shared by several test targets; not every target delays a response"
+    )]
     DelayedContent {
         delay_ms: u64,
         text: String,
@@ -133,6 +137,10 @@ impl FixtureSet {
 
     /// Match a generated runtime prompt whose occurrence IDs/timestamps vary per run.
     #[must_use]
+    #[allow(
+        dead_code,
+        reason = "shared by several test targets; not every target matches by prefix"
+    )]
     pub fn with_prompt_prefix(mut self, prefix: impl Into<String>, response: FixtureResponse) -> Self {
         self.prompt_prefix_responses.push((prefix.into(), response));
         self

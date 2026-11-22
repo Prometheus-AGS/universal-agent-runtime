@@ -40,6 +40,8 @@ pub mod sandbox;
 #[cfg(feature = "server")]
 pub mod server;
 pub mod session;
+#[cfg(feature = "server")]
+pub mod sidecar;
 pub mod skills_api;
 pub mod uar;
 

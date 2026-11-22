@@ -2957,3 +2957,30 @@ server-side consumers of the existing change feed that refresh those in-memory
 copies on every replica. The cost: a backend item on the critical path, and the
 boundary gate must exercise at least two replicas against one remote store, not
 only a single process.
+
+## 2026-11-21 — Supervised launch is a flag on the standalone binary; the build identity is public
+
+Issue #539 asked for a launch token on stdin, a reported port and a readiness
+line. All three already existed in `uar-sidecar`, which only The Boss payload
+ships. The operator chose to expose the same entry point as
+`universal-agent-runtime --supervised` instead of shipping a second 367 MB
+binary in every install, so the sidecar start-up code moved into the library
+(`src/sidecar/`) and `uar-sidecar` became a wrapper. In supervised mode
+`--port 0` now means an OS-assigned port; omitting the port keeps the 1906
+walk-up.
+
+The operator also chose to make `GET /api/uar/version` credential-free on a
+standalone server, like `/health`, because an installer has no credentials.
+The cost: a network-exposed server tells an unauthenticated caller its exact
+build. A supervised process still requires its launch token for the route.
+
+Decided against, on the operator's instruction: a new capabilities route
+(`/api/uar/capabilities` and `/api/uar/discovery/*` already exist; a plugin
+listing belongs to the plugin change) and a server-enforced no-tools start
+mode in this change (follow-up issue).
+
+Not changed: the compiled `server.ingest_directory` default, `/data/ingest`.
+It cannot be created on macOS or by the non-root container user, so every
+host and test fixture has to set it. Changing it would move the ingestion
+directory for deployments that mount `/data`, so it is documented for hosts
+in `docs/operations/supervised-launch.md` and left as a separate decision.

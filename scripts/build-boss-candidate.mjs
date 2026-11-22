@@ -116,7 +116,9 @@ try {
     writeFileSync(descriptor, `source ${source}\ntree ${sourceTree}\ncommand ${JSON.stringify(command)}\n`)
     const result = spawnSync(command[0], command.slice(1), {
       cwd: snapshot,
-      env: { ...process.env, CARGO_TARGET_DIR: targetDirectory },
+      // The snapshot has no .git, so hand the build the commit that
+      // GET /api/uar/version reports.
+      env: { ...process.env, CARGO_TARGET_DIR: targetDirectory, UAR_GIT_SHA: source },
       stdio: ['ignore', descriptor, descriptor]
     })
     if (result.error) throw result.error
