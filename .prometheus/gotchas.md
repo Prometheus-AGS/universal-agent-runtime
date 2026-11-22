@@ -2405,3 +2405,9 @@ is reconciled, even when the lockfile itself is correct
 --frozen-lockfile` (no tracked file changes; on 2026-11-19 it added one missing package).
 Do not bypass the hook. The `vite` `^8.3.8` manifest vs `8.3.5` lockfile difference is the
 `pnpm-workspace.yaml` override, not the cause.
+
+## 2026-11-21 — A failed `git commit` under lefthook can leave an empty `.git/index.lock`
+Three times in one session an empty `.git/index.lock` blocked git with no git process running. At least one was left by a `git commit` that ran the lefthook pre-commit hooks and then failed (missing `-F` message file). Before removing a lock, check `pgrep -x git` and the lock's mtime; an empty lock with no git process is stale. Do not delete a lock while any git process runs.
+
+## 2026-11-21 — Empty `.git/index.lock` reappears shortly after commits
+Three times on 2026-11-21 an empty `.git/index.lock` was found with no git process running; one appeared about a minute after a successful lefthook commit (07:27 commit, 07:28 lock) while a background review agent was running `git worktree add`/`git apply --check`. Before removing: `pgrep -lf "git "` and check mtime. Cause not established; suspect a concurrent git invocation (agent worktree or editor) killed mid-operation.
