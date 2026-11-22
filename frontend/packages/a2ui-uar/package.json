@@ -27,9 +27,9 @@
     "@prometheus-ags/a2ui-core": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "i18next": "27.1.1",
-    "lucide-react": "^1.62.0",
-    "motion": "14.12.0",
+    "i18next": "27.1.2",
+    "lucide-react": "^1.73.0",
+    "motion": "14.14.0",
     "react-aria-components": "^1.22.1",
     "tailwind-merge": "^3.7.0",
     "zod": "4.6.7"
@@ -43,19 +43,19 @@
     "@prometheus-ags/a2ui-react-reference-legacy-zod4": "workspace:0.12.0-rc.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.8",
+    "@testing-library/user-event": "^14.6.10",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
     "axe-core": "4.14.0",
     "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "globals": "^17.13.0",
+    "globals": "^17.14.0",
     "happy-dom": "^21.0.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.1",
-    "vitest": "5.0.5"
+    "typescript-eslint": "^8.72.2",
+    "vitest": "5.1.0"
   }
 }

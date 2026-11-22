@@ -134,7 +134,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@lit/context": "^1.1.6",
-    "@preact/signals-core": "^1.14.2",
+    "@preact/signals-core": "^1.14.5",
     "lit": "^3.3.3",
     "redos-detector": "^6.1.4",
     "validate-color": "^2.2.4",
