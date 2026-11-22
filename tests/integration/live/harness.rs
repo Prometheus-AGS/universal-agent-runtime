@@ -562,6 +562,7 @@ async fn boot_test_server_inner(
         acp_enabled: None,
         acp_path: None,
         strict_config: false,
+        supervised: false,
         command: None,
     };
 

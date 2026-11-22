@@ -432,7 +432,7 @@ fn valid_id(id: &str) -> bool {
     !id.is_empty() && id.len() <= 512 && id.trim() == id && !id.chars().any(char::is_control)
 }
 
-const PROTOCOL_VERSION: &str = "1.0";
+pub(crate) const PROTOCOL_VERSION: &str = "1.0";
 
 fn supported_protocol_version(version: &str) -> bool {
     if version == PROTOCOL_VERSION {

@@ -197,6 +197,8 @@ By default UAR requires a JWT on every API request (`security.jwt_required: true
 
 UAR can run as a server, container, or supervised local service. BossFang should currently supervise UAR out of process and use the OpenAI-compatible API first, adding A2A or AG-UI where richer task/event semantics are needed. A linked library should be reconsidered only after a narrow dependency-light kernel is extracted and profiling demonstrates a material IPC bottleneck. The detailed analysis is in the [BossFang integration guide](docs/librefang-integration.md#6-deployment-decision-library-or-supervised-service).
 
+A desktop application can start UAR as a child process with `universal-agent-runtime --supervised`: it writes a launch token to the child's stdin, reads the port from one `READY:<port>` line, and stops the child by closing stdin. See [Starting UAR from another program](docs/operations/supervised-launch.md). `GET /api/uar/version` reports which build is running.
+
 ### Native service quickstart
 
 Native packages for a macOS user LaunchAgent, Linux systemd, and Windows SCM

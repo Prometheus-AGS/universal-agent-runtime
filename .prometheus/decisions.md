@@ -3031,3 +3031,30 @@ Owner: "Remove the need for signings right now. Just do the work. Start planning
 - With the system default's provider disabled, the console now serves the configured fallback (`llm.model`) if that model verifies, labelled "configured fallback"; any other unservable model still fails the turn with no substitution. Rationale: the adopted S1 contract's mandatory SCN-SYS-012 control requires it; the previous 422 contradicted it.
 - `default_model` is excluded from the model-verification fingerprint. Rationale: it selects a model, it does not change how a provider is reached; including it invalidated every proof on each default switch, so the next turn failed. Upgrade cost: earlier proofs go stale once.
 - The settings API refuses `llm.default_provider`; the live provider route is its only writer. The console's settings save drops that key so one stray draft cannot sink a bulk save.
+
+## 2026-11-21 — Supervised launch is a flag on the standalone binary; the build identity is public
+
+Issue #539 asked for a launch token on stdin, a reported port and a readiness
+line. All three already existed in `uar-sidecar`, which only The Boss payload
+ships. The operator chose to expose the same entry point as
+`universal-agent-runtime --supervised` instead of shipping a second 367 MB
+binary in every install, so the sidecar start-up code moved into the library
+(`src/sidecar/`) and `uar-sidecar` became a wrapper. In supervised mode
+`--port 0` now means an OS-assigned port; omitting the port keeps the 1906
+walk-up.
+
+The operator also chose to make `GET /api/uar/version` credential-free on a
+standalone server, like `/health`, because an installer has no credentials.
+The cost: a network-exposed server tells an unauthenticated caller its exact
+build. A supervised process still requires its launch token for the route.
+
+Decided against, on the operator's instruction: a new capabilities route
+(`/api/uar/capabilities` and `/api/uar/discovery/*` already exist; a plugin
+listing belongs to the plugin change) and a server-enforced no-tools start
+mode in this change (follow-up issue).
+
+Not changed: the compiled `server.ingest_directory` default, `/data/ingest`.
+It cannot be created on macOS or by the non-root container user, so every
+host and test fixture has to set it. Changing it would move the ingestion
+directory for deployments that mount `/data`, so it is documented for hosts
+in `docs/operations/supervised-launch.md` and left as a separate decision.

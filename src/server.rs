@@ -2404,6 +2404,7 @@ async fn run_server_with_listener(
         .route("/health", get(liveness_handler))
         .route("/healthz", get(liveness_handler))
         .route("/readyz", get(readiness_handler))
+        .route("/api/uar/version", get(uar::api::version::version_handler))
         .route(
             "/api/uar/capabilities",
             get(uar::api::capabilities::capabilities_handler).with_state(Arc::new(

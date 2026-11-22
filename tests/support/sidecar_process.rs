@@ -272,12 +272,25 @@ pub fn render_config(workspace: &Workspace, options: &ConfigOptions) -> String {
          resilience:\n  rate_limit_enabled: false\n\
          persistence:\n  provider: \"surreal\"\n  database_url: \"surrealkv://{data}\"\n\
          acp:\n  enabled: true\n  path: \"/acp\"\n  auth_required: true\n\
-         llm:\n  model: \"{MODEL}\"\n  base_url: \"{base}\"\n\
-         server:\n  host: \"127.0.0.1\"\n  port: {port}\n  grpc_port: {grpc}\n  shutdown_timeout_secs: 10\n\
+         models:\n  models_dir: \"{models}\"\n\
+         llm:\n  model: \"{MODEL}\"\n  base_url: \"{base}\"\n  embedding:\n    models_dir: \"{models}\"\n\
+         server:\n  host: \"127.0.0.1\"\n  port: {port}\n  grpc_port: {grpc}\n  shutdown_timeout_secs: 10\n  ingest_directory: \"{ingest}\"\n\
          native_tools:\n  terminal_exec_enabled: true\n  terminal_use_sandbox: false\n  terminal_timeout_secs: 30\n\
          {extra}",
         jwt = options.jwt_required,
         data = workspace.data().display(),
+        // The compiled default, `/data/ingest`, is a container mount. Startup
+        // fails where it cannot be created (macOS, non-root), so every launch
+        // gets a private directory, as a host must give its own child.
+        ingest = workspace.path().join("ingest").display(),
+        // The process runs in a private working directory, so the default
+        // relative models directory would not resolve. A build with local
+        // embedding refuses to start without these files, and reads two
+        // keys for them: `llm.embedding.models_dir` for vector retrieval and
+        // `models.models_dir` for skill matching.
+        models = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src/uar/runtime/matching/models")
+            .display(),
         base = options.llm_base_url,
         port = options.port,
         grpc = options.grpc_port,
@@ -379,7 +392,9 @@ pub async fn spawn(program: &str, workspace: &Workspace, options: &LaunchOptions
     let mut command = base_command(program, workspace, options);
     command.stdin(Stdio::piped());
     #[cfg(windows)]
-    let parent_pipe = if program == sidecar_binary() {
+    let parent_pipe = if program == sidecar_binary()
+        || options.extra_args.iter().any(|argument| argument == SUPERVISED_FLAG)
+    {
         // Mandatory Windows launch contract: the child reads this inherited
         // named-pipe handle with overlapped I/O and joins canceled reads.
         use std::os::windows::fs::OpenOptionsExt as _;
@@ -467,6 +482,32 @@ pub async fn launch_sidecar(workspace: &Workspace, options: &LaunchOptions) -> S
     };
     process.port = Some(port);
     process
+}
+
+/// Flag that makes the standalone binary run its supervised entry point.
+pub const SUPERVISED_FLAG: &str = "--supervised";
+
+/// Start the standalone binary in supervised mode (`--supervised`) and wait
+/// for its `READY:{port}` line. Same launch contract as [`launch_sidecar`].
+pub async fn launch_supervised(workspace: &Workspace, options: &LaunchOptions) -> ServerProcess {
+    let mut process = spawn_supervised(workspace, options).await;
+    let port = match process.wait_for_ready(READY_TIMEOUT).await {
+        Ok(port) => port,
+        Err(error) => {
+            process.close_stdin();
+            let exit = process.wait_exit(READY_TIMEOUT).await;
+            panic!("supervised runtime did not become ready: {error}; exit={exit:?}");
+        }
+    };
+    process.port = Some(port);
+    process
+}
+
+/// Start the standalone binary in supervised mode without waiting for it.
+pub async fn spawn_supervised(workspace: &Workspace, options: &LaunchOptions) -> ServerProcess {
+    let mut options = options.clone();
+    options.extra_args.push(SUPERVISED_FLAG.to_owned());
+    spawn(standalone_binary(), workspace, &options).await
 }
 
 /// Start the standalone server on the configured port and wait for `/health`.

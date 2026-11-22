@@ -322,6 +322,13 @@ pub async fn auth_middleware(
         return Ok(next.run(request).await);
     }
 
+    // The build identity is compile-time metadata with no configuration or
+    // secret in it. An installer that checks which version is running has no
+    // credentials to present, so reading it needs none (issue #539).
+    if request.method() == axum::http::Method::GET && path == "/api/uar/version" {
+        return Ok(next.run(request).await);
+    }
+
     if state.config.security.validate_identity_policy().is_err() {
         return Err(StatusCode::SERVICE_UNAVAILABLE.into_response());
     }

@@ -386,6 +386,7 @@ pub fn administration_capabilities(
                         Host,
                         Read
                     ),
+                    endpoint!("version.read", "GET", "/api/uar/version", Public, Read),
                     endpoint!("health.read", "GET", "/health", Public, Read),
                     endpoint!("health.compatibility.read", "GET", "/healthz", Public, Read),
                     endpoint!("readiness.read", "GET", "/readyz", Public, Read),
