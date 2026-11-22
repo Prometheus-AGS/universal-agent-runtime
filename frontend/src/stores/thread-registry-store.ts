@@ -15,10 +15,12 @@ interface ThreadRegistryActions {
   hydrateFromDb(): Promise<void>;
   registerThread(id: string): void;
   markPersisted(id: string): void;
-  setTitle(id: string, title: string): void;
+  /** Resolves once the local database has the new title. */
+  setTitle(id: string, title: string): Promise<void>;
   touch(id: string): void;
   setActive(id: string | null): void;
-  removeThread(id: string): void;
+  /** Resolves once the local database no longer has the thread. */
+  removeThread(id: string): Promise<void>;
   getLatestPersisted(): LocalThread | null;
 }
 
@@ -77,7 +79,7 @@ export const useThreadRegistryStore = create<ThreadRegistryStore>()(
         state.threads[id].updatedAt = new Date().toISOString();
       });
       const updated = get().threads[id];
-      if (updated) void getDbInstance().upsertThread(updated);
+      return updated ? getDbInstance().upsertThread(updated) : Promise.resolve();
     },
 
     touch: (id) => {
@@ -95,7 +97,7 @@ export const useThreadRegistryStore = create<ThreadRegistryStore>()(
         delete state.threads[id];
         if (state.activeThreadId === id) state.activeThreadId = null;
       });
-      void getDbInstance().deleteThread(id);
+      return getDbInstance().deleteThread(id);
     },
 
     getLatestPersisted: () => {

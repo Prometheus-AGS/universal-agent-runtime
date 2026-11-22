@@ -41,6 +41,12 @@ const THREAD_LIST = '[aria-label="Thread list"]';
 const REPLY_PATTERN = /bdd-reply-[A-Za-z0-9._-]+/g;
 /** Root of one assistant turn in the transcript (`enhanced-thread.tsx` AssistantMessage). */
 const ASSISTANT_TURN = '[data-role="assistant"]';
+/**
+ * A markdown text part still being revealed or streamed: `MarkdownTextPrimitive` sets
+ * `data-status` to the smooth status, which stays "running" while the shown text lags the
+ * message text (`@assistant-ui/react-markdown` MarkdownText.js; `useSmooth.js` SMOOTH_STATUS).
+ */
+const REVEAL_RUNNING = '[data-status="running"]';
 /** How long a receipt may take to render under the answer to the message just sent. */
 const RECEIPT_TIMEOUT_MS = 15_000;
 const RECEIPT_POLL_MS = 100;
@@ -66,8 +72,37 @@ export function conversationSection(page: Page): Locator {
   return page.locator(CONVERSATION);
 }
 
+/**
+ * The transcript's shown text, one line per text node. Not innerText: that omits an answer
+ * the browser skips off-screen (`content-visibility: auto`), so the reply count would not
+ * grow when a new reply pushes an older one away. checkVisibility() still excludes
+ * display:none and visibility:hidden text (as innerText did) and treats such a skipped answer as shown.
+ * Text nodes under the same nearest block-level ancestor are joined with no separator, so a
+ * reply token split across inline elements stays whole; a new block ancestor starts a new line.
+ */
 async function conversationText(page: Page): Promise<string> {
-  return page.locator(CONVERSATION).innerText();
+  return page.locator(CONVERSATION).evaluate((root) => {
+    const blockOf = (element: Element): Element => {
+      let current: Element | null = element;
+      while (current && current !== root) {
+        if (!getComputedStyle(current).display.startsWith('inline')) return current;
+        current = current.parentElement;
+      }
+      return root;
+    };
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let text = '';
+    let previousBlock: Element | null = null;
+    while (walker.nextNode()) {
+      const parent = walker.currentNode.parentElement;
+      if (!parent?.checkVisibility({ visibilityProperty: true })) continue;
+      const block = blockOf(parent);
+      if (previousBlock !== null && block !== previousBlock) text += '\n';
+      text += walker.currentNode.nodeValue ?? '';
+      previousBlock = block;
+    }
+    return text;
+  });
 }
 
 function repliesIn(text: string): string[] {
@@ -102,7 +137,31 @@ export async function captureReply(page: Page, s1: S1Context, message: string): 
       timeout: 15_000,
     })
     .toBeGreaterThan(before);
-  const reply = await newestReply(page);
+  // The answer text is revealed gradually (MarkdownTextPrimitive smooth reveal), so the count can
+  // grow while only a prefix such as `bdd-reply-gpt-5` is shown. The primitive's container carries
+  // `data-status="running"` until the reveal has caught up and the part is complete; the reply is
+  // read only once the newest assistant turn holds no such element.
+  await expect
+    .poll(
+      async () => conversationSection(page).locator(ASSISTANT_TURN).last().locator(REVEAL_RUNNING).count(),
+      { message: `the reply to "${message}" has finished revealing`, timeout: 15_000 },
+    )
+    .toBe(0);
+  // The markdown renders through useDeferredValue, so the status can complete a render before
+  // the DOM shows the full text: the reply is taken once two reads ~100 ms apart agree.
+  const reads: { previous: string | null; stable: string | null } = { previous: null, stable: null };
+  await expect
+    .poll(
+      async () => {
+        const current = await newestReply(page);
+        if (current !== null && current === reads.previous) reads.stable = current;
+        reads.previous = current;
+        return reads.stable !== null;
+      },
+      { message: `the reply to "${message}" has stopped changing`, timeout: 10_000, intervals: [100] },
+    )
+    .toBe(true);
+  const reply = reads.stable;
   if (reply === null) throw new Error(`no reply text was found in the transcript for "${message}"`);
   s1.replyShown.set(message, reply);
 }
@@ -147,28 +206,64 @@ export async function startFreshThread(page: Page): Promise<void> {
   else await openFreshThread(page);
 }
 
-function threadRow(page: Page, name: string): Locator {
+export function threadRow(page: Page, name: string): Locator {
   return page
     .locator(THREAD_LIST)
     .locator('div.group')
     .filter({ has: page.getByText(name, { exact: true }) });
 }
 
-async function renameActiveThread(page: Page, name: string): Promise<void> {
+/** Gap between two reads of a thread title that must agree for the title to count as settled. */
+const TITLE_STABLE_INTERVAL_MS = 1_000;
+/** Bound on waiting for a thread title to stop changing. */
+const TITLE_SETTLE_TIMEOUT_MS = 15_000;
+
+/** The title text of a thread row: the first paragraph inside its thread button. */
+export function threadRowTitle(row: Locator): Locator {
+  return row.getByRole('button').first().locator('p').first();
+}
+
+/**
+ * Waits until a thread row's title reads the same twice, TITLE_STABLE_INTERVAL_MS apart, and
+ * returns it. A generated title can land after the first message and overwrite what is shown.
+ */
+export async function stableThreadTitle(row: Locator): Promise<string> {
+  const reads: { previous: string | null; stable: string | null } = { previous: null, stable: null };
+  await expect
+    .poll(
+      async () => {
+        const current = (await threadRowTitle(row).innerText()).trim();
+        if (current === reads.previous) reads.stable = current;
+        reads.previous = current;
+        return reads.stable !== null;
+      },
+      {
+        message: "the thread's title stops changing",
+        timeout: TITLE_SETTLE_TIMEOUT_MS,
+        intervals: [TITLE_STABLE_INTERVAL_MS],
+      },
+    )
+    .toBe(true);
+  if (reads.stable === null) throw new Error("the thread's title never settled");
+  return reads.stable;
+}
+
+export async function renameActiveThread(page: Page, name: string): Promise<void> {
   const list = page.locator(THREAD_LIST);
   const row = list.locator('div.group').filter({ has: page.locator('button[aria-current="page"]') }).first();
   await expect(row).toBeVisible({ timeout: 10_000 });
-  // The runtime titles a thread after its first reply; give that a moment so it
-  // cannot land after the rename. A thread that stays untitled is renamed anyway.
-  await expect(row)
-    .not.toContainText('New conversation', { timeout: 3_000 })
-    .catch(() => undefined);
+  // The runtime titles a thread after its first message; wait until that title has
+  // stopped changing so it cannot land after the rename.
+  await stableThreadTitle(row);
   await row.hover();
   await row.getByRole('button', { name: /^Actions for / }).click();
   await page.getByRole('menuitem', { name: 'Rename' }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Thread name').fill(name);
   await dialog.getByRole('button', { name: 'Save', exact: true }).click();
+  // The dialog closes only after the title write to the local database resolves
+  // (left-sidebar.tsx awaits setTitle), so a later reload sees the name.
+  await expect(dialog, 'saving closes the rename dialog').toBeHidden({ timeout: 10_000 });
   await expect(list.getByText(name, { exact: true })).toBeVisible();
 }
 
@@ -263,10 +358,86 @@ async function openPickerFor(page: Page, trigger: Locator, qualified: string): P
   if ((await search.count()) > 0) await search.first().fill(modelId);
 }
 
+// Above 1000 options the combobox list is virtual (`VIRTUALIZE_ABOVE_OPTIONS`,
+// `combobox-picker-model.ts:11`): only the rows near the scroll position are mounted
+// (`VirtualPickerList`, `combobox-picker.tsx:490-589`, overscan 8, 36 px option rows). The
+// system default picker lists the whole catalog, so a matching option further down the
+// filtered list is not in the DOM until the list (`data-slot="combobox-list"`,
+// `components/ui/combobox.tsx:122`) is scrolled to it.
+const PICKER_LIST = '[data-slot="combobox-list"]';
+const VIRTUAL_ROWS = '[data-virtualized="true"]';
+/** How long one scroll step waits for the rows it brings into range to mount. */
+const SCROLL_STEP_WAIT_MS = 250;
+/** Safety bound on scroll steps; a filtered list ends long before this. */
+const MAX_SCROLL_STEPS = 400;
+
+async function attachedWithin(option: Locator, timeout: number): Promise<boolean> {
+  return option
+    .first()
+    .waitFor({ state: 'attached', timeout })
+    .then(() => true)
+    .catch(() => false);
+}
+
+/**
+ * The open picker's virtual list once its filtered rows have settled, or null when the
+ * list is not virtual (every option is then mounted). The filter follows the typed query
+ * through `useDeferredValue`, and the virtual container's height is the filtered rows'
+ * total size, so the rows have settled when that height reads the same three times running.
+ */
+async function settledVirtualList(page: Page): Promise<Locator | null> {
+  const list = page.locator(`${PICKER_LIST}:visible`).last();
+  if ((await list.count()) === 0) return null;
+  const rows = list.locator(VIRTUAL_ROWS);
+  if ((await rows.count()) === 0) return null;
+  let previous = '';
+  let unchanged = 0;
+  await expect
+    .poll(
+      async () => {
+        const height = await rows.first().evaluate((element) => (element as HTMLElement).style.height);
+        unchanged = height === previous ? unchanged + 1 : 0;
+        previous = height;
+        return unchanged;
+      },
+      { message: 'the picker has applied the search', timeout: 10_000, intervals: [100] },
+    )
+    .toBeGreaterThanOrEqual(2);
+  return list;
+}
+
+/**
+ * Finds an option in an open picker: waits briefly for it to mount and, when the list is
+ * virtual, scrolls it down one viewport at a time until the option is mounted or the list
+ * can scroll no further. Returns whether the option is in the DOM.
+ */
+async function revealOption(page: Page, option: Locator, firstWaitMs: number): Promise<boolean> {
+  if (await attachedWithin(option, firstWaitMs)) return true;
+  const list = await settledVirtualList(page);
+  if (list === null) return (await option.count()) > 0;
+  // Scan from the top so no rows above the current position are skipped.
+  await list.evaluate(async (element) => {
+    element.scrollTop = 0;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  });
+  for (let step = 0; step < MAX_SCROLL_STEPS; step += 1) {
+    if (await attachedWithin(option, SCROLL_STEP_WAIT_MS)) return true;
+    const moved = await list.evaluate(async (element) => {
+      const before = element.scrollTop;
+      element.scrollTop = before + element.clientHeight;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      return element.scrollTop > before;
+    });
+    if (!moved) return attachedWithin(option, SCROLL_STEP_WAIT_MS);
+  }
+  return (await option.count()) > 0;
+}
+
 /** Opens the picker and clicks the option for a provider-qualified model. */
 async function chooseModel(page: Page, trigger: Locator, qualified: string): Promise<void> {
   await openPickerFor(page, trigger, qualified);
   const option = modelOption(page, qualified);
+  await revealOption(page, option, 1_000);
   await expect(option, `the picker offers ${qualified}`).toBeVisible({ timeout: 10_000 });
   await expect(option, `${qualified} is selectable`).not.toHaveAttribute('aria-disabled', 'true');
   await option.click();
@@ -280,11 +451,8 @@ async function optionState(
 ): Promise<{ state: 'absent' | 'blocked' | 'selectable'; text: string }> {
   await openPickerFor(page, trigger, qualified);
   const option = modelOption(page, qualified);
-  const present = await option
-    .first()
-    .waitFor({ state: 'attached', timeout: 3_000 })
-    .then(() => true)
-    .catch(() => false);
+  // An offered option below the mounted rows of a virtual list must not read as absent.
+  const present = await revealOption(page, option, 3_000);
   let result: { state: 'absent' | 'blocked' | 'selectable'; text: string } = { state: 'absent', text: '' };
   if (present) {
     const text = (await option.first().innerText()).trim();

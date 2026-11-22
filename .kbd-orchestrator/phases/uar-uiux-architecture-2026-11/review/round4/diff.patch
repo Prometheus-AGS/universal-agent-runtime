@@ -1,0 +1,549 @@
+diff --git a/frontend/src/components/layout/left-sidebar.tsx b/frontend/src/components/layout/left-sidebar.tsx
+index 4ebc6693..47063ce8 100644
+--- a/frontend/src/components/layout/left-sidebar.tsx
++++ b/frontend/src/components/layout/left-sidebar.tsx
+@@ -183,7 +183,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
+                 </DropdownMenuTrigger>
+                 <DropdownMenuContent align="end" sideOffset={6}>
+                   <DropdownMenuItem
+-                    onSelect={() => {
++                    onClick={() => {
+                       setRenameThreadId(thread.id);
+                       setRenameValue(thread.title);
+                     }}
+@@ -192,7 +192,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
+                   </DropdownMenuItem>
+                   <DropdownMenuItem
+                     className="text-destructive focus:text-destructive"
+-                    onSelect={() => setDeleteThreadId(thread.id)}
++                    onClick={() => setDeleteThreadId(thread.id)}
+                   >
+                     <Trash2 size={14} />Delete
+                   </DropdownMenuItem>
+diff --git a/frontend/src/stores/chat-message-store.ts b/frontend/src/stores/chat-message-store.ts
+index 1d026c8e..dce83f5d 100644
+--- a/frontend/src/stores/chat-message-store.ts
++++ b/frontend/src/stores/chat-message-store.ts
+@@ -41,9 +41,16 @@ export interface MessageMeta {
+ interface ChatMessageState {
+   messagesByThread: Record<string, RichMessage[]>;
+   streamingByThread: Record<string, StreamingState>;
++  /** Threads whose send turn still holds the chat stream lease. finishStream
++   * clears isStreaming before the turn is persisted and the lease is released,
++   * so the composer reads this too; a send accepted in that gap would be
++   * refused as "Another response is active". Set and cleared only by startStream. */
++  turnBusyByThread: Record<string, true>;
+ }
+ 
+ interface ChatMessageActions {
++  /** Mark a thread's turn as holding (true) or having released (false) the chat stream lease. */
++  setTurnBusy(threadId: string, busy: boolean): void;
+   /** Load persisted messages for a thread from PGlite into Zustand. */
+   loadMessagesFromDb(threadId: string): Promise<void>;
+   /** Append turns the server session holds but the local history lost. */
+@@ -542,6 +549,14 @@ export const useChatMessageStore = create<ChatMessageStore>()(
+   immer((set, get) => ({
+     messagesByThread: {},
+     streamingByThread: {},
++    turnBusyByThread: {},
++
++    setTurnBusy: (threadId, busy) =>
++      set((state) => {
++        if (!state.turnBusyByThread) state.turnBusyByThread = {};
++        if (busy) state.turnBusyByThread[threadId] = true;
++        else delete state.turnBusyByThread[threadId];
++      }),
+ 
+     loadMessagesFromDb: (threadId) => {
+       if (get().streamingByThread[threadId]?.isStreaming) return Promise.resolve();
+@@ -1190,8 +1205,9 @@ export const selectMessageById =
+   (threadId: string, messageId: string) => (state: ChatMessageStore) =>
+     state.messagesByThread[threadId]?.find((m) => m.id === messageId) ?? null;
+ 
++/** Busy for the whole turn: the live stream, then persistence until the lease is released. */
+ export const selectIsStreaming = (threadId: string) => (state: ChatMessageStore) =>
+-  state.streamingByThread[threadId]?.isStreaming ?? false;
++  (state.streamingByThread[threadId]?.isStreaming ?? false) || (state.turnBusyByThread?.[threadId] ?? false);
+ 
+ export const selectIsAwaitingFirstToken = (threadId: string) => (state: ChatMessageStore) =>
+   state.streamingByThread[threadId]?.awaitingFirstToken ?? false;
+diff --git a/frontend/src/stores/chat-stream-store.ts b/frontend/src/stores/chat-stream-store.ts
+index 66197a43..b42d964d 100644
+--- a/frontend/src/stores/chat-stream-store.ts
++++ b/frontend/src/stores/chat-stream-store.ts
+@@ -737,6 +737,8 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
+       callbacks?.onError?.(failure);
+       return;
+     }
++    // Keep the composer busy until the lease is released in the finally below.
++    if (!continuation) useChatMessageStore.getState().setTurnBusy(threadId, true);
+     try {
+     if (!continuation) useChatStreamStore.getState().cancelStream();
+ 
+@@ -1503,6 +1505,11 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
+         return;
+       }
+     }
+-    } finally { if (!continuation) lease.release(); }
++    } finally {
++      if (!continuation) {
++        lease.release();
++        useChatMessageStore.getState().setTurnBusy(threadId, false);
++      }
++    }
+   },
+ }));
+diff --git a/tests/bdd/support/s1-ui.ts b/tests/bdd/support/s1-ui.ts
+index 5d9a050c..c0e05425 100644
+--- a/tests/bdd/support/s1-ui.ts
++++ b/tests/bdd/support/s1-ui.ts
+@@ -41,6 +41,12 @@ const THREAD_LIST = '[aria-label="Thread list"]';
+ const REPLY_PATTERN = /bdd-reply-[A-Za-z0-9._-]+/g;
+ /** Root of one assistant turn in the transcript (`enhanced-thread.tsx` AssistantMessage). */
+ const ASSISTANT_TURN = '[data-role="assistant"]';
++/**
++ * A markdown text part still being revealed or streamed: `MarkdownTextPrimitive` sets
++ * `data-status` to the smooth status, which stays "running" while the shown text lags the
++ * message text (`@assistant-ui/react-markdown` MarkdownText.js; `useSmooth.js` SMOOTH_STATUS).
++ */
++const REVEAL_RUNNING = '[data-status="running"]';
+ /** How long a receipt may take to render under the answer to the message just sent. */
+ const RECEIPT_TIMEOUT_MS = 15_000;
+ const RECEIPT_POLL_MS = 100;
+@@ -66,8 +72,21 @@ export function conversationSection(page: Page): Locator {
+   return page.locator(CONVERSATION);
+ }
+ 
++/**
++ * The transcript's shown text, one line per text node. Not innerText: that omits an answer
++ * the browser skips off-screen (`content-visibility: auto`), so the reply count would not
++ * grow when a new reply pushes an older one away. checkVisibility() still excludes
++ * display:none and visibility:hidden text (as innerText did) and treats such a skipped answer as shown.
++ */
+ async function conversationText(page: Page): Promise<string> {
+-  return page.locator(CONVERSATION).innerText();
++  return page.locator(CONVERSATION).evaluate((root) => {
++    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
++    const lines: string[] = [];
++    while (walker.nextNode()) {
++      if (walker.currentNode.parentElement?.checkVisibility({ visibilityProperty: true })) lines.push(walker.currentNode.nodeValue ?? '');
++    }
++    return lines.join('\n');
++  });
+ }
+ 
+ function repliesIn(text: string): string[] {
+@@ -102,6 +121,16 @@ export async function captureReply(page: Page, s1: S1Context, message: string):
+       timeout: 15_000,
+     })
+     .toBeGreaterThan(before);
++  // The answer text is revealed gradually (MarkdownTextPrimitive smooth reveal), so the count can
++  // grow while only a prefix such as `bdd-reply-gpt-5` is shown. The primitive's container carries
++  // `data-status="running"` until the reveal has caught up and the part is complete; the reply is
++  // read only once the newest assistant turn holds no such element.
++  await expect
++    .poll(
++      async () => conversationSection(page).locator(ASSISTANT_TURN).last().locator(REVEAL_RUNNING).count(),
++      { message: `the reply to "${message}" has finished revealing`, timeout: 15_000 },
++    )
++    .toBe(0);
+   const reply = await newestReply(page);
+   if (reply === null) throw new Error(`no reply text was found in the transcript for "${message}"`);
+   s1.replyShown.set(message, reply);
+@@ -147,14 +176,14 @@ export async function startFreshThread(page: Page): Promise<void> {
+   else await openFreshThread(page);
+ }
+ 
+-function threadRow(page: Page, name: string): Locator {
++export function threadRow(page: Page, name: string): Locator {
+   return page
+     .locator(THREAD_LIST)
+     .locator('div.group')
+     .filter({ has: page.getByText(name, { exact: true }) });
+ }
+ 
+-async function renameActiveThread(page: Page, name: string): Promise<void> {
++export async function renameActiveThread(page: Page, name: string): Promise<void> {
+   const list = page.locator(THREAD_LIST);
+   const row = list.locator('div.group').filter({ has: page.locator('button[aria-current="page"]') }).first();
+   await expect(row).toBeVisible({ timeout: 10_000 });
+@@ -263,10 +292,81 @@ async function openPickerFor(page: Page, trigger: Locator, qualified: string): P
+   if ((await search.count()) > 0) await search.first().fill(modelId);
+ }
+ 
++// Above 1000 options the combobox list is virtual (`VIRTUALIZE_ABOVE_OPTIONS`,
++// `combobox-picker-model.ts:11`): only the rows near the scroll position are mounted
++// (`VirtualPickerList`, `combobox-picker.tsx:490-589`, overscan 8, 36 px option rows). The
++// system default picker lists the whole catalog, so a matching option further down the
++// filtered list is not in the DOM until the list (`data-slot="combobox-list"`,
++// `components/ui/combobox.tsx:122`) is scrolled to it.
++const PICKER_LIST = '[data-slot="combobox-list"]';
++const VIRTUAL_ROWS = '[data-virtualized="true"]';
++/** How long one scroll step waits for the rows it brings into range to mount. */
++const SCROLL_STEP_WAIT_MS = 250;
++/** Safety bound on scroll steps; a filtered list ends long before this. */
++const MAX_SCROLL_STEPS = 400;
++
++async function attachedWithin(option: Locator, timeout: number): Promise<boolean> {
++  return option
++    .first()
++    .waitFor({ state: 'attached', timeout })
++    .then(() => true)
++    .catch(() => false);
++}
++
++/**
++ * The open picker's virtual list once its filtered rows have settled, or null when the
++ * list is not virtual (every option is then mounted). The filter follows the typed query
++ * through `useDeferredValue`, and the virtual container's height is the filtered rows'
++ * total size, so the rows have settled when that height reads the same three times running.
++ */
++async function settledVirtualList(page: Page): Promise<Locator | null> {
++  const list = page.locator(`${PICKER_LIST}:visible`).last();
++  if ((await list.count()) === 0) return null;
++  const rows = list.locator(VIRTUAL_ROWS);
++  if ((await rows.count()) === 0) return null;
++  let previous = '';
++  let unchanged = 0;
++  await expect
++    .poll(
++      async () => {
++        const height = await rows.first().evaluate((element) => (element as HTMLElement).style.height);
++        unchanged = height === previous ? unchanged + 1 : 0;
++        previous = height;
++        return unchanged;
++      },
++      { message: 'the picker has applied the search', timeout: 10_000, intervals: [100] },
++    )
++    .toBeGreaterThanOrEqual(2);
++  return list;
++}
++
++/**
++ * Finds an option in an open picker: waits briefly for it to mount and, when the list is
++ * virtual, scrolls it down one viewport at a time until the option is mounted or the list
++ * can scroll no further. Returns whether the option is in the DOM.
++ */
++async function revealOption(page: Page, option: Locator, firstWaitMs: number): Promise<boolean> {
++  if (await attachedWithin(option, firstWaitMs)) return true;
++  const list = await settledVirtualList(page);
++  if (list === null) return (await option.count()) > 0;
++  for (let step = 0; step < MAX_SCROLL_STEPS; step += 1) {
++    if (await attachedWithin(option, SCROLL_STEP_WAIT_MS)) return true;
++    const moved = await list.evaluate(async (element) => {
++      const before = element.scrollTop;
++      element.scrollTop = before + element.clientHeight;
++      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
++      return element.scrollTop > before;
++    });
++    if (!moved) return attachedWithin(option, SCROLL_STEP_WAIT_MS);
++  }
++  return (await option.count()) > 0;
++}
++
+ /** Opens the picker and clicks the option for a provider-qualified model. */
+ async function chooseModel(page: Page, trigger: Locator, qualified: string): Promise<void> {
+   await openPickerFor(page, trigger, qualified);
+   const option = modelOption(page, qualified);
++  await revealOption(page, option, 1_000);
+   await expect(option, `the picker offers ${qualified}`).toBeVisible({ timeout: 10_000 });
+   await expect(option, `${qualified} is selectable`).not.toHaveAttribute('aria-disabled', 'true');
+   await option.click();
+@@ -280,11 +380,8 @@ async function optionState(
+ ): Promise<{ state: 'absent' | 'blocked' | 'selectable'; text: string }> {
+   await openPickerFor(page, trigger, qualified);
+   const option = modelOption(page, qualified);
+-  const present = await option
+-    .first()
+-    .waitFor({ state: 'attached', timeout: 3_000 })
+-    .then(() => true)
+-    .catch(() => false);
++  // An offered option below the mounted rows of a virtual list must not read as absent.
++  const present = await revealOption(page, option, 3_000);
+   let result: { state: 'absent' | 'blocked' | 'selectable'; text: string } = { state: 'absent', text: '' };
+   if (present) {
+     const text = (await option.first().innerText()).trim();
+diff --git a/tests/bdd/support/world.ts b/tests/bdd/support/world.ts
+index c6a97197..5bd6bf25 100644
+--- a/tests/bdd/support/world.ts
++++ b/tests/bdd/support/world.ts
+@@ -104,9 +104,36 @@ export async function sendMessageAndWait(page: Page, message: string): Promise<v
+  * `use-chat-runtime.ts`'s per-turn request (via `AgentConfigContext`) — the
+  * session-config-panel's own POST is a documented dead facade (see design.md
+  * Findings), so scenario steps must drive this UI, not call an API directly.
++ *
++ * The click is scoped to the list item (`CommandItem`, `data-slot="command-item"` in
++ * `components/ui/command.tsx`): on a fresh thread the trigger itself shows the fallback
++ * text "Default Assistant", so an unscoped text match would click the trigger and select
++ * nothing. Selecting an item saves the agent through `selectAgentForSession`, which POSTs
++ * `/api/uar/sessions/{id}/agent-config`; the switch is complete once that save has answered
++ * and the popover has closed.
+  */
+ export async function switchAgentViaUI(page: Page, agentTitle: string): Promise<void> {
+-  await page.locator('[aria-label="Select agent"]').click();
+-  await page.locator('[placeholder="Search agents..."]').fill(agentTitle);
+-  await page.getByText(agentTitle, { exact: true }).first().click();
++  const trigger = page.locator('[aria-label="Select agent"]');
++  await trigger.click();
++  const search = page.locator('[placeholder="Search agents..."]');
++  await search.fill(agentTitle);
++  const item = page
++    .locator('[data-slot="command-item"]')
++    .filter({ has: page.getByText(agentTitle, { exact: true }) })
++    .first();
++  await expect(item, `the agent list offers "${agentTitle}"`).toBeVisible({ timeout: 15_000 });
++  const saved = page.waitForResponse(
++    (response) => AGENT_CONFIG_SAVE.test(new URL(response.url()).pathname) && response.request().method() === 'POST',
++    { timeout: 15_000 },
++  );
++  await item.click();
++  const response = await saved;
++  if (response.status() >= 400) {
++    throw new Error(`selecting the agent "${agentTitle}" failed: ${response.status()} ${await response.text()}`);
++  }
++  await expect(search, 'the agent list closes after a selection').toBeHidden({ timeout: 10_000 });
++  await expect(trigger, `the agent selector shows "${agentTitle}"`).toContainText(agentTitle, { timeout: 10_000 });
+ }
++
++/** The session agent-config save the agent selector issues (`session-configuration-api.ts:209-212`). */
++const AGENT_CONFIG_SAVE = /^\/api\/uar\/sessions\/[^/]+\/agent-config$/;
+diff --git a/tests/bdd/features/thread-menu.feature b/tests/bdd/features/thread-menu.feature
+new file mode 100644
+index 00000000..b7189d2a
+--- /dev/null
++++ b/tests/bdd/features/thread-menu.feature
+@@ -0,0 +1,58 @@
++@ui @thread-menu
++Feature: Thread row menu renames and deletes conversations
++  As a person chatting
++  I want each thread's row menu to rename or delete that conversation
++  So that my thread list reads the way I named it and what I deleted stays gone
++
++  # Repair round 4 of phase uar-uiux-architecture-2026-11 (SCN-THR-001, SCN-THR-002).
++  # Authored, not executed. Each scenario has a negative control that cancels the dialog.
++  # The menu is the row's "Actions for <title>" button in the sidebar thread list. The
++  # reload steps show whether the change outlives the page: a deleted thread that the
++  # sync brings back fails the scenario. BDD runs use the deployment's auth-off test
++  # configuration and send no credentials.
++
++  @SCN-THR-001
++  Scenario: Renaming a thread from its row menu keeps the new name after a reload
++    Given a fresh conversation
++    When I send the message "What is 2 plus 2?"
++    And I rename this thread to "BDD Renamed Thread" through its row menu
++    Then the renamed thread is titled "BDD Renamed Thread" and no longer shows its previous title
++    And the thread list shows "BDD Renamed Thread" exactly once
++    When I reload the page
++    Then the thread list shows "BDD Renamed Thread" exactly once
++
++  # Control of SCN-THR-001: cancelling the rename dialog changes nothing.
++  @CTL-THR-001-CANCEL
++  Scenario: Cancelling the rename dialog keeps the thread's title
++    Given a fresh conversation
++    When I send the message "What is 2 plus 2?"
++    And I start renaming this thread to "BDD Cancelled Name" and cancel
++    Then the thread still shows its previous title
++    And the thread list does not show "BDD Cancelled Name"
++
++  @SCN-THR-002
++  Scenario: Deleting a thread from its row menu removes it for good and keeps the others
++    Given a fresh conversation
++    And I send the message "What is 2 plus 2?"
++    And this thread is named "BDD Thread A"
++    And I start a new thread
++    And I send the message "What is 2 plus 2?"
++    And this thread is named "BDD Thread B"
++    When I choose Delete in the row menu of "BDD Thread A"
++    Then the delete confirmation names "BDD Thread A"
++    When I confirm the deletion
++    Then the thread list shows "BDD Thread B"
++    And the thread list does not show "BDD Thread A"
++    When I reload the page
++    Then the thread list shows "BDD Thread B"
++    And the thread list does not show "BDD Thread A"
++
++  # Control of SCN-THR-002: cancelling the confirmation deletes nothing.
++  @CTL-THR-002-CANCEL
++  Scenario: Cancelling the delete confirmation keeps the thread
++    Given a fresh conversation
++    And I send the message "What is 2 plus 2?"
++    And this thread is named "BDD Thread Kept"
++    When I choose Delete in the row menu of "BDD Thread Kept"
++    And I cancel the deletion
++    Then the thread list shows "BDD Thread Kept"
+diff --git a/tests/bdd/steps/thread-menu.steps.ts b/tests/bdd/steps/thread-menu.steps.ts
+new file mode 100644
+index 00000000..4ee9be62
+--- /dev/null
++++ b/tests/bdd/steps/thread-menu.steps.ts
+@@ -0,0 +1,170 @@
++import { createBdd } from 'playwright-bdd';
++import type { Locator, Page } from '@playwright/test';
++import { expect, test, startNewConversation } from '../support/world';
++import { renameActiveThread, threadRow } from '../support/s1-ui';
++
++const { Given, When, Then } = createBdd(test);
++
++// Thread row actions menu (`frontend/src/components/layout/left-sidebar.tsx`): each row is a
++// `div.group` holding the thread button (`aria-current="page"` when active) and a menu trigger
++// labelled `Actions for <title>`, shown on hover. Rename opens a dialog with a `Thread name`
++// field and Cancel / Save buttons; Delete opens an alert dialog whose description names the
++// thread, with Cancel / Delete buttons. The list itself is `aria-label="Thread list"` and
++// carries `aria-busy="true"` until the local store has hydrated.
++
++const THREAD_LIST = '[aria-label="Thread list"]';
++/** The runtime's placeholder title; a thread titled this may still receive a generated title. */
++const PLACEHOLDER_TITLE = 'New conversation';
++/** How long the runtime gets to replace the placeholder title after the first message. */
++const TITLE_SETTLE_MS = 3_000;
++
++/** The title the active thread showed before it was renamed in this scenario, keyed by page. */
++const previousTitles = new WeakMap<Page, string>();
++
++function threadList(page: Page): Locator {
++  return page.locator(THREAD_LIST);
++}
++
++/** The row of the thread open in the chat (its button carries `aria-current="page"`). */
++function activeRow(page: Page): Locator {
++  return threadList(page)
++    .locator('div.group')
++    .filter({ has: page.locator('button[aria-current="page"]') })
++    .first();
++}
++
++/** The title text of a row: the first paragraph inside its thread button. */
++function rowTitle(row: Locator): Locator {
++  return row.getByRole('button').first().locator('p').first();
++}
++
++/**
++ * Reads the active thread's title once the runtime has had the chance to title it, and
++ * remembers it as the thread's previous title.
++ */
++async function rememberActiveTitle(page: Page): Promise<string> {
++  const row = activeRow(page);
++  await expect(row, 'the thread with the message is listed in the sidebar').toBeVisible({ timeout: 10_000 });
++  await expect(rowTitle(row))
++    .not.toHaveText(PLACEHOLDER_TITLE, { timeout: TITLE_SETTLE_MS })
++    .catch(() => undefined);
++  const title = (await rowTitle(row).innerText()).trim();
++  previousTitles.set(page, title);
++  return title;
++}
++
++function previousTitleOf(page: Page): string {
++  const title = previousTitles.get(page);
++  if (title === undefined) throw new Error('no thread title was recorded before the rename in this scenario');
++  return title;
++}
++
++/** Opens a row's actions menu and chooses one of its items. */
++async function chooseRowAction(page: Page, row: Locator, title: string, item: 'Rename' | 'Delete'): Promise<void> {
++  await expect(row, `the thread list shows a row for "${title}"`).toBeVisible({ timeout: 10_000 });
++  await row.hover();
++  await row.getByRole('button', { name: `Actions for ${title}`, exact: true }).click();
++  await page.getByRole('menuitem', { name: item }).click();
++}
++
++function renameDialog(page: Page): Locator {
++  return page.getByRole('dialog').filter({ hasText: 'Rename thread' });
++}
++
++function deleteConfirmation(page: Page): Locator {
++  return page.getByRole('alertdialog').filter({ hasText: 'Delete thread?' });
++}
++
++/** Opens the Rename dialog of the active thread from its row menu and types a new name. */
++async function startRenameOfActiveThread(page: Page, name: string): Promise<Locator> {
++  const previous = await rememberActiveTitle(page);
++  await chooseRowAction(page, activeRow(page), previous, 'Rename');
++  const dialog = renameDialog(page);
++  await expect(dialog, 'choosing Rename opens the rename dialog').toBeVisible({ timeout: 10_000 });
++  await dialog.getByLabel('Thread name').fill(name);
++  return dialog;
++}
++
++// ─── Given ──────────────────────────────────────────────────────────────────
++
++// Setup only: names the active thread through the same Rename dialog the S1 harness uses,
++// so a delete scenario can tell its two threads apart.
++Given('this thread is named {string}', async ({ page }, name: string) => {
++  await renameActiveThread(page, name);
++});
++
++Given('I start a new thread', async ({ page }) => {
++  await startNewConversation(page);
++});
++
++// ─── When ───────────────────────────────────────────────────────────────────
++
++When('I rename this thread to {string} through its row menu', async ({ page }, name: string) => {
++  const dialog = await startRenameOfActiveThread(page, name);
++  await dialog.getByRole('button', { name: 'Save', exact: true }).click();
++  await expect(dialog, 'saving closes the rename dialog').toBeHidden({ timeout: 10_000 });
++});
++
++When('I start renaming this thread to {string} and cancel', async ({ page }, name: string) => {
++  const dialog = await startRenameOfActiveThread(page, name);
++  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
++  await expect(dialog, 'cancelling closes the rename dialog').toBeHidden({ timeout: 10_000 });
++});
++
++When('I choose Delete in the row menu of {string}', async ({ page }, title: string) => {
++  await chooseRowAction(page, threadRow(page, title).first(), title, 'Delete');
++  await expect(deleteConfirmation(page), 'choosing Delete asks for confirmation').toBeVisible({ timeout: 10_000 });
++});
++
++When('I confirm the deletion', async ({ page }) => {
++  const confirmation = deleteConfirmation(page);
++  await confirmation.getByRole('button', { name: 'Delete', exact: true }).click();
++  await expect(confirmation, 'confirming closes the confirmation').toBeHidden({ timeout: 10_000 });
++});
++
++When('I cancel the deletion', async ({ page }) => {
++  const confirmation = deleteConfirmation(page);
++  await confirmation.getByRole('button', { name: 'Cancel', exact: true }).click();
++  await expect(confirmation, 'cancelling closes the confirmation').toBeHidden({ timeout: 10_000 });
++});
++
++When('I reload the page', async ({ page }) => {
++  await page.reload();
++  await page.locator('[aria-label="Select agent"]').waitFor({ state: 'visible', timeout: 15_000 });
++  await expect(threadList(page), 'the thread list has loaded').toHaveAttribute('aria-busy', 'false', { timeout: 15_000 });
++});
++
++// ─── Then ───────────────────────────────────────────────────────────────────
++
++Then('the renamed thread is titled {string} and no longer shows its previous title', async ({ page }, name: string) => {
++  const previous = previousTitleOf(page);
++  const title = rowTitle(activeRow(page));
++  await expect(title, 'the renamed thread shows the new name').toHaveText(name, { timeout: 10_000 });
++  if (previous !== name) await expect(title).not.toHaveText(previous);
++});
++
++Then('the thread list shows {string} exactly once', async ({ page }, title: string) => {
++  const rows = threadRow(page, title);
++  await expect(rows.first(), `the thread list shows "${title}"`).toBeVisible({ timeout: 15_000 });
++  await expect(rows, `the thread list shows "${title}" once`).toHaveCount(1);
++});
++
++Then('the thread still shows its previous title', async ({ page }) => {
++  const previous = previousTitleOf(page);
++  await expect(rowTitle(activeRow(page)), 'the thread keeps its title').toHaveText(previous, { timeout: 10_000 });
++});
++
++Then('the thread list shows {string}', async ({ page }, title: string) => {
++  await expect(threadRow(page, title).first(), `the thread list shows "${title}"`).toBeVisible({ timeout: 15_000 });
++});
++
++// Absence is only meaningful on a loaded list; the scenarios assert a remaining thread
++// is shown before asserting a deleted one is not.
++Then('the thread list does not show {string}', async ({ page }, title: string) => {
++  await expect(threadList(page)).toHaveAttribute('aria-busy', 'false', { timeout: 15_000 });
++  await expect(threadRow(page, title), `the thread list does not show "${title}"`).toHaveCount(0);
++});
++
++Then('the delete confirmation names {string}', async ({ page }, title: string) => {
++  await expect(deleteConfirmation(page), 'the confirmation names the thread').toContainText(`"${title}"`);
++});

@@ -183,6 +183,9 @@ export function useChatRuntime(threadId: string): {
   );
 
   const onCancel = useCallback(async () => {
+    // After the reply ends, the turn stays busy until it is saved and the stream
+    // lease is released. There is no run left to stop in that window.
+    if (!useChatMessageStore.getState().streamingByThread[threadId]?.isStreaming) return;
     cancelStream();
     // Stop requests cancellation; only the original native terminal settles it.
     await useChatMessageStore.getState().finishStream(threadId, "interrupted");

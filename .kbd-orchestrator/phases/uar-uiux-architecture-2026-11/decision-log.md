@@ -742,3 +742,15 @@ Operator, answering "Do you want all four as proposed, or should I drop the mode
 - Secret pattern scan: 15 files with one generic hit each were held out, uncommitted (list in the account handoff).
   The follow-up classification command was denied and was not retried.
 - Removed a stale empty .git/index.lock (07:04, no holder, no git process).
+
+### 2026-11-22 (new account): operator "Grant as proposed" (repair round 4)
+
+- Answer to "Grant repair round 4 as proposed?" over review/repair-round-4-proposal.md.
+- In scope for rc.6: T1 (thread menu onClick), P1 (send waits for the stream lease), C1 (counter with
+  checkVisibility({ visibilityProperty: true })), H1 (scroll the virtual picker list), H2 (wait for the newest
+  assistant turn to settle), H3 (select the agent from the list), and new scenarios SCN-THR-001 Rename and
+  SCN-THR-002 Delete with controls. Follow-ups, not in this round: P2, P3. D1 is decided after SCN-THR-002 runs.
+- Sequence: implement, independent diff and step review, one local commit. No test or build before that.
+- The contract amendment (repairAttempts 4, 15 scenarios, budget 1,350 min, rebind) still needs signing; the
+  lead asks for that specific action before running the signing script. Worktree removal for the mutant rebuild
+  is asked separately.

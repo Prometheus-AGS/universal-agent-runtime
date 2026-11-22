@@ -104,9 +104,51 @@ export async function sendMessageAndWait(page: Page, message: string): Promise<v
  * `use-chat-runtime.ts`'s per-turn request (via `AgentConfigContext`) — the
  * session-config-panel's own POST is a documented dead facade (see design.md
  * Findings), so scenario steps must drive this UI, not call an API directly.
+ *
+ * The click is scoped to the list item (`CommandItem`, `data-slot="command-item"` in
+ * `components/ui/command.tsx`): on a fresh thread the trigger itself shows the fallback
+ * text "Default Assistant", so an unscoped text match would click the trigger and select
+ * nothing. Selecting an item saves the agent through `selectAgentForSession`, which POSTs
+ * `/api/uar/sessions/{id}/agent-config`; the switch is complete once that save has answered
+ * and the popover has closed.
  */
 export async function switchAgentViaUI(page: Page, agentTitle: string): Promise<void> {
-  await page.locator('[aria-label="Select agent"]').click();
-  await page.locator('[placeholder="Search agents..."]').fill(agentTitle);
-  await page.getByText(agentTitle, { exact: true }).first().click();
+  const trigger = page.locator('[aria-label="Select agent"]');
+  await trigger.click();
+  const search = page.locator('[placeholder="Search agents..."]');
+  await search.fill(agentTitle);
+  const item = page
+    .locator('[data-slot="command-item"]')
+    .filter({ has: page.getByText(agentTitle, { exact: true }) })
+    .first();
+  await expect(item, `the agent list offers "${agentTitle}"`).toBeVisible({ timeout: 15_000 });
+  // selectAgentForSession reads the session's config (GET) before saving it (POST). A failed
+  // read stops the save, so it is reported by name instead of as a timeout on the POST.
+  const read = page.waitForResponse(
+    (response) => AGENT_CONFIG_SAVE.test(new URL(response.url()).pathname) && response.request().method() === 'GET',
+    { timeout: 15_000 },
+  );
+  const saved = page.waitForResponse(
+    (response) => AGENT_CONFIG_SAVE.test(new URL(response.url()).pathname) && response.request().method() === 'POST',
+    { timeout: 15_000 },
+  );
+  // Neither promise may reject unobserved while the other is awaited.
+  read.catch(() => undefined);
+  saved.catch(() => undefined);
+  await item.click();
+  const readResponse = await read;
+  if (readResponse.status() >= 400 && readResponse.status() !== 404) {
+    throw new Error(
+      `selecting the agent "${agentTitle}" failed: GET ${new URL(readResponse.url()).pathname} answered ${readResponse.status()} ${await readResponse.text()}`,
+    );
+  }
+  const response = await saved;
+  if (response.status() >= 400) {
+    throw new Error(`selecting the agent "${agentTitle}" failed: ${response.status()} ${await response.text()}`);
+  }
+  await expect(search, 'the agent list closes after a selection').toBeHidden({ timeout: 10_000 });
+  await expect(trigger, `the agent selector shows "${agentTitle}"`).toContainText(agentTitle, { timeout: 10_000 });
 }
+
+/** The session agent-config save the agent selector issues (`session-configuration-api.ts:209-212`). */
+const AGENT_CONFIG_SAVE = /^\/api\/uar\/sessions\/[^/]+\/agent-config$/;
