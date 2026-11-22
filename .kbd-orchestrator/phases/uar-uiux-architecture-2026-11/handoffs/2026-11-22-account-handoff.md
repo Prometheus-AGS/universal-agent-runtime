@@ -101,3 +101,7 @@ Ask the operator before inspecting or committing them. Everything else was commi
 found nothing; gitleaks was not run, and videos cannot be pattern-scanned.
 Also dirty by design: static/ build output, both mutant worktrees (their recorded patches), the uiux-baseline
 worktree (test overlay) and the #539 worktree's .handoff/ scratch folder.
+
+## Operator decision after the handoff (2026-11-22)
+"Keep local", answering "Keep the four branches local, or push them?". Do not push the four branches. The
+candidate still needs separate authority for push, PR, merge, tag and publication.
