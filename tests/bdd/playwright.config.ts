@@ -68,9 +68,11 @@ export default defineConfig({
     cucumberReporter('json', { outputFile: 'cucumber-report.json' }),
   ],
   use: {
-    // Tests open the page through the dev proxy (see webServer below), not
-    // the backend's static serve — same shape as local development.
-    baseURL: 'http://127.0.0.1:8085',
+    // Tests open the built page the runtime serves (static/, same origin as
+    // the API). The Vite dev proxy used before cannot render a conversation:
+    // it sends frontend/vendor/a2ui-web-core/src/universal/a2ui-lit-element.ts
+    // to the browser with its decorators untransformed.
+    baseURL: APP_BASE_URL,
     trace: 'on-first-retry',
     video: 'on',
   },
@@ -150,17 +152,6 @@ export default defineConfig({
       // machines; 30s raced it every time (same fix as
       // frontend/playwright.real-server.config.ts).
       timeout: 180_000,
-    },
-    {
-      // Frontend dev proxy (vite): the page is served from source and its
-      // /api, /healthz, /readyz calls are proxied to the backend above —
-      // the same shape as local development, no JWT in the browser.
-      command: 'bun run dev --host 127.0.0.1 --port 8085 --strictPort',
-      cwd: path.join(REPO_ROOT, 'frontend'),
-      env: { UAR_BACKEND_URL: APP_BASE_URL },
-      url: 'http://127.0.0.1:8085/threads',
-      reuseExistingServer: !process.env.CI,
-      timeout: 60_000,
     },
   ],
 });
