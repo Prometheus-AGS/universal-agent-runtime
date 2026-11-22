@@ -777,3 +777,19 @@ Operator, answering "Do you want all four as proposed, or should I drop the mode
   operator. The inventory is rebound and re-confirmed after it.
 - Archiving boundary/run.jsonl, logs, evidence and baseline receipts into attempt-4-9ad39030/ was denied by the
   permission check; not retried. Waiting for the operator.
+
+### 2026-11-22: operator "Yes, sign 4b and archive"
+- Covers running amendments/repair-round-4b.sh and moving the attempt 4 boundary outputs into boundary/attempt-4-9ad39030/.
+
+### 2026-11-22: operator "we need to be 100% code complete first and simplify our testing to ONLY validate what is actually important for users"
+- The boundary run is NOT started. The lead proposes a code-completion list and a reduced user-value test set for approval.
+
+### 2026-11-22: operator "fix P3, P2 and the delete wording to close out rc.6 ... Limit validation to ONLY new code to exit rc.6 work"
+- Also earlier: "we should ONLY be validating what changed between rc.5 and rc.6" and "add 8 user tests if they follow the rule".
+- Fixed: P3 (titles tracked per thread in use-chat-runtime), P2 (the server placeholder title never overwrites a
+  local title, use-thread-graph-sync), delete confirmation wording (removed from this browser; the server keeps
+  the conversation). D1, cross-thread send refusal and the other low items stay follow-ups (unchanged code).
+- Added: a P2 unit case in use-thread-graph-sync.test.tsx and SCN-THR-003 (each new thread gets its own title).
+- The signed S1 boundary packet (mutants, baseline overlays, 3x repeats) is superseded by this operator decision
+  for rc.6 exit; validation covers only code new since rc.5. #539 carries its R1-R7 evidence (its files did not
+  change after 72894dfa).

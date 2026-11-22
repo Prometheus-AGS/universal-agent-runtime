@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "phaseId": "uar-uiux-architecture-2026-11",
   "slice": "S1",
-  "contractDigest": "d5bb7921d9a0e1b60d9e576d26cd191e79bc327ba7e4a0a41ad97c4d03fc1a1e",
+  "contractDigest": "a6b514f2c0b0cbd2d6f6d14d6ff58588f13fce5a957cc22f928ce916c240d0f9",
   "status": "implementation-complete",
-  "candidateCommit": "f129bbfb5009e6263b32b9af4ccfaf26e2d930c5",
+  "candidateCommit": "be647d8c16437988a4c6f894c0b6fa63c953d161",
   "candidateCommitNote": "Set when the operator authorizes committing the candidate; BIND requires HEAD == candidateCommit and a clean tree outside .kbd-orchestrator/, .prometheus/ and static/.",
   "implementationTasks": {
     "uiux-system-model-live-default": [
@@ -87,7 +87,8 @@
     "B5 repair round 2, commit c8eb9e23: tests/bdd/playwright.config.ts sets baseURL to the app server (built page from static/) and removes the Vite dev-proxy webServer entry. No product source, feature file, step or oracle changed. changedPaths regenerated from git diff --name-status f2c9e36..c8eb9e23 with the BIND exclusions. contractDigest updated to the adopted contract 56d428bb, whose only change from 533f16f2 is that neg-sys-015 and neg-sys-017 copy the candidate tests/bdd/playwright.config.ts into their mutant worktrees before running. Mutant worktrees, patches, binaries and built pages are unchanged and were built from 2723a97b, which differs from c8eb9e23 only in that harness file.",
     "After the independent critic BLOCK on this inventory at c8eb9e23 (kept as review/s1/inventory-confirmation.c8eb9e23-block.json): contract re-adopted as acce8cf2 with the owner-signed amendment 2026-11-21-built-page-harness-terms (built-page harness described; BDD commands run with UAR_STATIC_DIR unset; binding requires the critic verdict PASS; one-time Repair-rule exception keeping the M1/M2 worktrees and builds made from 2723a97b, with neg-sys-015/017 checking the worktree differs from the candidate only in its target file, static/ excluded). contractDigest updated; the 2723a97b supersededCandidates entry and the unverified text corrected. No source file changed; candidateCommit is still c8eb9e23.",
     "B5 repair round 3 (d7c8db9e, review/round3/diff-r5.patch, re-review PASS): picker windowing, PGlite migrations, burst 100, BDD local owner and scratch config, provider default switch keeps verification proofs, baseline teardown. Then the combined rc.6 candidate: main 0ce227af, image fixes 46970b46, #539 72894dfa, version bump.",
-    "B5 repair round 4 (f129bbfb, review/round4/diff-r3.patch; reviews in review/round4/review-record.md): thread menu onClick and dialogs that close after the PGlite write; composer busy until the stream lease is released and Stop inert after the reply; harness reply counter, virtual picker scroll, complete-reply read, agent list item selection; new SCN-THR-001 and SCN-THR-002."
+    "B5 repair round 4 (f129bbfb, review/round4/diff-r3.patch; reviews in review/round4/review-record.md): thread menu onClick and dialogs that close after the PGlite write; composer busy until the stream lease is released and Stop inert after the reply; harness reply counter, virtual picker scroll, complete-reply read, agent list item selection; new SCN-THR-001 and SCN-THR-002.",
+    "be647d8c: thread-menu.feature sends \"Reply with OK.\" so the THR negative controls reach the menu on the baseline."
   ],
   "mutants": {
     "M1": {
@@ -1375,7 +1376,7 @@
       "path": "website/docs/intro.md"
     }
   ],
-  "candidateCommittedAt": "2026-11-22T16:00:17-06:00",
+  "candidateCommittedAt": "2026-11-22T16:24:45-06:00",
   "supersededCandidates": [
     {
       "commit": "f7795b71fef67f8a19149c860938f80a46928b4e",
@@ -1404,6 +1405,10 @@
     {
       "commit": "9ad39030d67b9fa52528107ab8dcfceb8cbf1f9c",
       "reason": "Boundary attempt 4 (boundary/attempt-4-verdicts.md): 2 PASS (provisional), 6 FAIL, 5 NOT_EXERCISED; ended during command 38. Repair round 4 followed; every attempt-4 verdict is void."
+    },
+    {
+      "commit": "f129bbfb5009e6263b32b9af4ccfaf26e2d930c5",
+      "reason": "Never run. The inventory critic found the THR scenarios sent a message the baseline stub cannot answer; be647d8c changes only thread-menu.feature (amendment 4b, contract a6b514f2)."
     }
   ]
 }

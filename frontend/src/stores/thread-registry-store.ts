@@ -4,6 +4,9 @@ import { useEffect } from "react";
 import type { LocalThread } from "@/types";
 import { getDbInstance } from "@/platform/pglite/client";
 
+/** Title of a thread nobody has named yet. The server snapshot sends it for every thread. */
+export const PLACEHOLDER_THREAD_TITLE = "New conversation";
+
 interface ThreadRegistryState {
   threads: Record<string, LocalThread>;
   activeThreadId: string | null;
@@ -50,7 +53,7 @@ export const useThreadRegistryStore = create<ThreadRegistryStore>()(
       const now = new Date().toISOString();
       const thread: LocalThread = {
         id,
-        title: "New conversation",
+        title: PLACEHOLDER_THREAD_TITLE,
         isEphemeral: true,
         createdAt: now,
         updatedAt: now,

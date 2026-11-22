@@ -265,7 +265,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete thread?</AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteThread ? `This will permanently delete "${deleteThread.title}".` : "This action cannot be undone."}
+              {deleteThread ? `"${deleteThread.title}" will be removed from your thread list in this browser.` : "This thread will be removed from your thread list in this browser."} The conversation stays stored on the server.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

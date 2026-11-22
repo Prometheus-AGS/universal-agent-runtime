@@ -58,3 +58,13 @@ Feature: Thread row menu renames and deletes conversations
     When I choose Delete in the row menu of "BDD Thread Kept"
     And I cancel the deletion
     Then the thread list shows "BDD Thread Kept"
+
+  # P3: the chat view is reused across threads; each new thread must get its own title.
+  @SCN-THR-003
+  Scenario: Every new conversation in one page load gets its own title
+    Given a fresh conversation
+    And I send the message "Reply with OK."
+    And I start a new thread
+    And I send the message "What is 2 plus 2?"
+    Then the thread list shows "Reply with OK."
+    And the thread list shows "What is 2 plus 2?"
