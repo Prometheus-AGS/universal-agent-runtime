@@ -16,6 +16,7 @@ on:
       - "!v1.4.0-rc.3"
       - "!v1.4.0-rc.4"
       - "!v1.4.0-rc.5"
+      - "!v1.4.0-rc.6"
   workflow_dispatch:
     inputs:
       publish_v1_2_0_alias:
@@ -53,7 +54,7 @@ jobs:
   # boss-sidecar-* tags used by the sidecar release jobs below.
   ghcr-build:
     name: GHCR Build (${{ matrix.platform }})
-    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') && github.ref != 'refs/tags/v1.2.0' && github.ref != 'refs/tags/v1.4.0-rc.3' && github.ref != 'refs/tags/v1.4.0-rc.4' && github.ref != 'refs/tags/v1.4.0-rc.5' && !inputs.publish_v1_2_0_alias }}
+    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') && github.ref != 'refs/tags/v1.2.0' && github.ref != 'refs/tags/v1.4.0-rc.3' && github.ref != 'refs/tags/v1.4.0-rc.4' && github.ref != 'refs/tags/v1.4.0-rc.5' && github.ref != 'refs/tags/v1.4.0-rc.6' && !inputs.publish_v1_2_0_alias }}
     runs-on: ${{ matrix.runner }}
     # ~3GB 5-toolchain image and a full Rust release compile; a cold GHA
     # cache needs >30min. Native arm64 runner avoids QEMU emulation entirely.
@@ -122,6 +123,8 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
+          build-args: |
+            UAR_GIT_SHA=${{ github.sha }}
           # Token for cargo git deps over SSH (kreuzberg) + any private
           # fetches. The Dockerfile rewrites ssh://git@github.com → https.
           secrets: |
@@ -146,7 +149,7 @@ jobs:
 
   ghcr-merge:
     name: GHCR Merge Manifest
-    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') && github.ref != 'refs/tags/v1.2.0' && github.ref != 'refs/tags/v1.4.0-rc.3' && github.ref != 'refs/tags/v1.4.0-rc.4' && github.ref != 'refs/tags/v1.4.0-rc.5' && !inputs.publish_v1_2_0_alias }}
+    if: ${{ !startsWith(github.ref, 'refs/tags/boss-sidecar-') && github.ref != 'refs/tags/v1.2.0' && github.ref != 'refs/tags/v1.4.0-rc.3' && github.ref != 'refs/tags/v1.4.0-rc.4' && github.ref != 'refs/tags/v1.4.0-rc.5' && github.ref != 'refs/tags/v1.4.0-rc.6' && !inputs.publish_v1_2_0_alias }}
     needs: ghcr-build
     runs-on: ubuntu-24.04
     timeout-minutes: 15
