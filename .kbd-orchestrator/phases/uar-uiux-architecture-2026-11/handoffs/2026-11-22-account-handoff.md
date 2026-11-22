@@ -105,3 +105,7 @@ worktree (test overlay) and the #539 worktree's .handoff/ scratch folder.
 ## Operator decision after the handoff (2026-11-22)
 "Keep local", answering "Keep the four branches local, or push them?". Do not push the four branches. The
 candidate still needs separate authority for push, PR, merge, tag and publication.
+
+## Entry point for the new account (added after this handoff)
+Use the prompt in `CLAUDE-ACCOUNT-HANDOFF.md` at the repository root. It replaces the "Start prompt" above, and
+its "Newer than the detailed handoff" section corrects this file where they differ.
