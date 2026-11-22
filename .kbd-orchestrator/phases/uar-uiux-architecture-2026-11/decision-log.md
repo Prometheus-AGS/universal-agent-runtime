@@ -754,3 +754,26 @@ Operator, answering "Do you want all four as proposed, or should I drop the mode
 - The contract amendment (repairAttempts 4, 15 scenarios, budget 1,350 min, rebind) still needs signing; the
   lead asks for that specific action before running the signing script. Worktree removal for the mutant rebuild
   is asked separately.
+
+### 2026-11-22 16:05 CST: operator "Yes, sign and run"
+
+- Answer to "Sign the round 4 amendment, rebuild both mutant copies and run the full boundary?" after round 4
+  was committed as f129bbfb (review/round4/review-record.md).
+- Covers: running amendments/repair-round-4.sh (sign, re-adopt, readiness), rebinding the inventory to f129bbfb
+  with a fresh critic's confirmation, archiving boundary logs, removing and rebuilding both mutant worktrees,
+  and one serial boundary run. The first FAIL or unruled warning still stops the batch and is reported.
+- Does not cover push, PR, merge, tag or publication.
+
+### 2026-11-22 16:30 CST: amendment adopted, inventory confirmed, one finding acted on
+
+- Amendment 2026-11-22-repair-round-4 adopted: contract d5bb7921, READY. Two earlier signing attempts were refused
+  by the adoption lint (placeholder-like text, unregistered owner task, source-requirement format); their signed
+  manifests are kept as *.rejected-attempt1/2.*. Owner task is uiux-system-model-live-default/8.18.
+- Inventory rebound to f129bbfb; a fresh artifact-critic wrote review/s1/inventory-confirmation.json: PASS.
+- Its first finding holds in source: the baseline stub reads only live-model-choice.json, which has no fixture
+  for "What is 2 plus 2?", so on the baseline the THR scenarios would fail at their first send and neg-thr-001/002
+  would prove nothing. thread-menu.feature now sends "Reply with OK." (answered by both stubs). That changes a
+  frozen file: amendment 4b (amendments/repair-round-4b.sh) re-freezes its digest. Signing 4b waits for the
+  operator. The inventory is rebound and re-confirmed after it.
+- Archiving boundary/run.jsonl, logs, evidence and baseline receipts into attempt-4-9ad39030/ was denied by the
+  permission check; not retried. Waiting for the operator.

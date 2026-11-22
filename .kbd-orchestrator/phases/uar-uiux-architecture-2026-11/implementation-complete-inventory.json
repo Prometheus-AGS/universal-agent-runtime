@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "phaseId": "uar-uiux-architecture-2026-11",
   "slice": "S1",
-  "contractDigest": "45f441e0180b799911eb61e4e50069a23b59b845ae61c94325e99513ac066e32",
+  "contractDigest": "d5bb7921d9a0e1b60d9e576d26cd191e79bc327ba7e4a0a41ad97c4d03fc1a1e",
   "status": "implementation-complete",
-  "candidateCommit": "9ad39030d67b9fa52528107ab8dcfceb8cbf1f9c",
+  "candidateCommit": "f129bbfb5009e6263b32b9af4ccfaf26e2d930c5",
   "candidateCommitNote": "Set when the operator authorizes committing the candidate; BIND requires HEAD == candidateCommit and a clean tree outside .kbd-orchestrator/, .prometheus/ and static/.",
   "implementationTasks": {
     "uiux-system-model-live-default": [
@@ -86,7 +86,8 @@
     "B5 repair round 1, commit 2723a97b: frontend/e2e/model-catalog-identity.spec.ts:108 counts distinct model ids containing a slash, matching catalog-identity.json modelIdsContainingSlash (2207). No product source changed. changedPaths regenerated from git diff --name-status f2c9e36..2723a97b (excluding **/.kbd-orchestrator/** and **/.prometheus/**, the BIND exclusions). contractDigest updated to the adopted contract.",
     "B5 repair round 2, commit c8eb9e23: tests/bdd/playwright.config.ts sets baseURL to the app server (built page from static/) and removes the Vite dev-proxy webServer entry. No product source, feature file, step or oracle changed. changedPaths regenerated from git diff --name-status f2c9e36..c8eb9e23 with the BIND exclusions. contractDigest updated to the adopted contract 56d428bb, whose only change from 533f16f2 is that neg-sys-015 and neg-sys-017 copy the candidate tests/bdd/playwright.config.ts into their mutant worktrees before running. Mutant worktrees, patches, binaries and built pages are unchanged and were built from 2723a97b, which differs from c8eb9e23 only in that harness file.",
     "After the independent critic BLOCK on this inventory at c8eb9e23 (kept as review/s1/inventory-confirmation.c8eb9e23-block.json): contract re-adopted as acce8cf2 with the owner-signed amendment 2026-11-21-built-page-harness-terms (built-page harness described; BDD commands run with UAR_STATIC_DIR unset; binding requires the critic verdict PASS; one-time Repair-rule exception keeping the M1/M2 worktrees and builds made from 2723a97b, with neg-sys-015/017 checking the worktree differs from the candidate only in its target file, static/ excluded). contractDigest updated; the 2723a97b supersededCandidates entry and the unverified text corrected. No source file changed; candidateCommit is still c8eb9e23.",
-    "B5 repair round 3 (d7c8db9e, review/round3/diff-r5.patch, re-review PASS): picker windowing, PGlite migrations, burst 100, BDD local owner and scratch config, provider default switch keeps verification proofs, baseline teardown. Then the combined rc.6 candidate: main 0ce227af, image fixes 46970b46, #539 72894dfa, version bump."
+    "B5 repair round 3 (d7c8db9e, review/round3/diff-r5.patch, re-review PASS): picker windowing, PGlite migrations, burst 100, BDD local owner and scratch config, provider default switch keeps verification proofs, baseline teardown. Then the combined rc.6 candidate: main 0ce227af, image fixes 46970b46, #539 72894dfa, version bump.",
+    "B5 repair round 4 (f129bbfb, review/round4/diff-r3.patch; reviews in review/round4/review-record.md): thread menu onClick and dialogs that close after the PGlite write; composer busy until the stream lease is released and Stop inert after the reply; harness reply counter, virtual picker scroll, complete-reply read, agent list item selection; new SCN-THR-001 and SCN-THR-002."
   ],
   "mutants": {
     "M1": {
@@ -112,7 +113,7 @@
     "review/s1/handoffs/IDN3.md",
     "review/s1/handoffs/E4.md"
   ],
-  "unverified": "No scenario or control has a verdict on this candidate. Plan: 0, 1, 7, 8, 23, 9-22, 24-49; commands 2-6 carry forward (baseline f2c9e36 unchanged); both mutants are removed and rebuilt from this commit. Limits: (1) the round 3 causes were fixed from source reading and nine of the ten chat scenarios have never run past setup; (2) the baseline BDD check shows that the old build lacks the feature, not that an oracle rejects it; SCN-SYS-012 fails there in its Given; (3) IDN-001 uniqueness sees only mounted rows; (4) PICK-002 empties configured models and does not time the dialog opening; (5) SYS-014 depends on a 15 s stream-start timeout; (6) the BDD burst of 100 is stated, so BDD cannot detect a regression of that default; (7) parent environment and home skill directories are not hermetic beyond the blanked keys; (8) static/ is outside the binding and is rebuilt by prepare-bdd; (9) product-screen-validation cannot pass on the built page and no command selects it; (10) the environment-key case of the proof fix has no scenario and is checked at image qualification; (11) main, #539 and the images are not certified by S1. Hooks compiled only the minimal feature set.",
+  "unverified": "No scenario or control has a verdict on this candidate. Plan: 0, 1, 7, 8, 23, 49-52, 9-22, 24-48, 53; commands 2-6 carry forward (baseline f2c9e36 unchanged); both mutants are removed and rebuilt from this commit. Limits carried from the rc.6 inventory: (1) nine of the ten chat scenarios have never reached their own assertions; (2) the baseline BDD check shows the old build lacks the feature, not that an oracle rejects it; SCN-SYS-012 fails there in its Given; (3) IDN-001 uniqueness sees only mounted rows; (4) PICK-002 empties configured models and does not time the dialog opening; (5) SYS-014 depends on a 15 s stream-start timeout; (6) the BDD burst of 100 is stated; (7) parent environment and home skill directories are not hermetic beyond the blanked keys; (8) static/ is outside the binding and is rebuilt by prepare-bdd; (9) product-screen-validation cannot pass on the built page and no command selects it; (10) the environment-key case of the proof fix is checked at image qualification; (11) main, #539 and the images are not certified by S1. New in round 4: (12) THR reload proves the browser database on the embedded store only (P2, D1 follow-ups); (13) neg-thr-002 fails on the baseline at its Rename setup, not at Delete; (14) a late generated title overwriting a rename is a residual timing risk; (15) the P1 busy flag is per thread while the lease is global, and A2UI lease holders do not set it.",
   "changedPaths": [
     {
       "status": "M",
@@ -125,6 +126,10 @@
     {
       "status": "M",
       "path": "AGENTS.md"
+    },
+    {
+      "status": "A",
+      "path": "CLAUDE-ACCOUNT-HANDOFF.md"
     },
     {
       "status": "M",
@@ -319,6 +324,10 @@
       "path": "frontend/src/components/assistant-ui/enhanced-thread.tsx"
     },
     {
+      "status": "M",
+      "path": "frontend/src/components/layout/left-sidebar.tsx"
+    },
+    {
       "status": "A",
       "path": "frontend/src/components/ui/combobox-picker-model.test.ts"
     },
@@ -409,6 +418,10 @@
     {
       "status": "M",
       "path": "frontend/src/features/chat/ui/chunks/chunk-renderer.tsx"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/features/chat/use-chat-runtime.ts"
     },
     {
       "status": "M",
@@ -625,6 +638,18 @@
     {
       "status": "M",
       "path": "frontend/src/platform/pglite/client.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/stores/chat-message-store.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/stores/chat-stream-store.ts"
+    },
+    {
+      "status": "M",
+      "path": "frontend/src/stores/thread-registry-store.ts"
     },
     {
       "status": "M",
@@ -1271,6 +1296,10 @@
     },
     {
       "status": "A",
+      "path": "tests/bdd/features/thread-menu.feature"
+    },
+    {
+      "status": "A",
       "path": "tests/bdd/fixtures/live-model-choice-new-kinds.json"
     },
     {
@@ -1288,6 +1317,10 @@
     {
       "status": "A",
       "path": "tests/bdd/steps/live-model-choice.steps.ts"
+    },
+    {
+      "status": "A",
+      "path": "tests/bdd/steps/thread-menu.steps.ts"
     },
     {
       "status": "M",
@@ -1342,7 +1375,7 @@
       "path": "website/docs/intro.md"
     }
   ],
-  "candidateCommittedAt": "2026-11-22T07:01:41-06:00",
+  "candidateCommittedAt": "2026-11-22T16:00:17-06:00",
   "supersededCandidates": [
     {
       "commit": "f7795b71fef67f8a19149c860938f80a46928b4e",
@@ -1367,6 +1400,10 @@
     {
       "commit": "c8eb9e234984677b1fb865af6d4aa5568cbae15e",
       "reason": "Boundary attempt 3 (archived in boundary/attempt-3-c8eb9e23): 1 PASS, 2 FAIL, 10 BLOCKED. Repair round 3 followed. Correction to the ae01b21c entry, which names c172da51 for all of attempt 1: per decision-log.md commands 0-1 ran under 32717a4e, 2-6 under 41a887fb, and 7 passed under c172da51 (after failures under 41a887fb and 911b6abd). Only command 8 and the passing run of 7 used c172da51."
+    },
+    {
+      "commit": "9ad39030d67b9fa52528107ab8dcfceb8cbf1f9c",
+      "reason": "Boundary attempt 4 (boundary/attempt-4-verdicts.md): 2 PASS (provisional), 6 FAIL, 5 NOT_EXERCISED; ended during command 38. Repair round 4 followed; every attempt-4 verdict is void."
     }
   ]
 }

@@ -2,11 +2,11 @@
   "schemaVersion": "1",
   "generatedBy": "kbd-runtime",
   "projectionContractVersion": 2,
-  "sourceRevision": 3696,
-  "derivedRevision": 3696,
+  "sourceRevision": 3698,
+  "derivedRevision": 3698,
   "frontier": {
     "16f5c9ca-4c43-4421-982e-bfdb86909212": 2626,
-    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 430,
+    "1cf1630a-e1a0-439e-b801-9f948eead3bf": 432,
     "2d4db6ad-b6b2-41b3-8c22-0c497d5f7887": 4,
     "51059513-f5b5-4a0c-9b71-bfdb5f80472a": 257,
     "525ede94-ad4e-4580-84da-627cba8991cb": 27,
@@ -22,7 +22,7 @@
     "f1399f5e-1d2f-4236-ba7e-b76a9a87a5d7": 2
   },
   "conflictCount": 0,
-  "updatedAt": "2026-11-22T16:22:33.216477Z",
+  "updatedAt": "2026-11-22T22:08:21.198963Z",
   "cursor": [
     "uar-uiux-architecture-2026-11",
     "uiux-model-identity-graph-ownership",

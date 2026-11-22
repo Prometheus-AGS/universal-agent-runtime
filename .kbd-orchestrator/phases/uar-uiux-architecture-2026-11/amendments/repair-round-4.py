@@ -31,10 +31,12 @@ SCOPE = ('S1 round 4 (operator grant 2026-11-22): the thread row menu renames an
 def scenario(sid, name, outcome, entry, observation, ctl_title, rejection, cmd, limits):
     return {
         'id': sid, 'name': name, 'actor': 'person chatting', 'usefulOutcome': outcome,
-        'sourceRequirement': 'review/repair-round-4-proposal.md section 2',
+        'sourceRequirement': ('assumption: each sidebar thread row menu renames and deletes its conversation '
+                              '(operator grant 2026-11-22, review/repair-round-4-proposal.md section 2)'),
         'reasonNow': 'boundary attempt 4: thread Rename is dead (SCN-SYS-011..015 FAIL); Delete is permanent and untested',
         'likelihood': 'HIGH', 'mandatory': True, 'scopeRefs': [SCOPE],
-        'ownerTask': 'repair-round-4/T1', 'productionEntry': entry,
+        'ownerTask': 'uiux-system-model-live-default/8.18',
+        'productionEntry': entry,
         'realCollaborators': template['realCollaborators'], 'substitutedBoundaries': ['model vendor (stub-llm)'],
         'oracle': {'observation': observation,
                    'expectedTruthSource': f'`{FEATURE}` (sha256 {feature_sha}) {sid}',
@@ -54,7 +56,7 @@ def scenario(sid, name, outcome, entry, observation, ctl_title, rejection, cmd, 
 c['scenarioMatrix'] += [
     scenario('SCN-THR-001', 'Renaming a thread from its row menu keeps the new name after a reload',
              'a person can rename a conversation and the name survives a reload',
-             'sidebar row menu "Actions for <title>" > Rename > dialog "Rename thread" > Save',
+             'the sidebar row actions button (labelled Actions for plus the thread title), then Rename, then Save in the Rename thread dialog',
              'sidebar thread list text after Save and after a page reload; active row title',
              'Cancelling the rename dialog keeps the thread\'s title',
              'the scenario fails on the baseline (the Rename dialog never opens)', 'neg-thr-001',
@@ -62,7 +64,7 @@ c['scenarioMatrix'] += [
               'old-title absence is checked on the active row only, because synced rows may share the placeholder']),
     scenario('SCN-THR-002', 'Deleting a thread from its row menu removes it for good and keeps the others',
              'a person can delete one conversation; it stays gone after a reload and the others remain',
-             'sidebar row menu "Actions for <title>" > Delete > alertdialog > Delete',
+             'the sidebar row actions button (labelled Actions for plus the thread title), then Delete, then Delete in the confirmation',
              'confirmation text; sidebar thread list after confirm and after a page reload',
              'Cancelling the delete confirmation keeps the thread',
              'the scenario fails on the baseline', 'neg-thr-002',

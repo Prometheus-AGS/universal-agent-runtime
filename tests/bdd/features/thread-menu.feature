@@ -16,7 +16,7 @@ Feature: Thread row menu renames and deletes conversations
   @SCN-THR-001
   Scenario: Renaming a thread from its row menu keeps the new name after a reload
     Given a fresh conversation
-    When I send the message "What is 2 plus 2?"
+    When I send the message "Reply with OK."
     And I rename this thread to "BDD Renamed Thread" through its row menu
     Then the renamed thread is titled "BDD Renamed Thread" and no longer shows its previous title
     And the thread list shows "BDD Renamed Thread" exactly once
@@ -27,7 +27,7 @@ Feature: Thread row menu renames and deletes conversations
   @CTL-THR-001-CANCEL
   Scenario: Cancelling the rename dialog keeps the thread's title
     Given a fresh conversation
-    When I send the message "What is 2 plus 2?"
+    When I send the message "Reply with OK."
     And I start renaming this thread to "BDD Cancelled Name" and cancel
     Then the thread still shows its previous title
     And the thread list does not show "BDD Cancelled Name"
@@ -35,10 +35,10 @@ Feature: Thread row menu renames and deletes conversations
   @SCN-THR-002
   Scenario: Deleting a thread from its row menu removes it for good and keeps the others
     Given a fresh conversation
-    And I send the message "What is 2 plus 2?"
+    And I send the message "Reply with OK."
     And this thread is named "BDD Thread A"
     And I start a new thread
-    And I send the message "What is 2 plus 2?"
+    And I send the message "Reply with OK."
     And this thread is named "BDD Thread B"
     When I choose Delete in the row menu of "BDD Thread A"
     Then the delete confirmation names "BDD Thread A"
@@ -53,7 +53,7 @@ Feature: Thread row menu renames and deletes conversations
   @CTL-THR-002-CANCEL
   Scenario: Cancelling the delete confirmation keeps the thread
     Given a fresh conversation
-    And I send the message "What is 2 plus 2?"
+    And I send the message "Reply with OK."
     And this thread is named "BDD Thread Kept"
     When I choose Delete in the row menu of "BDD Thread Kept"
     And I cancel the deletion

@@ -6,7 +6,7 @@
     "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
     "phaseId": "uar-uiux-architecture-2026-11",
     "planRevision": 143,
-    "contractDigest": "215f15bd2b4bb4712f722b7e283c17f79113e8ebbed457f00b208746c6954621"
+    "contractDigest": "d5bb7921d9a0e1b60d9e576d26cd191e79bc327ba7e4a0a41ad97c4d03fc1a1e"
   },
   "digestNormalization": {
     "algorithm": "sha256",
@@ -1062,6 +1062,175 @@
         "grader": "counts 597/44/54/28/85 and max long task under 200 ms (rendering and timing)",
         "stoppingRule": "fixed N=5, all must pass"
       }
+    },
+    {
+      "id": "SCN-THR-001",
+      "name": "Renaming a thread from its row menu keeps the new name after a reload",
+      "actor": "person chatting",
+      "usefulOutcome": "a person can rename a conversation and the name survives a reload",
+      "sourceRequirement": "assumption: each sidebar thread row menu renames and deletes its conversation (operator grant 2026-11-22, review/repair-round-4-proposal.md section 2)",
+      "reasonNow": "boundary attempt 4: thread Rename is dead (SCN-SYS-011..015 FAIL); Delete is permanent and untested",
+      "likelihood": "HIGH",
+      "mandatory": true,
+      "scopeRefs": [
+        "S1 round 4 (operator grant 2026-11-22): the thread row menu renames and deletes a conversation; it was dead since the Radix to Base UI swap (e92670e2, onSelect where Base UI needs onClick)"
+      ],
+      "ownerTask": "uiux-system-model-live-default/8.18",
+      "productionEntry": "the sidebar row actions button (labelled Actions for plus the thread title), then Rename, then Save in the Rename thread dialog",
+      "realCollaborators": [
+        "the service process",
+        "scratch embedded store",
+        "served frontend driven by `pnpm test:bdd` in a real browser",
+        "the provider and session routes",
+        "per-provider `stub-llm` instances (`tests/bdd/fixtures/live-model-choice.json`, plus `live-model-choice-new-kinds.json` through `STUB_LLM_EXTRA_FIXTURES`)"
+      ],
+      "substitutedBoundaries": [
+        "model vendor (stub-llm)"
+      ],
+      "oracle": {
+        "observation": "sidebar thread list text after Save and after a page reload; active row title",
+        "expectedTruthSource": "`tests/bdd/features/thread-menu.feature` (sha256 dedb2b0f2876339a935c1c0c71a8439e5ca6d1c08bc1dc7257476962f1868046) SCN-THR-001",
+        "comparator": "exact visible text match in the sidebar thread list, before and after reload"
+      },
+      "negativeControl": {
+        "input": "the same scenario on the baseline worktree f2c9e36 (menu items use onSelect, so they do nothing); the cancel control `Cancelling the rename dialog keeps the thread's title` runs inside the scenario command",
+        "expectedRejection": "the scenario fails on the baseline (the Rename dialog never opens)",
+        "commandRef": "neg-thr-001"
+      },
+      "fixtures": "scratch data root and ephemeral ports; stub fixture tests/bdd/fixtures/bdd-chat.json (\"What is 2 plus 2?\"). Frozen file: tests/bdd/features/thread-menu.feature (sha256 dedb2b0f2876339a935c1c0c71a8439e5ca6d1c08bc1dc7257476962f1868046)",
+      "evidence": "Playwright JSON result, trace and video per sample; baseline JSON result for the control",
+      "limitations": [
+        "embedded store only: P2 (remote snapshot titles every thread \"New conversation\") is not reachable here",
+        "old-title absence is checked on the active row only, because synced rows may share the placeholder"
+      ],
+      "invalidationKeys": [
+        "frontend/src/**",
+        "frontend/packages/**",
+        "frontend/index.html",
+        "frontend/vite.config.ts",
+        "frontend/package.json",
+        "frontend/pnpm-lock.yaml",
+        "package.json",
+        "pnpm-lock.yaml",
+        "src/**",
+        "Cargo.toml",
+        "Cargo.lock",
+        "vendor/**",
+        "catalog/**",
+        "tests/bdd/**",
+        "tests/integration/live/stub_llm.rs",
+        "frontend/src/features/providers/**",
+        "frontend/src/features/settings/**",
+        "src/uar/api/settings.rs",
+        "openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json",
+        "tests/bdd/features/live-model-choice.feature",
+        "tests/bdd/features/live-model-choice-controls.feature",
+        "tests/bdd/steps/**",
+        "tests/bdd/support/**",
+        "src/bin/stub-llm.rs",
+        "tests/bdd/playwright.config.ts",
+        "migrations/**",
+        "build.rs",
+        "proto/**",
+        "data/model_benchmarks.json",
+        "docs/agents/**",
+        "rust-toolchain.toml",
+        "frontend/src/components/layout/left-sidebar.tsx",
+        "tests/bdd/features/thread-menu.feature",
+        "tests/bdd/steps/thread-menu.steps.ts"
+      ],
+      "restoration": "stop the services and delete the scratch root",
+      "nondeterministic": true,
+      "stochastic": {
+        "samples": 3,
+        "grader": "oracle holds and the negative control rejects in the sample; run as --repeat-each=3 --retries=0",
+        "stoppingRule": "fixed N=3, all must pass (no pass on retry)"
+      }
+    },
+    {
+      "id": "SCN-THR-002",
+      "name": "Deleting a thread from its row menu removes it for good and keeps the others",
+      "actor": "person chatting",
+      "usefulOutcome": "a person can delete one conversation; it stays gone after a reload and the others remain",
+      "sourceRequirement": "assumption: each sidebar thread row menu renames and deletes its conversation (operator grant 2026-11-22, review/repair-round-4-proposal.md section 2)",
+      "reasonNow": "boundary attempt 4: thread Rename is dead (SCN-SYS-011..015 FAIL); Delete is permanent and untested",
+      "likelihood": "HIGH",
+      "mandatory": true,
+      "scopeRefs": [
+        "S1 round 4 (operator grant 2026-11-22): the thread row menu renames and deletes a conversation; it was dead since the Radix to Base UI swap (e92670e2, onSelect where Base UI needs onClick)"
+      ],
+      "ownerTask": "uiux-system-model-live-default/8.18",
+      "productionEntry": "the sidebar row actions button (labelled Actions for plus the thread title), then Delete, then Delete in the confirmation",
+      "realCollaborators": [
+        "the service process",
+        "scratch embedded store",
+        "served frontend driven by `pnpm test:bdd` in a real browser",
+        "the provider and session routes",
+        "per-provider `stub-llm` instances (`tests/bdd/fixtures/live-model-choice.json`, plus `live-model-choice-new-kinds.json` through `STUB_LLM_EXTRA_FIXTURES`)"
+      ],
+      "substitutedBoundaries": [
+        "model vendor (stub-llm)"
+      ],
+      "oracle": {
+        "observation": "confirmation text; sidebar thread list after confirm and after a page reload",
+        "expectedTruthSource": "`tests/bdd/features/thread-menu.feature` (sha256 dedb2b0f2876339a935c1c0c71a8439e5ca6d1c08bc1dc7257476962f1868046) SCN-THR-002",
+        "comparator": "exact visible text match in the sidebar thread list, before and after reload"
+      },
+      "negativeControl": {
+        "input": "the same scenario on the baseline worktree f2c9e36 (menu items use onSelect, so they do nothing); the cancel control `Cancelling the delete confirmation keeps the thread` runs inside the scenario command",
+        "expectedRejection": "the scenario fails on the baseline",
+        "commandRef": "neg-thr-002"
+      },
+      "fixtures": "scratch data root and ephemeral ports; stub fixture tests/bdd/fixtures/bdd-chat.json (\"What is 2 plus 2?\"). Frozen file: tests/bdd/features/thread-menu.feature (sha256 dedb2b0f2876339a935c1c0c71a8439e5ca6d1c08bc1dc7257476962f1868046)",
+      "evidence": "Playwright JSON result, trace and video per sample; baseline JSON result for the control",
+      "limitations": [
+        "threads A and B are named through Rename in setup, so on the baseline the control fails at that setup step, not at Delete: it proves the test cannot pass on a dead menu, not that the Delete step alone would catch a dead Delete",
+        "embedded store only: it sends no thread snapshot, so D1 (a postgres or remote-Surreal snapshot re-adding a deleted thread, untitled) cannot show here; absence is checked by title",
+        "the dialog closes only after the local database write resolves; the reload proves the browser database, not the server session"
+      ],
+      "invalidationKeys": [
+        "frontend/src/**",
+        "frontend/packages/**",
+        "frontend/index.html",
+        "frontend/vite.config.ts",
+        "frontend/package.json",
+        "frontend/pnpm-lock.yaml",
+        "package.json",
+        "pnpm-lock.yaml",
+        "src/**",
+        "Cargo.toml",
+        "Cargo.lock",
+        "vendor/**",
+        "catalog/**",
+        "tests/bdd/**",
+        "tests/integration/live/stub_llm.rs",
+        "frontend/src/features/providers/**",
+        "frontend/src/features/settings/**",
+        "src/uar/api/settings.rs",
+        "openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json",
+        "tests/bdd/features/live-model-choice.feature",
+        "tests/bdd/features/live-model-choice-controls.feature",
+        "tests/bdd/steps/**",
+        "tests/bdd/support/**",
+        "src/bin/stub-llm.rs",
+        "tests/bdd/playwright.config.ts",
+        "migrations/**",
+        "build.rs",
+        "proto/**",
+        "data/model_benchmarks.json",
+        "docs/agents/**",
+        "rust-toolchain.toml",
+        "frontend/src/components/layout/left-sidebar.tsx",
+        "tests/bdd/features/thread-menu.feature",
+        "tests/bdd/steps/thread-menu.steps.ts"
+      ],
+      "restoration": "stop the services and delete the scratch root",
+      "nondeterministic": true,
+      "stochastic": {
+        "samples": 3,
+        "grader": "oracle holds and the negative control rejects in the sample; run as --repeat-each=3 --retries=0",
+        "stoppingRule": "fixed N=3, all must pass (no pass on retry)"
+      }
     }
   ],
   "functionalScope": [
@@ -1133,9 +1302,9 @@
     }
   ],
   "budgets": {
-    "timeMinutes": 900,
+    "timeMinutes": 1350,
     "toolCalls": 400,
-    "repairAttempts": 3,
+    "repairAttempts": 4,
     "noProgressLimit": 3,
     "tokenBudget": "UNKNOWN",
     "tokenFallback": "toolCalls ceiling",
@@ -1721,6 +1890,58 @@
         ]
       },
       {
+        "id": "scn-thr-001",
+        "kind": "scenario",
+        "scenarioIds": [
+          "SCN-THR-001"
+        ],
+        "cwd": ".",
+        "argv": [
+          "bash",
+          "-c",
+          "C=$(jq -er .candidateCommit .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json) && test \"$(git rev-parse HEAD)\" = \"$C\" && test -z \"$(git status --porcelain --untracked-files=all -- . ':(exclude,glob)**/.kbd-orchestrator/**' ':(exclude,glob)**/.prometheus/**' ':(exclude)static')\" && printf '%s\\n' \"b141545ab8b15bc7f3e83919cf51e845b67d936e2783844beb81780f00cdb5e2  .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary-baseline-expectations.json\" \"4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c  tests/bdd/features/live-model-choice.feature\" \"e22be426401346d9a5cdff02791c0a26ae43fa62c6e609a189b95ebff1c5590d  tests/bdd/features/live-model-choice-controls.feature\" \"39a2d8c239362e2d36a1d62ded8401ec2c8e172ee4f6c599c2719c42130e6f9b  openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json\" \"4346f0a55c4b556898412e14aaffd9d028c41469d3c1865cb30b8272afe1f635  openspec/changes/uiux-system-model-live-default/fixtures/baseline-verdicts.json\" \"dedb2b0f2876339a935c1c0c71a8439e5ca6d1c08bc1dc7257476962f1868046  tests/bdd/features/thread-menu.feature\" | shasum -a 256 -c --status && test \"$(shasum -a 256 .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json | cut -d\" \" -f1)\" = \"$(jq -er .inventorySha256 .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" && test \"$(jq -er .candidateCommit .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" = \"$C\" && test \"$(jq -er .verdict .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" = \"PASS\" && { env pnpm exec env -u UAR_STATIC_DIR CI=1 UAR_SERVER__GRPC_PORT=50061 UAR_SERVER__INGEST_DIRECTORY=\"$(mktemp -d)\" playwright test -c tests/bdd/playwright.config.ts --grep 'Renaming a thread from its row menu keeps the new name after a reload|Cancelling the rename dialog keeps the thread.s title' --repeat-each 3 --retries 0; }"
+        ]
+      },
+      {
+        "id": "neg-thr-001",
+        "kind": "negativeControl",
+        "scenarioIds": [
+          "SCN-THR-001"
+        ],
+        "cwd": ".",
+        "argv": [
+          "bash",
+          "-c",
+          "C=$(jq -er .candidateCommit .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json) && test \"$(git rev-parse HEAD)\" = \"$C\" && test -z \"$(git status --porcelain --untracked-files=all -- . ':(exclude,glob)**/.kbd-orchestrator/**' ':(exclude,glob)**/.prometheus/**' ':(exclude)static')\" && printf '%s\\n' \"b141545ab8b15bc7f3e83919cf51e845b67d936e2783844beb81780f00cdb5e2  .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary-baseline-expectations.json\" \"4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c  tests/bdd/features/live-model-choice.feature\" \"e22be426401346d9a5cdff02791c0a26ae43fa62c6e609a189b95ebff1c5590d  tests/bdd/features/live-model-choice-controls.feature\" \"39a2d8c239362e2d36a1d62ded8401ec2c8e172ee4f6c599c2719c42130e6f9b  openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json\" \"4346f0a55c4b556898412e14aaffd9d028c41469d3c1865cb30b8272afe1f635  openspec/changes/uiux-system-model-live-default/fixtures/baseline-verdicts.json\" \"dedb2b0f2876339a935c1c0c71a8439e5ca6d1c08bc1dc7257476962f1868046  tests/bdd/features/thread-menu.feature\" | shasum -a 256 -c --status && test \"$(shasum -a 256 .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json | cut -d\" \" -f1)\" = \"$(jq -er .inventorySha256 .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" && test \"$(jq -er .candidateCommit .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" = \"$C\" && test \"$(jq -er .verdict .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" = \"PASS\" && { mkdir -p \".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary\" && R=\"$PWD\" && rm -f \".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/baseline-thr-001.json\" && rsync -a --delete --exclude fixtures/live-model-choice-new-kinds.json tests/bdd/ \"$HOME/.claude/worktrees/uiux-baseline/tests/bdd/\" && cd \"$HOME/.claude/worktrees/uiux-baseline\" && pnpm exec bddgen test -c tests/bdd/playwright.config.ts && { env -u STUB_LLM_EXTRA_FIXTURES pnpm exec env -u UAR_STATIC_DIR CI=1 UAR_SERVER__GRPC_PORT=50061 UAR_SERVER__INGEST_DIRECTORY=\"$(mktemp -d)\" playwright test -c tests/bdd/playwright.config.ts --retries 0 --grep 'Renaming a thread from its row menu keeps the new name after a reload' --reporter=json > \"$R/.kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/baseline-thr-001.json\"; true; } && cd \"$R\" && jq -e --arg t 'Renaming a thread from its row menu keeps the new name after a reload' '[.. | objects | select(has(\"specs\")) | .specs[] | select(.title == $t)] | length == 1 and (.[0].ok == false)' \".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/baseline-thr-001.json\"; }"
+        ]
+      },
+      {
+        "id": "scn-thr-002",
+        "kind": "scenario",
+        "scenarioIds": [
+          "SCN-THR-002"
+        ],
+        "cwd": ".",
+        "argv": [
+          "bash",
+          "-c",
+          "C=$(jq -er .candidateCommit .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json) && test \"$(git rev-parse HEAD)\" = \"$C\" && test -z \"$(git status --porcelain --untracked-files=all -- . ':(exclude,glob)**/.kbd-orchestrator/**' ':(exclude,glob)**/.prometheus/**' ':(exclude)static')\" && printf '%s\\n' \"b141545ab8b15bc7f3e83919cf51e845b67d936e2783844beb81780f00cdb5e2  .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary-baseline-expectations.json\" \"4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c  tests/bdd/features/live-model-choice.feature\" \"e22be426401346d9a5cdff02791c0a26ae43fa62c6e609a189b95ebff1c5590d  tests/bdd/features/live-model-choice-controls.feature\" \"39a2d8c239362e2d36a1d62ded8401ec2c8e172ee4f6c599c2719c42130e6f9b  openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json\" \"4346f0a55c4b556898412e14aaffd9d028c41469d3c1865cb30b8272afe1f635  openspec/changes/uiux-system-model-live-default/fixtures/baseline-verdicts.json\" \"dedb2b0f2876339a935c1c0c71a8439e5ca6d1c08bc1dc7257476962f1868046  tests/bdd/features/thread-menu.feature\" | shasum -a 256 -c --status && test \"$(shasum -a 256 .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json | cut -d\" \" -f1)\" = \"$(jq -er .inventorySha256 .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" && test \"$(jq -er .candidateCommit .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" = \"$C\" && test \"$(jq -er .verdict .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" = \"PASS\" && { env pnpm exec env -u UAR_STATIC_DIR CI=1 UAR_SERVER__GRPC_PORT=50061 UAR_SERVER__INGEST_DIRECTORY=\"$(mktemp -d)\" playwright test -c tests/bdd/playwright.config.ts --grep 'Deleting a thread from its row menu removes it for good and keeps the others|Cancelling the delete confirmation keeps the thread' --repeat-each 3 --retries 0; }"
+        ]
+      },
+      {
+        "id": "neg-thr-002",
+        "kind": "negativeControl",
+        "scenarioIds": [
+          "SCN-THR-002"
+        ],
+        "cwd": ".",
+        "argv": [
+          "bash",
+          "-c",
+          "C=$(jq -er .candidateCommit .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json) && test \"$(git rev-parse HEAD)\" = \"$C\" && test -z \"$(git status --porcelain --untracked-files=all -- . ':(exclude,glob)**/.kbd-orchestrator/**' ':(exclude,glob)**/.prometheus/**' ':(exclude)static')\" && printf '%s\\n' \"b141545ab8b15bc7f3e83919cf51e845b67d936e2783844beb81780f00cdb5e2  .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary-baseline-expectations.json\" \"4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c  tests/bdd/features/live-model-choice.feature\" \"e22be426401346d9a5cdff02791c0a26ae43fa62c6e609a189b95ebff1c5590d  tests/bdd/features/live-model-choice-controls.feature\" \"39a2d8c239362e2d36a1d62ded8401ec2c8e172ee4f6c599c2719c42130e6f9b  openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json\" \"4346f0a55c4b556898412e14aaffd9d028c41469d3c1865cb30b8272afe1f635  openspec/changes/uiux-system-model-live-default/fixtures/baseline-verdicts.json\" \"dedb2b0f2876339a935c1c0c71a8439e5ca6d1c08bc1dc7257476962f1868046  tests/bdd/features/thread-menu.feature\" | shasum -a 256 -c --status && test \"$(shasum -a 256 .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json | cut -d\" \" -f1)\" = \"$(jq -er .inventorySha256 .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" && test \"$(jq -er .candidateCommit .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" = \"$C\" && test \"$(jq -er .verdict .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json)\" = \"PASS\" && { mkdir -p \".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary\" && R=\"$PWD\" && rm -f \".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/baseline-thr-002.json\" && rsync -a --delete --exclude fixtures/live-model-choice-new-kinds.json tests/bdd/ \"$HOME/.claude/worktrees/uiux-baseline/tests/bdd/\" && cd \"$HOME/.claude/worktrees/uiux-baseline\" && pnpm exec bddgen test -c tests/bdd/playwright.config.ts && { env -u STUB_LLM_EXTRA_FIXTURES pnpm exec env -u UAR_STATIC_DIR CI=1 UAR_SERVER__GRPC_PORT=50061 UAR_SERVER__INGEST_DIRECTORY=\"$(mktemp -d)\" playwright test -c tests/bdd/playwright.config.ts --retries 0 --grep 'Deleting a thread from its row menu removes it for good and keeps the others' --reporter=json > \"$R/.kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/baseline-thr-002.json\"; true; } && cd \"$R\" && jq -e --arg t 'Deleting a thread from its row menu removes it for good and keeps the others' '[.. | objects | select(has(\"specs\")) | .specs[] | select(.title == $t)] | length == 1 and (.[0].ok == false)' \".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary/baseline-thr-002.json\"; }"
+        ]
+      },
+      {
         "id": "rebind-postcondition",
         "kind": "run",
         "cwd": ".",
@@ -1761,7 +1982,8 @@
       "Prior receipt .prometheus/verification/c33-rest-model-restart-macos-pass.json (B36, 2026-10-27, sha256 c87d0ad986e5eb1ae8a0973d465cd7c61450c0028a2a421a5f0c93b67e4b645d) is preserved as prior evidence of REST default and override routing and restart survival on an earlier build; it is not S1 evidence for the current tree",
       "No credential, JWT or admin key is created, sent or renewed; BDD runs use the deployment's auth-off test configuration; scratch data only; live UAR is never restarted or redeployed",
       "Repair rule: a fix made under an authorized B5 repair is committed; the candidate commit in implementation-complete-inventory.json is updated to that commit; the independent critic re-confirms the M1 and M2 patches and targetFile entries against the new commit and records the inventory's sha256 as inventorySha256 and the new commit as candidateCommit in .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json; the step-definition and runner review is redone when the diff touches tests/bdd/**, frontend/e2e/** or frontend/playwright.*.config.ts; bind-candidate-tree runs; prepare-bdd reruns in the main tree; the old M1/M2 worktrees are removed (scripts/worktree-rm.sh s1-mutant-m1 --force and s1-mutant-m2 --force) and recreated, digest-checked, patched and rebuilt from the new commit; the baseline checks rerun when the diff touches tests/bdd/**, frontend/e2e/** or frontend/playwright.*.config.ts; then the failed step, every scenario and control whose evidence is invalidated under evidenceInvalidation, both mutant controls, every command that had not run when the batch stopped, and rebind-postcondition run. An uncommitted edit never satisfies a rerun Round-2 exception, signed by the owner on 2026-11-21 and valid for candidate c8eb9e23 only: that commit differs from 2723a97b in tests/bdd/playwright.config.ts alone, so the M1 and M2 worktrees created, digest-checked, patched and built from 2723a97b are kept and commands 9-22 are not rerun. neg-sys-015 and neg-sys-017 copy the candidate tests/bdd/playwright.config.ts into their worktree and then require that the worktree differs from the candidate commit only in the inventory target file (static/ excluded); if not, the control is INVALID. bind-candidate-tree, prepare-bdd and both baseline checks rerun as the rule says. Run order for the combined rc.6 candidate: 0, 1, 7, 8, 23, 9-22, 24-49. scn-sys-001 runs after both baseline checks and before the mutant builds, so that a broken chat path stops the batch before those builds. Commands 2-6 carry forward, because the baseline commit f2c9e36 is unchanged. The binding, the first-FAIL stop and every command are unchanged.",
-      "Clean-tree scope: the binding check excludes every .kbd-orchestrator/ and .prometheus/ directory at any depth (KBD runtime projections, hook and learning logs, the inventory, review records and evidence, written during the run) and static/ (the frontend build output that prepare-bdd rewrites, including tracked static/index.html; it is rebuilt by prepare-bdd from the bound source after every bind, is the page every BDD command opens (served by the runtime from ./static with UAR_STATIC_DIR unset), and is the page supporting real-server starts serve through UAR_STATIC_DIR). Every product, test, step-definition, fixture and feature path must match the candidate commit exactly. The frozen inputs are checked by sha256 in the same check: boundary-baseline-expectations.json b141545a…db5e2, live-model-choice.feature 4e648ea9…209c, live-model-choice-controls.feature e22be426…590d, s1-oracle.json 39a2d8c2…6f9b, baseline-verdicts.json 4346f0a5…f635. The inventory is bound by the independent critic's record in every command: the binding check requires the inventory's sha256 to equal inventorySha256 and its candidateCommit to equal candidateCommit in .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json, which only the independent critic writes. The binding check also requires that record's verdict to be PASS. The verify-mutant-m1|m2-patch-digest commands repeat the sha256 check."
+      "Clean-tree scope: the binding check excludes every .kbd-orchestrator/ and .prometheus/ directory at any depth (KBD runtime projections, hook and learning logs, the inventory, review records and evidence, written during the run) and static/ (the frontend build output that prepare-bdd rewrites, including tracked static/index.html; it is rebuilt by prepare-bdd from the bound source after every bind, is the page every BDD command opens (served by the runtime from ./static with UAR_STATIC_DIR unset), and is the page supporting real-server starts serve through UAR_STATIC_DIR). Every product, test, step-definition, fixture and feature path must match the candidate commit exactly. The frozen inputs are checked by sha256 in the same check: boundary-baseline-expectations.json b141545a…db5e2, live-model-choice.feature 4e648ea9…209c, live-model-choice-controls.feature e22be426…590d, s1-oracle.json 39a2d8c2…6f9b, baseline-verdicts.json 4346f0a5…f635. The inventory is bound by the independent critic's record in every command: the binding check requires the inventory's sha256 to equal inventorySha256 and its candidateCommit to equal candidateCommit in .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/inventory-confirmation.json, which only the independent critic writes. The binding check also requires that record's verdict to be PASS. The verify-mutant-m1|m2-patch-digest commands repeat the sha256 check.",
+      "Repair round 4 adds SCN-THR-001 and SCN-THR-002 (tests/bdd/features/thread-menu.feature, frozen by digest in commands 49-52 only). Each scenario command runs the scenario and its cancel control, 3 samples each, --retries 0. Each negative control overlays the candidate tests on the baseline worktree f2c9e36, whose menu items use onSelect, and requires the scenario to fail there (JSON result ok == false). Commands 2-6 carry forward (baseline unchanged). Run order for this candidate: 0, 1, 7, 8, 23, 49-52, 9-22, 24-48, 53. rebind-postcondition moves from index 49 to 53, unchanged."
     ],
     "requiredApprovals": "phase verification grant from the operator recorded in the phase ledger; an independent fresh-context review of the step definitions, runner configs and authored control scenarios against this contract before any scenario command; no credentials in tests (auth-off test configuration for BDD runs)",
     "receipts": [
@@ -1945,6 +2167,20 @@
         "one-receipt exception for that notice; resume at command 24 without rebuilding"
       ],
       "unchanged": "scenarioMatrix, oracles, controls, verdict rules, commands, runner, BIND checks, frozen fixtures, candidate, budgets and every other warning rule; history is not reset",
+      "operatorApproval": "signed by the owner"
+    },
+    {
+      "date": "2026-11-22",
+      "supersedesDigest": "215f15bd2b4bb4712f722b7e283c17f79113e8ebbed457f00b208746c6954621",
+      "reason": "The operator granted repair round 4 as proposed (review/repair-round-4-proposal.md): T1 thread menu, P1 send race, harness fixes C1, H1, H2, H3, and tests for Rename and Delete.",
+      "changes": [
+        "budgets.repairAttempts 3 to 4",
+        "budgets.timeMinutes 900 to 1350, cumulative",
+        "scenarioMatrix adds SCN-THR-001 and SCN-THR-002 (13 to 15)",
+        "commands 49-52 added (scn-thr-001, neg-thr-001, scn-thr-002, neg-thr-002); rebind to index 53",
+        "expectedEffects: run order and the THR controls"
+      ],
+      "unchanged": "every existing scenario, oracle, control, verdict rule, command text, BIND check and frozen fixture; all attempt-4 verdicts are void by the Repair rule; consumed budgets and history are not reset",
       "operatorApproval": "signed by the owner"
     }
   ]
