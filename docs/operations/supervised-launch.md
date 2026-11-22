@@ -171,7 +171,7 @@ so the host has to ship them. The Boss sidecar payload already includes them.
 ```json
 {
   "name": "universal-agent-runtime",
-  "version": "1.4.0-rc.5",
+  "version": "1.4.0-rc.6",
   "git_commit": null,
   "build_profile": "release",
   "target": "aarch64-apple-darwin",

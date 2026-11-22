@@ -1,12 +1,12 @@
 {
   "$schema": "./product-support-matrix.schema.json",
   "version": "1.0.0",
-  "product_version": "1.4.0-rc.5",
+  "product_version": "1.4.0-rc.6",
   "version_semantics": "version is the matrix contract revision; product_version follows Cargo.toml; SDK/package/schema versions remain independent",
   "claim_reviewed_at": "2026-11-02",
-  "current_candidate_status": "RC5 exact Linux amd64 native chat and protocol qualification pending; RC4 qualification under #465 is historical for RC5",
+  "current_candidate_status": "RC6 exact Linux amd64 image and live-model-choice qualification pending; RC4 and RC5 qualification are historical for RC6",
   "version_inventory": [
-    {"path": "Cargo.toml", "format": "toml", "version": "1.4.0-rc.5", "role": "runtime-product"},
+    {"path": "Cargo.toml", "format": "toml", "version": "1.4.0-rc.6", "role": "runtime-product"},
     {"path": "package.json", "format": "json", "version": "1.0.0", "role": "private-workspace-tooling"},
     {"path": "frontend/package.json", "format": "json", "version": "1.0.0", "role": "independent-frontend-package"},
     {"path": "website/package.json", "format": "json", "version": "0.0.0", "role": "private-documentation-package"},
