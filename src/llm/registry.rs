@@ -192,6 +192,15 @@ pub(crate) fn prepare_provider_update(
                 }
                 None => model.execution_profile.clone_from(&previous.execution_profile),
             }
+            // Reads fill in the default profile, so a client that writes back what it read
+            // sends one. Readers treat absent and default alike; storing it would change the
+            // configuration digest and stale every verification proof of the provider.
+            if previous.execution_profile.is_none()
+                && model.execution_profile.as_ref()
+                    == Some(&super::team_profile::TeamModelExecutionSettings::default())
+            {
+                model.execution_profile = None;
+            }
         } else if let Some(settings) = &model.execution_profile {
             settings.validate()?;
             anyhow::ensure!(settings.settings_revision == 1, "TEAM_REVISION_CONFLICT");

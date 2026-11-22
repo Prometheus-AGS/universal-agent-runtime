@@ -124,9 +124,9 @@ resilience:
   requests_per_second: 5.0
 
   # Burst size: max requested allowed in a short burst.
-  # Default: 10.0
+  # Default: 100.0
   # Env: UAR_RESILIENCE__BURST_SIZE
-  burst_size: 10.0
+  burst_size: 100.0
 
 persistence:
   # The database provider to use. Supported values: "surreal" or "postgres".

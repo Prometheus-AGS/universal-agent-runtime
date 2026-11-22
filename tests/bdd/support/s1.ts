@@ -127,7 +127,7 @@ export class S1Context {
       this.held.passThrough = true;
       await this.held.route.abort().catch(() => undefined);
     }
-    await releaseAllStubs();
+    await releaseAllStubs({ allowMissingRoute: true });
     await restoreS1Baseline();
     if (this.operator && !this.operator.isClosed()) await this.operator.close();
     this.active = false;

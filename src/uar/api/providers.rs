@@ -275,18 +275,26 @@ async fn update_provider(
 ) -> Result<Json<ProviderView>, (StatusCode, Json<ErrorResponse>)> {
     let _administration = state.registry.administration_guard().await;
     config.id = id;
-    enrich_provider_config(&mut config);
     let existing = state.registry.get(&config.id).await.ok_or((StatusCode::NOT_FOUND,
         Json(ErrorResponse { error: "Provider not found".into() })))?;
+    // Enrichment fills a missing key from the environment. The operator did not send that
+    // key, so it must not replace the saved one or be written to durable storage: either
+    // would rotate the credential and stale every verification proof of the provider.
     let request_had_key = config.api_key.is_some();
-    if config.api_key.is_none() { config.api_key.clone_from(&existing.api_key); }
+    enrich_provider_config(&mut config);
+    let environment_key = if request_had_key { None } else { config.api_key.clone() };
+    if !request_had_key && existing.api_key.is_some() { config.api_key.clone_from(&existing.api_key); }
     let response = prepare_provider_update(&existing, config).map_err(|error| {
         let code = error.to_string();
         (if code == "TEAM_REVISION_CONFLICT" { StatusCode::CONFLICT } else { StatusCode::BAD_REQUEST },
             Json(ErrorResponse { error: code }))
     })?;
 
-    if let Err(reason) = persist_provider_config(&state, &response, request_had_key).await {
+    let mut durable = response.clone();
+    if environment_key.is_some() && durable.api_key == environment_key {
+        durable.api_key = None;
+    }
+    if let Err(reason) = persist_provider_config(&state, &durable, request_had_key).await {
         return Err(provider_persist_error(&response.id, &reason));
     }
 

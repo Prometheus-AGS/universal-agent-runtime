@@ -33,6 +33,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ProviderModelPicker, ProviderPicker } from "../pickers";
 import { ModelsIngestionError } from "./models-ingestion-error";
+import { VirtualCatalogList } from "./virtual-catalog-list";
 import { useModelsAdmin } from "../model/use-models-admin";
 import {
   filterModelRows,
@@ -83,6 +84,8 @@ export const ModelsPage: FC = () => {
 
   const [removeTarget, setRemoveTarget] = useState<{ providerId: string; modelId: string } | null>(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  // The page's one scroll container; the catalog list windows against it.
+  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(null);
 
   // Compare state (CH-10): a bounded selection of catalog model keys, plus
   // whether the side-by-side dialog is open. Selection persists across
@@ -218,7 +221,7 @@ export const ModelsPage: FC = () => {
       )}
       <ModelsIngestionError />
 
-      <div className="flex-1 overflow-y-auto">
+      <div ref={setScrollElement} className="relative flex-1 overflow-y-auto">
         {/* Configured models section */}
         <section className=" px-6 py-4" aria-label="Configured models">
           <div className="mb-3 flex items-center gap-2">
@@ -318,17 +321,21 @@ export const ModelsPage: FC = () => {
               }
             />
           )}
-          <div className="flex flex-col gap-1.5">
-            {filtered.map((m) => (
+          <VirtualCatalogList
+            rows={filtered}
+            scrollElement={scrollElement}
+            label="Catalog models"
+            // At the limit only the checked rows can take focus, so they must stay mounted.
+            pinnedKeys={compareKeys.length >= MAX_COMPARE ? compareKeys : undefined}
+            renderRow={(m) => (
               <ModelRow
-                key={m.key}
                 row={m}
                 compareChecked={compareKeys.includes(m.key)}
                 compareDisabled={compareKeys.length >= MAX_COMPARE && !compareKeys.includes(m.key)}
                 onToggleCompare={() => toggleCompare(m.key)}
               />
-            ))}
-          </div>
+            )}
+          />
         </section>
       </div>
 

@@ -102,11 +102,16 @@ export async function totalHeld(): Promise<number> {
   return counts.reduce((sum, count) => sum + count, 0);
 }
 
-/** Frees every held reply on every stub (`POST /_stub/release`). */
-export async function releaseAllStubs(): Promise<void> {
+/**
+ * Frees every held reply on every stub (`POST /_stub/release`). Only teardown may allow
+ * a missing route: a stub built before the hold kind (the baseline) has none and holds
+ * nothing, and a teardown error would hide what the scenario itself reported.
+ */
+export async function releaseAllStubs(options: { allowMissingRoute?: boolean } = {}): Promise<void> {
   await Promise.all(
     S1_STUBS.map(async (stub) => {
       const res = await fetch(`${stub.baseUrl}/_stub/release`, { method: 'POST' });
+      if (res.status === 404 && options.allowMissingRoute) return;
       if (!res.ok) throw new Error(`stub release failed for ${stub.provider}: ${res.status}`);
     }),
   );

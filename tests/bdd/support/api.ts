@@ -383,8 +383,8 @@ export const S1_VERIFIED_MODELS = [
  * Produces the verification proof through the API the console uses
  * (`POST /api/uar/providers/{id}/test`, a real one-token probe against the
  * provider's own stub). A proof binds the provider's current configuration, so
- * this runs after every write the setup makes; a later provider write
- * (including the console's own default_model save) makes the proof stale.
+ * this runs after every write the setup makes. A later write to anything but
+ * default_model makes the proof stale.
  */
 export async function verifyModel(providerId: string, modelId: string): Promise<void> {
   const res = await fetch(`${APP_BASE_URL}/api/uar/providers/${providerId}/test`, {
@@ -419,8 +419,8 @@ export async function setSystemDefaultViaApi(
   modelId: string,
 ): Promise<{ t0: number; t1: number }> {
   const t0 = Date.now();
-  // A provider write changes its configuration digest and so stales its
-  // verification proofs; write only when the default model really changes.
+  // Write only when the default model really changes. A default_model write
+  // must not stale the provider's verification proofs.
   const current = (await readProviders()).providers.find((provider) => provider.id === providerId);
   if (current?.default_model !== modelId) await putProvider(providerId, { default_model: modelId });
   const res = await fetch(`${APP_BASE_URL}/api/uar/providers/${providerId}/default`, { method: 'POST' });

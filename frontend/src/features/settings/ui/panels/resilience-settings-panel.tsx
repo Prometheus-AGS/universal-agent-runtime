@@ -214,7 +214,7 @@ export function ResiliencePanel() {
               <Field
                 label="Burst Size"
                 hint="How many requests can pass in a short spike."
-                defaultValue="20"
+                defaultValue="100"
               >
                 <Input
                   type="number"

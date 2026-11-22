@@ -1752,7 +1752,7 @@ impl AppConfig {
             .set_default("resilience.rate_limit_enabled", true)?
             .set_default("resilience.timeout_disabled", false)? // Default enabled (timeout_disabled=false)
             .set_default("resilience.requests_per_second", 10.0)?
-            .set_default("resilience.burst_size", 20.0)?
+            .set_default("resilience.burst_size", 100.0)?
             .set_default("resilience.request_timeout_ms", 30_000_i64)?
             .set_default("resilience.stream_start_timeout_ms", 15_000_i64)?
             .set_default("resilience.stream_idle_timeout_ms", 30_000_i64)?

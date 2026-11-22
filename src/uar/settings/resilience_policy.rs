@@ -30,7 +30,7 @@ impl Default for ResiliencePolicy {
         Self {
             rate_limit_enabled: true,
             requests_per_second: 10.0,
-            burst_size: 20.0,
+            burst_size: 100.0,
             request_timeout_ms: 30_000,
             stream_start_timeout_ms: 15_000,
             stream_idle_timeout_ms: 30_000,
