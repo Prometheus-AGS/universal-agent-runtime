@@ -1,50 +1,64 @@
 {
   "schemaVersion": 1,
   "kind": "kbd.derived-method-context",
-  "generatedAt": "2026-11-20T22:06:42.718Z",
+  "generatedAt": "2026-11-23T12:19:50.300Z",
   "authority": "derived-read-only-index; canonical signed decisions, phase binding, contract and governing host policy remain authority",
   "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
   "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
   "phaseId": "uar-uiux-architecture-2026-11",
-  "sourceRevision": 3556,
+  "sourceRevision": 3702,
   "phaseDirectory": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11",
   "contract": {
     "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
     "observation": "observed",
-    "sha256": "19ce700a169c230979d3a12b89ca27776fc142d1378d9c356307de63b6c62ffe",
-    "contractDigest": "6477e9a141d59effe2c68ecc8b277a672a6355fd2baac668a6ebbba920d98b04",
+    "sha256": "f5d519a6dda961ddd11d6753b26fed0fd091b4b2d0366cbeb2325e4a7f195bb1",
+    "contractDigest": "a6b514f2c0b0cbd2d6f6d14d6ff58588f13fce5a957cc22f928ce916c240d0f9",
     "binding": {
       "contractPath": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
-      "contractDigest": "6477e9a141d59effe2c68ecc8b277a672a6355fd2baac668a6ebbba920d98b04",
+      "contractDigest": "a6b514f2c0b0cbd2d6f6d14d6ff58588f13fce5a957cc22f928ce916c240d0f9",
       "scenarioDigests": {
-        "SCN-IDN-001": "ba094545908f8211be912bebeb351fdbe8c5cd215ee171f909f429c99b86a3bd",
-        "SCN-PICK-002": "fc8ad06f42d8f25744ad22c1ea88ded3d7a23c325eb5b2332d12c7a2c259c754",
-        "SCN-SET-003": "fc99f6bac26275869ec5c4c66199980601be8515f1fbd9b6eebc95371fd85afc",
-        "SCN-SYS-001": "96a96b02e5415aa11de1706499761cbe548bcccfe6a3c51d96da0ae07f47f119",
-        "SCN-SYS-003": "99c37054317320450ba5525c843d94173706438d7edc2c999da9d934a4a3ba9f",
-        "SCN-SYS-007": "4d0d3b40d0ddf03ddffb33918f3385b2f1db03e3a93d431c784d1fb09cb0250b",
-        "SCN-SYS-011": "c5d219819c2c3c300cf003d698f82bcc6e3b5c683aabb7eb0a1700a6e8c7a071",
-        "SCN-SYS-012": "8b42c60c16215f458326bf7f66026ae615431fde7f223ac1bf28149d414cfba7",
-        "SCN-SYS-013": "13aa48e0914b93f617ebcb5ab3e15ecf06018e8cef869f66bba34a82289e41bd",
-        "SCN-SYS-014": "0bbcf5fd7ab048c403fa854afc1f5f0f37e4932ae64c6a122a2c109d367f53f7",
-        "SCN-SYS-015": "ed560684d7de86f27fc73a389e02231287b3aabba2104d20c00ee5fbd969e625",
-        "SCN-SYS-016": "938cf061c4b2d0da8cfa437eb47bbb6370d3feff6a92274229e00b31cf231f9e",
-        "SCN-SYS-017": "92966bb3cf8ece4d0767e05905d0d61612f3f5eb9bca5994109b32f3a7ea91f4"
+        "SCN-IDN-001": "d02ce8c8ad8e4a898f2bdf0263d15948c7216b1ae3883ad164f56c5b8ebcff73",
+        "SCN-PICK-002": "1d87d220b6ae3dbd0c8d3ce034001b95d55b00901fa6b9c52b0b919465cb005f",
+        "SCN-SET-003": "590c771975cbc629cc3250f5afe5c5fb3eb0363df03900cd74c47b3f04055826",
+        "SCN-SYS-001": "67264feeea06976ae607d00387e3c74b68413e329642ccfb36bdc5293bdbd35c",
+        "SCN-SYS-003": "258574dab681f86006fb872da7591008d5847aa555613a6325ae46a08bc9fcaa",
+        "SCN-SYS-007": "07baeec23e33cebf15c2a1c665b7b69a389307f1a6031299d1e148c7df8d66b3",
+        "SCN-SYS-011": "b0c7ef3a0eb86dc47097d12e2076efb8a61a875e8987a572ff83beedc08824ae",
+        "SCN-SYS-012": "90e2e350303b9a96b3019ff3c16cb83dbd4b1348e5f7abb3f5f9b8ae5b8964af",
+        "SCN-SYS-013": "cdfaa06ddc7d419c7adcb055254b9277e9544326463c4a7a97d7f4d0f6b3b8a1",
+        "SCN-SYS-014": "14047e36bdccdd9f861e2bbdb63c1d6eb56d19970c11097113a373bd93d08c71",
+        "SCN-SYS-015": "aa0ca5711d6ac18978cd5ee66c28bdaefb82b61104c646bf87cd36462e3f7fdb",
+        "SCN-SYS-016": "41a14988b7f727b1bd0d38b0ad44f7a3f3fc59333289c05c92f8e9b096813d72",
+        "SCN-SYS-017": "99d271808fa32fef075b72a0f3058c682bb3e1b11d482961ddf1df79b7621a50",
+        "SCN-THR-001": "0f9bd41927e71d58e3d148301d4d895e14a5f86e84ee4b14d82706929366775f",
+        "SCN-THR-002": "df81a787c31a039aef45911d23cf4f93b34b5f9de5cc65e0ede23273b73f868f"
       },
       "planRevision": 143,
-      "adoptionDecisionId": "contract-adoption-uar-uiux-architecture-2026-11-6477e9a1",
-      "bindingRevision": 1
+      "adoptionDecisionId": "contract-adoption-uar-uiux-architecture-2026-11-a6b514f2",
+      "bindingRevision": 14,
+      "amendedScenarios": [
+        "SCN-THR-001",
+        "SCN-THR-002"
+      ],
+      "authority": {
+        "manifestRaw": "{\"action\":\"amend-contract\",\"approver\":\"travis@tribehealthsolutions.com\",\"contractPath\":\".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json\",\"kind\":\"kbd.scope-authority\",\"namespace\":\"prometheus-kbd-scope-amendment\",\"newContractDigest\":\"a6b514f2c0b0cbd2d6f6d14d6ff58588f13fce5a957cc22f928ce916c240d0f9\",\"nonce\":\"c508afbe20acf2b7039398119bfb4231\",\"phaseId\":\"uar-uiux-architecture-2026-11\",\"previousContractDigest\":\"d5bb7921d9a0e1b60d9e576d26cd191e79bc327ba7e4a0a41ad97c4d03fc1a1e\",\"projectId\":\"c8d33ac7-e3cd-4db6-b938-1425ec19ee9a\",\"reason\":\"Repair round 4b: thread-menu.feature sends a message the baseline stub answers, so the THR negative controls reach the menu.\",\"runId\":\"fix-runtime-settings-namespace-routes-20260825T091750Z\",\"scenarioChanges\":{\"added\":[],\"modified\":[\"SCN-THR-001\",\"SCN-THR-002\"],\"removed\":[]},\"schemaVersion\":\"1\",\"timestamp\":\"2026-11-22T22:45:51Z\"}",
+        "manifestSha256": "7c52f1af10bfe899988baf3e554654e414bc6a8c785ad00db2462a1af4a6e64e",
+        "signature": "-----BEGIN SSH SIGNATURE-----\nU1NIU0lHAAAAAQAAADMAAAALc3NoLWVkMjU1MTkAAAAgsgqOvzJMpDfEY0CKRyfxixLl97\nUxT+bg/r6Jl4BBHFcAAAAecHJvbWV0aGV1cy1rYmQtc2NvcGUtYW1lbmRtZW50AAAAAAAA\nAAZzaGE1MTIAAABTAAAAC3NzaC1lZDI1NTE5AAAAQJO4/OgDzRjtkkKxfmrl1+d1CZpfLx\ny6SK+MU+/TEdsSptKuMUjq+GVTWMXl8XlZDWkhv0dOUzh7CCC2xm8S7Qk=\n-----END SSH SIGNATURE-----\n",
+        "approver": "travis@tribehealthsolutions.com",
+        "namespace": "prometheus-kbd-scope-amendment",
+        "allowedSignersSha256": "4c32adefb70e281e6c78f3ecb562088ef82209c54a9a01b1ed630ba3ed78a573"
+      }
     },
     "identity": {
       "projectId": "c8d33ac7-e3cd-4db6-b938-1425ec19ee9a",
       "runId": "fix-runtime-settings-namespace-routes-20260825T091750Z",
       "phaseId": "uar-uiux-architecture-2026-11",
       "planRevision": 143,
-      "contractDigest": "6477e9a141d59effe2c68ecc8b277a672a6355fd2baac668a6ebbba920d98b04"
+      "contractDigest": "a6b514f2c0b0cbd2d6f6d14d6ff58588f13fce5a957cc22f928ce916c240d0f9"
     }
   },
   "selectedMethod": "VLBV",
-  "methodSource": "pack-default",
+  "methodSource": "project-pin",
   "deviation": null,
   "methodDecision": null,
   "retiredMethods": [],
@@ -73,9 +87,10 @@
     "A2UI/AG-UI protocol changes",
     "Prometheus Entity Management package changes",
     "new commercial claims",
-    "editing user or harness settings (including the Impeccable engine pin)"
+    "editing user or harness settings (including the Impeccable engine pin)",
+    "the combined rc.6 candidate also contains main at 0ce227af, issue #539 (supervised launch and the version route) and the image build fixes; an S1 pass certifies none of them. #539 keeps its own evidence and each image needs its own qualification"
   ],
-  "stage": "plan",
+  "stage": null,
   "stageAuthority": {
     "operations": [
       "discover/define/plan within governing policy"
@@ -88,12 +103,12 @@
     {
       "path": "AGENTS.md",
       "observation": "observed",
-      "sha256": "538603e86940a0a00c74520abd95e084d917a76e034d648b63bcb5120b972c30"
+      "sha256": "c69ce268ca6a40f33177a3679c35d47be6d9b42ac052c525f6d27aa7c5f4d5c0"
     },
     {
       "path": "CLAUDE.md",
       "observation": "observed",
-      "sha256": "538603e86940a0a00c74520abd95e084d917a76e034d648b63bcb5120b972c30"
+      "sha256": "c69ce268ca6a40f33177a3679c35d47be6d9b42ac052c525f6d27aa7c5f4d5c0"
     },
     {
       "path": ".kbd-orchestrator/constraints.md",
@@ -111,22 +126,7 @@
     ],
     "shadowing": null
   },
-  "policyConflicts": [
-    {
-      "path": "AGENTS.md",
-      "sha256": "538603e86940a0a00c74520abd95e084d917a76e034d648b63bcb5120b972c30",
-      "issue": "Host compiler or cadence exception conflicts with VLBV; do not infer permission to run generated-code checks during generation.",
-      "acknowledged": false,
-      "ackDecisionId": null
-    },
-    {
-      "path": "CLAUDE.md",
-      "sha256": "538603e86940a0a00c74520abd95e084d917a76e034d648b63bcb5120b972c30",
-      "issue": "Host compiler or cadence exception conflicts with VLBV; do not infer permission to run generated-code checks during generation.",
-      "acknowledged": false,
-      "ackDecisionId": null
-    }
-  ],
+  "policyConflicts": [],
   "candidateAndEvidence": {
     "freshness": "Every invalidationKeys entry is a repository path or git pathspec glob. After an authorized repair, a scenario's or negative control's earlier evidence carries forward to the repaired candidate only when `git diff --name-only <old candidateCommit> <new candidateCommit>` lists no path matching any of its keys; otherwise it is invalidated and reruns on the new candidate. Every S1 scenario shares one key set covering the console source (frontend/src/**, frontend/packages/**), the server source (src/**, vendor/**), the files compiled into the server (migrations/** embedded through include_str! and sqlx::migrate!, build.rs, proto/**, data/model_benchmarks.json, docs/agents/**), rust-toolchain.toml, build manifests and lockfiles, catalog/** and tests/bdd/**, because each one drives the whole application through the browser; supporting scenarios also key on frontend/e2e/** and their Playwright configs. Both mutant controls always rerun after a repair, because their worktrees are recreated from the new candidate. A change to this contract, s1-oracle.json, either feature file, baseline-verdicts.json or boundary-baseline-expectations.json is an amendment under amendmentPolicy, never a repair. History is preserved.",
     "paths": [
@@ -146,15 +146,20 @@
   },
   "budgets": {
     "adopted": {
-      "timeMinutes": 180,
+      "timeMinutes": 1350,
       "toolCalls": 400,
-      "repairAttempts": 2,
+      "repairAttempts": 4,
       "noProgressLimit": 3,
       "tokenBudget": "UNKNOWN",
       "tokenFallback": "toolCalls ceiling",
       "exhaustion": "checkpoint + BLOCKED; never silent PASS"
     },
-    "consumption": "UNKNOWN; recover original canonical/evidence receipts before execution"
+    "consumption": {
+      "boundaryCommands": 1,
+      "durationMilliseconds": 242520,
+      "repairAttempts": 0,
+      "retries": 0
+    }
   },
   "unresolved": {
     "boundaryObligations": {
@@ -562,6 +567,6 @@
       "universal model obedience or arbitrary tool interception"
     ]
   },
-  "status": "CONFLICT",
+  "status": "RESOLVED_REFERENCES",
   "blockers": []
 }
