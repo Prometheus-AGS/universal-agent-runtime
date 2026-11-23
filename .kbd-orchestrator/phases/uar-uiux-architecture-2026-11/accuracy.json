@@ -1,0 +1,47 @@
+{
+  "phase": "uar-uiux-architecture-2026-11",
+  "writtenAt": "2026-11-23",
+  "contractClosed": false,
+  "exit": "operator-superseded: rc.6 new-code-only BDD check 15/15 PASS on 8e4ce275",
+  "amendmentsAfterAdoption": {
+    "signed": 13,
+    "rejectedAttempts": 2
+  },
+  "boundaryAttempts": 4,
+  "lastAttemptVerdicts": {
+    "pass_provisional": 2,
+    "fail": 6,
+    "not_exercised": 5
+  },
+  "blockedByContractOrHarness": {
+    "atLeast": 2,
+    "examples": [
+      "attempt-1 webserver failed",
+      "attempt-4 SCN-SYS-003 harness reply counter"
+    ]
+  },
+  "repairRounds": [
+    "3",
+    "4",
+    "4b"
+  ],
+  "postClosureEscapes": null,
+  "knownDefectsShipped": 4,
+  "b4Step5Findings": null,
+  "goals": {
+    "met": 0,
+    "partial": 3,
+    "notMet": 6
+  },
+  "successorIssue": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542",
+  "phaseDisposition": "CLOSED_SUPERSEDED",
+  "closureKey": "754b54bcbd9eb5c18a27cc9bb7cb8c30845c1798541189692b351b5cf7145659",
+  "operatorExit": {
+    "exercised": 15,
+    "exercisedPass": 15,
+    "withdrawnScenarios": 15,
+    "withdrawnScope": 3,
+    "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542",
+    "manifest": "amendments/2026-11-23-supersede-exit.json"
+  }
+}
