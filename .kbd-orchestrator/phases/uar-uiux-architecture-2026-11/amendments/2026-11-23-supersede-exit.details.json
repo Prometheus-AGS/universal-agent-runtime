@@ -1,0 +1,416 @@
+{
+  "operatorDecision": {
+    "reference": "operator instructions in session f1444227, 2026-11-23; .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/reflection.md (Delta and Next Phase Seed)",
+    "text": "\"Sign a superseding exit\" and \"Yes, close it\": the rc.6 new-code-only BDD check (15 scenarios, run once on 8e4ce275, released as 84840af1) replaces the unfinished S1 boundary packet; unshipped scope moves to issue #542."
+  },
+  "exercised": [
+    {
+      "id": "SCN-RC6-01",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/live-model-choice.feature",
+          "sha256": "4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ],
+      "scopeRefs": [
+        "S1-R1 Live default: an authorized operator changes the system default A to B through the dedicated live route; confirmation shows only after the runtime acknowledges; no restart"
+      ]
+    },
+    {
+      "id": "SCN-RC6-02",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/live-model-choice.feature",
+          "sha256": "4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ],
+      "scopeRefs": [
+        "S1-R2 Next eligible turn: a conversation with no override answers its next turn on B, and the transcript shows the model that actually answered, its origin (system default) and when the change took effect"
+      ]
+    },
+    {
+      "id": "SCN-RC6-03",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/live-model-choice.feature",
+          "sha256": "4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ],
+      "scopeRefs": [
+        "S1-R3 Override holds: a conversation with override C keeps answering on C after the default change, shown with origin \"this conversation\""
+      ]
+    },
+    {
+      "id": "SCN-RC6-04",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/live-model-choice.feature",
+          "sha256": "4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ],
+      "scopeRefs": [
+        "S1-R4 Clear to inherit: clearing the override previews the inherited value B before confirming, and the next turn answers on B"
+      ]
+    },
+    {
+      "id": "SCN-RC6-05",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/live-model-choice.feature",
+          "sha256": "4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ],
+      "scopeRefs": [
+        "S1-R5 Isolation: changing or clearing one conversation's override does not change another conversation"
+      ]
+    },
+    {
+      "id": "SCN-RC6-06",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/live-model-choice.feature",
+          "sha256": "4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ],
+      "scopeRefs": [
+        "S1-R6 In-flight binding: a turn already generating when the default changes finishes on the model it started with"
+      ]
+    },
+    {
+      "id": "SCN-RC6-07",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/live-model-choice.feature",
+          "sha256": "4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ],
+      "scopeRefs": [
+        "S1-R7 Truthful failure: an unavailable or disabled choice is refused with a usable reason, the previous effective value stays and is shown, and nothing reports the requested model as served"
+      ]
+    },
+    {
+      "id": "SCN-RC6-08",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/live-model-choice.feature",
+          "sha256": "4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ],
+      "scopeRefs": [
+        "S1-R8 Agent pin: an agent with an explicit model keeps it and is listed as pinned when the default changes"
+      ]
+    },
+    {
+      "id": "SCN-RC6-09",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/live-model-choice.feature",
+          "sha256": "4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ],
+      "scopeRefs": [
+        "S1-R1 Live default: an authorized operator changes the system default A to B through the dedicated live route; confirmation shows only after the runtime acknowledges; no restart"
+      ]
+    },
+    {
+      "id": "SCN-RC6-10",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/live-model-choice.feature",
+          "sha256": "4e648ea90751890d4c1417670b737e6c46199ce3baa72fb9d48760d0c8be209c"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ],
+      "scopeRefs": [
+        "S1-R9 Served model, not requested model: the receipt names the model id the provider reported as serving and never shows the requested candidate as the answering model"
+      ]
+    },
+    {
+      "id": "SCN-RC6-11",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/thread-menu.feature",
+          "sha256": "bf43b11121e93674e0519063f341120438b1b965db239d2a43f54300611d3c9d"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ]
+    },
+    {
+      "id": "SCN-RC6-12",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/thread-menu.feature",
+          "sha256": "bf43b11121e93674e0519063f341120438b1b965db239d2a43f54300611d3c9d"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ]
+    },
+    {
+      "id": "SCN-RC6-13",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/thread-menu.feature",
+          "sha256": "bf43b11121e93674e0519063f341120438b1b965db239d2a43f54300611d3c9d"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ]
+    },
+    {
+      "id": "SCN-RC6-14",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/thread-menu.feature",
+          "sha256": "bf43b11121e93674e0519063f341120438b1b965db239d2a43f54300611d3c9d"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ]
+    },
+    {
+      "id": "SCN-RC6-15",
+      "verdict": "PASS",
+      "evidence": [
+        {
+          "path": "tests/bdd/features/thread-menu.feature",
+          "sha256": "bf43b11121e93674e0519063f341120438b1b965db239d2a43f54300611d3c9d"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd.json",
+          "sha256": "606b1288462bed9ce373770a7613db912bf7b19ea1dd96b13c6f73e9cda7a190"
+        },
+        {
+          "path": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/rc6-check/3-bdd-run.log",
+          "sha256": "4fbf7c4e54c687e38a3d08e92c46292fd4fe42428d18c40c5034fd3b63de92cc"
+        }
+      ]
+    }
+  ],
+  "withdrawn": [
+    {
+      "id": "SCN-SYS-001",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-SYS-003",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-SYS-007",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-SYS-011",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-SYS-012",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-SYS-013",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-SYS-014",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-SYS-015",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-SYS-016",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-SYS-017",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-SET-003",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-IDN-001",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-PICK-002",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-THR-001",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "SCN-THR-002",
+      "kind": "scenario",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "Supporting dependency (SCN-SET-003): the settings API rejects writes to llm.default_provider, so the live route is the only system-default writer",
+      "kind": "scope",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "Supporting dependency (SCN-IDN-001): one provider-qualified Model identity holds under shared bare model ids",
+      "kind": "scope",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    },
+    {
+      "id": "Supporting dependency (SCN-PICK-002): the model picker the operator and chat user drive is searchable and keyboard operable",
+      "kind": "scope",
+      "destination": "https://github.com/Prometheus-AGS/universal-agent-runtime/issues/542"
+    }
+  ],
+  "budgetAccounting": {
+    "class": "measured",
+    "values": {
+      "durationMilliseconds": 242520,
+      "boundaryCommands": 1,
+      "repairAttempts": 0,
+      "retries": 0
+    }
+  },
+  "limits": [
+    "None of the 15 bound S1 scenarios is certified; each is withdrawn to #542.",
+    "The rc.6 checks ran once on 8e4ce275; the released 84840af1 has identical tests/bdd, frontend/src and src, but was not re-run.",
+    "Server-side rejection of a direct settings-API write to the default is not exercised.",
+    "The four earlier boundary attempts were not metered and their verdicts are not claimed.",
+    "Thread-menu checks (SCN-RC6-11..15) cover rc.6 scope added outside the bound contract."
+  ]
+}
