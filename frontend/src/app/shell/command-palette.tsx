@@ -1,22 +1,68 @@
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { Dialog } from "@base-ui/react/dialog";
-import { CornerDownLeft, X } from "lucide-react";
+import { CornerDownLeft, Cpu, X } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { useRef } from "react";
 import { useNavigate } from "react-router";
 
 import { useUiState } from "@/hooks/use-ui-state";
 
-import {
-  NAV_DESTINATIONS,
-  type NavigationDestination,
-} from "./nav-destinations";
+import { NAV_DESTINATIONS } from "./nav-destinations";
+
+/** One row of the palette: a place to go, or a command that goes to the place where it is done. */
+interface PaletteEntry {
+  id: string;
+  path: string;
+  /** Location hash the destination reads, for example the system default panel's. */
+  hash?: string;
+  label: string;
+  description: string;
+  group: string;
+  icon: LucideIcon;
+}
+
+const SYSTEM_DEFAULT_COMMAND: PaletteEntry = {
+  id: "command-change-system-default-model",
+  path: "/admin/providers",
+  hash: "#system-default-model",
+  label: "Change system default model",
+  description: "Choose the model conversations and agents use by default",
+  group: "command",
+  icon: Cpu,
+};
+
+const PALETTE_ENTRIES: readonly PaletteEntry[] = [
+  ...NAV_DESTINATIONS.map((destination): PaletteEntry => ({
+    id: destination.id,
+    path: destination.path,
+    label: destination.label,
+    description: destination.description,
+    group: destination.group,
+    icon: destination.icon,
+  })),
+  SYSTEM_DEFAULT_COMMAND,
+];
 
 export function CommandPalette() {
   const navigate = useNavigate();
   const { commandPaletteOpen, setCommandPaletteOpen } = useUiState();
+  // Navigation waits until the dialog has finished closing so its focus return cannot
+  // take focus back from the page the command opens.
+  const pending = useRef<PaletteEntry | null>(null);
 
-  const navigateTo = (destination: NavigationDestination) => {
-    navigate(destination.path);
+  const navigateTo = (entry: PaletteEntry) => {
+    if (entry.hash) {
+      pending.current = entry;
+    } else {
+      navigate(entry.path);
+    }
     setCommandPaletteOpen(false);
+  };
+
+  const goToPending = () => {
+    const entry = pending.current;
+    pending.current = null;
+    if (entry) navigate({ pathname: entry.path, hash: entry.hash ?? "" });
   };
 
   return (
@@ -24,6 +70,9 @@ export function CommandPalette() {
       open={commandPaletteOpen}
       onOpenChange={(open) => {
         setCommandPaletteOpen(open);
+      }}
+      onOpenChangeComplete={(open) => {
+        if (!open) goToPending();
       }}
     >
       <Dialog.Portal>
@@ -37,7 +86,7 @@ export function CommandPalette() {
             <Autocomplete.Root
               open
               inline
-              items={NAV_DESTINATIONS}
+              items={PALETTE_ENTRIES}
               itemToStringValue={(destination) => `${destination.label} ${destination.description}`}
               autoHighlight="always"
               keepHighlight
@@ -62,7 +111,7 @@ export function CommandPalette() {
               </Autocomplete.Empty>
 
               <Autocomplete.List className="min-h-0 overflow-y-auto p-2 data-empty:p-0">
-                {(destination: NavigationDestination) => {
+                {(destination: PaletteEntry) => {
                   const Icon = destination.icon;
                   return (
                     <Autocomplete.Item

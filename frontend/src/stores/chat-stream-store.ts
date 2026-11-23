@@ -737,6 +737,8 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
       callbacks?.onError?.(failure);
       return;
     }
+    // Keep the composer busy until the lease is released in the finally below.
+    if (!continuation) useChatMessageStore.getState().setTurnBusy(threadId, true);
     try {
     if (!continuation) useChatStreamStore.getState().cancelStream();
 
@@ -1503,6 +1505,11 @@ export const useChatStreamStore = create<ChatStreamActions>(() => ({
         return;
       }
     }
-    } finally { if (!continuation) lease.release(); }
+    } finally {
+      if (!continuation) {
+        lease.release();
+        useChatMessageStore.getState().setTurnBusy(threadId, false);
+      }
+    }
   },
 }));

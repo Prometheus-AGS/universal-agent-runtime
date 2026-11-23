@@ -1,0 +1,39 @@
+{
+ "baselineRevision": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+ "method": "Read from source at the baseline revision. No builds, no tests. Verdicts are source-derived.",
+ "scenarios": {
+  "SCN-PICK-001": {
+   "baseline": "FAIL",
+   "kind": "new-behavior",
+   "evidence": "features/settings/ui/generic-schema-panel.tsx:209-293 renders slider and tag-input fields as a bare number input and a comma-separated text input, and context_strategy.config as a raw JSON textarea outside any Advanced disclosure (:165-206,268-270). Number fields with minimum and maximum already get min and max attributes (:238-250), so only part of the scenario fails."
+  },
+  "SCN-PICK-002": {
+   "baseline": "FAIL",
+   "kind": "new-behavior",
+   "evidence": "features/models/ui/models-page.tsx:512-531: the Add Model dialog model control is a plain Select with no search input, so the frozen search counts cannot be produced."
+  },
+  "SCN-PICK-003": {
+   "baseline": "FAIL",
+   "kind": "new-behavior",
+   "evidence": "features/credentials/ui/credentials-page.tsx:226-233 is a text input with a datalist and features/settings/ui/panels/ai-settings-panels.tsx:549-557 a text input, so typing not-a-provider is accepted and stored; no picker lists the 343 frozen ids."
+  },
+  "SCN-PICK-004": {
+   "baseline": "FAIL",
+   "kind": "new-behavior",
+   "evidence": "At least 11 of the 12 mustNotBeTextbox entries are textboxes at the baseline (ai-settings-panels.tsx:549,559,569; memory-settings-panel.tsx:143; credentials-page.tsx:226; resilience-settings-panel.tsx:430; governance-settings-panels.tsx:796; skills-page.tsx:384; memory-page.tsx:204; skill-import-dialog.tsx:119; manager.rs:2864 rendered as text). The row requires at least 10 baseline violations, else BLOCKED."
+  },
+  "SCN-PICK-006": {
+   "baseline": "FAIL",
+   "kind": "new-behavior",
+   "evidence": "Status codes, allowed tools and preferred tools are comma-separated text inputs at the baseline (resilience-settings-panel.tsx:430, governance-settings-panels.tsx:796, skills-page.tsx:384) and the memory agent filter is a text input (memory-page.tsx:204), so the frozen option sets are not offered and 99 and 600 are not refused at selection."
+  },
+  "SCN-PICK-007": {
+   "baseline": "FAIL",
+   "kind": "new-behavior",
+   "evidence": "Resilience already blocks Save on out-of-range values (resilience-settings-panel.tsx:60-104, saveDisabled at :136) and its number inputs carry min and max, so those 9 rows pass. The rest fails: memory max_context_tokens has min 100 and max 32000 (memory-settings-panel.tsx:84-87) against the frozen minimum 0 with no maximum (manager.rs:2614), and the intent classifier, rag and memory panels do not validate or clamp typed out-of-range values (no clamp or validation in those files)."
+  }
+ },
+ "notMandatory": {
+  "SCN-PICK-005": "blocked on D5, mandatory false"
+ }
+}

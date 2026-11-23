@@ -194,7 +194,7 @@ describe("ProviderPanel", () => {
     });
     expect(staleTrigger).not.toBeDisabled();
     expect(staleTrigger).toHaveAttribute("aria-invalid", "true");
-    expect(staleTrigger).toHaveTextContent("Select a model");
+    expect(staleTrigger).toHaveTextContent("Unavailable: retired-model");
     expect(
       screen.getByText("Current model is unavailable. Choose an enabled model."),
     ).toBeVisible();

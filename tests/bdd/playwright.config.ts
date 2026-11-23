@@ -1,10 +1,20 @@
 import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@playwright/test';
 import { defineBddConfig, cucumberReporter } from 'playwright-bdd';
-import { APP_PORT, APP_BASE_URL, STUB_PORT, STUB_BASE_URL } from './support/ports';
+import {
+  APP_PORT,
+  APP_BASE_URL,
+  STUB_PORT,
+  STUB_BASE_URL,
+  STUB_PORT_B,
+  STUB_BASE_URL_B,
+  STUB_PORT_C,
+  STUB_BASE_URL_C,
+} from './support/ports';
 
 // Mirrors the root tests/e2e/playwright.config.ts pattern (single `cargo run`
 // serving the built frontend + API at 127.0.0.1:3001), plus a second
@@ -19,6 +29,14 @@ import { APP_PORT, APP_BASE_URL, STUB_PORT, STUB_BASE_URL } from './support/port
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const STUB_FIXTURES = path.resolve(__dirname, 'fixtures/bdd-chat.json');
+// S1 live model choice (phase uar-uiux-architecture-2026-11): content-only
+// fixtures for every S1 message, and the hold_content / served_model entries
+// that only a stub with the extended kinds can parse. The new kinds travel in
+// STUB_LLM_EXTRA_FIXTURES, which a stub built before the extension ignores, so
+// that stub still starts with the basic files.
+const S1_STUB_FIXTURES = path.resolve(__dirname, 'fixtures/live-model-choice.json');
+const S1_STUB_NEW_KINDS = path.resolve(__dirname, 'fixtures/live-model-choice-new-kinds.json');
+const STUB_BINARY = path.join(REPO_ROOT, 'target/debug/stub-llm');
 
 // Fresh embedded SurrealKV store per run, same mechanism
 // tests/integration/live/harness.rs uses for the Rust-side integration
@@ -26,6 +44,23 @@ const STUB_FIXTURES = path.resolve(__dirname, 'fixtures/bdd-chat.json');
 // checkout ships no config.yaml/.env, so it must be supplied explicitly.
 const PERSISTENCE_PATH = path.join(os.tmpdir(), `uar-bdd-persistence-${crypto.randomUUID()}`);
 const MEMORY_PATH = path.join(os.tmpdir(), `uar-bdd-memory-${crypto.randomUUID()}`);
+
+// A scratch config file. Without CONFIG_FILE the runtime falls back to ./config.yaml and
+// then ~/.uar/config.yaml (src/config.rs), so a test server would load the developer's
+// own providers and could send a scenario's chat turn to a paid route.
+// It holds one synthetic, non-secret value: the installation id that a local owner needs
+// before a run can bind credentials (docs/security/jwt-validation.md, "Local-host
+// loopback identity"). Without it every chat turn is refused as credential_source_denied.
+const CONFIG_PATH = path.join(os.tmpdir(), `uar-bdd-config-${crypto.randomUUID()}.yaml`);
+fs.writeFileSync(
+  CONFIG_PATH,
+  [
+    'security:',
+    '  provider_credentials:',
+    "    installation_id: '00000000-0000-4000-8000-000000000001'",
+    '',
+  ].join('\n'),
+);
 
 const testDir = defineBddConfig({
   features: 'features/*.feature',
@@ -51,9 +86,11 @@ export default defineConfig({
     cucumberReporter('json', { outputFile: 'cucumber-report.json' }),
   ],
   use: {
-    // Tests open the page through the dev proxy (see webServer below), not
-    // the backend's static serve — same shape as local development.
-    baseURL: 'http://127.0.0.1:8085',
+    // Tests open the built page the runtime serves (static/, same origin as
+    // the API). The Vite dev proxy used before cannot render a conversation:
+    // it sends frontend/vendor/a2ui-web-core/src/universal/a2ui-lit-element.ts
+    // to the browser with its decorators untransformed.
+    baseURL: APP_BASE_URL,
     trace: 'on-first-retry',
     video: 'on',
   },
@@ -67,10 +104,36 @@ export default defineConfig({
       // startup timeout). `test:bdd`'s package.json script runs `cargo
       // build --bin stub-llm --bin universal-agent-runtime` first so both
       // binaries already exist by the time webServer starts them.
-      command: `${path.join(REPO_ROOT, 'target/debug/stub-llm')} ${STUB_FIXTURES}`,
+      //
+      // Stub A: the `openai` provider's stub. It keeps the shared chat
+      // fixtures and also serves the S1 messages; it needs the extended kinds
+      // (the held reply of scenario 6). The S1 file is first because a stub built
+      // before the extension (the baseline) reads only its first argument; the two
+      // files share no fixture.
+      command: `${STUB_BINARY} ${S1_STUB_FIXTURES} ${STUB_FIXTURES}`,
       cwd: REPO_ROOT,
-      env: { STUB_LLM_PORT: String(STUB_PORT) },
+      env: { STUB_LLM_PORT: String(STUB_PORT), STUB_LLM_EXTRA_FIXTURES: S1_STUB_NEW_KINDS },
       url: `${STUB_BASE_URL}/v1/models`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+    },
+    {
+      // Stub B: behind `bdd-provider-b`. It needs the extended kinds (the
+      // served-model reply of the last S1 scenario).
+      command: `${STUB_BINARY} ${S1_STUB_FIXTURES}`,
+      cwd: REPO_ROOT,
+      env: { STUB_LLM_PORT: String(STUB_PORT_B), STUB_LLM_EXTRA_FIXTURES: S1_STUB_NEW_KINDS },
+      url: `${STUB_BASE_URL_B}/v1/models`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+    },
+    {
+      // Stub C: behind `bdd-provider-c` (and the never-called, disabled
+      // `bdd-provider-off`). Basic content fixtures only.
+      command: `${STUB_BINARY} ${S1_STUB_FIXTURES}`,
+      cwd: REPO_ROOT,
+      env: { STUB_LLM_PORT: String(STUB_PORT_C) },
+      url: `${STUB_BASE_URL_C}/v1/models`,
       reuseExistingServer: !process.env.CI,
       timeout: 30_000,
     },
@@ -84,8 +147,16 @@ export default defineConfig({
         // anywhere in config.rs/main.rs. `UAR_SERVER__PORT` is config-rs's
         // own `Environment` source and is the one that actually works.
         UAR_SERVER__PORT: String(APP_PORT),
+        CONFIG_FILE: CONFIG_PATH,
         UAR_LLM__BASE_URL: `${STUB_BASE_URL}/v1`,
         UAR_LLM__API_KEY: 'test-stub-key',
+        // Playwright merges the parent environment. Blank the two keys this server would
+        // pick up for the S1 providers, so that a real one never reaches a stub or the store.
+        OPENAI_API_KEY: '',
+        LLM_API_KEY: '',
+        // The product default, stated because the baseline build's default (20) refuses
+        // the Background's own requests before any scenario step runs.
+        UAR_RESILIENCE__BURST_SIZE: '100',
         UAR_LLM__MODEL: 'openai/gpt-5.4-mini',
         UAR_PERSISTENCE__PROVIDER: 'surreal',
         UAR_PERSISTENCE__DATABASE_URL: `surrealkv://${PERSISTENCE_PATH}`,
@@ -98,6 +169,9 @@ export default defineConfig({
         // opens the web page and calls the API without a token.
         UAR_SECURITY__JWT_SECRET: 'bdd-dev-secret-at-least-32-characters-long',
         UAR_SECURITY__SETTINGS_MUTATION_AUTH_REQUIRED: 'false',
+        // A credential-free loopback browser is the local owner on this test
+        // server (src/uar/security/middleware.rs). The product default is off.
+        UAR_SECURITY__LOCAL_LOOPBACK_OWNER: 'true',
         CREDENTIAL_ENCRYPTION_KEY: '0123456789abcdef0123456789abcdef',
         UAR_MEMORY__ENABLED: 'true',
         UAR_MEMORY__DB_PATH: MEMORY_PATH,
@@ -109,17 +183,6 @@ export default defineConfig({
       // machines; 30s raced it every time (same fix as
       // frontend/playwright.real-server.config.ts).
       timeout: 180_000,
-    },
-    {
-      // Frontend dev proxy (vite): the page is served from source and its
-      // /api, /healthz, /readyz calls are proxied to the backend above —
-      // the same shape as local development, no JWT in the browser.
-      command: 'bun run dev --host 127.0.0.1 --port 8085 --strictPort',
-      cwd: path.join(REPO_ROOT, 'frontend'),
-      env: { UAR_BACKEND_URL: APP_BASE_URL },
-      url: 'http://127.0.0.1:8085/threads',
-      reuseExistingServer: !process.env.CI,
-      timeout: 60_000,
     },
   ],
 });

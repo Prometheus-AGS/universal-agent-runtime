@@ -1,5 +1,5 @@
 import { type FC, useEffect, useState } from "react";
-import { AlertTriangle, ArrowLeft, Bot, Brain, Info, Loader2, Pencil, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Bot, Brain, Info, Loader2, Pencil, Pin, Plus, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +29,9 @@ import {
 import { useAgentsAdmin } from "../model/use-agents-admin";
 import { AgentPresentationAssignment } from "@/features/presentations";
 import type { UarAgent } from "@/types";
+import { explicitAgentModel, type ExplicitModelSource } from "../model/explicit-model";
+
+type AgentWithExplicitModel = UarAgent & ExplicitModelSource;
 
 // ── Agent Memory Section ───────────────────────────────────────────────────
 
@@ -202,21 +205,16 @@ type AgentModelStatus =
   | "unverifiable";
 
 /**
- * Classifies an agent's model-resolution status: `"configured"` when it has
- * an explicit per-agent provider/model override; otherwise `"system-default"`
- * when a working system-wide default resolves (no icon vs. a warning icon —
- * see the render site), or `"unresolved"` when no resolution path exists at
- * all.
+ * Classifies an agent's model-resolution status: `"configured"` when the runtime reports an
+ * explicit model for it (`explicit_model`, the same rule a turn is resolved with); otherwise
+ * `"system-default"` when a working system-wide default resolves, or `"unresolved"` when no
+ * resolution path exists at all.
  */
 function agentModelStatus(
   a: UarAgent,
   systemDefaultStatus: SystemDefaultModelStatus["status"],
 ): AgentModelStatus {
-  const raw = a as unknown as Record<string, unknown>;
-  const policy = (raw.policy as Record<string, unknown>) ?? {};
-  const providerPolicy = (policy.provider as Record<string, unknown>) ?? {};
-  const def = (providerPolicy.default as Record<string, unknown>) ?? {};
-  if (def.provider && def.model) return "configured";
+  if (explicitAgentModel(a as AgentWithExplicitModel)) return "configured";
   if (systemDefaultStatus === "available") return "system-default";
   if (systemDefaultStatus === "loading") return "loading";
   if (systemDefaultStatus === "error") return "unverifiable";
@@ -235,8 +233,11 @@ function AgentListRow({
   onSelect: () => void;
 }) {
   const status = agentModelStatus(agent, systemDefault.status);
+  const ownModel = explicitAgentModel(agent as AgentWithExplicitModel);
   const statusExplanation =
-    status === "system-default"
+    status === "configured"
+      ? `Keeps its own model ${ownModel}. Changing the system default does not change it.`
+      : status === "system-default"
       ? `Uses system default ${systemDefault.providerId}/${systemDefault.modelId}.`
       : status === "unresolved"
         ? "No usable model route. Assign a provider and model to this agent, or configure a system default."
@@ -269,6 +270,13 @@ function AgentListRow({
           size={13}
           className="shrink-0 animate-spin text-muted-foreground"
           aria-label="Checking model configuration"
+        />
+      )}
+      {status === "configured" && (
+        <Pin
+          size={13}
+          className="shrink-0 text-muted-foreground"
+          aria-label={`Keeps its own model ${ownModel}`}
         />
       )}
       {status === "system-default" && (

@@ -1,0 +1,162 @@
+[
+  {
+    "model": "sysp1/sys-m1",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m1"
+    }
+  },
+  {
+    "model": "sysp1/sys-m1",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m1"
+    }
+  },
+  {
+    "model": "sys-m1",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m1"
+    }
+  },
+  {
+    "model": "sys-m1",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m1"
+    }
+  },
+  {
+    "model": "sysp1/sys-m2",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m2"
+    }
+  },
+  {
+    "model": "sysp1/sys-m2",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m2"
+    }
+  },
+  {
+    "model": "sys-m2",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m2"
+    }
+  },
+  {
+    "model": "sys-m2",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m2"
+    }
+  },
+  {
+    "model": "sysp2/sys-m3",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m3"
+    }
+  },
+  {
+    "model": "sysp2/sys-m3",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m3"
+    }
+  },
+  {
+    "model": "sys-m3",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m3"
+    }
+  },
+  {
+    "model": "sys-m3",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m3"
+    }
+  },
+  {
+    "model": "sysp2/sys-m4",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m4"
+    }
+  },
+  {
+    "model": "sysp2/sys-m4",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m4"
+    }
+  },
+  {
+    "model": "sys-m4",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m4"
+    }
+  },
+  {
+    "model": "sys-m4",
+    "last_user_message": "uar-sys-ping-001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "content",
+      "text": "uar-sys-reply-sys-m4"
+    }
+  }
+]

@@ -88,6 +88,8 @@ pub mod tool_definitions;
 pub mod upload;
 #[cfg(feature = "server")]
 pub mod user_settings;
+#[cfg(feature = "server")]
+pub mod version;
 
 #[cfg(feature = "server")]
 use axum::Router;

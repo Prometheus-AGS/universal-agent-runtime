@@ -1,0 +1,33 @@
+{
+  "$comment": "Frozen oracle for SCN-SET-010 and SCN-SET-007. Truth source: this file (values the runner writes) and the response shapes of change uiux-config-boot-safety-and-live-reload design D6-D8. The runner computes digests itself from the bytes it writes.",
+  "scratchConfigFile": "config.yaml",
+  "brokenYaml": "resilience:\n  requests_per_second: [5,\nserver: {\n",
+  "bootFallback": {
+    "procedure": "start with fixtures/scratch-config.yaml (saved as last known good), stop, replace config.yaml with brokenYaml, start",
+    "bannerMustContain": ["config.yaml", "{first 12 hex chars of sha256(brokenYaml bytes)}"],
+    "bannerMustNotContain": ["requests_per_second", "[5,"],
+    "panelMustShow": ["last known good", "source_parse"],
+    "interfaceRequirement": "boot-status config.fallback must carry the rejected file's path (failed_source_path) in addition to digests; requested of uiux-config-boot-safety-and-live-reload (design D8 shows digests and key_path only)"
+  },
+  "drift": {
+    "yamlValue": 5,
+    "operatorValue": 7,
+    "key": "resilience.requests_per_second",
+    "procedure": "set the key to 7 in the console, stop, start with fixtures/scratch-config.yaml (YAML says 5)",
+    "listMustShow": {"key": "resilience.requests_per_second", "saved": "7", "config": "5"},
+    "afterResolve": {"apiValue": 5, "driftListContainsKey": false},
+    "resolveRequest": "POST /api/uar/settings/drift/resilience.requests_per_second/resolve {\"resolution\":\"use_config\"}",
+    "noActionKey": "llm.default_provider",
+    "controls": [
+      {"request": "POST /api/uar/settings/drift/llm.default_provider/resolve", "expectedStatus": 409},
+      {"request": "POST /api/uar/settings/drift/resilience.requests_per_second/resolve (second time)", "expectedStatus": 404}
+    ]
+  },
+  "reload": {
+    "yamlEdit": {"resilience.requests_per_second": 3, "server.shutdown_timeout_secs": 31},
+    "request": "console 'Reload configuration' action -> POST /api/uar/settings/reload",
+    "expectedReport": {"applied": ["resilience.requests_per_second"], "restart_required": ["server.shutdown_timeout_secs"]},
+    "note": "a YAML edit of a YAML-at-boot key is restart_required (taken from YAML at the next start); a DB edit of the same key is not_applied (settings-apply-status). The config change must report the YAML case as restart_required.",
+    "invalidControl": {"yaml": "brokenYaml", "expected": "console shows a rejected state with the failure class; no success text; GET /api/uar/settings/resilience.requests_per_second unchanged"}
+  }
+}

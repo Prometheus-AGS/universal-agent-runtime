@@ -1,0 +1,142 @@
+{
+  "fixtureVersion": 1,
+  "frozenAt": "2026-11-19",
+  "truthSource": "src/uar/mcp_server.rs tool functions at the commit this change was written (22 tools), src/uar/tools/web_fetch.rs (effect ExternalMutation; accepts headers), src/uar/api/providers.rs:59-80 provider_admin_boundary, src/uar/api/settings.rs:446 require_admin_key, src/uar/runtime/native_skill.rs:76-86 approval class, and project rule AGENTS.md 'Capability inversion'",
+  "mcpUarAllowedToolFunctions": [
+    "uar_list_agents",
+    "uar_create_run",
+    "uar_get_run_status",
+    "uar_list_skills",
+    "uar_compile_spec",
+    "uar_collaboration_capabilities",
+    "uar_collaboration_preflight_package",
+    "uar_collaboration_install_package",
+    "uar_collaboration_package_status",
+    "uar_collaboration_list_packages",
+    "uar_collaboration_export_package",
+    "uar_collaboration_preflight_binding",
+    "uar_collaboration_install_binding",
+    "uar_collaboration_binding_status",
+    "uar_collaboration_list_bindings",
+    "uar_collaboration_effective_binding_receipt",
+    "uar_collaboration_export_binding_template",
+    "uar_collaboration_install_representation_grant",
+    "uar_collaboration_list_representation_grants",
+    "uar_collaboration_representation_grant_status",
+    "uar_collaboration_representation_grant_revision",
+    "uar_collaboration_representation_grant_history"
+  ],
+  "mcpUarForbiddenNameFragments": [
+    "setting",
+    "provider",
+    "default_model",
+    "config"
+  ],
+  "kernelAttempt": {
+    "tool": "web_fetch",
+    "method": "POST",
+    "urlTemplate": "http://127.0.0.1:${REPLICA_A_PORT}/api/uar/providers/p-two/default",
+    "requiresConfig": "native_tools.web_fetch_enabled: true in the scratch YAML (default false, src/config.rs:3038)",
+    "expectedToolOutcome": "error naming a blocked address (src/uar/tools/fetch_guard.rs, loopback/private rule)",
+    "stubLlmFixtures": [
+      {
+        "model": "m-one",
+        "last_user_message": "RTM-INVERSION",
+        "has_tools": true,
+        "has_tool_result": false,
+        "response": {
+          "kind": "tool_call",
+          "name": "web_fetch",
+          "arguments": "{\"url\":\"http://127.0.0.1:${REPLICA_A_PORT}/api/uar/providers/p-two/default\",\"method\":\"POST\"}"
+        }
+      },
+      {
+        "model": "m-one",
+        "last_user_message": "RTM-INVERSION",
+        "has_tools": true,
+        "has_tool_result": true,
+        "response": {
+          "kind": "content",
+          "text": "RTM-INVERSION-DONE"
+        }
+      }
+    ]
+  },
+  "unchangedAfterKernelAttempt": [
+    "registry default_id == p-one on A and on B",
+    "stored llm.default_provider == p-one",
+    "no providers or settings frame on B's reader"
+  ],
+  "classification": "regression-guard: the property already holds at f2c9e36efe088e06a17c5d880ada877e25f2ad52; this phase adds no kernel boundary. The scenario is mandatory and is NOT expected to fail on that baseline.",
+  "hostBoundaries": [
+    {
+      "id": "tool-catalog",
+      "what": "agents can only call tools in the host registry; no registered tool changes settings or the default provider",
+      "evidence": "native tool names in src/uar/tools/* and src/uar/runtime/native_skills/*; /mcp/uar tool functions in src/uar/mcp_server.rs"
+    },
+    {
+      "id": "admin-authority",
+      "what": "provider and settings mutation routes require the host admin key when security.settings_mutation_auth_required is true (the default); a kernel is never given it",
+      "evidence": "src/uar/api/providers.rs:59-80; src/uar/api/settings.rs:446-457; src/server.rs:2237"
+    },
+    {
+      "id": "approval-class",
+      "what": "web_fetch has effect ExternalMutation, so its descriptor approval class is Required",
+      "evidence": "src/uar/tools/web_fetch.rs effect(); src/uar/runtime/native_skill.rs:76-86; openspec/specs/governed-action-boundary (not exercised here)"
+    },
+    {
+      "id": "ssrf-guard",
+      "what": "web_fetch never connects to loopback, private or link-local addresses",
+      "evidence": "src/uar/tools/fetch_guard.rs:139-162"
+    }
+  ],
+  "forbiddenToolNamePattern": "(setting|provider|default_model|default_provider)",
+  "catalogSources": [
+    "tools/list on /mcp/uar (exact: subset of mcpUarAllowedToolFunctions)",
+    "GET /api/tools on the replica (pattern check only)"
+  ],
+  "replicaAdminAuth": {
+    "settings_mutation_auth_required": true,
+    "adminKey": "a scratch value placed only in replica A's own environment (UAR_SECURITY__SETTINGS_ADMIN_KEY); never in a request made by the runner, the stub or the agent run"
+  },
+  "runs": [
+    {
+      "id": "R0-candidate",
+      "build": "candidate",
+      "settings_mutation_auth_required": true,
+      "expect": {
+        "toolOutcome": "error naming a blocked address (SSRF guard)",
+        "stateUnchanged": true,
+        "catalog": "within allowlist and no forbidden pattern"
+      }
+    },
+    {
+      "id": "R1-ssrf-open-auth-required",
+      "build": "M2-ssrf-loopback-open",
+      "settings_mutation_auth_required": true,
+      "expect": {
+        "toolOutcome": "the POST reaches the route and is refused with status 401 and body containing 'Provider administration requires valid admin authority'",
+        "stateUnchanged": true
+      }
+    },
+    {
+      "id": "R2-ssrf-open-auth-off",
+      "build": "M2-ssrf-loopback-open",
+      "settings_mutation_auth_required": false,
+      "expect": {
+        "toolOutcome": "the POST succeeds (200)",
+        "defaultAfter": "p-two on A and B",
+        "scenarioVerdictMustBe": "FAIL (mutant killed)"
+      }
+    },
+    {
+      "id": "R3-mcp-mutant",
+      "build": "M1-mcp-settings-tool",
+      "settings_mutation_auth_required": true,
+      "expect": {
+        "catalog": "contains uar_set_default_provider, outside the allowlist",
+        "scenarioVerdictMustBe": "FAIL (mutant killed)"
+      }
+    }
+  ]
+}

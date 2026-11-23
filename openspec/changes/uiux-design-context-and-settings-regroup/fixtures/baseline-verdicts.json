@@ -1,0 +1,11 @@
+{
+  "baselineRevision": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+  "$comment": "Read with git show f2c9e36e:<path>; no builds or tests. SCN-DSN-004..006 are supplemental, not mandatory, and are omitted.",
+  "scenarios": {
+    "SCN-DSN-001": {"baseline": "FAIL", "kind": "new-behavior", "evidence": "frontend/src/App.tsx:40-69 defines only /threads, /admin/*, /about and a catch-all Navigate to /threads, so every /settings/... URL and every fixture redirect target lands on /threads; the oracle requires the section URL and heading."},
+    "SCN-DSN-002": {"baseline": "FAIL", "kind": "new-behavior", "evidence": "frontend/src/features/settings/ui/settings-navigation.tsx lists 30 flat items including the 14 removed namespaces, with no area/section mapping; the fixture requires the removed set absent and each retained namespace in exactly its mapped section."},
+    "SCN-DSN-003": {"baseline": "NOT_RUNNABLE", "kind": "new-behavior", "evidence": "The runner visits each section by the URLs in fixtures/settings-routes.json; none exist at the baseline (App.tsx:40-69 redirects to /threads and settings-page.tsx selects sections with useState), so the per-section count cannot be set up."},
+    "SCN-DSN-007": {"baseline": "NOT_RUNNABLE", "kind": "new-behavior", "evidence": "The reviewed artifacts do not exist at the baseline: git ls-tree finds no frontend/DESIGN.md or .impeccable/design.json, and no settings-regroup diff; the only critique files are for other targets under .impeccable/critique/."},
+    "SCN-DSN-008": {"baseline": "NOT_RUNNABLE", "kind": "new-behavior", "evidence": "The scenario opens the first section of each of the seven areas by URL; none exist at the baseline (App.tsx:40-69), so the width and theme matrix cannot be set up."}
+  }
+}

@@ -18,7 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { SkillImportDialog } from "./skill-import-dialog";
-import { ModelSelector } from "@/features/models/model-selector";
+import { ModelPicker } from "@/features/models/pickers";
 import { LoadingCursor } from "@/shared/ui/configuration/loading-cursor";
 import { EmptyFrame } from "@/shared/ui/configuration/empty-frame";
 import { ErrorBar } from "@/shared/ui/configuration/error-bar";
@@ -394,9 +394,10 @@ export const SkillsPage: FC = () => {
               <Label className="font-mono text-xs text-muted-foreground">
                 Model override (optional)
               </Label>
-              <ModelSelector
+              <ModelPicker
                 value={form.preferredModel}
                 onChange={(value) => setForm((prev) => ({ ...prev, preferredModel: value }))}
+                ariaLabel="Model override"
                 defaultLabel="Use agent / global default"
                 placeholder="Search models…"
               />

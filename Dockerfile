@@ -298,6 +298,9 @@ FROM toolchain AS builder
 
 ARG UAR_CARGO_BUILD_JOBS
 ARG UAR_CARGO_CACHE_KEY=default
+# Full commit id of the source. The context has no .git, so without it
+# `GET /api/uar/version` reports a null commit.
+ARG UAR_GIT_SHA
 
 WORKDIR /src
 
@@ -353,7 +356,7 @@ RUN --mount=type=secret,id=github_token \
         GIT_CONFIG_VALUE_3='!f() { if [ "$1" = get ]; then printf "username=x-access-token\npassword="; cat /run/secrets/github_token || return; printf "\n"; fi; }; f'; \
     fi \
     && if [ -n "${UAR_CARGO_BUILD_JOBS}" ]; then export CARGO_BUILD_JOBS="${UAR_CARGO_BUILD_JOBS}"; fi \
-    && CARGO_NET_GIT_FETCH_WITH_CLI=true cargo +"${RUST_TOOLCHAIN}" build --release --locked \
+    && CARGO_NET_GIT_FETCH_WITH_CLI=true UAR_GIT_SHA="${UAR_GIT_SHA}" cargo +"${RUST_TOOLCHAIN}" build --release --locked \
         --features "server-full,postgres-backend" \
         --bin universal-agent-runtime \
     && mkdir -p /out/bin \

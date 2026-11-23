@@ -222,8 +222,10 @@ When('I save model A as the model override for one fresh session', async functio
 Then('a stale default-provider revision and an invalid session model are refused without changing saved state', async function () {
   const before = await savedState(this);
   this.evidence.rejections = {};
+  // The settings API refuses llm.default_provider outright (422, SET 1.6); the
+  // live provider route is its only writer.
   const stale = await request(this, 'PUT', DEFAULT_SETTING,
-    { value: this.originalSetting.saved, expected_revision: `stale-${randomUUID()}` }, 409);
+    { value: this.originalSetting.saved, expected_revision: `stale-${randomUUID()}` }, 422);
   this.evidence.rejections.stale_revision = stale;
   const invalid = await request(this, 'POST', `/api/uar/sessions/${this.overrideSession}/agent-config`,
     { ...this.override, model: this.b.model }, 400);

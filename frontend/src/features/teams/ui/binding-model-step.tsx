@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { ModelSelector } from "@/features/models/model-selector";
+import { ModelPicker } from "@/features/models/pickers";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useConfiguredModels, type ConversionDiagnostic, type ModelRequirement } from "@/platform/entities";
@@ -47,7 +47,7 @@ function RequirementRow({ requirement, choice, diagnostics, onChange }: Requirem
       <div className="space-y-1.5">
         <p id={modelId} className="text-sm leading-none font-medium">Provider and model</p>
         <div role="group" aria-labelledby={modelId}>
-          <ModelSelector value={choice?.route?.value ?? ""} onChange={choose} placeholder="Choose a provider and model" className="min-h-11" />
+          <ModelPicker value={choice?.route?.value ?? ""} onChange={choose} ariaLabel="Provider and model" placeholder="Choose a provider and model" className="min-h-11" />
         </div>
       </div>
       <DiagnosticList label={`Check results for the ${requirement.role} model`} diagnostics={diagnostics} />

@@ -16,6 +16,7 @@
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::net::TcpListener as StdTcpListener;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use axum::{
@@ -27,6 +28,19 @@ use axum::{
 };
 use serde_json::{Value, json};
 use tokio::net::TcpListener;
+use tokio::sync::watch;
+
+/// The fixture kinds this stub understands, reported by `GET /_stub/capabilities`
+/// so a harness can tell a stub that supports a kind from a pre-extension stub
+/// (which has no such route) before it relies on the kind.
+const SUPPORTED_KINDS: [&str; 6] = [
+    "content",
+    "grounded_content",
+    "tool_call",
+    "delayed_content",
+    "hold_content",
+    "served_model",
+];
 
 /// A canned response for one fixture key: either plain assistant text, or a
 /// single tool call the assistant "decides" to make.
@@ -35,6 +49,10 @@ pub enum FixtureResponse {
     Content(String),
     /// Hold a real HTTP model request after it reaches the stub, so the live
     /// UAR integration gate can inspect and cancel an occupied turn.
+    #[allow(
+        dead_code,
+        reason = "shared by several test targets; not every target delays a response"
+    )]
     DelayedContent {
         delay_ms: u64,
         text: String,
@@ -45,6 +63,27 @@ pub enum FixtureResponse {
     )]
     GroundedContent {
         required_context: String,
+        text: String,
+    },
+    /// Plain assistant text that is only sent after `POST /_stub/release`.
+    /// The request is logged on arrival and counted by `GET /_stub/held` for
+    /// as long as it waits, so a harness can act while a reply is in flight.
+    #[allow(
+        dead_code,
+        reason = "constructed only by the standalone stub-llm binary's fixture file; other compilation units that include this module never build it"
+    )]
+    HoldContent {
+        text: String,
+    },
+    /// Plain assistant text whose response `model` field reports
+    /// `served_model` instead of the model the request asked for, in both the
+    /// streaming and non-streaming wire shapes.
+    #[allow(
+        dead_code,
+        reason = "constructed only by the standalone stub-llm binary's fixture file; other compilation units that include this module never build it"
+    )]
+    ServedModel {
+        served_model: String,
         text: String,
     },
     ToolCall {
@@ -133,6 +172,10 @@ impl FixtureSet {
 
     /// Match a generated runtime prompt whose occurrence IDs/timestamps vary per run.
     #[must_use]
+    #[allow(
+        dead_code,
+        reason = "shared by several test targets; not every target matches by prefix"
+    )]
     pub fn with_prompt_prefix(mut self, prefix: impl Into<String>, response: FixtureResponse) -> Self {
         self.prompt_prefix_responses.push((prefix.into(), response));
         self
@@ -175,12 +218,31 @@ fn find_free_port() -> u16 {
 struct AppState {
     fixtures: FixtureSet,
     log: Mutex<Vec<Value>>,
+    /// Requests currently waiting on a `HoldContent` fixture.
+    held: AtomicUsize,
+    /// Release generation: every `POST /_stub/release` bumps it, which wakes
+    /// every request that subscribed before the bump.
+    release: watch::Sender<u64>,
+}
+
+/// Decrements the held count when a held request finishes or its client
+/// disconnects (the handler future is dropped), so `GET /_stub/held` never
+/// reports a request that is gone.
+struct HeldGuard<'a>(&'a AtomicUsize);
+
+impl Drop for HeldGuard<'_> {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::SeqCst);
+    }
 }
 
 fn build_router(fixtures: FixtureSet) -> Router {
+    let (release, _initial_receiver) = watch::channel(0_u64);
     let state = Arc::new(AppState {
         fixtures,
         log: Mutex::new(Vec::new()),
+        held: AtomicUsize::new(0),
+        release,
     });
     Router::new()
         .route("/v1/models", get(models_handler))
@@ -189,7 +251,39 @@ fn build_router(fixtures: FixtureSet) -> Router {
             "/_stub/requests",
             get(list_requests_handler).post(reset_requests_handler),
         )
+        .route("/_stub/held", get(held_handler))
+        .route("/_stub/release", post(release_handler))
+        .route("/_stub/capabilities", get(capabilities_handler))
         .with_state(state)
+}
+
+/// How many requests are waiting on a `hold_content` fixture right now.
+async fn held_handler(State(state): State<Arc<AppState>>) -> Json<Value> {
+    Json(json!({ "held": state.held.load(Ordering::SeqCst) }))
+}
+
+/// Frees every request currently held by a `hold_content` fixture. Requests
+/// that arrive after the release are held again until the next release.
+async fn release_handler(State(state): State<Arc<AppState>>) -> StatusCode {
+    state.release.send_modify(|generation| *generation += 1);
+    StatusCode::NO_CONTENT
+}
+
+/// The fixture kinds this stub supports. A stub built before the hold and
+/// served-model kinds existed has no such route.
+async fn capabilities_handler() -> Json<Value> {
+    Json(json!({ "kinds": SUPPORTED_KINDS }))
+}
+
+/// Waits until the next `POST /_stub/release`. The subscription is taken
+/// before the held count is raised, so a release that follows an observed
+/// count of one can never be missed.
+async fn hold_until_released(state: &AppState) {
+    let mut released = state.release.subscribe();
+    state.held.fetch_add(1, Ordering::SeqCst);
+    let _held = HeldGuard(&state.held);
+    // `changed` fails only when the sender is dropped, and `state` owns it.
+    let _ = released.changed().await;
 }
 
 /// Every raw request body received by `/v1/chat/completions` so far, in
@@ -300,15 +394,21 @@ async fn chat_completions_handler(
         }
     }
 
-    let fixture = match fixture.clone() {
+    let (fixture, model) = match fixture.clone() {
         FixtureResponse::DelayedContent { delay_ms, text } => {
             tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
-            FixtureResponse::Content(text)
+            (FixtureResponse::Content(text), fingerprint.model.clone())
         }
-        other => other,
+        FixtureResponse::HoldContent { text } => {
+            hold_until_released(&state).await;
+            (FixtureResponse::Content(text), fingerprint.model.clone())
+        }
+        FixtureResponse::ServedModel { served_model, text } => {
+            (FixtureResponse::Content(text), served_model)
+        }
+        other => (other, fingerprint.model.clone()),
     };
     let stream = body.get("stream").and_then(Value::as_bool).unwrap_or(false);
-    let model = fingerprint.model.clone();
 
     if stream {
         streaming_response(model, fixture).into_response()
@@ -321,12 +421,16 @@ fn non_streaming_response(model: String, fixture: FixtureResponse) -> Json<Value
     let finish_reason = match &fixture {
         FixtureResponse::Content(_)
         | FixtureResponse::DelayedContent { .. }
+        | FixtureResponse::HoldContent { .. }
+        | FixtureResponse::ServedModel { .. }
         | FixtureResponse::GroundedContent { .. } => "stop",
         FixtureResponse::ToolCall { .. } => "tool_calls",
     };
     let message = match fixture {
         FixtureResponse::Content(text)
         | FixtureResponse::DelayedContent { text, .. }
+        | FixtureResponse::HoldContent { text }
+        | FixtureResponse::ServedModel { text, .. }
         | FixtureResponse::GroundedContent { text, .. } => {
             json!({ "role": "assistant", "content": text })
         }
@@ -360,6 +464,8 @@ fn streaming_response(model: String, fixture: FixtureResponse) -> impl IntoRespo
     let (delta, finish_reason) = match fixture {
         FixtureResponse::Content(text)
         | FixtureResponse::DelayedContent { text, .. }
+        | FixtureResponse::HoldContent { text }
+        | FixtureResponse::ServedModel { text, .. }
         | FixtureResponse::GroundedContent { text, .. } => {
             (json!({ "role": "assistant", "content": text }), "stop")
         }
@@ -583,6 +689,125 @@ mod tests {
             body["error"]["type"].as_str().unwrap(),
             "stub_llm_missing_fixture"
         );
+    }
+
+    #[tokio::test]
+    async fn served_model_reports_the_served_id_streaming_and_not() {
+        let server = start_stub_llm(FixtureSet::new().with(
+            fp("claude-5-haiku", "served", false),
+            FixtureResponse::ServedModel {
+                served_model: "claude-5-haiku-20261101".to_string(),
+                text: "bdd-reply-claude-5-haiku-20261101".to_string(),
+            },
+        ))
+        .await;
+        let client = reqwest::Client::new();
+
+        let plain = client
+            .post(format!("{}/chat/completions", server.base_url))
+            .json(&json!({
+                "model": "claude-5-haiku",
+                "messages": [{"role": "user", "content": "served"}],
+                "stream": false,
+            }))
+            .send()
+            .await
+            .unwrap();
+        let body: Value = plain.json().await.unwrap();
+        assert_eq!(body["model"], "claude-5-haiku-20261101");
+
+        let streamed = client
+            .post(format!("{}/chat/completions", server.base_url))
+            .json(&json!({
+                "model": "claude-5-haiku",
+                "messages": [{"role": "user", "content": "served"}],
+                "stream": true,
+            }))
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await
+            .unwrap();
+        assert!(streamed.contains("\"model\":\"claude-5-haiku-20261101\""));
+    }
+
+    #[tokio::test]
+    async fn hold_content_waits_for_release_and_counts_as_held() {
+        let server = start_stub_llm(FixtureSet::new().with(
+            fp("gpt-5.4-mini", "hold", false),
+            FixtureResponse::HoldContent {
+                text: "bdd-reply-gpt-5.4-mini".to_string(),
+            },
+        ))
+        .await;
+        let root = server.base_url.trim_end_matches("/v1").to_string();
+        let client = reqwest::Client::new();
+
+        let pending = tokio::spawn({
+            let client = client.clone();
+            let url = format!("{}/chat/completions", server.base_url);
+            async move {
+                client
+                    .post(url)
+                    .json(&json!({
+                        "model": "gpt-5.4-mini",
+                        "messages": [{"role": "user", "content": "hold"}],
+                        "stream": false,
+                    }))
+                    .send()
+                    .await
+                    .unwrap()
+                    .json::<Value>()
+                    .await
+                    .unwrap()
+            }
+        });
+
+        let held_url = format!("{root}/_stub/held");
+        let mut held = 0;
+        for _ in 0..50 {
+            let report: Value = client.get(&held_url).send().await.unwrap().json().await.unwrap();
+            held = report["held"].as_u64().unwrap();
+            if held == 1 {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        }
+        assert_eq!(held, 1);
+        assert!(!pending.is_finished());
+
+        let released = client
+            .post(format!("{root}/_stub/release"))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(released.status(), 204);
+
+        let body = pending.await.unwrap();
+        assert_eq!(
+            body["choices"][0]["message"]["content"],
+            "bdd-reply-gpt-5.4-mini"
+        );
+        let after: Value = client.get(&held_url).send().await.unwrap().json().await.unwrap();
+        assert_eq!(after["held"], 0);
+    }
+
+    #[tokio::test]
+    async fn capabilities_list_the_hold_and_served_model_kinds() {
+        let server = start_stub_llm(FixtureSet::new()).await;
+        let root = server.base_url.trim_end_matches("/v1").to_string();
+        let report: Value = reqwest::Client::new()
+            .get(format!("{root}/_stub/capabilities"))
+            .send()
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
+        let kinds = report["kinds"].as_array().unwrap();
+        assert!(kinds.iter().any(|kind| kind == "hold_content"));
+        assert!(kinds.iter().any(|kind| kind == "served_model"));
     }
 
     #[tokio::test]

@@ -6,18 +6,18 @@ paths: ['frontend/**/*.ts', 'frontend/**/*.tsx', '**/package.json', '**/tsconfig
 
 Loaded when a frontend file is read. Not resident.
 
-| Tier | Command |
-|---|---|
-| T0 every edit | `pnpm typecheck`; `pnpm lint` |
-| T1 unit complete | `pnpm -C frontend test <file_pattern>` |
-| T2 phase complete | `pnpm build`; `pnpm test` |
-| T3 milestone only | e2e; visual regression |
+## Verification in UAR
 
-Install with `pnpm -C frontend install --frozen-lockfile`. TypeScript 5.9.3,
-2-space indent, semicolons. React code lives in `frontend/src/`.
+Follow the project-owned **UAR verification: prove the user outcome** rule in
+`AGENTS.md`. Inspect selectors, step bindings and fixtures early. Use the
+smallest admitted TypeScript check and browser/BDD journey for the changed
+behavior. Neither per-edit `pnpm typecheck`/`pnpm lint` nor an automatic
+`pnpm test` is required. Bundling does not prove types, and typing does not
+prove what a user can actually do. Preserve required release commands.
 
-`pnpm typecheck` is the real type gate — bundlers strip types without checking
-them, so a green build proves nothing about types.
+Install with `pnpm -C frontend install --frozen-lockfile` when dependency
+installation is needed. TypeScript 5.9.3, 2-space indent, semicolons. React code
+lives in `frontend/src/`.
 
 ## Required React/entity guidance
 

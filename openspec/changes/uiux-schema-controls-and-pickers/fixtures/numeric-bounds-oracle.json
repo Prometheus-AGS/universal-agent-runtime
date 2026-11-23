@@ -1,0 +1,212 @@
+{
+ "frozenAt": "2026-11-19",
+ "purpose": "Frozen expected bounds for SCN-PICK-007, read from src/uar/settings/manager.rs by line (independent of the frontend and of the runtime response). A bound the schema does not declare is null: the control must still be a stepper or slider with the declared minimum, and no maximum is asserted. If GET /api/uar/settings/types disagrees with a row, the source changed and the runner reports BLOCKED (stale fixture); it is never used as the expected value.",
+ "bounds": [
+  {
+   "namespace": "resilience",
+   "key": "requests_per_second",
+   "label": "Requests Per Second",
+   "minimum": 0.1,
+   "maximum": null,
+   "schemaSource": "src/uar/settings/manager.rs:1519",
+   "controlSite": "resilience-settings-panel.tsx:202"
+  },
+  {
+   "namespace": "resilience",
+   "key": "burst_size",
+   "label": "Burst Size",
+   "minimum": 1,
+   "maximum": null,
+   "schemaSource": "src/uar/settings/manager.rs:1521",
+   "controlSite": "resilience-settings-panel.tsx:219"
+  },
+  {
+   "namespace": "resilience",
+   "key": "request_timeout_ms",
+   "label": "Request Timeout (ms)",
+   "minimum": 1000,
+   "maximum": null,
+   "schemaSource": "src/uar/settings/manager.rs:1523",
+   "controlSite": "resilience-settings-panel.tsx:241"
+  },
+  {
+   "namespace": "resilience",
+   "key": "stream_start_timeout_ms",
+   "label": "Stream Start Timeout (ms)",
+   "minimum": 1000,
+   "maximum": null,
+   "schemaSource": "src/uar/settings/manager.rs:1525",
+   "controlSite": "resilience-settings-panel.tsx:257"
+  },
+  {
+   "namespace": "resilience",
+   "key": "retry_max_attempts",
+   "label": "Max Attempts",
+   "minimum": 0,
+   "maximum": 10,
+   "schemaSource": "src/uar/settings/manager.rs:1531",
+   "controlSite": "resilience-settings-panel.tsx:293"
+  },
+  {
+   "namespace": "resilience",
+   "key": "retry_base_delay_ms",
+   "label": "Base Delay (ms)",
+   "minimum": 100,
+   "maximum": null,
+   "schemaSource": "src/uar/settings/manager.rs:1533",
+   "controlSite": "resilience-settings-panel.tsx:310"
+  },
+  {
+   "namespace": "resilience",
+   "key": "retry_max_delay_ms",
+   "label": "Max Delay (ms)",
+   "minimum": 100,
+   "maximum": null,
+   "schemaSource": "src/uar/settings/manager.rs:1537",
+   "controlSite": "resilience-settings-panel.tsx:326"
+  },
+  {
+   "namespace": "resilience",
+   "key": "retry_backoff_multiplier",
+   "label": "Backoff Multiplier",
+   "minimum": 1.1,
+   "maximum": 5.0,
+   "schemaSource": "src/uar/settings/manager.rs:1535",
+   "controlSite": "resilience-settings-panel.tsx:346"
+  },
+  {
+   "namespace": "resilience",
+   "key": "retry_budget_ms",
+   "label": "Retry Budget (ms)",
+   "minimum": 0,
+   "maximum": null,
+   "schemaSource": "src/uar/settings/manager.rs:1558",
+   "controlSite": "resilience-settings-panel.tsx:369"
+  },
+  {
+   "namespace": "intent_classifier",
+   "key": "topk",
+   "label": "Top-K Results",
+   "minimum": 1,
+   "maximum": null,
+   "schemaSource": "src/uar/settings/manager.rs:2017",
+   "controlSite": "governance-settings-panels.tsx:58"
+  },
+  {
+   "namespace": "intent_classifier",
+   "key": "accept_threshold",
+   "label": "Accept Threshold",
+   "minimum": 0.0,
+   "maximum": 1.0,
+   "schemaSource": "src/uar/settings/manager.rs:2018",
+   "controlSite": "governance-settings-panels.tsx:67"
+  },
+  {
+   "namespace": "intent_classifier",
+   "key": "margin_threshold",
+   "label": "Margin Threshold",
+   "minimum": 0.0,
+   "maximum": 1.0,
+   "schemaSource": "src/uar/settings/manager.rs:2020",
+   "controlSite": "governance-settings-panels.tsx:83"
+  },
+  {
+   "namespace": "rag",
+   "key": "chunk_size",
+   "label": "Chunk Size (chars)",
+   "minimum": 64,
+   "maximum": null,
+   "schemaSource": "src/uar/settings/manager.rs:2407",
+   "controlSite": "ai-settings-panels.tsx:456"
+  },
+  {
+   "namespace": "rag",
+   "key": "chunk_tokens",
+   "label": "Chunk Size (tokens)",
+   "minimum": 16,
+   "maximum": null,
+   "schemaSource": "src/uar/settings/manager.rs:2408",
+   "controlSite": "ai-settings-panels.tsx:469"
+  },
+  {
+   "namespace": "rag",
+   "key": "semantic_threshold",
+   "label": "Semantic Merge Threshold",
+   "minimum": 0.0,
+   "maximum": 1.0,
+   "schemaSource": "src/uar/settings/manager.rs:2409",
+   "controlSite": "ai-settings-panels.tsx:485"
+  },
+  {
+   "namespace": "memory",
+   "key": "max_context_tokens",
+   "label": "Max Context Tokens",
+   "minimum": 0,
+   "maximum": null,
+   "schemaSource": "src/uar/settings/manager.rs:2614",
+   "controlSite": "memory-settings-panel.tsx:84"
+  },
+  {
+   "namespace": "memory",
+   "key": "vector_weight",
+   "label": "Vector (Semantic) Weight",
+   "minimum": 0.0,
+   "maximum": 1.0,
+   "schemaSource": "src/uar/settings/manager.rs:2616",
+   "controlSite": "memory-settings-panel.tsx:103"
+  },
+  {
+   "namespace": "memory",
+   "key": "bm25_weight",
+   "label": "BM25 (Keyword) Weight",
+   "minimum": 0.0,
+   "maximum": 1.0,
+   "schemaSource": "src/uar/settings/manager.rs:2617",
+   "controlSite": "memory-settings-panel.tsx:117"
+  }
+ ],
+ "outOfRange": {
+  "resilience.retry_max_attempts": {
+   "above": 11
+  },
+  "resilience.retry_backoff_multiplier": {
+   "above": 5.1,
+   "below": 1.0
+  },
+  "resilience.request_timeout_ms": {
+   "below": 999
+  },
+  "resilience.burst_size": {
+   "below": 0
+  },
+  "intent_classifier.accept_threshold": {
+   "above": 1.1
+  },
+  "intent_classifier.topk": {
+   "below": 0
+  },
+  "rag.chunk_size": {
+   "below": 63
+  },
+  "memory.vector_weight": {
+   "above": 1.1
+  }
+ },
+ "inRangeSaves": {
+  "resilience.retry_max_attempts": 3,
+  "resilience.request_timeout_ms": 45000,
+  "memory.vector_weight": 0.6,
+  "rag.chunk_size": 2048,
+  "intent_classifier.topk": 7
+ },
+ "saveReadBack": "PUT then GET /api/uar/settings/<namespace>. The expected saved values are the frozen inRangeSaves, so a dropped save fails; the API is only the reader of what was stored.",
+ "notFrozen": [
+  "agent_config per-agent override numbers (governance-settings-panels.tsx:828-883): the schema for that namespace was not extracted; they are reported by the runner, not asserted.",
+  "knowledge_bases default chunk_size (ai-settings-panels.tsx:579): bound source not read."
+ ],
+ "schemaSourceSha256": {
+  "path": "src/uar/settings/manager.rs",
+  "sha256": "ad6310ceea33050a9689dddb2dddf20339169e53b54d6540743a0775b7aadfc7",
+  "note": "line numbers cited are valid for this digest; a different digest makes the fixture stale (BLOCKED)"
+ }
+}

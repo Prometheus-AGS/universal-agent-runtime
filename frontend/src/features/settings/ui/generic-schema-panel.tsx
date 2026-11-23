@@ -118,7 +118,14 @@ type SchemaProperty = {
   maximum?: number;
   "x-control"?: string;
   "x-sensitive"?: boolean;
+  /** The backend marks a property the console must not render or send. */
+  "x-uar-ui-hidden"?: boolean;
+  "x-uar-ui-reason"?: string;
 };
+
+function isUiHidden(prop: SchemaProperty | undefined): boolean {
+  return prop?.["x-uar-ui-hidden"] === true;
+}
 
 function schemaProperties(
   schema: Record<string, unknown>,
@@ -323,9 +330,25 @@ export function GenericSchemaPanel({
     () => schemaProperties(typeMeta?.schema ?? {}),
     [typeMeta],
   );
+  // A property marked `x-uar-ui-hidden` is absent from the console: it is not
+  // rendered, never becomes a draft here, and never counts toward Save.
   const rows = useMemo(
-    () => Object.values(settings).sort((a, b) => a.key.localeCompare(b.key)),
-    [settings],
+    () =>
+      Object.values(settings)
+        .filter((row) => !isUiHidden(properties[leafKey(row.key, namespace)]))
+        .sort((a, b) => a.key.localeCompare(b.key)),
+    [settings, properties, namespace],
+  );
+  const visibleKeys = useMemo(() => new Set(rows.map((row) => row.key)), [rows]);
+  const hasVisibleDirty = useMemo(
+    () => Object.keys(dirty).some((key) => visibleKeys.has(key)),
+    [dirty, visibleKeys],
+  );
+  const setVisibleSetting = useCallback(
+    (key: string, value: unknown) => {
+      if (visibleKeys.has(key)) setSetting(key, value);
+    },
+    [setSetting, visibleKeys],
   );
 
   const handleSave = useCallback(async () => {
@@ -341,7 +364,7 @@ export function GenericSchemaPanel({
         subtitle={subtitle ?? `${rows.length} setting(s)`}
         saving={saving}
         loading={loading}
-        saveDisabled={Object.keys(dirty).length === 0}
+        saveDisabled={!hasVisibleDirty}
         onSave={() => void handleSave()}
         onReload={() => void reload()}
       />
@@ -409,7 +432,7 @@ export function GenericSchemaPanel({
                           variant="ghost"
                           size="sm"
                           className="h-7 px-2 font-mono text-xs"
-                          onClick={() => setSetting(row.key, prop.default)}
+                          onClick={() => setVisibleSetting(row.key, prop.default)}
                         >
                           Reset
                         </Button>
@@ -419,7 +442,7 @@ export function GenericSchemaPanel({
                   <GenericSettingControl
                     prop={prop}
                     value={values[row.key]}
-                    onChange={(next) => setSetting(row.key, next)}
+                    onChange={(next) => setVisibleSetting(row.key, next)}
                   />
                   {conflict !== undefined && (
                     <p className="font-mono text-xs text-amber-600 dark:text-amber-400">

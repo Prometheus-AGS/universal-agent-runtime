@@ -75,6 +75,23 @@ describe("useThreadGraphSync", () => {
     expect(local?.isEphemeral).toBe(false);
   });
 
+  test("server placeholder title never replaces a title the user set (P2)", async () => {
+    useThreadRegistryStore.getState().registerThread("sess-4");
+    await useThreadRegistryStore.getState().setTitle("sess-4", "Quarterly plan");
+
+    render(<Harness />);
+
+    await act(async () => {
+      useGraphStore.getState().upsertEntity("Thread", "sess-4", {
+        id: "sess-4",
+        title: "New conversation",
+        updated_at: new Date().toISOString(),
+      });
+    });
+
+    expect(useThreadRegistryStore.getState().threads["sess-4"]?.title).toBe("Quarterly plan");
+  });
+
   test("server delete event → removeThread called", async () => {
     // Pre-seed: server-known thread.
     useThreadRegistryStore.getState().registerThread("sess-3");

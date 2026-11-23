@@ -20,6 +20,20 @@ use universal_agent_runtime::server;
 use universal_agent_runtime::uar;
 
 fn main() -> std::process::ExitCode {
+    // A supervised launch (`--supervised`, issue #539) owns process start-up
+    // from the first instruction: it writes environment variables and reads
+    // the launch token before any runtime thread exists, so it is dispatched
+    // here, ahead of the standalone runtime. Like the standalone server it
+    // loads an environment file only when one is named explicitly (#419).
+    if universal_agent_runtime::sidecar::is_supervised_launch(std::env::args_os()) {
+        if let Err(status) = load_selected_env_file() {
+            return std::process::ExitCode::from(status);
+        }
+        return universal_agent_runtime::sidecar::run(
+            universal_agent_runtime::sidecar::ImplicitEnvFile::Skip,
+        );
+    }
+
     let runtime = match tokio::runtime::Builder::new_multi_thread()
         .thread_stack_size(8 * 1024 * 1024)
         .enable_all()
@@ -41,14 +55,8 @@ async fn run_main() -> u8 {
     // `env = "LLM_MODEL"` binding captured it, and the CLI tier applied it as a
     // set_override that no YAML or UAR_* source could beat. Load env files only
     // through the explicit path below.
-    if let Some(path) = selected_env_file() {
-        if let Err(error) = from_path(&path) {
-            eprintln!(
-                "Failed to load selected environment file '{}': {error}",
-                path.display()
-            );
-            return 1;
-        }
+    if let Err(status) = load_selected_env_file() {
+        return status;
     }
 
     let mut cli = Cli::parse();
@@ -213,6 +221,25 @@ async fn run_main() -> u8 {
         }
     }
     code
+}
+
+/// Load the environment file named by `--env-file` or `UAR_ENV_FILE`, if any.
+///
+/// # Errors
+///
+/// Returns the process exit status after reporting a file that cannot be
+/// loaded.
+fn load_selected_env_file() -> Result<(), u8> {
+    let Some(path) = selected_env_file() else {
+        return Ok(());
+    };
+    from_path(&path).map_err(|error| {
+        eprintln!(
+            "Failed to load selected environment file '{}': {error}",
+            path.display()
+        );
+        1
+    })
 }
 
 fn selected_env_file() -> Option<PathBuf> {

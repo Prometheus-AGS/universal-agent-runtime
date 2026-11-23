@@ -1,0 +1,194 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "judge_model": "claude-opus-5-5",
+  "isolation_mode": "harness-native",
+  "producer_model": "claude-opus-5-5",
+  "cross_model_check": "same-model-collision",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 6051,
+      "claim": "Every one of the 160 scenario and negative-control commands calls one runner script that does not exist and that the implementer writes after implementation. Nothing binds the runner to the oracle text, so the oracles cannot be enforced at adoption.",
+      "evidence": "Every scenario and negativeControl argv is `bash scripts/behaviors/uiux/run-scenario.sh --scenario|--negative <ID>`. expectedEffects says: \"scripts/behaviors/uiux/run-scenario.sh is authored at the boundary, after the implementation-complete inventory; it does not exist at adoption\". `ls scripts/behaviors/uiux` returns 'No such file or directory'. The contract carries no digest or reviewed content for the runner. It does not define what PASS means for a `--negative` run (rejection observed, or command succeeded). The designs name about nine other gates: `scripts/behaviors/configuration-boot-safety.cucumber.mjs` (config design.md:349), `scripts/behaviors/realtime-replica-consistency.cucumber.mjs` (realtime design.md:323), `playwright.local-first.config.ts`, `playwright.installed-settings-truth.config.ts`, `playwright.installed-settings-areas.config.ts`, `playwright.workers-pwa.config.ts`, `e2e/model-catalog-identity.spec.ts`, and \"exact argv bound in Plan (UNVERIFIED here)\" (system-model design.md:166). Most of these do not exist either. A runner that exits 0 for every ID satisfies the boundary packet as written.",
+      "suggested_fix": "Before adoption, decide where each scenario lives (design gate or contract command, not both). Require the runner and the per-scenario specs to be written and pass independent review before the implementation-complete inventory, and bind their digests into the contract. Define negative-control semantics: PASS only when the declared rejection is observed."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "openspec/changes/uiux-realtime-topics-and-replica-refresh/design.md",
+      "line": 185,
+      "claim": "Replica refresh sets the live registry default from the `llm.default_provider` row. Every write comes back through the change feed, including the writer's own, so a plain settings-API write to `llm.default_provider` becomes live on every replica. Another change's spec and two mandatory negative controls require the opposite.",
+      "evidence": "Realtime R6 step 2 and task 3.3: `apply_persisted` will \"set the default from `llm.default_provider` when that provider exists\". Triggers include `Settings`/`Providers` events, and \"An own-write echo triggers the same pass\". The routing table sends `llm.default_provider` to `[Settings, Providers]` (design.md:86). Analysis delta 1: \"every change event comes back through the DB change feed, including the process's own writes.\" Against this, settings-apply-status spec.md:44 says: \"Saving `llm.default_provider` through the settings API SHALL be classified `restart`: it SHALL persist and SHALL NOT change the live registry default\" (scenario: \"the registry default is unchanged until the instance restarts\"). SCN-SET-003 negative: \"Direct `PUT llm.default_provider` -> `restart_required` and unchanged registry until restart\". SCN-SYS-007 negative: \"harness writes `llm.default_provider` directly -> console's live default unchanged\". `set_default_provider_id` writes that same row (src/uar/settings/manager.rs:1248-1250). The result is a second live write path for the system model, which operator decision 2 (2026-11-19) rules out.",
+      "suggested_fix": "Pick one rule. Either the settings API rejects writes to `llm.default_provider` (only the live route writes it, and refresh may then apply the row), or refresh takes the default from a separate key that only the live route writes. Then update settings-apply-status, SCN-SET-003 and SCN-SYS-007 to match."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 3609,
+      "claim": "Three non-waivable safety checks are mapped to scenarios that never exercise the property they claim, so they could be reported as evidenced with zero coverage.",
+      "evidence": "SAFE-CAPABILITY-INVERSION (\"no agent kernel writes settings\") maps to SCN-SYS-007, SET-006, SET-002, CFG-006 and RTM-004. All five are operator or harness HTTP writes, and none attempts a settings or provider write from an agent kernel or tool path. SAFE-PERSIST-BEFORE-PUBLISH (\"a failed persist changes nothing\") maps to SYS-006, SYS-002, RTM-001 and RTM-002. SYS-006 says \"partial outcome NOT_EXERCISED without a fault hook\", and its negative and RTM-001/002's are a 404 for an unknown provider, which is rejected before any persist. No scenario injects a persist failure or observes ordering. SAFE-MASKED-SECRET-ROUNDTRIP (\"masked in reads (including drift listings)\") maps to CFG-001 and CFG-007. CFG-001 checks bytes on disk only, and CFG-007's comparator covers only the restart_required/applied lists and the 409/404 codes. No scenario reads a secret-bearing setting or a drift entry and checks masking. The requirement 'Drift is visible with both values' (masking clause) has no scenario at all.",
+      "suggested_fix": "Add scenarios that actually exercise each check: an agent tool or kernel attempting a settings or provider mutation, rejected and with nothing persisted; a persist-failure fault (for example a read-only or disconnected store) on the default route with registry and other replicas unchanged; and a drift and settings read containing a sentinel secret, compared against the masked form."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1080,
+      "claim": "Several mandatory scenarios are nondeterministic but undeclared. Only SCN-RTM-003 sets `nondeterministic: true` and a stochastic profile, so the rest can pass on a single lucky sample.",
+      "evidence": "SCN-PGL-009 limitations: \"nondeterministic; several samples with the stopping rule declared by the lead (sample count and stopping rule not yet declared in design.md)\". Its `nondeterministic` field is absent and it is mandatory, which breaks the schema rule 'Declared before any result exists (VLBV 21)'. SCN-PGL-005: \"kill timing uncontrolled\". SCN-WRK-007: \"timing comparison is statistical\". SCN-IDN-003, SCN-PICK-002 and SCN-WRK-009 compare long-task durations with a 200 ms or budget threshold that is \"hardware-dependent\". SCN-PGL-001, -006 and -009 depend on \"a real model route\" (vendor output and length; PGL-009 needs the \"reply length reliably above the max wait\"). SCN-DSN-007 is graded on output from LLM subagents. None of these declares samples, grader or stopping rule.",
+      "suggested_fix": "Mark each one `nondeterministic: true` with samples, grader and stopping rule set before adoption, or make it deterministic: use `stub-llm` (src/bin/stub-llm.rs) with a fixed streaming length instead of a real model route, and use fixed hardware or a declared tolerance for the timing thresholds."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 2177,
+      "claim": "Several mandatory oracles take their expected truth from the system under test or from files the implementer writes, so wrong behavior passes.",
+      "evidence": "Schema: expectedTruthSource is the \"Independent source of expected truth \u2014 never the system under test (VLBV 06)\". SCN-SET-002 truth: \"The classifier table of the same build, read from `GET` rows\". If a key is misclassified, the oracle agrees with the bug, and the contract's own explicitUnknowns list classifier rows as UNVERIFIED. SCN-DSN-001 truth: \"The route table in the shipped build\". SCN-SET-005: \"The route list from the shipped route table\" (a page left out of the table is never checked). SCN-DSN-003: \"The audit result file\" (written by the implementer, task 3.4). SCN-PICK-004: a bijection with `frontend/test-fixtures/free-text-register.json`, written by the implementer (task 8.1). Any free-text model or binding field passes once it is registered, because no oracle checks that the control is truly non-enumerable or that the reason class is honest. That is the main oracle for goals 6-7. SCN-DSN-007: critique files' self-reported `p0_count`. SCN-IDN-002 truth: \"the same rows before reconnect\", so rows that are identically wrong before and after (for example hard-coded `vision: false`, providers-graph.ts:84) pass.",
+      "suggested_fix": "Take truth from independent sources. SET-002: the operator decision's 15-item list plus the analysis table. DSN-001/SET-005: the area, section and page list in the spec and decision 5. DSN-003: a count computed from the rendered DOM against a fixed limit. PICK-004: an independent catalogue of enumerable sources (option endpoints) checked against each register entry, with register reasons restricted and reviewed before adoption. IDN-002: per-row equality with `/api/models`."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1246,
+      "claim": "Several mandatory scenarios have a negative control that is declared NOT_EXERCISED before any run, or that cannot reject. The contract does not say what a mandatory scenario's status is when its control does not run.",
+      "evidence": "SCN-IDN-001 (\"Catalog model identity survives a shared bare model id\") negative: \"two providers sharing a bare id from the real catalog -> two rows (none available: NOT_EXERCISED)\". The defect the scenario is named after is never exercised, and its positive oracle (row count equals `/api/models`) can pass with bare-id keying when no collision is present. SCN-IDN-003 negative: \"baseline exceeds threshold (none: NOT_EXERCISED)\". SCN-WRK-007 negative: \"assumption: design.md states no expected rejection\". SCN-SYS-006 negative: \"this scenario; absent provider\", which duplicates SCN-SYS-001's negative. stopConditions cover FAIL and missing fixtures only. A mandatory scenario whose control is NOT_EXERCISED is not a defined outcome.",
+      "suggested_fix": "Give each one a control that runs: a scratch YAML with two providers listing the same bare id for IDN-001 (real YAML, not a rewritten response), a baseline build for IDN-003, and the baseline `sw.js` caching `/api/` for WRK-007. Add a stop condition: a mandatory scenario whose negative control is NOT_EXERCISED is BLOCKED, never PASS."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 2604,
+      "claim": "SCN-SYS-004 passes even if the stored Global model was never created, because the writer's default for open decision 3 is to ignore a Global model on write.",
+      "evidence": "Production entry: \"harness writes `run_policy.global` with a model through the settings API\". spec-open-decisions.md #3 default: \"ignore on write, leave inert\" (system-model design.md:136). If the write drops `model`, nothing Global exists and the recorder shows the registry default whether or not the resolver still honors Global. The oracle has no precondition that reads back a stored Global model. Legacy stored values, the case the requirement targets (\"A stored value SHALL be inert\"), are not exercised.",
+      "suggested_fix": "Seed the stored Global model out of band (the store runner, as CFG-004 does) or through a pre-change build, assert it reads back as stored, then run the turn."
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "openspec/changes/uiux-config-boot-safety-and-live-reload/tasks.md",
+      "line": 44,
+      "claim": "The console screens for the boot-fallback warning, drift with one-click resolution and the reload report are handed to two changes, and neither has a task or scenario for them. Build item 8's UI and calibration example 4 are therefore uncovered.",
+      "evidence": "Config task 5.3: \"the console renders boot status, drift with `use_config`, and the reload report; those screens belong to `uiux-settings-truthful-status-and-removals` and `uiux-design-context-and-settings-regroup`. No frontend code in this change.\" grep of both changes' tasks.md finds no boot-status, fallback or drift UI task (settings 3.1 only flattens `is_drift`). Analysis item 8: \"visible drift with one-click resolution\". Calibration positive 4: \"the console shows a visible warning naming the rejected file\". The SCN-CFG-002 oracle observes only readiness, `/resilience`, boot-status JSON and a log line name, with no console observation.",
+      "suggested_fix": "Give one change the console boot-status banner and the drift list with a use_config action. Add a mandatory scenario that observes them in the browser."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/uiux-config-boot-safety-and-live-reload/specs/configuration-boot-safety/spec.md",
+      "line": 40,
+      "claim": "The spec excludes the remote deployment profile from the fallback, so a bad YAML still stops startup in the replica topology. The release claim and the goal say startup is never prevented, and the operator was never asked.",
+      "evidence": "Spec: \"Remote profile never falls back \u2014 startup fails with the original error\" (design D2 rule 7). releaseClaim.userOperation (contract line 20): \"YAML changes never prevent startup\". Supported environments include remote Surreal and Postgres with two or more replicas. Goal 3: \"without any risk of rendering the system unusable\". spec-open-decisions.md does not list this trade-off.",
+      "suggested_fix": "Narrow the release claim to the local profile, or put the remote-profile exclusion to the operator as a decision."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 3783,
+      "claim": "The two release builds write the same output binary, so every scenario runs against the postgres-backend build. Neither build is the 'default features' product the claim names.",
+      "evidence": "build-release (`--features server-full`) then build-release-postgres (`--features server-full,postgres-backend`) both produce `target/release/universal-agent-runtime` (Cargo.toml:112-115), and the second overwrites the first. expectedEffects says \"built twice (default features, then with postgres-backend)\" and supportedEnvironments says \"embedded SurrealDB 4.0.0 (default features)\", but Cargo.toml:318 has `default = [\"minimal\"]`, not server-full.",
+      "suggested_fix": "Use separate `--target-dir` values, or copy each binary to a named path after it builds, and map each scenario to the binary it needs. Fix the 'default features' wording, or add a minimal build."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 6051,
+      "claim": "The boundary packet does not build the prerequisites the scenarios need. The runner would build them itself, with no receipts, outside the clean-build rule and outside the worktree convention.",
+      "evidence": "CFG-004/005 need the `surrealql_store_runner` example (Cargo.toml:157, `[[example]]`), which `cargo build` without `--examples` does not build. Config design says \"the example build is a prerequisite, serialized with the main build\". Negative controls for PGL-001/003/007/009/010 and WRK-001/004/005/006 need baseline builds (\"baseline worktree build\"). Cleanup says \"remove baseline worktrees created for negative controls\", but the project rule requires worktrees under `~/.claude/worktrees/` via `scripts/worktree-new.sh`. IDN-003 needs a \"baseline receipt\". DSN-004/005 need the Impeccable CLI.",
+      "suggested_fix": "Add build commands for the example and for each baseline (built under ~/.claude/worktrees), with build receipts and the clean-build rule applied."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1661,
+      "claim": "SCN-RTM-004's negative control expects `restart_required` for a database edit of `server.port`, but the settings change classifies `server.*` as inert and reports `not_applied`. The realtime and config designs also update the effective map with the old 'not Restart' rule, which treats the new Inert class as live.",
+      "evidence": "RTM-004 negative: \"edit `server.port` on A -> B reports restart-required\". Settings design.md:116 lists `server.*` as `inert`, and line 69 gives `not_applied`, \"always, including after restart\". Realtime design.md:178: \"update the effective map only for keys whose `setting_apply_mode` is not Restart\". Config D4 does the same. Settings task 1.2 adds `SettingApplyMode::Inert`, and task 1.3 stops effective writes for restart and inert keys.",
+      "suggested_fix": "Use a true restart-class key, such as `rag.chunk_size` or `memory.*`, in RTM-004. Have realtime and config compute effective writes from the settings change's class table."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 20,
+      "claim": "Changing an agent's model and having the next turn in an open conversation use it, on the same replica or another, is in goal 4 and the release claim but has no scenario.",
+      "evidence": "releaseClaim: \"changes the model for the system, an agent, a team member or a live conversation ... the next turn in open conversations uses it on every replica\". SYS-003 tests only that an agent pin beats the system default. RTM-001..006 cover provider defaults, settings, conversation policy and team catalog. No scenario edits an agent's model.",
+      "suggested_fix": "Add a mandatory scenario: edit agent A's model on replica A, and the next turn of an open conversation on replica B reaches the new model, with a recorder as truth."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1337,
+      "claim": "SCN-IDN-003 is mandatory, but no task in any change virtualizes the Models page list that causes the long tasks it measures.",
+      "evidence": "The workers proposal says the Models page \"renders every filtered row without virtualization (`models-page.tsx:326`). A worker removes the compute, not the rendering.\" spec-open-decisions.md #13: \"Virtualizing the Models list is the real fix and nobody owns it today\". IDN-003's owner tasks are identity 2.x (atomic ingestion), and grep finds no virtualization task in the identity tasks.",
+      "suggested_fix": "Assign Models-page virtualization to a change (identity or pickers) and add it to IDN-003's ownerTask."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 3568,
+      "claim": "Functional scope claims behavior that only optional scenarios cover, and about 25 spec requirements in the ten changes have no scenario that names them.",
+      "evidence": "Item 2 claims a \"one-time legacy localStorage import\", but SCN-PGL-011 is mandatory false. Item 4 claims \"thread records are retired\", but SCN-IDN-006 is mandatory false because the work \"may move to a child phase\". Requirements no scenario names include: 'Provider changes invalidate providers and models on every store' (the core Surreal provider-topic bug in analysis delta 1), 'Replica refresh never applies governance or restart-class keys', 'Cross-replica behavior is verified with at least two replicas', 'Saving the last-known-good copy never blocks or overwrites a start', 'A fallback start is visible and carries no value text', 'The console displays what each saved setting actually does', 'The live default-provider swap records its own effect', 'Stored rows of removed namespaces remain inert by default', 'Primary navigation has one Settings destination', 'Computation workers are side-effect free'.",
+      "suggested_fix": "Either reduce functionalScope to the mandatory set, or make the scenarios mandatory. Map each requirement to at least one scenario, or record why it has none."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/uiux-local-first-persistence-worker/design.md",
+      "line": 225,
+      "claim": "Three mandatory PGL scenarios need a real model route. That means paid vendor calls, which need separate operator authority, and a provider key that the boundary approvals do not cover.",
+      "evidence": "PGL-001/006/009: \"a real model route\" (design.md:225, 301, 306). CLAUDE.md: \"Publication, signing, deployment, paid calls ... require separate authority.\" boundaryPacket.requiredApprovals lists only the phase verification grant. `stub-llm` exists (Cargo.toml:127-130) and the RTM scenarios use it.",
+      "suggested_fix": "Use stub-llm with a fixed long stream, or add explicit paid-call authority to requiredApprovals."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 3638,
+      "claim": "SAFE-NO-TEST-CREDENTIALS is mapped to all 80 scenarios, but no scenario or runner check exercises it. The admin-key path for the new guarded routes is still unknown.",
+      "evidence": "The mapping lists all 80 IDs, including file-only scenarios such as DSN-004..006. No step scans the runner or specs for `x-uar-admin-key`, `Authorization` or JWT minting. explicitUnknowns: \"whether the existing manual scripts satisfy the admin-key guard without minting a credential\" and \"whether the reload endpoint requires an admin key in the isolated setup\". boot-status, reload and drift-resolve are admin-key guarded (config tasks 4.5, 4.9, 4.10).",
+      "suggested_fix": "Add a deterministic check of runner and spec sources for credential headers and token minting, with a negative fixture. Fix `settings_mutation_auth_required: false` in the scratch YAML now, rather than leaving it as a runtime fallback."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 3741,
+      "claim": "SAFE-FALLBACK-NO-SECRET-ON-DISK promises more than the design delivers: the last-known-good copy duplicates any secret written inline in the YAML.",
+      "evidence": "The check says \"Nothing secret is persisted to disk by the fallback\". The config acceptance limitation says it \"does not establish behavior when the YAML itself contains a secret (documented duplication)\". The spec saves the file's \"exact bytes\".",
+      "suggested_fix": "Narrow the check to environment-, CLI- and vault-supplied secrets, or reject saving a last-known-good copy when the YAML holds a secret-typed field."
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/uiux-design-context-and-settings-regroup/proposal.md",
+      "line": 102,
+      "claim": "The proposals give conflicting disposition advice for the same open changes, so the operator's decision 7 review gets contradictory inputs.",
+      "evidence": "`migrate-settings-mutations-and-retire-stores`: supersede (design proposal:103), continue and fold into identity (persistence proposal:87), continue narrowed (pickers proposal:131). `migrate-models-page-direct-and-redesign`: supersede (design proposal:102, identity proposal:120), continue (system-model proposal:108).",
+      "suggested_fix": "The lead reconciles to one disposition per open change before Plan."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1423,
+      "claim": "Static and structural checks count as mandatory acceptance, against the spec packet's rule.",
+      "evidence": "spec-packet.md: \"Real collaborators only: unit, mocked or structural checks cannot establish acceptance.\" Mandatory SCN-IDN-005 (`pnpm frontend:boundaries`, limitation \"static analysis\"), SCN-PGL-002 (seed check script, \"does not exercise the browser\") and SCN-DSN-004/005/006 (text and substring checks of files) are acceptance rows.",
+      "suggested_fix": "Mark these as supplemental gates rather than behavior scenarios, or record an explicit operator exception."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1611,
+      "claim": "Mandatory SCN-RTM-003's negative control needs the forwarder fixture, the same fixture that got SCN-RTM-007 demoted because its availability is UNVERIFIED.",
+      "evidence": "RTM-003 negative: \"B's store forwarder cut\", with fixtures \"forwarder owned by the runner\". RTM-007: \"mandatory false: needs a forwarder fixture whose availability is UNVERIFIED\".",
+      "suggested_fix": "Apply one rule to both: commit to the forwarder fixture, or give RTM-003 a negative control that does not need it."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "openspec/changes/uiux-design-context-and-settings-regroup/tasks.md",
+      "line": 23,
+      "claim": "Task 3.4 moves 'Raw JSON and CSV editors' into Advanced, while the pickers change removes CSV editing altogether.",
+      "evidence": "Design task 3.4: \"Raw JSON and CSV editors move inside Advanced.\" The pickers spec says: \"no value is split from a comma-separated string\", and a raw JSON editor only \"for an object with no declared properties\".",
+      "suggested_fix": "Drop 'CSV' from design task 3.4."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "openspec/changes/uiux-schema-controls-and-pickers/tasks.md",
+      "line": 30,
+      "claim": "Until open decision 15 is made, `llm.embedding.model`, a setting that is in use today, is shown read-only, so the console loses its only way to change the embedding model.",
+      "evidence": "Task 5.1: \"render the stored value read-only with a stated reason until a source exists\". The assessment notes \"the live embedding model is chosen by free text\".",
+      "suggested_fix": "Settle the embedding option source (decision 15) before Plan, so this phase does not remove the control."
+    }
+  ]
+}

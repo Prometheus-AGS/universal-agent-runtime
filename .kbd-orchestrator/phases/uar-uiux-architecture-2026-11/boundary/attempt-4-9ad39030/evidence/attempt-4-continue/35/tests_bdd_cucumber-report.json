@@ -1,0 +1,610 @@
+[
+  {
+    "description": "  As an operator choosing the system default model, and a person chatting\n  I want a change of model to apply to the next answer without a restart,\n  and to see which model answered, why, and since when\n  So that I can trust the model I chose is the model that served the reply",
+    "elements": [
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;a-reply-already-being-written-finishes-on-the-model-it-started-with",
+        "keyword": "Scenario",
+        "line": 98,
+        "name": "A reply already being written finishes on the model it started with",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 224000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 10000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 99,
+            "name": "the stub supports \"hold_content\"",
+            "result": {
+              "status": "passed",
+              "duration": 3000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 100,
+            "name": "a conversation \"Chat Y\" with no model override",
+            "result": {
+              "status": "passed",
+              "duration": 1497000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 101,
+            "name": "5 seconds have passed since the system default was set",
+            "result": {
+              "status": "passed",
+              "duration": 3748000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 102,
+            "name": "I send the message \"S1 r6 hold\" without waiting for the reply",
+            "result": {
+              "status": "passed",
+              "duration": 364000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 103,
+            "name": "the stub for \"openai\" is holding the reply to \"S1 r6 hold\"",
+            "result": {
+              "status": "passed",
+              "duration": 867000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 104,
+            "name": "the operator changes the system default to \"bdd-provider-b/claude-5-haiku\" from another page",
+            "result": {
+              "status": "passed",
+              "duration": 1607000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 105,
+            "name": "the reply to \"S1 r6 hold\" is still held and the stop control is still visible",
+            "result": {
+              "status": "passed",
+              "duration": 4000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 106,
+            "name": "the held reply is released",
+            "result": {
+              "status": "passed",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 107,
+            "name": "the reply to \"S1 r6 hold\" finishes with content containing \"bdd-reply-gpt-5.4-mini\"",
+            "result": {
+              "status": "failed",
+              "duration": 127919000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/live-model-choice.steps.ts:547:5)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:99:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 108,
+            "name": "the reply to \"S1 r6 hold\" came from \"openai/gpt-5.4-mini\" with exactly one request",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 109,
+            "name": "the answer's receipt names \"openai/gpt-5.4-mini\" and the origin \"system default\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 110,
+            "name": "the answer's receipt shows the time the system default became \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 111,
+            "name": "the answer's receipt does not show the time the system default became \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 112,
+            "name": "I send the message \"S1 r6 next\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 113,
+            "name": "the reply to \"S1 r6 next\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 8216000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 16484000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;a-reply-already-being-written-finishes-on-the-model-it-started-with",
+        "keyword": "Scenario",
+        "line": 98,
+        "name": "A reply already being written finishes on the model it started with",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 187000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 10000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 99,
+            "name": "the stub supports \"hold_content\"",
+            "result": {
+              "status": "passed",
+              "duration": 4000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 100,
+            "name": "a conversation \"Chat Y\" with no model override",
+            "result": {
+              "status": "passed",
+              "duration": 1471000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 101,
+            "name": "5 seconds have passed since the system default was set",
+            "result": {
+              "status": "passed",
+              "duration": 3772000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 102,
+            "name": "I send the message \"S1 r6 hold\" without waiting for the reply",
+            "result": {
+              "status": "passed",
+              "duration": 362000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 103,
+            "name": "the stub for \"openai\" is holding the reply to \"S1 r6 hold\"",
+            "result": {
+              "status": "passed",
+              "duration": 363000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 104,
+            "name": "the operator changes the system default to \"bdd-provider-b/claude-5-haiku\" from another page",
+            "result": {
+              "status": "passed",
+              "duration": 1928000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 105,
+            "name": "the reply to \"S1 r6 hold\" is still held and the stop control is still visible",
+            "result": {
+              "status": "passed",
+              "duration": 7000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 106,
+            "name": "the held reply is released",
+            "result": {
+              "status": "passed",
+              "duration": 1000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 107,
+            "name": "the reply to \"S1 r6 hold\" finishes with content containing \"bdd-reply-gpt-5.4-mini\"",
+            "result": {
+              "status": "failed",
+              "duration": 129424000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/live-model-choice.steps.ts:547:5)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:99:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 108,
+            "name": "the reply to \"S1 r6 hold\" came from \"openai/gpt-5.4-mini\" with exactly one request",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 109,
+            "name": "the answer's receipt names \"openai/gpt-5.4-mini\" and the origin \"system default\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 110,
+            "name": "the answer's receipt shows the time the system default became \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 111,
+            "name": "the answer's receipt does not show the time the system default became \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 112,
+            "name": "I send the message \"S1 r6 next\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 113,
+            "name": "the reply to \"S1 r6 next\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 8297000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 17801000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;a-reply-already-being-written-finishes-on-the-model-it-started-with",
+        "keyword": "Scenario",
+        "line": 98,
+        "name": "A reply already being written finishes on the model it started with",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 190000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 10000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 99,
+            "name": "the stub supports \"hold_content\"",
+            "result": {
+              "status": "passed",
+              "duration": 4000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 100,
+            "name": "a conversation \"Chat Y\" with no model override",
+            "result": {
+              "status": "passed",
+              "duration": 1448000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 101,
+            "name": "5 seconds have passed since the system default was set",
+            "result": {
+              "status": "passed",
+              "duration": 3797000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 102,
+            "name": "I send the message \"S1 r6 hold\" without waiting for the reply",
+            "result": {
+              "status": "passed",
+              "duration": 373000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 103,
+            "name": "the stub for \"openai\" is holding the reply to \"S1 r6 hold\"",
+            "result": {
+              "status": "passed",
+              "duration": 362000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 104,
+            "name": "the operator changes the system default to \"bdd-provider-b/claude-5-haiku\" from another page",
+            "result": {
+              "status": "passed",
+              "duration": 1910000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 105,
+            "name": "the reply to \"S1 r6 hold\" is still held and the stop control is still visible",
+            "result": {
+              "status": "passed",
+              "duration": 6000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 106,
+            "name": "the held reply is released",
+            "result": {
+              "status": "passed",
+              "duration": 2000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 107,
+            "name": "the reply to \"S1 r6 hold\" finishes with content containing \"bdd-reply-gpt-5.4-mini\"",
+            "result": {
+              "status": "failed",
+              "duration": 129088000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/live-model-choice.steps.ts:547:5)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:99:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 108,
+            "name": "the reply to \"S1 r6 hold\" came from \"openai/gpt-5.4-mini\" with exactly one request",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 109,
+            "name": "the answer's receipt names \"openai/gpt-5.4-mini\" and the origin \"system default\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 110,
+            "name": "the answer's receipt shows the time the system default became \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 111,
+            "name": "the answer's receipt does not show the time the system default became \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 112,
+            "name": "I send the message \"S1 r6 next\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 113,
+            "name": "the reply to \"S1 r6 next\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 8599000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 17481000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "live-model-choice-governs-the-next-eligible-response",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Live model choice governs the next eligible response",
+    "tags": [],
+    "uri": "features/live-model-choice.feature"
+  }
+]

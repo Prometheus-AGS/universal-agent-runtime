@@ -1,0 +1,490 @@
+[
+  {
+    "description": "  As the people who rely on live model choice\n  I want each promise to be checked against an input a wrong build would get wrong\n  So that a pass means the behaviour is real and the checks can tell right from wrong",
+    "elements": [
+      {
+        "description": "",
+        "id": "live-model-choice,-negative-controls;clearing-an-override-while-the-default's-provider-is-disabled-previews-the-fallback",
+        "keyword": "Scenario",
+        "line": 85,
+        "name": "Clearing an override while the default's provider is disabled previews the fallback",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 16,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 244000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 12000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 86,
+            "name": "the system default model is \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 22000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 87,
+            "name": "a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 2230000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 88,
+            "name": "the provider \"bdd-provider-b\" is disabled",
+            "result": {
+              "status": "passed",
+              "duration": 15000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 89,
+            "name": "I clear the model override of this conversation",
+            "result": {
+              "status": "passed",
+              "duration": 358000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 90,
+            "name": "the preview says this conversation will answer with \"openai/gpt-5.4-mini\" from \"configured fallback\"",
+            "result": {
+              "status": "passed",
+              "duration": 5000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 91,
+            "name": "the preview does not name \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 4000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 92,
+            "name": "I confirm the change",
+            "result": {
+              "status": "passed",
+              "duration": 321000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 93,
+            "name": "I send the message \"S1 c012\"",
+            "result": {
+              "status": "failed",
+              "duration": 124378000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice-controls.feature.spec.js:77:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 94,
+            "name": "the reply to \"S1 c012\" came from \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 95,
+            "name": "no outgoing request used the model \"claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 96,
+            "name": "the answer's receipt names \"openai/gpt-5.4-mini\" and the origin \"configured fallback\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 7691000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 7742000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice,-negative-controls;clearing-an-override-while-the-default's-provider-is-disabled-previews-the-fallback",
+        "keyword": "Scenario",
+        "line": 85,
+        "name": "Clearing an override while the default's provider is disabled previews the fallback",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 16,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 217000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 37000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 86,
+            "name": "the system default model is \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 50000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 87,
+            "name": "a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 2234000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 88,
+            "name": "the provider \"bdd-provider-b\" is disabled",
+            "result": {
+              "status": "passed",
+              "duration": 12000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 89,
+            "name": "I clear the model override of this conversation",
+            "result": {
+              "status": "passed",
+              "duration": 358000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 90,
+            "name": "the preview says this conversation will answer with \"openai/gpt-5.4-mini\" from \"configured fallback\"",
+            "result": {
+              "status": "passed",
+              "duration": 4000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 91,
+            "name": "the preview does not name \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 4000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 92,
+            "name": "I confirm the change",
+            "result": {
+              "status": "passed",
+              "duration": 322000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 93,
+            "name": "I send the message \"S1 c012\"",
+            "result": {
+              "status": "failed",
+              "duration": 124298000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice-controls.feature.spec.js:77:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 94,
+            "name": "the reply to \"S1 c012\" came from \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 95,
+            "name": "no outgoing request used the model \"claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 96,
+            "name": "the answer's receipt names \"openai/gpt-5.4-mini\" and the origin \"configured fallback\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 7681000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 7741000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice,-negative-controls;clearing-an-override-while-the-default's-provider-is-disabled-previews-the-fallback",
+        "keyword": "Scenario",
+        "line": 85,
+        "name": "Clearing an override while the default's provider is disabled previews the fallback",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 16,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 196000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 17,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 15000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 86,
+            "name": "the system default model is \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 21000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 87,
+            "name": "a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 2234000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 88,
+            "name": "the provider \"bdd-provider-b\" is disabled",
+            "result": {
+              "status": "passed",
+              "duration": 14000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 89,
+            "name": "I clear the model override of this conversation",
+            "result": {
+              "status": "passed",
+              "duration": 328000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 90,
+            "name": "the preview says this conversation will answer with \"openai/gpt-5.4-mini\" from \"configured fallback\"",
+            "result": {
+              "status": "passed",
+              "duration": 5000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 91,
+            "name": "the preview does not name \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 5000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 92,
+            "name": "I confirm the change",
+            "result": {
+              "status": "passed",
+              "duration": 321000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 93,
+            "name": "I send the message \"S1 c012\"",
+            "result": {
+              "status": "failed",
+              "duration": 124864000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice-controls.feature.spec.js:77:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 94,
+            "name": "the reply to \"S1 c012\" came from \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 95,
+            "name": "no outgoing request used the model \"claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 96,
+            "name": "the answer's receipt names \"openai/gpt-5.4-mini\" and the origin \"configured fallback\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 8046000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 8122000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "live-model-choice,-negative-controls",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Live model choice, negative controls",
+    "tags": [],
+    "uri": "features/live-model-choice-controls.feature"
+  }
+]

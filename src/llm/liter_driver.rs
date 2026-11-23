@@ -55,6 +55,18 @@ fn uses_generic_chat_adapter(config: &ClientConfig, model: &str) -> bool {
 
 const GENERIC_ENDPOINT_HINT: &str = "uar-settings-profile";
 
+/// `NormalizedEvent::Custom` source of the provider-reported served-model event.
+pub(crate) const SERVED_MODEL_SOURCE: &str = "uar.response";
+/// `NormalizedEvent::Custom` event name of the provider-reported served-model event.
+pub(crate) const SERVED_MODEL_EVENT: &str = "served_model";
+
+/// Whether a custom driver event is the served-model report. Consumers that
+/// accept only a fixed set of driver events use this to ignore it.
+#[must_use]
+pub(crate) fn is_served_model_event(source: &str, event_name: &str) -> bool {
+    source == SERVED_MODEL_SOURCE && event_name == SERVED_MODEL_EVENT
+}
+
 /// LLM driver powered by liter-llm's `DefaultClient`.
 ///
 /// Handles provider auto-detection, streaming, and tool-call normalization
@@ -1080,6 +1092,10 @@ impl LlmDriver for LiterLlmDriver {
             let mut event_count: u64 = 0;
             let mut saw_terminal = false;
             let mut saw_tool_finish = false;
+            // The model id the provider's own chunks report. This is the only
+            // source for the served-model receipt; the requested model is never
+            // substituted when a provider reports none.
+            let mut served_model: Option<String> = None;
 
             loop {
                 let next_chunk = futures::future::poll_fn(|cx| {
@@ -1099,6 +1115,14 @@ impl LlmDriver for LiterLlmDriver {
                 };
 
                 chunk_count += 1;
+
+                // Trailing metadata-only chunks report an empty model; keep the
+                // last non-empty report.
+                if !chunk.model.trim().is_empty()
+                    && served_model.as_deref() != Some(chunk.model.as_str())
+                {
+                    served_model = Some(chunk.model.clone());
+                }
 
                 for choice in &chunk.choices {
                     if let Some(ref reasoning) = choice.delta.reasoning_content {
@@ -1225,6 +1249,17 @@ impl LlmDriver for LiterLlmDriver {
                     "liter-llm stream complete"
                 );
             });
+
+            // Emitted only after a complete, terminal stream, so a failed or
+            // interrupted call never produces a served-model claim.
+            if let Some(model) = served_model.take() {
+                let provider = metrics_model.split_once('/').map(|(provider, _)| provider);
+                yield Ok(NormalizedEvent::Custom {
+                    source: SERVED_MODEL_SOURCE.into(),
+                    event_name: SERVED_MODEL_EVENT.into(),
+                    payload: serde_json::json!({ "provider": provider, "model": model }),
+                });
+            }
 
             yield Ok(NormalizedEvent::Done);
         };

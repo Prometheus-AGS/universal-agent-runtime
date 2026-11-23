@@ -1,0 +1,445 @@
+{
+  "schema": "uar-frozen-oracle/1",
+  "change": "uiux-system-model-live-default",
+  "slice": "S1",
+  "frozenAt": "2026-11-19",
+  "revision": "round-1 revision (review/s1/findings-round1.json)",
+  "adoptionRule": "One vocabulary for the whole S1 slice: the synthetic values of tests/bdd/features/live-model-choice*.feature. Values are fixed before implementation and are not read from implementation code or the system under test. Editable only together with design.md before the contract is adopted.",
+  "identityNote": "BDD runs use the deployment's auth-off test configuration (tests/bdd/playwright.config.ts) and send no credentials; the operator is the deployment's own authority. No external identity proxy is involved.",
+  "stub": {
+    "binary": "target/debug/stub-llm",
+    "instances": {
+      "A": {
+        "provider": "openai",
+        "port": "STUB_PORT (existing)"
+      },
+      "B": {
+        "provider": "bdd-provider-b",
+        "port": "STUB_PORT_B (new)"
+      },
+      "C": {
+        "provider": "bdd-provider-c",
+        "port": "STUB_PORT_C (new)"
+      },
+      "off": {
+        "provider": "bdd-provider-off",
+        "port": "STUB_PORT_C (never called; disabled)"
+      }
+    },
+    "providerTruth": "each provider has its own stub instance; a request is attributed to the provider whose stub logged it",
+    "fixtureFiles": {
+      "basic": "tests/bdd/fixtures/bdd-chat.json (existing, content kinds only; the pre-phase stub parses it)",
+      "s1Basic": "tests/bdd/fixtures/live-model-choice.json (content kinds only: cross product of every S1 message x models gpt-5.4-mini, claude-5-haiku, claude-5-sonnet, qwen-5-turbo, with and without tools)",
+      "s1NewKinds": "tests/bdd/fixtures/live-model-choice-new-kinds.json (hold_content and served_model entries); passed only through env STUB_LLM_EXTRA_FIXTURES, which the pre-phase stub ignores"
+    },
+    "capabilityProbe": "GET /_stub/capabilities lists the kinds hold_content and served_model; the pre-phase stub has no such route, so setup steps that need them fail there (NOT_RUNNABLE)",
+    "hold": {
+      "entry": {
+        "model": "gpt-5.4-mini",
+        "message": "S1 r6 hold",
+        "kind": "hold_content",
+        "text": "bdd-reply-gpt-5.4-mini"
+      },
+      "release": "POST /_stub/release frees every held request",
+      "held": "GET /_stub/held returns {held:n}",
+      "controlEntry": {
+        "model": "claude-5-haiku",
+        "message": "S1 r6 hold",
+        "kind": "content"
+      }
+    },
+    "served": {
+      "message": "S1 served",
+      "requestedModel": "claude-5-haiku",
+      "reportedModel": "claude-5-haiku-20261101",
+      "kind": "served_model",
+      "text": "bdd-reply-claude-5-haiku-20261101"
+    },
+    "requestLog": "GET /_stub/requests on each instance; reset POST /_stub/requests",
+    "messageRule": "every message sent in the two features is unique within its scenario and prefixed `S1 `; assertions select the request whose last user message equals the message just sent and require exactly one, plus the reply text bdd-reply-<served wire id> visible in the transcript"
+  },
+  "models": {
+    "A": {
+      "qualified": "openai/gpt-5.4-mini",
+      "wire": "gpt-5.4-mini",
+      "note": "initial system default; also the YAML fallback model (UAR_LLM__MODEL), so scenarios that must tell a refused default from a fallback assert the registry pair and stored row directly"
+    },
+    "B": {
+      "qualified": "bdd-provider-b/claude-5-haiku",
+      "wire": "claude-5-haiku"
+    },
+    "B2": {
+      "qualified": "bdd-provider-b/claude-5-sonnet",
+      "wire": "claude-5-sonnet",
+      "note": "bdd-provider-b default_model; differs from B on purpose so the per-provider button cannot satisfy S1-R1"
+    },
+    "C": {
+      "qualified": "bdd-provider-c/qwen-5-turbo",
+      "wire": "qwen-5-turbo",
+      "providerDefaultModel": "qwen-5-turbo"
+    }
+  },
+  "providers": {
+    "bdd-provider-b": {
+      "models": [
+        "claude-5-sonnet",
+        "claude-5-haiku"
+      ],
+      "default_model": "claude-5-sonnet",
+      "setupNote": "the S1 setup step PUTs this configuration over the one ensureSecondTestProvider creates (default_model claude-5-haiku, tests/bdd/support/api.ts:115)"
+    },
+    "bdd-provider-c": {
+      "models": [
+        "qwen-5-turbo"
+      ],
+      "default_model": "qwen-5-turbo"
+    }
+  },
+  "unservable": {
+    "disabledProvider": {
+      "id": "bdd-provider-off",
+      "enabled": false,
+      "model": "off-model-1"
+    },
+    "unavailableModel": "bdd-provider-b/claude-5-retired"
+  },
+  "agents": [
+    {
+      "title": "Default Assistant",
+      "artifactModel": null,
+      "pinned": false
+    },
+    {
+      "title": "BDD Agent Dawn",
+      "artifactModel": null,
+      "pinned": false,
+      "note": "user-created agent with no model; must not be listed as pinned"
+    },
+    {
+      "title": "BDD Agent Aurora",
+      "artifactModel": "openai/gpt-5.4-mini",
+      "pinned": true
+    },
+    {
+      "title": "BDD Agent Cirrus",
+      "artifactModel": null,
+      "extension": {
+        "key": "uar.run_policy",
+        "model": {
+          "provider_id": "bdd-provider-c",
+          "model_id": "qwen-5-turbo"
+        }
+      },
+      "pinned": true
+    }
+  ],
+  "originLabels": [
+    "system default",
+    "this conversation",
+    "agent",
+    "configured fallback"
+  ],
+  "activationLabels": {
+    "systemDefaultChange": "live"
+  },
+  "timeComparator": {
+    "separationSeconds": 5,
+    "toleranceSeconds": 2,
+    "precision": "second",
+    "display": "HH:MM:SS in the browser's time zone",
+    "rule": "the receipt's change time lies inside [t0 - 2 s, t1 + 2 s] where t0 is the harness clock before the operator's confirm click and t1 the harness clock when the live route acknowledged; it must NOT lie inside the window of any other change; consecutive default changes are at least 5 seconds apart (step: 5 seconds have passed since the system default was set)",
+    "truthSource": "harness clock (browser and server share one host); the store read-back of the default row's update time is a second truth when its route is named (UNVERIFIED)"
+  },
+  "scn": {
+    "SCN-SYS-001": {
+      "before": "gpt-5.4-mini",
+      "selection": "bdd-provider-b/claude-5-haiku",
+      "afterChange": "claude-5-haiku",
+      "mustNotServe": "claude-5-sonnet",
+      "expectedConsoleWrites": [
+        "PUT /api/uar/providers/bdd-provider-b",
+        "POST /api/uar/providers/bdd-provider-b/default"
+      ],
+      "writesOrder": "PUT first, then POST",
+      "activationLabel": "live",
+      "requestedValueShown": "bdd-provider-b/claude-5-haiku",
+      "perProviderButton": "stays (it sets a provider default); it sets the default provider with default_model claude-5-sonnet, so it cannot produce the S1-R1 expectation; no S1 oracle accepts it as S1-R1",
+      "negativeControl": {
+        "directRoute": "POST /api/uar/providers/bdd-missing/default",
+        "expectedStatus": 404,
+        "expectedBody": "{\"error\":\"Provider 'bdd-missing' not found\"}",
+        "stateAfter": "default stays openai/gpt-5.4-mini"
+      },
+      "legacyButtonControl": {
+        "input": "click the per-provider Set as default on bdd-provider-b",
+        "expectedWireModel": "claude-5-sonnet",
+        "note": "proves the oracle can tell the legacy path from the picker path"
+      },
+      "confirmationComparator": {
+        "mechanism": "the harness intercepts POST /api/uar/providers/bdd-provider-b/default with Playwright page.route and holds it; the PUT before it is not held",
+        "assertionsWhileHeld": [
+          "no confirmation element is visible",
+          "the system-default control does not show bdd-provider-b/claude-5-haiku as the live pair and still shows openai/gpt-5.4-mini",
+          "a registry read-back (GET /api/uar/providers, not the UI) still returns default_id openai"
+        ],
+        "assertionAfterRelease": "after route.continue() lets the server answer, a confirmation appears showing the requested value bdd-provider-b/claude-5-haiku and the activation `live`, and the control shows the new live pair",
+        "rejects": "an optimistic UI that shows the confirmation or the new pair on click, before the live route answers (the baseline's optimisticUpsert, frontend/src/features/providers/model/providers-store.ts:156-176); also a UI that confirms after the PUT returns but before, or without, the POST; and a UI that sends the POST but confirms without awaiting its answer (caught by the polled hold window)",
+        "heldArrivalCondition": "the step attaches a page response listener that records the status of PUT /api/uar/providers/bdd-provider-b and arms page.route on POST /api/uar/providers/*/default, both before the confirm click; it waits until the route handler has signalled that a POST was intercepted whose URL path is exactly /api/uar/providers/bdd-provider-b/default (the live route carries no body) and the recorded PUT status is 2xx; it then keeps the POST held for holdWindowMs (2000 ms), polling at most every 100 ms that no confirmation element is visible (any appearance fails the step), and returns at the end of that window; the step never waits for a response to the held POST",
+        "holdWindowMs": 2000,
+        "assertionsTiming": "assertionsWhileHeld run after the held step returns, at the end of the 2000 ms hold and immediately before release; a confirmation that appears at any time during the hold fails the scenario, so a console that confirms after sending the POST without awaiting its answer is rejected"
+      },
+      "heldRouteControl": {
+        "id": "CTL-SYS-001-HELD-500",
+        "scenario": "A default change whose acknowledgement fails shows no confirmation",
+        "mechanism": "the held POST is fulfilled with status 500 (route.fulfill); later matching requests are passed through to the server so a retry or second POST would change the registry",
+        "expected": {
+          "confirmationShown": false,
+          "errorShown": "a visible error that says the system default was not changed",
+          "registryReadBack": {
+            "default_id": "openai"
+          },
+          "controlStillShows": "openai/gpt-5.4-mini",
+          "noFurtherWrite": {
+            "window": "3 seconds after the fulfilled 500",
+            "rule": "the browser issues no write request to /api/uar/** in the window (the one PUT already made is excluded)"
+          }
+        },
+        "rejects": "a UI that confirms or flips the control before the route answers, or that swallows the failure",
+        "guards": "a console that, after the 500, falls back to another write path that reaches the server: a second POST to the default route (passed through once the first is fulfilled) or a PUT of llm.default_provider; and a UI that confirms or flips the control anyway",
+        "notClaimed": "the held request never reaches the server, so the registry read-back cannot detect the 500 itself; it only detects a fallback write that does reach the server"
+      }
+    },
+    "SCN-SYS-003": {
+      "afterChangeTo": "bdd-provider-b/claude-5-haiku",
+      "turnModels": {
+        "Default Assistant": "claude-5-haiku",
+        "BDD Agent Dawn": "claude-5-haiku",
+        "BDD Agent Aurora": "gpt-5.4-mini",
+        "BDD Agent Cirrus": "qwen-5-turbo"
+      },
+      "expectedPinnedExactly": [
+        "BDD Agent Aurora",
+        "BDD Agent Cirrus"
+      ],
+      "expectedFollowCount": "number of agents returned by the agents read minus 2",
+      "negativeControl": {
+        "agents": [
+          "Default Assistant",
+          "BDD Agent Dawn"
+        ],
+        "expected": "neither listed as pinned; both follow claude-5-haiku (a predicate that pins every user-created agent fails on Dawn)"
+      }
+    },
+    "SCN-SYS-007": {
+      "expectedConsoleWrites": [
+        "PUT /api/uar/providers/bdd-provider-b",
+        "POST /api/uar/providers/bdd-provider-b/default"
+      ],
+      "forbiddenSettingKeys": [
+        "llm.default_provider",
+        "llm.model",
+        "run_policy.global"
+      ],
+      "negativeControl": {
+        "directSettingsWrite": "PUT /api/uar/settings/llm.default_provider naming bdd-provider-b",
+        "expectedStatus": "4xx; code and body owned by uiux-settings-truthful-status-and-removals",
+        "expectedBodyContains": [
+          "/api/uar/providers/",
+          "default"
+        ],
+        "stateAfter": "registry default_id still openai and the stored llm.default_provider row unchanged (read back)"
+      }
+    },
+    "SCN-SYS-011": {
+      "conversation": "Chat X",
+      "override": "bdd-provider-c/qwen-5-turbo",
+      "defaultChangedTo": "bdd-provider-b/claude-5-haiku",
+      "message": "S1 r3 override",
+      "expectedWireModel": "qwen-5-turbo",
+      "expectedProvider": "bdd-provider-c",
+      "expectedOrigin": "this conversation",
+      "effectiveViewShows": {
+        "requested": "bdd-provider-c/qwen-5-turbo",
+        "effective": "bdd-provider-c/qwen-5-turbo"
+      },
+      "negativeControl": {
+        "input": "the override is cleared before the default change",
+        "expectedWireModel": "claude-5-haiku"
+      }
+    },
+    "SCN-SYS-012": {
+      "conversation": "Chat X",
+      "systemDefault": "bdd-provider-b/claude-5-haiku",
+      "override": "bdd-provider-c/qwen-5-turbo",
+      "preview": {
+        "model": "bdd-provider-b/claude-5-haiku",
+        "origin": "system default"
+      },
+      "cancelOutcome": {
+        "wireModel": "qwen-5-turbo"
+      },
+      "confirmOutcome": {
+        "wireModel": "claude-5-haiku",
+        "origin": "system default"
+      },
+      "negativeControl": {
+        "input": "bdd-provider-b is disabled (PUT enabled=false) before the clear; the runtime then falls back to the YAML model openai/gpt-5.4-mini (registry.default_model() is None for a disabled provider, src/llm/registry.rs:555-557; resolve_default_model, src/uar/runtime/manager.rs:11323-11331)",
+        "expectedPreview": {
+          "model": "openai/gpt-5.4-mini",
+          "origin": "configured fallback"
+        },
+        "expectedConfirmOutcome": {
+          "wireModel": "gpt-5.4-mini",
+          "provider": "openai",
+          "origin": "configured fallback"
+        },
+        "forbidden": "a preview naming bdd-provider-b/claude-5-haiku, or a reply from the bdd-provider-b stub",
+        "decisionNote": "holds while the YAML fallback exists; if the operator retires it (open decision 4) the expectation becomes: clear refused with the unavailable reason, override kept"
+      }
+    },
+    "SCN-SYS-013": {
+      "conversations": {
+        "X": "override C",
+        "Y": "no override"
+      },
+      "defaultThroughout": "bdd-provider-b/claude-5-haiku",
+      "sequence": [
+        {
+          "step": "X sets override to openai/gpt-5.4-mini",
+          "xWire": "gpt-5.4-mini",
+          "yWire": "claude-5-haiku"
+        },
+        {
+          "step": "X clears override",
+          "xWire": "claude-5-haiku",
+          "yWire": "claude-5-haiku"
+        }
+      ],
+      "afterDefaultChangedToA": {
+        "yWire": "gpt-5.4-mini"
+      },
+      "negativeControl": {
+        "input": "X and Y both use the agent Default Assistant; X sets override C",
+        "expectedYWireModel": "claude-5-haiku",
+        "expectedAgentReadBack": "Default Assistant still has no model of its own",
+        "expectedGlobalReadBack": "GET /api/uar/settings/presentation-policy policy.model unchanged",
+        "note": "a wrong build that writes the override to the agent or global scope changes Y or the read-backs"
+      }
+    },
+    "SCN-SYS-014": {
+      "message": "S1 r6 hold",
+      "firstRequestWireModel": "gpt-5.4-mini",
+      "requestsForThatTurn": 1,
+      "heldAfterAcknowledgement": {
+        "stubHeld": 1,
+        "stopControlVisible": true,
+        "requestsWithoutCompletedResponse": 1
+      },
+      "replyText": "bdd-reply-gpt-5.4-mini",
+      "receiptModel": "openai/gpt-5.4-mini",
+      "receiptTime": "the activation window of the Background change to openai/gpt-5.4-mini, not the window of the change to B",
+      "nextMessage": "S1 r6 next",
+      "nextWireModel": "claude-5-haiku",
+      "operatorActsFrom": "a second browser page",
+      "negativeControl": {
+        "input": "default changed to B before the message is sent",
+        "expectedWireModel": "claude-5-haiku",
+        "stubHeld": 0
+      }
+    },
+    "SCN-SYS-015": {
+      "receiptFields": [
+        "model that answered (qualified id)",
+        "origin label",
+        "time the default became that model (second precision)"
+      ],
+      "before": {
+        "model": "openai/gpt-5.4-mini",
+        "origin": "system default"
+      },
+      "after": {
+        "model": "bdd-provider-b/claude-5-haiku",
+        "origin": "system default"
+      },
+      "negativeControl": {
+        "scenario": "mutant M2 (receipt time read from the turn's send time) run against SCN-SYS-015's scenario 2",
+        "expected": "see mutants.M2; FAIL at the first time step on M2, PASS on the candidate",
+        "note": "distinct from SCN-SYS-017, whose control is M1 (served-vs-requested label); SCN-SYS-015 owns the origin and activation-time parts of the receipt"
+      }
+    },
+    "SCN-SYS-016": {
+      "disabledDefault": {
+        "choice": "bdd-provider-off/off-model-1",
+        "expectedReasonContains": "disabled",
+        "expectedStatus": 409
+      },
+      "unavailableOverride": {
+        "choice": "bdd-provider-b/claude-5-retired",
+        "expectedReasonContains": "not offered"
+      },
+      "effectiveAfter": "openai/gpt-5.4-mini",
+      "registryReadBack": {
+        "default_id": "openai"
+      },
+      "storedDefaultProviderReadBack": "openai",
+      "expectedWireModel": "gpt-5.4-mini",
+      "forbiddenWireModels": [
+        "off-model-1",
+        "claude-5-retired"
+      ],
+      "yamlFallbackNote": "the YAML fallback is gpt-5.4-mini, the same as A, so the registry pair and stored row are read back directly; a sentinel UAR_LLM__MODEL is used when the S1 config is a separate project (task 7.11)",
+      "negativeControl": {
+        "input": "a valid choice bdd-provider-c/qwen-5-turbo as override in the same flow",
+        "expected": "accepted; next wire model qwen-5-turbo from the bdd-provider-c stub"
+      }
+    },
+    "SCN-SYS-017": {
+      "message": "S1 served",
+      "systemDefault": "bdd-provider-b/claude-5-haiku",
+      "requestedWire": "claude-5-haiku",
+      "stubReportsModel": "claude-5-haiku-20261101",
+      "expectedReceiptModelField": "claude-5-haiku-20261101",
+      "expectedReceiptProvider": "bdd-provider-b",
+      "forbiddenReceiptModelField": "claude-5-haiku",
+      "comparator": "exact equality of the receipt's model field with the served id; the requested id must not be the model field",
+      "negativeControl": {
+        "input": "mutant M1",
+        "expected": "see mutants.M1; FAIL at the step that names the serving model, with every earlier step passed, and scenario 2 passing on M1"
+      }
+    }
+  },
+  "samples": {
+    "perScenario": 3,
+    "stoppingRule": "fixed N=3 with --repeat-each=3 --retries=0, every sample must pass"
+  },
+  "mutants": {
+    "rule": "A mutant is the candidate commit named in the implementation-complete inventory plus exactly one patch file. The patch's sha256 is recorded in the inventory; the run refuses to start if the digest differs, or if `git diff --name-only <candidate>..` on the mutant tree lists any file other than the patch's single target. Judgement is made from the mutant's JSON reporter file, never from the exit status. A failure at any other step is control INVALID, not a pass.",
+    "M1": {
+      "patch": "openspec/changes/uiux-system-model-live-default/fixtures/m1-receipt-from-request.patch",
+      "patchChanges": "only the receipt's served-model data source: it reads the requested model instead of the provider response's reported model",
+      "patchAuthoredAt": "the implementation-complete inventory (the receipt code does not exist yet; task 7.13)",
+      "reporter": "mutant-m1-receipt.json",
+      "controlFor": "SCN-SYS-017",
+      "expected": {
+        "failingScenario": "The receipt names the model the provider reported, not the one requested",
+        "failingStep": "the answer's receipt names the serving model \"claude-5-haiku-20261101\" on \"bdd-provider-b\"",
+        "allEarlierStepsPassed": true,
+        "alsoRequiredPass": "A conversation without an override follows the new default and says so"
+      }
+    },
+    "M2": {
+      "patch": "openspec/changes/uiux-system-model-live-default/fixtures/m2-receipt-time-from-send.patch",
+      "patchChanges": "only the receipt's change-time data source: it reads the turn's send time instead of the time the default became that model",
+      "patchAuthoredAt": "the implementation-complete inventory (task 7.13)",
+      "reporter": "mutant-m2-receipt.json",
+      "controlFor": "SCN-SYS-015",
+      "expected": {
+        "failingScenario": "A conversation without an override follows the new default and says so",
+        "failingStep": "the answer's receipt shows the time the system default became \"openai/gpt-5.4-mini\"",
+        "allEarlierStepsPassed": true,
+        "alsoRequiredPass": "A conversation override keeps answering on its own model",
+        "why": "the first message is sent at least 5 seconds after A became the default, so a send-time label lies outside A's window"
+      }
+    }
+  }
+}

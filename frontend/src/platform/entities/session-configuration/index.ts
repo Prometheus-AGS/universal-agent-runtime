@@ -26,6 +26,26 @@ export {
 } from "./registration";
 
 export {
+  MODEL_ORIGINS,
+  SESSION_EFFECTIVE_MODEL_ENTITY,
+  clearSessionEffectiveModel,
+  decodeSessionEffectiveModel,
+  isModelOrigin,
+  loadSessionEffectiveModel,
+  useSessionEffectiveModelField,
+} from "./effective-model";
+export type {
+  ModelOrigin,
+  SessionEffectiveModel,
+  SessionEffectiveModelField,
+} from "./effective-model";
+
+export {
+  SessionConfigurationSaveError,
+  SessionModelNotOfferedError,
+} from "./api/session-configuration-api";
+
+export {
   agentSessionDraftActions,
   agentSessionDraftId,
   cancelAgentSessionDraft,

@@ -1,7 +1,7 @@
 export const RESILIENCE_RECOMMENDED_DEFAULTS = {
   rate_limit_enabled: true,
   requests_per_second: 10,
-  burst_size: 20,
+  burst_size: 100,
   request_timeout_ms: 30000,
   stream_start_timeout_ms: 15000,
   retries_enabled: true,

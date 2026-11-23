@@ -1,0 +1,64 @@
+{
+  "candidateCommit": "be647d8c16437988a4c6f894c0b6fa63c953d161",
+  "inventorySha256": "406c3cd27de9958be6bb3f3fcbadb0fe48bcdd855a63570f607a3b7406b398e0",
+  "inventoryConfirmed": true,
+  "verdict": "PASS",
+  "inventoryNotes": [
+    "Binding: git rev-parse HEAD = be647d8c16437988a4c6f894c0b6fa63c953d161 = inventory candidateCommit; candidateCommittedAt 2026-11-22T16:24:45-06:00 equals the commit time. git status --porcelain --untracked-files=all with the BIND exclusions prints 0 lines. All five command-0 digests and the thread-menu.feature digest 5245b634e12341ed48157936198ca332de04a49a0fadba9d119aeb17ba5525c3 pass shasum -c.",
+    "inventorySha256 is the sha256 of the working-tree inventory. The inventory committed in be647d8c is the f129bbfb one (sha 20b39e2a...); the new one is an uncommitted edit under the .kbd-orchestrator exclusion, as are adopted/a6b514f2...json, the 4b amendment and its .sig. Binding is unaffected; they must be committed to keep the record reproducible (LOW).",
+    "Inventory vs implementation-complete-inventory.f129bbfb.json (jq -S diff): only candidateCommit, candidateCommittedAt, contractDigest, one appended leadFixes entry and one appended supersededCandidates entry (f129bbfb, never run) differ. unverified, limits 1-15, mutants, implementationTasks, handoffs unchanged and still accurate for a feature-text-only change.",
+    "changedPaths (314) equal git diff --name-status f2c9e36..be647d8c with **/.kbd-orchestrator/** and **/.prometheus/** excluded; the only difference in the sorted compare is rename score formatting (git R098/R100 vs inventory R) for the three src/sidecar renames, the same convention as earlier inventories.",
+    "git diff --stat f129bbfb..be647d8c: outside .kbd-orchestrator/ only tests/bdd/features/thread-menu.feature changes (5 lines, the sent message only; no step text changed). No frontend/src, tests/bdd/steps, support or fixture file changed, so the round-4 diff review carried from the f129bbfb record still applies.",
+    "Contract: jq -S -c 'del(.identity.contractDigest)|del(.identity.planRevision)' of adopted-contract.json = a6b514f2c0b0cbd2d6f6d14d6ff58588f13fce5a957cc22f928ce916c240d0f9 = the adopted/a6b514f2...json filename and the amendment newContractDigest (previous d5bb7921, scenarioChanges modified SCN-THR-001/002 only). Diff against adopted/d5bb7921...json: the thread-menu.feature digest in commands 49-52 (4), the two THR fixtures strings (each also carries the digest) and the two THR expectedTruthSource strings = 8 occurrences, plus one amendmentHistory entry; identity fields are excluded by the normalization. No other byte differs. The only remaining dedb2b0f2876 is the 12-char prefix inside the new amendmentHistory text. The committed amendments/repair-round-4b.py produces exactly this edit (asserts 2 fixture-text hits, replaces all digest hits). SSH signature not verified (no allowed-signers file in scope).",
+    "Fixture check: live-model-choice.json has 16 \"Reply with OK.\" entries, all kind content, has_tool_result false, has_tools true and false, for gpt-5.4-mini and openai/gpt-5.4-mini (the default UAR_LLM__MODEL on stub A) and the other S1 models. bdd-chat.json and live-model-choice-new-kinds.json have no \"Reply with OK.\" entry and the two content files share no fingerprint. Baseline stub f2c9e36 src/bin/stub-llm.rs reads env::args().nth(1) only (live-model-choice.json in the rsynced config) and its FixtureFileEntry/Content variant parses every entry of that file. So on both stubs the THR sends are answered and the baseline runs reach the row menu; baseline left-sidebar.tsx:186,195 still uses the dead onSelect, so neg-thr-001 fails at 'choosing Rename opens the rename dialog' and neg-thr-002 at the Rename setup (limit 13).",
+    "LOW, rationale overstated: amendment 4b and repair-round-4b.py say the THR controls 'would fail at the first send' on the baseline. sendMessageAndWait (tests/bdd/support/world.ts) waits only for Stop generating to hide and asserts no reply, so an unanswered (404) turn would not by itself fail the step. The change is still correct and removes an error-path dependency; the stated mechanism is unproven.",
+    "LOW, stale reference: the 9ad39030 supersededCandidates entry cites boundary/attempt-4-verdicts.md, which is now at boundary/attempt-4-9ad39030/attempt-4-verdicts.md (git status shows the tracked originals deleted and the archive untracked).",
+    "MEDIUM, carried (not new, not blocking): neg-thr-001 and neg-thr-002 judge only ok == false on a baseline 314 paths away, so they cannot show the failure is the dead menu item. Limit 13 discloses this for neg-thr-002 only."
+  ],
+  "mutants": {
+    "M1": {
+      "patchShaMatches": true,
+      "appliesCleanly": true,
+      "touchesOnlyTarget": true,
+      "notes": "sha256 0073d40c677e8504ecf60da4e07b1c4eb612e2e1c8359a4a1d5be31dc1055aac on disk and in be647d8c (git show | shasum). git apply --check exit 0 on the candidate tree; numstat 2/2 src/uar/runtime/manager.rs only. manager.rs unchanged f129bbfb..be647d8c. ~/.claude/worktrees/s1-mutant-m1 does not exist and is not registered in git worktree list."
+    },
+    "M2": {
+      "patchShaMatches": true,
+      "appliesCleanly": true,
+      "touchesOnlyTarget": true,
+      "notes": "sha256 e527ad4eca6ca3002470bc48dedd589176c8e8a208e8a7e1476edf4b17010764 on disk and in be647d8c. git apply --check exit 0; numstat 1/1 src/uar/domain/policy.rs only. policy.rs unchanged f129bbfb..be647d8c. ~/.claude/worktrees/s1-mutant-m2 does not exist and is not registered."
+    }
+  },
+  "dryWalk": {
+    "firstMechanicalFailure": "None predicted. The stale mutant worktrees are already gone (ls: No such file; absent from git worktree list and .git/worktrees), so command 9 (scripts/worktree-new.sh:41 target-exists check, detached git worktree add) is clear. boundary/run.jsonl and boundary/logs are absent from boundary/ (archived into boundary/attempt-4-9ad39030/), so no attempt-4 receipt can be read as or appended to the new run.",
+    "notes": [
+      "0: every term holds once this file is written (HEAD, empty porcelain, five digests OK, inventorySha256, candidateCommit, verdict PASS). Command 0 does not check the thread-menu digest; 49-52 do, and it matches.",
+      "1: pnpm test:bdd:prepare; only a .feature text changed since f129bbfb, no step text, so bddgen output differs only in the message literal.",
+      "7: grep 'Live model choice governs the next eligible response' does not select THR; rsync also carries the new feature into the baseline, where bddgen compiles it against unchanged step text.",
+      "8, 23: inputs unchanged since f129bbfb.",
+      "49, 51: CI=1 gives fresh servers per invocation (reuseExistingServer false) with UAR_LLM__MODEL openai/gpt-5.4-mini; stub A answers \"Reply with OK.\" from its first file. Grep alternations each select one scenario; 6 tests each with --repeat-each 3 --retries 0.",
+      "50, 52: baseline worktree ~/.claude/worktrees/uiux-baseline at f2c9e36 exists; env -u STUB_LLM_EXTRA_FIXTURES at the outer level is overridden by the config's webServer env, but the baseline stub ignores that variable and the excluded new-kinds file is never read. Expected stop: menu item does not open the dialog; jq needs exactly one spec with ok false.",
+      "9-22: clean create; 15 and 22 are build-kind steps under the clean-build rule (only stated exemptions). The one-receipt PLUGIN_TIMINGS exemption names the 9ad39030 build-mutant-m2 receipt only and its 'resumes at command 24' clause does not apply to this run; a recurrence of that notice on the new 22 would stop the batch.",
+      "24-48, 53: command text unchanged; 53 rechecks HEAD, tree and the five digests.",
+      "Plausible non-mechanical stops (unchanged from the f129bbfb record): a build warning at 1/15/22, and the generated-title race (limit 14) in 49/51."
+    ]
+  },
+  "stepDefinitionReview": {
+    "verdict": "PASS",
+    "scope": "git diff f129bbfb..be647d8c in tests/bdd (thread-menu.feature only), re-read of steps/thread-menu.steps.ts, steps/common.steps.ts, support/world.ts sendMessageAndWait/openFreshThread, support/s1-ui.ts sendAndCapture/threadRow/stableThreadTitle, and baseline left-sidebar.tsx at f2c9e36.",
+    "findings": [
+      "No assertion changed: the five edits replace only the quoted message; every step pattern and step body is identical to f129bbfb.",
+      "No ambiguity introduced: 'I send the message {string}' still resolves only to common.steps.ts:9; the '... without waiting for the reply' variant does not match. \"Reply with OK.\" is used by no other feature, so the shared stub request log cannot be polluted across features.",
+      "No false pass: THR scenarios are not S1-active (s1.active set only by S1 steps), so sendAndCapture is plain sendMessageAndWait; the reply text is never asserted and cannot affect the menu, title or list assertions. No title-generation fixture exists in either file for the old or new message, so title behaviour is unchanged.",
+      "Carried MEDIUM (limit 14): stableThreadTitle can settle on a placeholder before a late generated title; false FAIL, not false pass.",
+      "Carried MEDIUM: negative controls judged by ok == false only (see inventoryNotes)."
+    ]
+  },
+  "carriedForward": [
+    "ACCEPTED, not rerun: commands 2-6 (bodies unchanged; baseline worktree at f2c9e36 present). Stated in the inventory unverified text.",
+    "MUST RERUN on be647d8c in plan order: 0, 1, 7, 8, 23, 49-52, 9-22 (new worktrees from be647d8c), 24-48, 53.",
+    "NOT ACCEPTED: any earlier result of 0, 1, 7-53, including the attempt-4 provisional PASSes; f129bbfb was never run.",
+    "From the f129bbfb record, still valid because no product or step file changed: round-4 diff equals review/round4/diff-r3.patch; dead Base UI onSelect at baseline; PGlite write awaited before dialogs close; traceability gap (THR under task 8.18, no OpenSpec requirement added).",
+    "Not examined: SSH signature of amendment 4b; step bodies outside the files listed in stepDefinitionReview."
+  ]
+}

@@ -1,0 +1,86 @@
+[
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "hold_content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "gpt-5.4-mini",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "hold_content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "hold_content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "S1 r6 hold",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "hold_content",
+      "text": "bdd-reply-gpt-5.4-mini"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 served",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "served_model",
+      "served_model": "claude-5-haiku-20261101",
+      "text": "bdd-reply-claude-5-haiku-20261101"
+    }
+  },
+  {
+    "model": "claude-5-haiku",
+    "last_user_message": "S1 served",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "served_model",
+      "served_model": "claude-5-haiku-20261101",
+      "text": "bdd-reply-claude-5-haiku-20261101"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 served",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": {
+      "kind": "served_model",
+      "served_model": "claude-5-haiku-20261101",
+      "text": "bdd-reply-claude-5-haiku-20261101"
+    }
+  },
+  {
+    "model": "bdd-provider-b/claude-5-haiku",
+    "last_user_message": "S1 served",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": {
+      "kind": "served_model",
+      "served_model": "claude-5-haiku-20261101",
+      "text": "bdd-reply-claude-5-haiku-20261101"
+    }
+  }
+]

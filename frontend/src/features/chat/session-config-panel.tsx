@@ -19,8 +19,9 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import type { AgentConfig } from "@/features/chat/agent-selector";
-import { ModelSelector } from "@/features/models/model-selector";
+import { ModelPicker } from "@/features/models/pickers";
 import { SessionPresentationSelection } from "@/features/presentations";
+import { ClearOverridePreview, SessionEffectiveModelView } from "./session-model-view";
 import {
   agentSessionDraftId,
   useAgentSessionDraftActions,
@@ -69,26 +70,84 @@ interface DraftControlProps {
 
 function ModelOverrideControl({
   draftId,
+  sessionId,
   disabled,
   defaultLabel,
-}: DraftControlProps & { defaultLabel: string }) {
+  effectiveFailed,
+  onRetryEffective,
+  onSave,
+}: DraftControlProps & {
+  sessionId: string;
+  defaultLabel: string;
+  effectiveFailed: boolean;
+  onRetryEffective: () => void;
+  /** Saves the whole draft; true when the runtime accepted it. */
+  onSave: () => Promise<boolean>;
+}) {
   const model = useAgentSessionDraftField(draftId, "model");
   const actions = useAgentSessionDraftActions();
+  const [previewing, setPreviewing] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  // Clearing never happens silently: the preview names what the conversation will inherit first.
+  // Cancel only closes the preview; the draft and the saved settings are untouched.
+  const confirmClear = useCallback(async () => {
+    setClearing(true);
+    actions.setField(draftId, "model", null);
+    const saved = await onSave();
+    setClearing(false);
+    if (!saved) setPreviewing(false);
+  }, [actions, draftId, onSave]);
+
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor="model-override" className="font-mono text-xs">
         Model Override
       </Label>
-      <ModelSelector
+      <ModelPicker
+        id="model-override"
+        testId="session-config-model-trigger"
+        ariaLabel="Model override"
         value={model ?? ""}
-        onChange={(value) => actions.setField(draftId, "model", value || null)}
+        onChange={(value) => {
+          if (value) actions.setField(draftId, "model", value);
+          else if (model) setPreviewing(true);
+        }}
         defaultLabel={defaultLabel}
         placeholder="Select model override..."
-        disabled={disabled}
+        disabled={disabled || previewing}
       />
       <p className="font-body text-xs text-muted-foreground">
-        Leave empty to use the agent default.
+        Clear it to follow the agent, or the system default.
       </p>
+      <SessionEffectiveModelView
+        sessionId={sessionId}
+        failed={effectiveFailed}
+        onRetry={onRetryEffective}
+      />
+      {previewing ? (
+        <ClearOverridePreview
+          sessionId={sessionId}
+          failed={effectiveFailed}
+          busy={clearing}
+          onConfirm={() => void confirmClear()}
+          onCancel={() => setPreviewing(false)}
+        />
+      ) : (
+        model && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            data-testid="session-config-clear"
+            disabled={disabled}
+            onClick={() => setPreviewing(true)}
+            className="self-start font-mono text-xs"
+          >
+            Use the inherited model
+          </Button>
+        )
+      )}
     </div>
   );
 }
@@ -269,6 +328,8 @@ export function SessionConfigPanel({
   const [retryNonce, setRetryNonce] = useState(0);
   const [effectiveLoading, setEffectiveLoading] = useState(false);
   const [effectiveUnavailable, setEffectiveUnavailable] = useState(false);
+  const [modelViewLoading, setModelViewLoading] = useState(false);
+  const [modelViewFailed, setModelViewFailed] = useState(false);
   const draftOpened = useRef(false);
   const saveErrorRef = useRef<HTMLParagraphElement>(null);
 
@@ -309,6 +370,29 @@ export function SessionConfigPanel({
     threadId,
   ]);
 
+  // Which model answers is read separately from the draft: a failure here is shown in its own
+  // block and never blocks the other settings. Cleared first so a previous value is never
+  // presented as current while the runtime is being asked again.
+  useEffect(() => {
+    if (!open) return;
+    const controller = new AbortController();
+    actions.clearEffectiveModel(threadId);
+    setModelViewLoading(true);
+    setModelViewFailed(false);
+    void actions
+      .loadEffectiveModel(threadId, controller.signal)
+      .catch((loadError: unknown) => {
+        if (controller.signal.aborted || isAbortError(loadError)) return;
+        setModelViewFailed(true);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setModelViewLoading(false);
+      });
+    return () => {
+      controller.abort();
+    };
+  }, [actions, open, retryNonce, threadId]);
+
   useEffect(
     () => () => {
       actions.cancel(draftId);
@@ -328,9 +412,11 @@ export function SessionConfigPanel({
     [actions, draftId, onOpenChange],
   );
 
-  const handleSave = useCallback(async () => {
-    if (await actions.save(draftId)) onOpenChange(false);
+  const handleSave = useCallback(async (): Promise<boolean> => {
+    const saved = await actions.save(draftId);
+    if (saved) onOpenChange(false);
     else requestAnimationFrame(() => saveErrorRef.current?.focus());
+    return saved;
   }, [actions, draftId, onOpenChange]);
 
   const saving = saveStatus === "saving";
@@ -339,6 +425,7 @@ export function SessionConfigPanel({
     saveStatus === null ||
     effectivePromptCaching === null ||
     effectiveLoading ||
+    modelViewLoading ||
     effectiveUnavailable;
 
   return (
@@ -359,12 +446,16 @@ export function SessionConfigPanel({
         <div className="flex flex-col gap-6 px-4 pb-4">
           <ModelOverrideControl
             draftId={draftId}
+            sessionId={threadId}
             disabled={saving || unavailable}
             defaultLabel={
               agentConfig?.model
                 ? `Agent: ${agentConfig.model}`
                 : "Agent default"
             }
+            effectiveFailed={modelViewFailed}
+            onRetryEffective={() => setRetryNonce((value) => value + 1)}
+            onSave={handleSave}
           />
 
           <Separator />

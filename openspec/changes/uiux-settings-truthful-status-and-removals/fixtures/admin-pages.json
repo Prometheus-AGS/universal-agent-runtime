@@ -1,0 +1,15 @@
+{
+  "$comment": "Frozen oracle for SCN-SET-005. Truth source: assessment.md G5 (eight unreachable sections) and the section list in frontend/src/pages/admin-page.tsx at the start of the phase. Headings were read from the page components on 2026-11-19. Reach every page by clicks and command-palette search from /threads; never type a URL. The final navigation structure may differ (regroup change); the headings and data requests do not.",
+  "pages": [
+    {"id": "models", "heading": "models", "dataRequest": "GET /api/models", "headingSource": "features/models/ui/models-page.tsx:185"},
+    {"id": "credentials", "heading": "Credentials", "testId": "credentials-heading", "dataRequest": "GET /api/uar/credentials", "note": "may render a disabled or sign-in state; the heading must still render", "headingSource": "features/credentials/ui/credentials-page.tsx:105"},
+    {"id": "mcp-health", "heading": "Tool Server Health", "dataRequest": "GET /api/uar/mcp/health", "headingSource": "features/tools/ui/mcp-health-page.tsx:53"},
+    {"id": "compiler", "heading": "compiler sessions", "dataRequest": "GET /api/compiler/sessions", "headingSource": "features/compiler/ui/compiler-page.tsx:40"},
+    {"id": "memory", "heading": "memory browser", "dataRequest": "GET /api/admin/memories/stats", "headingSource": "features/memory/ui/memory-page.tsx:134"},
+    {"id": "cost", "heading": "cost", "dataRequest": null, "headingSource": "features/cost/ui/cost-dashboard-page.tsx:90"},
+    {"id": "auth", "heading": "API Keys", "dataRequest": "GET /api/auth/keys", "headingSource": "features/auth/ui/auth-page.tsx:49"},
+    {"id": "protocols", "heading": "Compatibility Console", "dataRequest": null, "headingSource": "features/runtime/ui/runtime-console-page.tsx:501"}
+  ],
+  "dataRequestRule": "where dataRequest is not null the page triggers that request and it returns 2xx or the page shows its own explicit empty/disabled state",
+  "unknownSectionControl": {"path": "/admin/nonexistent", "expectedTestId": "admin-section-runtime", "source": "pages/admin-page.tsx sectionFromPath fallback"}
+}

@@ -1,0 +1,79 @@
+{
+  "schema": "uar-frozen-oracle/1",
+  "change": "uiux-workers-and-pwa-cache",
+  "frozenAt": "2026-11-19",
+  "adoptionRule": "Entries with status 'proposed' may be edited only together with design.md before the phase contract is adopted. After adoption every value is immutable. No value here is read from implementation code.",
+  "baseline": {
+    "gitRef": "f2c9e36e",
+    "worktreeName": "wrk-baseline",
+    "createdBy": "scripts/worktree-new.sh wrk-baseline --base f2c9e36e (path ~/.claude/worktrees/wrk-baseline)"
+  },
+  "ownedCaches": {
+    "exactNames": [
+      "uar-shell-v2",
+      "uar-static-v2",
+      "uar-meta-v2"
+    ],
+    "prefixes": [
+      "uar-assets-"
+    ],
+    "legacyMustBeAbsent": [
+      "uar-v1"
+    ]
+  },
+  "trees": {
+    "derivedFrom": "one real `pnpm --dir frontend build` output",
+    "rule": "A is the unmodified output. B and C copy A, rename the entry script to index-TREEB000.js and index-TREEC000.js and one lazy chunk to chunk-TREEB000.js and chunk-TREEC000.js, append the comment '/* tree-B */' or '/* tree-C */' to each renamed file, and rewrite index.html references. File lists are computed from the HTML and chunk graph of each tree, not from the worker.",
+    "expectedRetainedAfterC": [
+      "C",
+      "B"
+    ],
+    "expectedAbsentAfterC": [
+      "A-only"
+    ],
+    "retainedBuildCount": 2
+  },
+  "unhashedProbes": {
+    "image": {
+      "path": "/brand/uar-favicon-dark.svg",
+      "newBytes": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1\" height=\"1\"><!-- wrk-probe-2 --></svg>",
+      "maxLoadsUntilServed": 2
+    },
+    "script": {
+      "path": "/probe.js",
+      "bytesBefore": "export const v = 1;",
+      "bytesAfter": "export const v = 2;",
+      "maxLoadsUntilServed": 1
+    }
+  },
+  "navigation": {
+    "distinctUrls": 20,
+    "urlPattern": "/?uar-wrk-nav=<n> for n in 1..20, plus the Models page deep link",
+    "expectedHtmlEntriesInCaches": 1
+  },
+  "bypass": {
+    "probeUrls": [
+      "/api/uar/providers",
+      "/v1/models",
+      "/metrics"
+    ],
+    "requirement": "each probe returns 200 in the scratch environment; a probe that does not return 200 makes the scenario BLOCKED",
+    "expectedCachedUnderBypassPrefixes": 0,
+    "eventLatencyToleranceMs": 250,
+    "samples": 10,
+    "mutantRule": "copy of the new sw.js with the lines between the markers '// uar-sw:bypass-start' and '// uar-sw:bypass-end' deleted"
+  },
+  "catalog": {
+    "status": "proposed",
+    "minimumRows": 5000,
+    "queryLength": 8,
+    "computeBudgetMs": 16,
+    "longTaskThresholdMs": 50,
+    "samples": 10,
+    "baselineMustLackMeasures": [
+      "uar:catalog-project",
+      "uar:catalog-filter"
+    ],
+    "query": "claude-3"
+  }
+}

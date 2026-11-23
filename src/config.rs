@@ -107,6 +107,14 @@ pub struct Cli {
     /// Treat config source conflicts (e.g., env var vs config file) as hard errors.
     #[arg(long, env = "UAR_STRICT_CONFIG")]
     pub strict_config: bool,
+
+    /// Run as a child process supervised by a host program, with the same
+    /// contract as the `uar-sidecar` binary: read a launch token from the
+    /// first stdin line, serve one loopback listener that requires it, print
+    /// `READY:<port>` on stdout once requests are served, and exit when stdin
+    /// closes. With `--port 0` the operating system picks the port.
+    #[arg(long)]
+    pub supervised: bool,
 }
 
 /// Top-level binary subcommands. Absent ⇒ run the server (default).
@@ -1752,7 +1760,7 @@ impl AppConfig {
             .set_default("resilience.rate_limit_enabled", true)?
             .set_default("resilience.timeout_disabled", false)? // Default enabled (timeout_disabled=false)
             .set_default("resilience.requests_per_second", 10.0)?
-            .set_default("resilience.burst_size", 20.0)?
+            .set_default("resilience.burst_size", 100.0)?
             .set_default("resilience.request_timeout_ms", 30_000_i64)?
             .set_default("resilience.stream_start_timeout_ms", 15_000_i64)?
             .set_default("resilience.stream_idle_timeout_ms", 30_000_i64)?
@@ -2630,6 +2638,7 @@ mod tests {
                 acp_path: None,
                 command: None,
                 strict_config: false,
+                supervised: false,
             },
             cfg_path,
         )

@@ -1,0 +1,11 @@
+--- a/src/uar/domain/policy.rs
++++ b/src/uar/domain/policy.rs
+@@ -397,7 +397,7 @@
+     if registry_default_id != Some(stored) {
+         return None;
+     }
+-    let at = row.setting.updated_at.unwrap_or(row.setting.created_at);
++    let at = chrono::Utc::now();
+     Some(at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true))
+ }
+ 

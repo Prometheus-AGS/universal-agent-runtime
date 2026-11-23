@@ -1,0 +1,16 @@
+[
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "uar-pgl-long-stream-001",
+    "has_tools": true,
+    "has_tool_result": false,
+    "response": { "kind": "stream_content", "chunks": 2000, "interval_ms": 20, "chunk_text": "w " }
+  },
+  {
+    "model": "openai/gpt-5.4-mini",
+    "last_user_message": "uar-pgl-long-stream-001",
+    "has_tools": false,
+    "has_tool_result": false,
+    "response": { "kind": "stream_content", "chunks": 2000, "interval_ms": 20, "chunk_text": "w " }
+  }
+]

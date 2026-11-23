@@ -16,7 +16,7 @@ resilience:
   rate_limit_enabled: true
   timeout_disabled: false
   requests_per_second: 10.0
-  burst_size: 20.0
+  burst_size: 100.0
 
 persistence:
   provider: "surreal"

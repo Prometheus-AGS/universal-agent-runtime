@@ -83,24 +83,33 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
     setMobileSidebarOpen(false);
   };
 
-  const handleConfirmDeleteThread = () => {
+  // Each dialog closes only after the local database has the change, so a
+  // reload right after it closes cannot bring back the old row or title.
+  const handleConfirmDeleteThread = async () => {
     if (!deleteThreadId) return;
 
     const id = deleteThreadId;
-    removeThread(id);
+    const removed = removeThread(id);
     clearThread(id);
     if (activeThreadId === id) setActive(null);
-    setDeleteThreadId(null);
+    try {
+      await removed;
+    } finally {
+      setDeleteThreadId(null);
+    }
   };
 
-  const handleRenameSubmit = () => {
+  const handleRenameSubmit = async () => {
     if (!renameThreadId) return;
     const nextTitle = renameValue.trim();
     if (!nextTitle) return;
 
-    setTitle(renameThreadId, nextTitle);
-    setRenameThreadId(null);
-    setRenameValue("");
+    try {
+      await setTitle(renameThreadId, nextTitle);
+    } finally {
+      setRenameThreadId(null);
+      setRenameValue("");
+    }
   };
 
   return (
@@ -183,7 +192,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" sideOffset={6}>
                   <DropdownMenuItem
-                    onSelect={() => {
+                    onClick={() => {
                       setRenameThreadId(thread.id);
                       setRenameValue(thread.title);
                     }}
@@ -192,7 +201,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
-                    onSelect={() => setDeleteThreadId(thread.id)}
+                    onClick={() => setDeleteThreadId(thread.id)}
                   >
                     <Trash2 size={14} />Delete
                   </DropdownMenuItem>
@@ -225,7 +234,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                handleRenameSubmit();
+                void handleRenameSubmit();
               }
             }}
             placeholder="Thread name"
@@ -256,7 +265,7 @@ export function LeftSidebar({ className }: LeftSidebarProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete thread?</AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteThread ? `This will permanently delete "${deleteThread.title}".` : "This action cannot be undone."}
+              {deleteThread ? `"${deleteThread.title}" will be removed from your thread list in this browser.` : "This thread will be removed from your thread list in this browser."} The conversation stays stored on the server.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

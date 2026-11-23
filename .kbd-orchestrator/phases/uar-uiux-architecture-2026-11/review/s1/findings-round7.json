@@ -1,0 +1,101 @@
+{
+  "verdict": "BLOCK",
+  "counts": {"critical": 1, "warning": 2, "suggestion": 2},
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1065,
+      "claim": "The common invalidation-key set leaves out repository paths that are compiled into the server binary. Under the new mechanical carry-forward rule, a repair that touches only those paths carries every S1 PASS forward to a server that was rebuilt with different behavior. evidenceInvalidation says the shared set covers 'the server source (src/**, vendor/**)', but the server also embeds files from outside src/.",
+      "evidence": "The 16 keys common to all 13 scenarios (computed with jq over scenarioMatrix[].invalidationKeys) are frontend/src/**, frontend/packages/**, frontend/index.html, frontend/vite.config.ts, frontend/package.json, frontend/pnpm-lock.yaml, package.json, pnpm-lock.yaml, src/**, Cargo.toml, Cargo.lock, vendor/**, catalog/**, tests/bdd/**, tests/integration/live/stub_llm.rs and tests/bdd/playwright.config.ts. No scenario lists migrations/**. src/uar/persistence/providers/surreal_host.rs:105 does include_str!(\"../../../../migrations/surrealdb/principal_conversation_policies.surql\") (conversation overrides, SCN-SYS-011/012/013), and :122 does include_str! of migrations/surrealdb/run_history.surql (turn history and receipts, SCN-SYS-015/017). Other embedded schema files load the same way (surreal_host.rs:42-124). build.rs is also unkeyed: it compiles proto/a2a*.proto when a2a-transport is on (build.rs:14-27), and Cargo.toml:322 puts a2a-transport inside server-full. proto/**, .cargo/config.toml, rust-toolchain.toml and frontend/vendor/** are unkeyed as well; the last of these holds pnpm workspace packages that the console bundles (pnpm-workspace.yaml).",
+      "failure_scenario": "SCN-SYS-015 fails on C1 because the receipt's change time is not persisted. Repair C2 changes only migrations/surrealdb/run_history.surql, for example by redefining the table and dropping the served-model field. `git diff --name-only C1 C2` lists one path that matches no key, so the C1 PASS of SCN-SYS-017, and of every other scenario, carries forward. The mutant control neg-sys-017 still 'passes' on M1 built from C2, because the target scenario fails at the same served-model step and the health scenario does not read that field. Result: SCN-SYS-017 is reported PASS for a candidate whose receipts no longer carry the served model.",
+      "suggested_fix": "Make carry-forward fail closed. Either (a) any change of candidateCommit invalidates every S1 scenario and control, or (b) evidence carries forward only when every path in the diff matches an explicit allowlist of non-product paths (for example docs/**, openspec/** except the frozen fixtures, .prometheus/**, .kbd-orchestrator/**). If a key list is kept, add migrations/**, build.rs, proto/**, .cargo/**, rust-toolchain.toml, pnpm-workspace.yaml, frontend/vendor/**, frontend/build/**, frontend/tsconfig*.json and frontend/public/**, and correct the 'server source' claim."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1083,
+      "claim": "The binding prefix and rebind-postcondition read candidateCommit from implementation-complete-inventory.json. That file sits under the excluded .kbd-orchestrator/ tree and is not hashed in the prefix. The inventorySha256 check against review/s1/inventory-confirmation.json appears only in verify-mutant-m1-patch-digest and verify-mutant-m2-patch-digest (:1193, :1263). So candidateCommit can change mid-run without the critic and without the Repair rule, and every later prefix and rebind-postcondition still passes. Nothing checks that a mutant worktree's base equals the current candidateCommit when neg-sys-015/017 run. The claim at :1660 that 'the main scenarios, the baseline overlays and the mutants all run ... the source of the candidate commit' therefore holds only per command, not across the run.",
+      "evidence": "Prefix: `C=$(jq -er .candidateCommit .../implementation-complete-inventory.json) && test \"$(git rev-parse HEAD)\" = \"$C\" && ...`. It is identical in all 56 commands (jq: 1 unique prefix). rebind-postcondition (:1651) is the prefix alone. Clean-tree scope (:1685) excludes .kbd-orchestrator/** at any depth. The neg-sys-015/017 argv (:1511, :1563) do not compare `git -C <mutant worktree> rev-parse HEAD` with C. results.json records no per-command commit.",
+      "failure_scenario": "SCN-SYS-007 fails on C1. The lead commits a fix C2 that touches frontend/src, edits candidateCommit to C2 and resumes at scn-sys-007, skipping the critic, the mutant recreation and the reruns. Every later prefix passes, and so does rebind-postcondition. The C1 PASSes of SCN-SYS-001 and 003 stand, although the diff matches their frontend/src/** key. neg-sys-015/017 judge mutants built from C1. The final receipts show all PASS, bound to C2.",
+      "suggested_fix": "Add the inventorySha256 clause (`shasum` of the inventory equals `.inventorySha256` in review/s1/inventory-confirmation.json) to the common prefix and to rebind-postcondition. Add `test \"$(git -C $HOME/.claude/worktrees/s1-mutant-mN rev-parse HEAD)\" = \"$C\"` to neg-sys-015/017. Record candidateCommit per command in results.json, and have rebind-postcondition reject any carried result whose commit-to-C diff matches its keys."
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1684,
+      "claim": "The Repair rule redoes the step-definition and runner review, and reruns the baseline checks, only 'when the diff touches tests/bdd/** or frontend/e2e/**'. baseline-check-supporting copies frontend/playwright.real-server.config.ts and frontend/playwright.installed-settings-truth.config.ts from the candidate (:1163), and requiredApprovals (:1687) requires review of 'runner configs'. A repair that changes only those configs reruns the supporting scenarios, which key on them, but neither re-reviews the runner nor re-establishes baseline discrimination.",
+      "evidence": ":1684 'the step-definition and runner review is redone when the diff touches tests/bdd/** or frontend/e2e/**' and 'the baseline checks rerun when the diff touches tests/bdd/** or frontend/e2e/**'. baseline-check-supporting argv: `cp frontend/playwright.real-server.config.ts frontend/playwright.installed-settings-truth.config.ts \"$HOME/.claude/worktrees/uiux-baseline/frontend/\"`.",
+      "failure_scenario": "A repair edits frontend/playwright.installed-settings-truth.config.ts to get the server to start, and in doing so drops the explicit UAR_STATIC_DIR or points webServer at an already running server. SCN-SET-003 reruns and passes. The baseline check, which expects FAIL at the baseline and would have shown the runner no longer discriminates, is not rerun. No reviewer sees the change.",
+      "suggested_fix": "Extend both triggers to frontend/playwright.*.config.ts and to any file baseline-check-supporting copies. Simpler: rerun the baseline checks and the runner review on every repair."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "openspec/changes/uiux-system-model-live-default/design.md",
+      "line": 341,
+      "claim": "The design's frozen-fixture table still gives s1-oracle.json as sha256 5e31b071... The frozen-input check in every command pins 39a2d8c2...6f9b, which matches disk. A reviewer or step-review critic who checks the oracle against design.md will reject a correct run, or will be unable to tell which digest governs.",
+      "evidence": "design.md:341 says '... sha256 `5e31b07156a454917bafa01ebb9a514bf32bb6efe966230350f4f47488bb60fb`'. `shasum -a 256 openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json` gives 39a2d8c239362e2d36a1d62ded8401ec2c8e172ee4f6c599c2719c42130e6f9b, which matches adopted-contract.json:1083 and :1685.",
+      "suggested_fix": "Update design.md:341 to 39a2d8c2...6f9b, or replace the digest there with a pointer to the contract's frozen-input list."
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1684,
+      "claim": "After a repair, the rerun list is 'the failed step, every scenario and control whose evidence is invalidated ..., both mutant controls and rebind-postcondition'. It leaves out the commands that never ran because 'the first FAIL stops the batch' (:1717). Read literally, a repaired run ends at rebind-postcondition with those scenarios unrun, so they are BLOCKED. This fails closed, but it leaves a correct repaired candidate without a defined path to PASS.",
+      "evidence": "Repair rule text at :1684; stop condition 'the first FAIL stops the batch'.",
+      "suggested_fix": "Add 'then every command after the failed one, in order' before rebind-postcondition."
+    }
+  ],
+  "round6Disposition": [
+    {
+      "index": 0,
+      "status": "RESOLVED",
+      "evidence": "Every one of the 56 commands now starts with the same binding prefix (HEAD equals candidateCommit, clean tree, frozen digests). jq over boundaryPacket.commands[].argv[-1] finds 1 unique prefix and no command without it. A final rebind-postcondition (:1645-1651) re-checks the binding, and per :1713 its failure voids the run. :1718 now requires a committed fix plus the Repair rule and forbids reruns on an uncommitted edit. Residual gap: candidateCommit itself is mutable (new WARNING at :1083)."
+    },
+    {
+      "index": 1,
+      "status": "PARTIALLY_RESOLVED",
+      "evidence": "The prose keys are gone (every key is a path or glob; the only non-existent ones are to-be-authored files). The 'only affected scenarios' and 'never certifies' contradictions are removed. :1065 defines a mechanical `git diff --name-only old new` rule. All 13 scenarios share 16 keys that include frontend/src/**, src/** and tests/bdd/**, which covers the models-store.ts and settings/manager.rs case raised in round 6. The common set still misses server-embedded inputs such as migrations/** (surreal_host.rs:105, :122), build.rs and proto/** (new CRITICAL)."
+    },
+    {
+      "index": 2,
+      "status": "RESOLVED",
+      "evidence": "The prefix carries ':(exclude)static' (:1083), and Clean-tree scope (:1685) documents static/ as prepare-bdd output that is rebuilt after every bind. The Repair rule (:1684) reruns prepare-bdd after bind. The mutant and baseline builds write to their own worktrees' static/, outside the main-tree binding."
+    },
+    {
+      "index": 3,
+      "status": "RESOLVED",
+      "evidence": "The prefix pipes five pinned lines into `shasum -a 256 -c --status`: boundary-baseline-expectations.json b141545a..., both feature files 4e648ea9... and e22be426..., s1-oracle.json 39a2d8c2..., and baseline-verdicts.json 4346f0a5.... All five match disk (shasum -a 256). A deliberately wrong digest piped to `shasum -a 256 -c --status` exits 1; the correct one exits 0."
+    },
+    {
+      "index": 4,
+      "status": "RESOLVED",
+      "evidence": "s1-oracle.json SCN-SYS-001 confirmationComparator now has holdWindowMs 2000. heldArrivalCondition polls at most every 100 ms that no confirmation is visible and fails on any appearance. assertionsTiming runs the absence checks at the end of the hold, immediately before release. The design.md:754 step contract matches. The 'void POST; showConfirm()' UI from round 6 shows its confirmation within the window and fails."
+    },
+    {
+      "index": 5,
+      "status": "PARTIALLY_RESOLVED",
+      "evidence": "The Repair rule (:1684) now requires critic re-confirmation of the patches and targetFile entries with inventorySha256 recorded in review/s1/inventory-confirmation.json, a redone step review when tests/bdd/** or frontend/e2e/** changes, a prepare-bdd rerun in the main tree, and mutant recreation. Gaps: inventorySha256 is checked only in verify-mutant-m1-patch-digest and verify-mutant-m2-patch-digest (:1193, :1263), not in bind, the per-command prefix or rebind-postcondition (new WARNING at :1083), and the review and baseline triggers omit the supporting Playwright configs (new WARNING at :1684)."
+    },
+    {
+      "index": 6,
+      "status": "RESOLVED",
+      "evidence": "baseline-check-bdd (:1153) runs `rm -f` on the report, uses `rsync -a --delete --exclude fixtures/live-model-choice-new-kinds.json`, and chains `&& cd WT && bddgen && {run; true;} && cd \"$R\" && jq`. A bddgen failure therefore short-circuits, and a missing report fails jq. baseline-check-supporting (:1163) runs rm -f per report, uses rsync --delete, and keeps the subshell `$OLDPWD`, which resolves to the repo root. neg-sys-015 (:1511) and neg-sys-017 (:1563) run rm -f on the receipt before `(cd WT && ...) && jq`, so a failed cd now fails closed. The excluded new-kinds file is protected from --delete on the receiver."
+    },
+    {
+      "index": 7,
+      "status": "RESOLVED",
+      "evidence": ":1660 ('empty outside the paths listed under Clean-tree scope') and :1685 (any-depth .kbd-orchestrator/ and .prometheus/, plus static/) both match the prefix pathspecs. No 'except the phase evidence directory' wording remains."
+    },
+    {
+      "index": 8,
+      "status": "RESOLVED",
+      "evidence": "The prefix uses ':(exclude,glob)**/.kbd-orchestrator/**' and ':(exclude,glob)**/.prometheus/**'. Running `git status --porcelain --untracked-files=all` with those pathspecs on the current tree drops every .kbd-orchestrator, .prometheus and frontend/.prometheus entry and keeps product paths."
+    },
+    {
+      "index": 9,
+      "status": "RESOLVED",
+      "evidence": "s1-oracle.json heldArrivalCondition and design.md:754 now state that the step attaches a page response listener recording the PUT /api/uar/providers/<target> status, and arms page.route on POST /api/uar/providers/*/default, both before the confirm click."
+    }
+  ]
+}

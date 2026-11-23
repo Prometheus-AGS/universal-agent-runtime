@@ -1,0 +1,11 @@
+{
+  "stage": "spec",
+  "completedAt": "2026-11-19T23:23:42Z",
+  "outputs": [
+    "openspec/changes/uiux-system-model-live-default/proposal.md"
+  ],
+  "nextStage": "plan",
+  "summaryForNext": "10 OpenSpec changes created (all validate --strict), 89 scenarios (72 mandatory), 33 frozen fixtures; contract v2 lints clean but is NOT adopted. Review capped at 2 harness-native rounds: 5 unresolved criticals on acceptance content (SYS-006 unpassable, baseline commands cannot build a baseline, runner integrity self-decided, RTM-008/009 self-controls, IDN-004 truth from server) block adoption per VLBV CR-30 pending owner decision. 20 operator decisions in spec-open-decisions.md. See spec-review.md.",
+  "skipped": false,
+  "skipReason": null
+}

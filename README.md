@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-FF6A3D" /></a>
-  <img alt="Version: 1.4.0-rc.5" src="https://img.shields.io/badge/version-1.4.0--rc.5-141C26" />
+  <img alt="Version: 1.4.0-rc.6" src="https://img.shields.io/badge/version-1.4.0--rc.6-141C26" />
   <a href="https://prometheus-ags.github.io/universal-agent-runtime/"><img alt="Documentation portal" src="https://img.shields.io/badge/docs-portal-2563EB" /></a>
 </p>
 
@@ -14,9 +14,11 @@
 
 Universal Agent Runtime (UAR) is a Rust/Axum runtime for governed agent execution, model routing, typed streaming, tools, retrieval, and declarative agent UI. Its first-party operator interface is React 19 + TypeScript.
 
-The Rust product version is **1.4.0-rc.5**. SDK, package, and schema versions are independent. The signed RC4 prerelease covers the selected Linux amd64 container APIs behind a trusted host or gateway. The 1.4.0 GA release and broader platform qualification are outside this release decision. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
+The Rust product version is **1.4.0-rc.6**. SDK, package, and schema versions are independent. The signed RC4 prerelease covers the selected Linux amd64 container APIs behind a trusted host or gateway. The 1.4.0 GA release and broader platform qualification are outside this release decision. The distributed server/sidecar product is the `server-full` bundle; it includes the React application, document intelligence, governance, telemetry, and supported protocol surfaces. The dependency-light `minimal` bundle remains a Stable headless profile, not the packaged customer distribution. See the [product support matrix](docs/product-support-matrix.md) before making deployment commitments.
 
 The [GitHub Pages documentation portal](https://prometheus-ags.github.io/universal-agent-runtime/) covers installation, architecture, SDKs, skills, deployment, and security; begin with the [introduction](https://prometheus-ags.github.io/universal-agent-runtime/docs/intro). Its live routes are verified by the final documentation publication change.
+
+RC6 is an unqualified candidate. Its [release notes](docs/releases/v1.4.0-rc.6.md) list what changed and what is not yet verified.
 
 ## Run the qualified RC4 container
 
@@ -197,6 +199,8 @@ By default UAR requires a JWT on every API request (`security.jwt_required: true
 
 UAR can run as a server, container, or supervised local service. BossFang should currently supervise UAR out of process and use the OpenAI-compatible API first, adding A2A or AG-UI where richer task/event semantics are needed. A linked library should be reconsidered only after a narrow dependency-light kernel is extracted and profiling demonstrates a material IPC bottleneck. The detailed analysis is in the [BossFang integration guide](docs/librefang-integration.md#6-deployment-decision-library-or-supervised-service).
 
+A desktop application can start UAR as a child process with `universal-agent-runtime --supervised`: it writes a launch token to the child's stdin, reads the port from one `READY:<port>` line, and stops the child by closing stdin. See [Starting UAR from another program](docs/operations/supervised-launch.md). `GET /api/uar/version` reports which build is running.
+
 ### Native service quickstart
 
 Native packages for a macOS user LaunchAgent, Linux systemd, and Windows SCM
@@ -329,7 +333,7 @@ Release evidence includes source-bound security-audit results and signed supply-
 
 ## License
 
-The Rust product source version is 1.4.0-rc.5; supported deployment and recovery claims follow the evidence-scoped [support matrix](docs/product-support-matrix.md).
+The Rust product source version is 1.4.0-rc.6; supported deployment and recovery claims follow the evidence-scoped [support matrix](docs/product-support-matrix.md).
 
 - **Code** — the runtime server, the SDKs (`sdks/python`, `sdks/rust`, `sdks/typescript`), and everything else in this repository: `MIT`. See [LICENSE](LICENSE).
 - **Documentation** (`docs/`, and Markdown elsewhere not covered by a more specific license): `CC-BY-4.0`. See [LICENSE-CC-BY-4.0.md](LICENSE-CC-BY-4.0.md).

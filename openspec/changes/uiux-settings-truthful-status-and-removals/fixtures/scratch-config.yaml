@@ -1,0 +1,7 @@
+# Frozen scratch configuration for SCN-SET-001..010 (SAFE-NO-TEST-CREDENTIALS).
+# Scenarios never send, mint or copy a credential, token or admin key. The settings
+# mutation guard is switched off here, in configuration, before any scenario runs.
+security:
+  settings_mutation_auth_required: false
+resilience:
+  requests_per_second: 5

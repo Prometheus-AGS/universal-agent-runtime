@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { ProviderModelPicker } from "@/features/models/pickers";
 import { useSettings } from "../../model/use-settings";
 import { NamespacePanel } from "../generic-schema-panel";
 import { getProviderModelOptions } from "./provider-model-options";
@@ -12,10 +13,16 @@ import {
   MaskedInput,
   PanelHeader,
   SavedBanner,
-  SettingModelPicker,
   SettingSelect,
   Toggle,
 } from "../settings-primitives";
+
+/** `provider.openai` -> `openai`. */
+function providerLeaf(settingKey: string) {
+  return settingKey.startsWith("provider.")
+    ? settingKey.slice("provider.".length)
+    : settingKey;
+}
 
 function providerControlId(providerKey: string, field: string) {
   return `provider-${encodeURIComponent(providerKey)}-${field}`;
@@ -224,28 +231,25 @@ export function ProviderPanel() {
                   htmlFor={defaultModelId}
                   hintId={modelHint ? defaultModelHintId : undefined}
                 >
-                  <SettingModelPicker
+                  <ProviderModelPicker
                     id={defaultModelId}
                     ariaDescribedBy={
                       modelHint ? defaultModelHintId : undefined
                     }
-                    value={currentModelIsAvailable ? currentModel : ""}
-                    options={modelOptions}
+                    providerId={providerLeaf(s.key)}
+                    models={modelOptions.map((option) => ({
+                      id: option.value,
+                      label: option.label,
+                    }))}
+                    value={modelOptions.length === 0 ? "" : currentModel}
                     onChange={(v) => setField("default_model", v)}
-                    triggerClassName="w-full"
+                    className="w-full"
                     ariaLabel={`${displayName} default model`}
                     searchAriaLabel={`Search ${displayName} models`}
                     disabled={modelOptions.length === 0}
-                    placeholder={
-                      modelOptions.length === 0
-                        ? "No enabled models"
-                        : "Select a model"
-                    }
-                    ariaInvalid={Boolean(
-                      modelOptions.length > 0 &&
-                        currentModel &&
-                        !currentModelIsAvailable,
-                    )}
+                    placeholder="Select a model"
+                    emptyLabel="No enabled models"
+                    unavailableText={null}
                   />
                 </Field>
               </div>

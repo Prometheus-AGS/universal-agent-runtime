@@ -17,6 +17,11 @@ pub fn key(provider: &str, model: &str) -> String {
 
 pub async fn fingerprint(provider: &ProviderConfig, service: Option<&ProviderService>) -> Option<String> {
     let mut config = serde_json::to_value(provider).ok()?;
+    // `default_model` selects which listed model serves when none is named. It
+    // is not how a model is reached, so switching it must not stale the proofs
+    // of the provider's other models. Endpoint, credential, protocol, enabled
+    // flag and the listed models all stay in the fingerprint.
+    config.as_object_mut()?.remove("default_model");
     // Credential contents are hashed only in memory, never emitted or persisted.
     // A protected store's revision also invalidates proofs after rotation.
     let revision = if let Some(service) = service {

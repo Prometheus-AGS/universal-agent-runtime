@@ -1,0 +1,61 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "isolation_mode": "harness-native",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 888,
+      "claim": "Edit 1 opens a false-PASS path. The new exclusion removes all of top-level .kbd-orchestrator/ from the only tree check. That directory holds boundary-baseline-expectations.json, which judges the baseline discrimination gate. The file's freeze is prose only: a sha256 appears at :1740 and :1773, but no command computes it, and the only shasum commands in the contract (:997, :1067) check the patches. The file is untracked, so the candidate commit does not pin it either. Changing a bdd scenario's baselineVerdict to PASS makes baseline-check-bdd (:957) accept a vacuous step definition that passes on the pre-phase baseline. The same step then passes on the candidate, which gives a false scenario PASS and leaves no trace. :1759 claims that 'every product, test, step-definition, fixture and feature path must match the candidate commit exactly', but this judgement input sits outside that guarantee. The contract that defines every jq judgement is also in the excluded directory, with contractDigest null (:9). The patches and oracle are safe: they live under openspec/ and remain bound. No product or test code reads the excluded directories (grep over tests/bdd and src found nothing runtime-relevant).",
+      "evidence": "adopted-contract.json:888 `':(exclude).kbd-orchestrator' ':(exclude).prometheus'`. :957 `jq -e --slurpfile e .kbd-orchestrator/.../boundary-baseline-expectations.json`. :1740 'frozen ... (sha256 b141545a...)'. `grep -n shasum adopted-contract.json` matches only :997 and :1067. `git ls-files --error-unmatch .../boundary-baseline-expectations.json` returns 'did not match any file(s) known to git'. Current `shasum` = b141545a... (matches today, but nothing enforces it). The Repair rule (:1758) does not exclude the expectations file from repair, so an agent can 'fix' a baseline mismatch by editing it.",
+      "suggested_fix": "Add `&& test \"$(shasum -a 256 .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/boundary-baseline-expectations.json | cut -d' ' -f1)\" = b141545ab8b15bc7f3e83919cf51e845b67d936e2783844beb81780f00cdb5e2` to bind-candidate-tree, or commit the expectations file in the candidate and narrow the exclusion to the inventory, hooks.log.jsonl(.lock), hooks-status.json, the ledger and boundary/. List the expectations file in the SCN invalidationKeys.",
+      "resolves": "NEW (introduced by the round-4 CRITICAL fix at adopted-contract.json:888)"
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 888,
+      "claim": "Round-4 CRITICAL 1 is only partly resolved: it now fails closed whenever a nested hook writes. Pathspecs are relative to cwd and match by prefix, so `:(exclude).prometheus` excludes only the top-level directory. frontend/.prometheus/ is tracked. KBD and karpathy hooks write to it: the prompt snapshot 'current', wiki index.md and log.md, untracked generations/*.json, and .index.lock. The root .gitignore:134 pattern contains a slash, so it is anchored and does not ignore frontend/.prometheus/knowledge/.prompt-snapshots/. Any such write between the candidate commit and bind makes the bind BLOCKED. workstreams/bauar/.kbd-orchestrator/ is also tracked and not excluded. Missing fact: whether these hooks fire between the commit and the bind (per prompt or per tool call).",
+      "evidence": "`git status --porcelain -- frontend/.prometheus` now shows ' M .../.prompt-snapshots/project/current', ' M wiki/index.md', ' M wiki/log.md', six '?? generations/*.json' and '?? wiki/.index.lock'. `git check-ignore -v frontend/.prometheus/knowledge/.prompt-snapshots/project/current` returns no match. `git ls-files` lists workstreams/bauar/.kbd-orchestrator/project.json.",
+      "suggested_fix": "Use `:(exclude,glob)**/.prometheus/**` (or list frontend/.prometheus explicitly), or better, scope the clean check to product, test and fixture paths as round 4 suggested.",
+      "resolves": "partially .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/findings-round4.json CRITICAL at adopted-contract.json:888"
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1758,
+      "claim": "Edit 3 (Repair rule) only partly resolves the round-4 WARNING. It says the worktrees 'are recreated', but no command removes them first. scripts/worktree-new.sh:41 dies when the target exists, and worktree-rm.sh appears only in closure (:1779). The rule is prose; the command list still has no dependsOn and no rebind or recreation step. tests/bdd/playwright.config.ts, which sets the steps glob and timeouts, is still missing from the SCN-SYS-015 and SCN-SYS-017 invalidationKeys (:495, :615). A repair to that file therefore triggers no 'affected' mutant rerun under this rule. The rule also does not require the critic to re-confirm the patches and targetFile after the inventory is rewritten (stop condition at :1788).",
+      "evidence": "adopted-contract.json:1758. :971 create-mutant-m1-worktree. scripts/worktree-new.sh:41 `[[ -e \"$target\" ]] && die \"target already exists\"`. The invalidationKeys at :495 and :615 do not include tests/bdd/playwright.config.ts.",
+      "suggested_fix": "Name the sequence in the rule: worktree-rm.sh s1-mutant-m1 and s1-mutant-m2, then rebind, recreate, re-digest, rebuild and rerun neg-sys-015 and neg-sys-017. Add tests/bdd/playwright.config.ts to every BDD scenario's invalidationKeys.",
+      "resolves": "partially .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/findings-round4.json WARNING at adopted-contract.json:1790"
+    },
+    {
+      "severity": "WARNING",
+      "file": "openspec/changes/uiux-system-model-live-default/design.md",
+      "line": 341,
+      "claim": "Edit 4 resolves round-4 CRITICAL 2 in substance. The held step now keys on the POST URL path, which matches the real route: providers-api.ts:71 sends a POST with no body, and providers.rs:52 and :367-370 extract only Path(id). The oracle edit was not re-frozen. design.md:341 and every contract frozen-files entry (:79, :139, ... :610) still pin s1-oracle.json at sha256 5e31b071..., but the file now hashes to 038ce389... Round 4's suggested fix asked for the re-freeze. Anyone who checks the freeze will find the oracle 'tampered', and the pins no longer certify anything. No false PASS results, because bind still covers openspec/.",
+      "evidence": "`shasum -a 256 openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json` = 038ce389db9e48197d522df1d13cd6421af70e66a1026a57a6814985bd29bb3a. design.md:341 `sha256 5e31b071...`. `grep 038ce389` finds nothing. s1-oracle.json:187 and design.md:750 now say 'URL path is exactly /api/uar/providers/bdd-provider-b/default (the live route carries no body)'.",
+      "suggested_fix": "Update the s1-oracle.json sha256 in design.md:341 and in all contract scenario fixtures strings to 038ce389db9e48197d522df1d13cd6421af70e66a1026a57a6814985bd29bb3a, then recompute the contract digest at adoption.",
+      "resolves": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/findings-round4.json CRITICAL at openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json:187 (substance resolved; freeze stale)"
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1017,
+      "claim": "Edit 2 resolves the round-4 WARNING for ordinary added files. After `git add -N -- .`, `git diff --name-only \"$C\"` lists new files. However, `git add -N` honours .gitignore, so a patch that creates a file under an ignored path (for example a Vite .env.local, or tests/bdd/.features-gen/) is still invisible. Both patches are critic-reviewed (:1788), which mitigates this. The intent-to-add behaviour was not executed in this review; it is stated from git semantics.",
+      "evidence": "adopted-contract.json:1017 and :1087. bash -n reports syntax-ok for both. :1007 `git apply` runs without --index.",
+      "suggested_fix": "Also require `test -z \"$(git status --porcelain --ignored=matching --untracked-files=all | grep -v '^ M' )\"` before install, or apply the patch with `git apply --index` and diff with `--cached`.",
+      "resolves": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/review/s1/findings-round4.json WARNING at adopted-contract.json:1017"
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1787,
+      "claim": "The prose contradicts the new command. :1734 still says the tree must be empty 'except the phase evidence directory .../boundary', and the stop condition at :1787 says 'changes outside the phase evidence directory'. :1759 and :888 now exclude all of .kbd-orchestrator/ and .prometheus/. A judge who reads the stop condition will apply a different rule from the one the command runs.",
+      "evidence": "adopted-contract.json:1734, :1759, :1787, :888.",
+      "suggested_fix": "Align :1734 and :1787 with the actual exclusion set.",
+      "resolves": "NEW"
+    }
+  ]
+}

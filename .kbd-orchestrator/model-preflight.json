@@ -3,13 +3,13 @@
   "gateway": "http://localhost:4000/v1",
   "roles": {
     "judge": {
-      "alias": "k3",
+      "alias": "mimo-v2.6-pro",
       "identity": {
-        "providerConnectionId": "kimi-coding",
-        "providerId": "kimi",
-        "modelId": "k3"
+        "providerConnectionId": "xiaomi-token-plan",
+        "providerId": "xiaomi",
+        "modelId": "mimo-v2.6-pro"
       },
-      "source": "env"
+      "source": "/Users/gqadonis/.prometheus/kbd/models.toml"
     },
     "critic": {
       "alias": "MiniMax-M3",
@@ -34,6 +34,8 @@
     "openai",
     "gemini",
     "groq",
+    "mistral",
+    "cohere",
     "fireworks",
     "openrouter"
   ],
@@ -46,5 +48,5 @@
   "config_path": "/Users/gqadonis/.config/liter-llm/liter-llm-proxy.toml",
   "config_exists": true,
   "config_defects": [],
-  "checked_at": "2026-10-12T23:07:13Z"
+  "checked_at": "2026-11-19T15:13:30Z"
 }

@@ -56,6 +56,37 @@ pub fn build_openapi_spec() -> utoipa::openapi::OpenApi {
                     }
                 }
             },
+            "/api/uar/version": {
+                "get": {
+                    "summary": "Build identity",
+                    "description": "Package version, source commit, build profile, target, enabled Cargo features and wire protocol versions of the running binary. Needs no credentials on a standalone server; a supervised process requires its launch token.",
+                    "tags": ["health"],
+                    "responses": { "200": { "description": "Build identity", "content": { "application/json": { "schema": {
+                        "type": "object",
+                        "required": ["name", "version", "git_commit", "build_profile", "target", "features", "protocols", "administration_schema"],
+                        "properties": {
+                            "name": {"type": "string"},
+                            "version": {"type": "string"},
+                            "git_commit": {"type": ["string", "null"]},
+                            "build_profile": {"type": "string", "enum": ["debug", "release"]},
+                            "target": {"type": "string"},
+                            "features": {"type": "array", "items": {"type": "string"}},
+                            "protocols": {
+                                "type": "object",
+                                "required": ["a2a", "ag_ui", "ag_ui_profile", "a2ui", "mcp"],
+                                "properties": {
+                                    "a2a": {"type": ["string", "null"]},
+                                    "ag_ui": {"type": "string"},
+                                    "ag_ui_profile": {"type": "string"},
+                                    "a2ui": {"type": "string"},
+                                    "mcp": {"type": "string"}
+                                }
+                            },
+                            "administration_schema": {"type": "integer"}
+                        }
+                    } } } } }
+                }
+            },
             "/v1/models": {
                 "get": {
                     "summary": "List available models",
@@ -805,6 +836,7 @@ mod tests {
             "/api/uar/knowledge-bases",
             "/api/uar/auth/exchange",
             "/api/live/{topic}",
+            "/api/uar/version",
         ] {
             assert!(spec["paths"].get(path).is_some(), "missing path {path}");
         }

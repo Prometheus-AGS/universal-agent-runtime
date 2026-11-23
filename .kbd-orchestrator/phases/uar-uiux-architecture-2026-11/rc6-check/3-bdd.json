@@ -1,0 +1,1458 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.local/share/fnm/node-versions/v26.5.0/installation/bin/node",
+      "/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/playwright/cli.js",
+      "test",
+      "-c",
+      "tests/bdd/playwright.config.ts",
+      "--retries",
+      "0",
+      "--reporter=list,json",
+      "features/live-model-choice\\.feature\\.spec",
+      "features/thread-menu\\.feature\\.spec"
+    ],
+    "configFile": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/playwright.config.ts",
+    "rootDir": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen",
+        "snapshotDir": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 120000,
+        "use": {
+          "baseURL": "http://127.0.0.1:3002",
+          "trace": "on-first-retry",
+          "video": "on"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.65.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "features/live-model-choice.feature.spec.js",
+      "file": "features/live-model-choice.feature.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Live model choice governs the next eligible response",
+          "file": "features/live-model-choice.feature.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "The operator switches the system default without restarting",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11970,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a fresh conversation using \"Default Assistant\"",
+                          "duration": 1917
+                        },
+                        {
+                          "title": "And 5 seconds have passed since the system default was set",
+                          "duration": 3332
+                        },
+                        {
+                          "title": "When the operator confirms the system default change to \"bdd-provider-b/claude-5-haiku\" while the acknowledgement is held",
+                          "duration": 3885
+                        },
+                        {
+                          "title": "Then no confirmation is shown yet",
+                          "duration": 2
+                        },
+                        {
+                          "title": "And the system default control does not yet show \"bdd-provider-b/claude-5-haiku\" as live",
+                          "duration": 3
+                        },
+                        {
+                          "title": "And the registry default is still \"openai\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "When the acknowledgement is released",
+                          "duration": 37
+                        },
+                        {
+                          "title": "Then the confirmation shows the requested value \"bdd-provider-b/claude-5-haiku\" and the activation \"live\"",
+                          "duration": 14
+                        },
+                        {
+                          "title": "And the system default control shows \"bdd-provider-b/claude-5-haiku\" as live",
+                          "duration": 2
+                        },
+                        {
+                          "title": "When I send the message \"S1 r1 after change\"",
+                          "duration": 1998
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r1 after change\" came from \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 4
+                        },
+                        {
+                          "title": "And the reply to \"S1 r1 after change\" did not come from \"bdd-provider-b/claude-5-sonnet\"",
+                          "duration": 3
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:19:29.429Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-80985--default-without-restarting/video-1.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-80985--default-without-restarting/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-b30cea27b8ea37cf8734",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 11,
+              "column": 3
+            },
+            {
+              "title": "A conversation without an override follows the new default and says so",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 14014,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a conversation \"Chat Y\" with no model override",
+                          "duration": 1430
+                        },
+                        {
+                          "title": "And 5 seconds have passed since the system default was set",
+                          "duration": 3819
+                        },
+                        {
+                          "title": "When I send the message \"S1 r2 before\"",
+                          "duration": 3721
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r2 before\" came from \"openai/gpt-5.4-mini\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "And the answer's receipt names \"openai/gpt-5.4-mini\" and the origin \"system default\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "And the answer's receipt shows the time the system default became \"openai/gpt-5.4-mini\"",
+                          "duration": 6
+                        },
+                        {
+                          "title": "When the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 1773
+                        },
+                        {
+                          "title": "And I send the message \"S1 r2 after\"",
+                          "duration": 2472
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r2 after\" came from \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "And the answer's receipt names \"bdd-provider-b/claude-5-haiku\" and the origin \"system default\"",
+                          "duration": 4
+                        },
+                        {
+                          "title": "And the answer's receipt shows the time the system default became \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 4
+                        },
+                        {
+                          "title": "And the answer's receipt does not show the time the system default became \"openai/gpt-5.4-mini\"",
+                          "duration": 4
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:19:41.850Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-def78-the-new-default-and-says-so/video-1.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-def78-the-new-default-and-says-so/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-bf19911943ec5fc33643",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 26,
+              "column": 3
+            },
+            {
+              "title": "A conversation override keeps answering on its own model",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 12396,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+                          "duration": 2301
+                        },
+                        {
+                          "title": "And 5 seconds have passed since the system default was set",
+                          "duration": 2949
+                        },
+                        {
+                          "title": "When the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 1850
+                        },
+                        {
+                          "title": "And I send the message \"S1 r3 override\"",
+                          "duration": 4241
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r3 override\" came from \"bdd-provider-c/qwen-5-turbo\"",
+                          "duration": 8
+                        },
+                        {
+                          "title": "And the answer's receipt names \"bdd-provider-c/qwen-5-turbo\" and the origin \"this conversation\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "And the \"Chat X\" conversation shows the requested model \"bdd-provider-c/qwen-5-turbo\" and the effective model \"bdd-provider-c/qwen-5-turbo\" from \"this conversation\"",
+                          "duration": 191
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:19:55.874Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-98561--answering-on-its-own-model/video-1.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-98561--answering-on-its-own-model/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-3952b4b1cfa1148b6ed4",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 41,
+              "column": 3
+            },
+            {
+              "title": "Clearing an override shows what the conversation will inherit",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9910,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given the system default model is \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 31
+                        },
+                        {
+                          "title": "And a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+                          "duration": 2312
+                        },
+                        {
+                          "title": "When I clear the model override of this conversation",
+                          "duration": 371
+                        },
+                        {
+                          "title": "Then the preview says this conversation will answer with \"bdd-provider-b/claude-5-haiku\" from \"system default\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "When I cancel the change",
+                          "duration": 353
+                        },
+                        {
+                          "title": "And I send the message \"S1 r4 cancel\"",
+                          "duration": 3660
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r4 cancel\" came from \"bdd-provider-c/qwen-5-turbo\"",
+                          "duration": 4
+                        },
+                        {
+                          "title": "When I clear the model override of this conversation",
+                          "duration": 324
+                        },
+                        {
+                          "title": "And I confirm the change",
+                          "duration": 321
+                        },
+                        {
+                          "title": "And I send the message \"S1 r4 confirm\"",
+                          "duration": 1940
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r4 confirm\" came from \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "And the answer's receipt names \"bdd-provider-b/claude-5-haiku\" and the origin \"system default\"",
+                          "duration": 4
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:20:08.277Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-5eca6-e-conversation-will-inherit/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-1fb7d1e81ed7c07f773b",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 51,
+              "column": 3
+            },
+            {
+              "title": "Changing one conversation leaves the others alone",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 22083,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given the system default model is \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 29
+                        },
+                        {
+                          "title": "And a conversation \"Chat Y\" with no model override",
+                          "duration": 1462
+                        },
+                        {
+                          "title": "And a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+                          "duration": 851
+                        },
+                        {
+                          "title": "When I switch to the conversation \"Chat X\"",
+                          "duration": 0
+                        },
+                        {
+                          "title": "And I set the model override of this conversation to \"openai/gpt-5.4-mini\"",
+                          "duration": 770
+                        },
+                        {
+                          "title": "And I send the message \"S1 r5 x1\"",
+                          "duration": 3778
+                        },
+                        {
+                          "title": "And I switch to the conversation \"Chat Y\"",
+                          "duration": 25
+                        },
+                        {
+                          "title": "And I send the message \"S1 r5 y1\"",
+                          "duration": 3531
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r5 x1\" came from \"openai/gpt-5.4-mini\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "And the reply to \"S1 r5 y1\" came from \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 6
+                        },
+                        {
+                          "title": "When I switch to the conversation \"Chat X\"",
+                          "duration": 42
+                        },
+                        {
+                          "title": "And I clear the model override of this conversation",
+                          "duration": 393
+                        },
+                        {
+                          "title": "And I confirm the change",
+                          "duration": 327
+                        },
+                        {
+                          "title": "And I send the message \"S1 r5 x2\"",
+                          "duration": 1944
+                        },
+                        {
+                          "title": "And I switch to the conversation \"Chat Y\"",
+                          "duration": 30
+                        },
+                        {
+                          "title": "And I send the message \"S1 r5 y2\"",
+                          "duration": 1986
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r5 x2\" came from \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 8
+                        },
+                        {
+                          "title": "And the reply to \"S1 r5 y2\" came from \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 8
+                        },
+                        {
+                          "title": "When the operator changes the system default to \"openai/gpt-5.4-mini\"",
+                          "duration": 4062
+                        },
+                        {
+                          "title": "And I send the message \"S1 r5 y3\"",
+                          "duration": 1970
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r5 y3\" came from \"openai/gpt-5.4-mini\"",
+                          "duration": 8
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:20:18.193Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-08a6a-ion-leaves-the-others-alone/video-1.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-08a6a-ion-leaves-the-others-alone/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-ed8954ff9d93e10fa745",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 66,
+              "column": 3
+            },
+            {
+              "title": "A reply already being written finishes on the model it started with",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13587,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given the stub supports \"hold_content\"",
+                          "duration": 7
+                        },
+                        {
+                          "title": "And a conversation \"Chat Y\" with no model override",
+                          "duration": 1401
+                        },
+                        {
+                          "title": "And 5 seconds have passed since the system default was set",
+                          "duration": 3840
+                        },
+                        {
+                          "title": "When I send the message \"S1 r6 hold\" without waiting for the reply",
+                          "duration": 60
+                        },
+                        {
+                          "title": "And the stub for \"openai\" is holding the reply to \"S1 r6 hold\"",
+                          "duration": 870
+                        },
+                        {
+                          "title": "And the operator changes the system default to \"bdd-provider-b/claude-5-haiku\" from another page",
+                          "duration": 1631
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r6 hold\" is still held and the stop control is still visible",
+                          "duration": 4
+                        },
+                        {
+                          "title": "When the held reply is released",
+                          "duration": 2
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r6 hold\" finishes with content containing \"bdd-reply-gpt-5.4-mini\"",
+                          "duration": 2551
+                        },
+                        {
+                          "title": "And the reply to \"S1 r6 hold\" came from \"openai/gpt-5.4-mini\" with exactly one request",
+                          "duration": 10
+                        },
+                        {
+                          "title": "And the answer's receipt names \"openai/gpt-5.4-mini\" and the origin \"system default\"",
+                          "duration": 8
+                        },
+                        {
+                          "title": "And the answer's receipt shows the time the system default became \"openai/gpt-5.4-mini\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "And the answer's receipt does not show the time the system default became \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 3
+                        },
+                        {
+                          "title": "When I send the message \"S1 r6 next\"",
+                          "duration": 2025
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r6 next\" came from \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 11
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:20:40.283Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-fdfa9-n-the-model-it-started-with/video.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-fdfa9-n-the-model-it-started-with/video-1.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-0526c092158c52441ef9",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 90,
+              "column": 3
+            },
+            {
+              "title": "A choice that cannot be served is refused and nothing is claimed",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 13718,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a conversation \"Chat X\" with no model override",
+                          "duration": 1445
+                        },
+                        {
+                          "title": "When the operator tries to change the system default to \"bdd-provider-off/off-model-1\"",
+                          "duration": 1570
+                        },
+                        {
+                          "title": "Then the change is refused with a reason mentioning \"disabled\"",
+                          "duration": 1
+                        },
+                        {
+                          "title": "And the registry default is still \"openai\"",
+                          "duration": 8
+                        },
+                        {
+                          "title": "And the stored default provider is still \"openai\"",
+                          "duration": 9
+                        },
+                        {
+                          "title": "When I try to set the model override of this conversation to \"bdd-provider-b/claude-5-retired\"",
+                          "duration": 3489
+                        },
+                        {
+                          "title": "Then the change is refused with a reason mentioning \"not offered\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "And the \"Chat X\" conversation shows the effective model \"openai/gpt-5.4-mini\" from \"system default\"",
+                          "duration": 764
+                        },
+                        {
+                          "title": "When I send the message \"S1 r7 override refused\"",
+                          "duration": 4381
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r7 override refused\" came from \"openai/gpt-5.4-mini\"",
+                          "duration": 4
+                        },
+                        {
+                          "title": "And no outgoing request used the model \"off-model-1\"",
+                          "duration": 4
+                        },
+                        {
+                          "title": "And no outgoing request used the model \"claude-5-retired\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "And no answer's receipt names \"off-model-1\"",
+                          "duration": 6
+                        },
+                        {
+                          "title": "And no answer's receipt names \"claude-5-retired\"",
+                          "duration": 6
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:20:53.879Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-766e3-used-and-nothing-is-claimed/video-1.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-766e3-used-and-nothing-is-claimed/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-bd08770f97f4b623f89d",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 108,
+              "column": 3
+            },
+            {
+              "title": "An agent with its own model keeps it and is listed when the default changes",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 20548,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given an agent \"BDD Agent Aurora\" with the model \"openai/gpt-5.4-mini\" exists",
+                          "duration": 32
+                        },
+                        {
+                          "title": "And an agent \"BDD Agent Cirrus\" with the extension model \"bdd-provider-c/qwen-5-turbo\" exists",
+                          "duration": 36
+                        },
+                        {
+                          "title": "And an agent \"BDD Agent Dawn\" with no model exists",
+                          "duration": 80
+                        },
+                        {
+                          "title": "When the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 1773
+                        },
+                        {
+                          "title": "Then the change result lists exactly \"BDD Agent Aurora\" and \"BDD Agent Cirrus\" as pinned",
+                          "duration": 22
+                        },
+                        {
+                          "title": "And the change result's follow count equals the number of other agents",
+                          "duration": 10
+                        },
+                        {
+                          "title": "When I switch to a fresh conversation using \"BDD Agent Aurora\"",
+                          "duration": 1681
+                        },
+                        {
+                          "title": "And I send the message \"S1 r8 aurora\"",
+                          "duration": 3505
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r8 aurora\" came from \"openai/gpt-5.4-mini\"",
+                          "duration": 4
+                        },
+                        {
+                          "title": "When I switch the active agent to \"BDD Agent Cirrus\"",
+                          "duration": 397
+                        },
+                        {
+                          "title": "And I send the message \"S1 r8 cirrus\"",
+                          "duration": 3021
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r8 cirrus\" came from \"bdd-provider-c/qwen-5-turbo\"",
+                          "duration": 7
+                        },
+                        {
+                          "title": "When I switch the active agent to \"BDD Agent Dawn\"",
+                          "duration": 447
+                        },
+                        {
+                          "title": "And I send the message \"S1 r8 dawn\"",
+                          "duration": 6665
+                        },
+                        {
+                          "title": "Then the reply to \"S1 r8 dawn\" came from \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 6
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:21:07.608Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-16659-ed-when-the-default-changes/video-1.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-16659-ed-when-the-default-changes/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-fca8f4f020473c64de9a",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 125,
+              "column": 3
+            },
+            {
+              "title": "Changing the default uses only the live route",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9043,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a fresh conversation using \"Default Assistant\"",
+                          "duration": 1879
+                        },
+                        {
+                          "title": "When the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 1942
+                        },
+                        {
+                          "title": "Then the console's writes to the server were, in order, \"PUT /api/uar/providers/bdd-provider-b\" and \"POST /api/uar/providers/bdd-provider-b/default\"",
+                          "duration": 1
+                        },
+                        {
+                          "title": "And the console wrote none of the settings \"llm.default_provider\", \"llm.model\" and \"run_policy.global\"",
+                          "duration": 2998
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:21:28.163Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-fda73-lt-uses-only-the-live-route/video.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-fda73-lt-uses-only-the-live-route/video-1.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-03ebb8b5d940993f7edf",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 143,
+              "column": 3
+            },
+            {
+              "title": "The receipt names the model the provider reported, not the one requested",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7030,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given the stub supports \"served_model\"",
+                          "duration": 13
+                        },
+                        {
+                          "title": "And the system default model is \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 38
+                        },
+                        {
+                          "title": "And a conversation \"Chat Y\" with no model override",
+                          "duration": 1449
+                        },
+                        {
+                          "title": "When I send the message \"S1 served\"",
+                          "duration": 4768
+                        },
+                        {
+                          "title": "Then the stub of \"bdd-provider-b\" received one request for \"S1 served\" asking for the model \"claude-5-haiku\"",
+                          "duration": 10
+                        },
+                        {
+                          "title": "And the answer's receipt names the serving model \"claude-5-haiku-20261101\" on \"bdd-provider-b\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "And the answer's receipt does not name \"claude-5-haiku\" as the serving model",
+                          "duration": 4
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:21:37.217Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-live-model-choice-e98e8-orted-not-the-one-requested/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-4fe7f77e4f22844a5339",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 150,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "features/thread-menu.feature.spec.js",
+      "file": "features/thread-menu.feature.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Thread row menu renames and deletes conversations",
+          "file": "features/thread-menu.feature.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Renaming a thread from its row menu keeps the new name after a reload",
+              "ok": true,
+              "tags": [
+                "ui",
+                "thread-menu",
+                "SCN-THR-001"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6156,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a fresh conversation",
+                          "duration": 1505
+                        },
+                        {
+                          "title": "When I send the message \"Reply with OK.\"",
+                          "duration": 1872
+                        },
+                        {
+                          "title": "And I rename this thread to \"BDD Renamed Thread\" through its row menu",
+                          "duration": 1650
+                        },
+                        {
+                          "title": "Then the renamed thread is titled \"BDD Renamed Thread\" and no longer shows its previous title",
+                          "duration": 8
+                        },
+                        {
+                          "title": "And the thread list shows \"BDD Renamed Thread\" exactly once",
+                          "duration": 7
+                        },
+                        {
+                          "title": "When I reload the page",
+                          "duration": 842
+                        },
+                        {
+                          "title": "Then the thread list shows \"BDD Renamed Thread\" exactly once",
+                          "duration": 10
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:21:44.270Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-thread-menu.featu-c8d66-the-new-name-after-a-reload/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4f91af7238a36de99e9d-d3b296d4e016a45fdb86",
+              "file": "features/thread-menu.feature.spec.js",
+              "line": 6,
+              "column": 3
+            },
+            {
+              "title": "Cancelling the rename dialog keeps the thread's title",
+              "ok": true,
+              "tags": [
+                "ui",
+                "thread-menu",
+                "CTL-THR-001-CANCEL"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6019,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a fresh conversation",
+                          "duration": 1482
+                        },
+                        {
+                          "title": "When I send the message \"Reply with OK.\"",
+                          "duration": 2377
+                        },
+                        {
+                          "title": "And I start renaming this thread to \"BDD Cancelled Name\" and cancel",
+                          "duration": 1654
+                        },
+                        {
+                          "title": "Then the thread still shows its previous title",
+                          "duration": 19
+                        },
+                        {
+                          "title": "And the thread list does not show \"BDD Cancelled Name\"",
+                          "duration": 35
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:21:50.435Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-thread-menu.featu-cfadf-og-keeps-the-thread-s-title/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4f91af7238a36de99e9d-95d70d1b927f1d105332",
+              "file": "features/thread-menu.feature.spec.js",
+              "line": 16,
+              "column": 3
+            },
+            {
+              "title": "Deleting a thread from its row menu removes it for good and keeps the others",
+              "ok": true,
+              "tags": [
+                "ui",
+                "thread-menu",
+                "SCN-THR-002"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10250,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a fresh conversation",
+                          "duration": 1410
+                        },
+                        {
+                          "title": "And I send the message \"Reply with OK.\"",
+                          "duration": 1865
+                        },
+                        {
+                          "title": "And this thread is named \"BDD Thread A\"",
+                          "duration": 1767
+                        },
+                        {
+                          "title": "And I start a new thread",
+                          "duration": 50
+                        },
+                        {
+                          "title": "And I send the message \"Reply with OK.\"",
+                          "duration": 1843
+                        },
+                        {
+                          "title": "And this thread is named \"BDD Thread B\"",
+                          "duration": 1621
+                        },
+                        {
+                          "title": "When I choose Delete in the row menu of \"BDD Thread A\"",
+                          "duration": 231
+                        },
+                        {
+                          "title": "Then the delete confirmation names \"BDD Thread A\"",
+                          "duration": 2
+                        },
+                        {
+                          "title": "When I confirm the deletion",
+                          "duration": 349
+                        },
+                        {
+                          "title": "Then the thread list shows \"BDD Thread B\"",
+                          "duration": 3
+                        },
+                        {
+                          "title": "And the thread list does not show \"BDD Thread A\"",
+                          "duration": 5
+                        },
+                        {
+                          "title": "When I reload the page",
+                          "duration": 845
+                        },
+                        {
+                          "title": "Then the thread list shows \"BDD Thread B\"",
+                          "duration": 3
+                        },
+                        {
+                          "title": "And the thread list does not show \"BDD Thread A\"",
+                          "duration": 3
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:21:56.464Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-thread-menu.featu-299f1-r-good-and-keeps-the-others/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4f91af7238a36de99e9d-b626d52c99147a0d40b6",
+              "file": "features/thread-menu.feature.spec.js",
+              "line": 24,
+              "column": 3
+            },
+            {
+              "title": "Cancelling the delete confirmation keeps the thread",
+              "ok": true,
+              "tags": [
+                "ui",
+                "thread-menu",
+                "CTL-THR-002-CANCEL"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5749,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a fresh conversation",
+                          "duration": 1341
+                        },
+                        {
+                          "title": "And I send the message \"Reply with OK.\"",
+                          "duration": 1859
+                        },
+                        {
+                          "title": "And this thread is named \"BDD Thread Kept\"",
+                          "duration": 1714
+                        },
+                        {
+                          "title": "When I choose Delete in the row menu of \"BDD Thread Kept\"",
+                          "duration": 315
+                        },
+                        {
+                          "title": "And I cancel the deletion",
+                          "duration": 293
+                        },
+                        {
+                          "title": "Then the thread list shows \"BDD Thread Kept\"",
+                          "duration": 4
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:22:06.723Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-thread-menu.featu-ca6a2-nfirmation-keeps-the-thread/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4f91af7238a36de99e9d-c8b20c489265f075dd5a",
+              "file": "features/thread-menu.feature.spec.js",
+              "line": 41,
+              "column": 3
+            },
+            {
+              "title": "Every new conversation in one page load gets its own title",
+              "ok": true,
+              "tags": [
+                "ui",
+                "thread-menu",
+                "SCN-THR-003"
+              ],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6632,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a fresh conversation",
+                          "duration": 1499
+                        },
+                        {
+                          "title": "And I send the message \"Reply with OK.\"",
+                          "duration": 2407
+                        },
+                        {
+                          "title": "And I start a new thread",
+                          "duration": 46
+                        },
+                        {
+                          "title": "And I send the message \"What is 2 plus 2?\"",
+                          "duration": 2383
+                        },
+                        {
+                          "title": "Then the thread list shows \"Reply with OK.\"",
+                          "duration": 6
+                        },
+                        {
+                          "title": "And the thread list shows \"What is 2 plus 2?\"",
+                          "duration": 8
+                        }
+                      ],
+                      "startTime": "2026-11-22T23:22:12.478Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/test-results/features-thread-menu.featu-a233f-age-load-gets-its-own-title/video.webm"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "4f91af7238a36de99e9d-18f512075c6dff4c22e7",
+              "file": "features/thread-menu.feature.spec.js",
+              "line": 50,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-22T23:18:16.699Z",
+    "duration": 242520.573,
+    "expected": 15,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

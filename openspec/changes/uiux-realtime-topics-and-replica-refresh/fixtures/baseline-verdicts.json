@@ -1,0 +1,51 @@
+{
+  "baselineRevision": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+  "note": "HEAD equals the baseline revision for src/, migrations/ and Cargo.toml (git diff --stat is empty), so cited lines are baseline lines; read only. The baseline is built with the same feature set (server-full,postgres-backend) for the Postgres runs.",
+  "scenarios": {
+    "SCN-RTM-001": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "src/uar/settings/provider_sync.rs:15-29 is called once at boot (src/server.rs:1173) and nothing subscribes to Providers or Settings (the only bus consumers are the committed-work wakeups, src/server.rs:2286-2320, and the SSE routes), so replica B keeps default_id p-one and answers with RTM-MARK-ONE after the change on A. The oracle requires B to follow within 10 s."
+    },
+    "SCN-RTM-002": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "same as SCN-RTM-001 on Postgres; additionally the settings trigger payload carries no key (migrations/20260220000002_notify_entity_change.sql:23-34, :60-90), so the LISTEN probe expectation of a data.key member fails."
+    },
+    "SCN-RTM-003": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "on Surreal a provider edit lands in the settings table and is emitted on settings (src/uar/realtime/surreal_bus.rs:164-201, EntityTopic::table mod.rs:140-165), so no providers frame arrives; on Postgres a providers frame arrives but no models frame (trigger :66-72) and the snapshot is replayed from B's stale registry (src/server/lifecycle_snapshot.rs:130-142, no barrier). The oracle requires frame-then-current-snapshot with a models frame for 20 edits."
+    },
+    "SCN-RTM-004": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "SettingsManager.get_value is cache-first (src/uar/settings/manager.rs:468-489) and the cache is written only by this process's set_value (:640-664), so replica B returns the old prompt_caching.enabled; the restart-class status for memory.max_context_tokens on B also depends on its own stale cache. The oracle requires B to follow within 10 s."
+    },
+    "SCN-RTM-005": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "src/uar/realtime/mod.rs:88-135 has no ConversationPolicies variant; src/uar/api/discovery.rs:871-958 and :1107-1160 make no bus call; no Postgres trigger exists for the policy tables. No conversation_policies frame is ever produced; B also keeps a deleted policy in agent_sessions (src/uar/api/discovery.rs:715-735)."
+    },
+    "SCN-RTM-006": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "no TeamCatalog variant (src/uar/realtime/mod.rs:88-135); the only uar_collaboration_state topic is the host-only CollaborationState (is_public false, :193-198) and is not served on /api/live or /api/uar/sync/stream. The oracle requires a public team_catalog frame."
+    },
+    "SCN-RTM-007": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "no replica refresh exists (see SCN-RTM-001), so after the feed returns B still serves the old provider and setting values, and its providers snapshot is a complete stale set while the feed is cut (src/server/lifecycle_snapshot.rs:50-90 does not consult topic readiness). The forwarder is a runner-owned component, so the baseline can set the scenario up; it fails on the oracle."
+    },
+    "SCN-RTM-008": {
+      "baseline": "PASS",
+      "kind": "regression-guard",
+      "evidence": "src/uar/api/providers.rs:379-398 persists the default (500 'Failed to persist default provider' on error) before registry.set_default, and the unit test at :781 asserts the live default is preserved. The fault run (non-2xx, default_id p-one on A and B, stored row p-one, no frame on B) and the baseline-neutral positive-flow control (A flips, B receives a settings frame, because llm.default_provider is a settings row) hold at the baseline. Not trivially passing: mutant M3 (swap before persist, fixtures/mutants.json) must make the scenario FAIL, and the positive-flow control proves frames flow. Residual risk: whether the persist call returns non-2xx within request_timeout_ms with the store cut is UNVERIFIED for both builds."
+    },
+    "SCN-RTM-009": {
+      "baseline": "PASS",
+      "kind": "regression-guard",
+      "evidence": "the candidate-equivalent run R0 holds at the baseline: web_fetch exists and refuses loopback (src/uar/tools/fetch_guard.rs:139-162, src/uar/tools/web_fetch.rs:206-230), native_tools.web_fetch_enabled exists (src/config.rs:1889, :2967), provider_admin_boundary (src/uar/api/providers.rs:59-80) and require_admin_key (src/uar/api/settings.rs:446-457) exist, and /mcp/uar exposes only the 22 frozen tools (src/uar/mcp_server.rs:288-805). Runs R1-R3 are mutant builds, not baseline runs. Not trivially passing: R2 (mutant M2 with admin auth off) and R3 (mutant M1 with a settings-mutating MCP tool) must be killed, and R1 must observe the 401 body."
+    }
+  }
+}

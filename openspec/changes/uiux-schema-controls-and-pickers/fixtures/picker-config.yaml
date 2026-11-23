@@ -1,0 +1,15 @@
+# Frozen fixture for SCN-PICK-002 (written 2026-11-19).
+# One configured provider that exists in the bundled catalog with 597 models (nano-gpt), so the
+# Add Model dialog's provider-scoped model picker lists exactly that provider's catalog models
+# (expected counts in picker-oracle.json). The base URL is the repository stub model server
+# (target/debug/stub-llm); no model call is made.
+#
+# How the boundary runner loads this file as the scratch config is UNVERIFIED here; the lead
+# binds the exact argv.
+providers:
+  - id: "nano-gpt"
+    display_name: "NanoGPT"
+    base_url: "http://127.0.0.1:4601/v1"
+    protocol: chat
+    enabled: true
+    models: []

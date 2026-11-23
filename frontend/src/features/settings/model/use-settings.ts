@@ -25,6 +25,14 @@ export interface UseSettingsReturn {
   reload: () => Promise<void>;
 }
 
+/**
+ * Fields the settings API refuses because another route owns them
+ * (`llm.default_provider` is written only by POST /api/uar/providers/{id}/default).
+ */
+const REGISTRY_MANAGED_FIELDS: Readonly<Record<string, readonly string[]>> = {
+  llm: ["default_provider"],
+};
+
 export function successfulSubmittedKeys(
   submittedValues: Record<string, unknown>,
   response: BulkSettingsUpdateResponse,
@@ -111,14 +119,31 @@ export function useSettings(namespace: string): UseSettingsReturn {
 
   const saveAll = useCallback(async () => {
     const submitted = getDirty(namespace);
-    if (Object.keys(submitted.values).length === 0) return null;
-
-    const response = await saveNamespace(namespace, submitted.values);
-    const successfulKeys = successfulSubmittedKeys(
-      submitted.values,
-      response,
+    // The settings API refuses registry-managed keys and rejects the whole
+    // bulk request when one is present, which would discard every other edit.
+    // A draft for such a key can exist only if it was made before the schema
+    // marked the row hidden; drop it rather than send it.
+    const droppedKeys = Object.keys(submitted.values).filter((key) =>
+      REGISTRY_MANAGED_FIELDS[namespace]?.includes(key),
     );
-    reconcileSubmittedDirty(namespace, submitted, successfulKeys);
+    const sendable = Object.fromEntries(
+      Object.entries(submitted.values).filter(
+        ([key]) => !droppedKeys.includes(key),
+      ),
+    );
+    if (Object.keys(sendable).length === 0) {
+      if (droppedKeys.length > 0) {
+        reconcileSubmittedDirty(namespace, submitted, droppedKeys);
+      }
+      return null;
+    }
+
+    const response = await saveNamespace(namespace, sendable);
+    const successfulKeys = successfulSubmittedKeys(sendable, response);
+    reconcileSubmittedDirty(namespace, submitted, [
+      ...successfulKeys,
+      ...droppedKeys,
+    ]);
     if (namespace === "governance") {
       response.retained_draft_keys = Object.keys(getDirty(namespace).values);
     }

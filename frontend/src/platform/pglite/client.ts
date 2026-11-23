@@ -112,9 +112,11 @@ export class UarDb {
       const instance = new UarDb(db);
       if (loadDataDir) {
         onStatus?.("Versioned schema seed loaded");
-      } else {
-        await instance.runMigrations(onStatus);
       }
+      // The seed only holds the schema up to the version it was built at, so
+      // pending migrations must run for a seeded database too. Applied
+      // versions are skipped.
+      await instance.runMigrations(onStatus);
       await instance.migrateFromLocalStorage(onStatus);
       onStatus?.("Database ready");
       _instance = instance;

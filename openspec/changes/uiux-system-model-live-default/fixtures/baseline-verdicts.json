@@ -1,0 +1,106 @@
+{
+  "baselineRevision": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+  "note": "Read at the baseline revision; `git diff f2c9e36e HEAD -- src frontend/src catalog` is empty, so the cited lines are identical at HEAD. No build or test was run. SCN-SYS-008 is not mandatory and is not listed.",
+  "scenarios": {
+    "SCN-SYS-001": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "frontend/src/features/providers/ui/providers-page.tsx:409-410 offers only a per-provider 'Set as default' button; there is no System default model picker or provider/model pair control to drive, and the baseline PUT-then-POST sequence has no console entry (providers-store.ts:156-176 posts the route only). Round-1 revision: the target model differs from bdd-provider-b's default_model (claude-5-sonnet), so the baseline per-provider button would serve claude-5-sonnet and cannot satisfy the oracle. Confirmation timing: the baseline's setDefault writes the new default into the graph before the server call (frontend/src/features/providers/model/providers-store.ts:156-166, optimisticUpsert), so a held route would show the new pair and confirmation before acknowledgement; the oracle's held-route comparator would reject it. The scenario is still NOT_RUNNABLE because the picker step cannot be driven."
+    },
+    "SCN-SYS-002": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "The production entry is the console picker, which the baseline lacks (providers-page.tsx:409-410 only). The persistence half already works (src/uar/api/providers.rs:367-399 persists llm.default_provider; src/uar/settings/provider_sync.rs:21-23 hydrates it), so a runner that cannot set up the picker records the setup failure."
+    },
+    "SCN-SYS-003": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "No pinned-agent list or system default change result exists in the baseline console (frontend/src/features/agents/ui/agents-page.tsx classifies status only at :206-225), and the picker entry is absent."
+    },
+    "SCN-SYS-004": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "src/uar/domain/policy.rs:538 applies the Global scope `model` in resolve_run_policy, and resolve_effective_run_policy_core loads run_policy.global (policy.rs:683-700); with the stored model sysp2/sys-m4 and an agent with no model the stub would receive sys-m4, the oracle requires sys-m1. Runnable: GET /api/uar/settings/presentation-policy exists (src/uar/api/settings.rs:92) and the stored value is seeded out of band."
+    },
+    "SCN-SYS-005": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "frontend/src/app/shell/command-palette.tsx:40 lists only NAV_DESTINATIONS; the baseline has no 'Change system default model' action and no system default panel on the Providers destination."
+    },
+    "SCN-SYS-006": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "Parts A and B need the picker's single-write and PUT-first paths, absent at baseline. The route half already behaves (src/uar/api/providers.rs:380-396 persists before swapping) so it is not a discriminator; the negative control does discriminate: src/uar/api/providers.rs:367-399 checks existence only, so POST default for a disabled provider returns 200 at baseline where the oracle requires 409."
+    },
+    "SCN-SYS-007": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "The console write set to compare needs the picker action (absent, providers-page.tsx:409-410). The control also fails at baseline: the settings API accepts llm.default_provider (src/uar/settings/manager.rs:1247-1249 and set_value at :666-671), whereas the oracle requires a 4xx rejection."
+    },
+    "SCN-SYS-009": {
+      "baseline": "PASS",
+      "kind": "regression-guard",
+      "evidence": "The agent is read from persistence on every turn (src/server.rs:7609-7620 -> resolve_agent_for_run -> run_manager.resolve_registered_agent, src/uar/runtime/manager.rs:3203-3212 -> agent_store::resolve_registered_agent(persistence)); an explicit model is verified, not substituted (src/server.rs:7727-7728 -> resolve_requested_model :7052-7110 -> verified_model, 422 model_not_verified). So an edit on replica 1 reaches the next turn on replica 2 and a nonexistent model fails with no default substitution already at baseline. The expected-error text on the AG-UI run path is UNVERIFIED (read on the OpenAI-shaped path).",
+      "notTriviallyPassing": "The oracle needs the stub log to change from sys-m1 before the edit to sys-m4 after it on the other replica, and the control needs an error plus no stub request and no sys-m1 request; a mutant that caches the agent per replica, or that falls back to the system default for an unverifiable agent model, fails both."
+    },
+    "SCN-SYS-010": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "The candidate surface (system default picker over the full catalog) does not exist at baseline; the baseline's Models page (frontend/src/app/shell/nav-destinations.ts matchPaths '/admin/models', pages/admin-page.tsx:32-52) is the scenario's negative-control surface, not its candidate."
+    },
+    "SCN-SYS-011": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "The scenario's operator step drives the new system default picker, which the baseline lacks (frontend/src/features/providers/ui/providers-page.tsx:409-410 offers only the per-provider button); every scenario using that step is NOT_RUNNABLE at baseline."
+    },
+    "SCN-SYS-012": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "The scenario uses only baseline-runnable steps (default set through the existing route by a harness step, override chosen in the sheet, clear control present). Clearing sets an empty value with no preview (frontend/src/features/chat/session-config-panel.tsx:75-86), so the oracle's preview is absent. It needs no new stub kind."
+    },
+    "SCN-SYS-013": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "The final step changes the default through the picker, absent at baseline (providers-page.tsx:409-410), and the scenario's confirm and clear steps need the preview flow; the round-1 PASS expectation is withdrawn.",
+      "note": "The routing property itself holds at baseline (per-session policy, src/uar/api/discovery.rs) but is not exercised by a baseline-runnable scenario."
+    },
+    "SCN-SYS-014": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "Needs the hold_content stub kind, GET /_stub/held and POST /_stub/release, absent from the pre-phase stub (src/bin/stub-llm.rs accepts only content, grounded_content and tool_call and panics on others); the capability probe GET /_stub/capabilities does not exist there, so setup fails. It also uses the picker step."
+    },
+    "SCN-SYS-015": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "Uses the picker operator step (absent at baseline) and a receipt that does not exist; additionally PolicyScope has no system-default origin (src/uar/domain/policy.rs:346-357)."
+    },
+    "SCN-SYS-016": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "Scenario 7 begins with the operator trying to change the default through the picker, absent at baseline (providers-page.tsx:409-410). The route half would fail at baseline (src/uar/api/providers.rs:367-399 accepts a disabled provider) but is not reached by a baseline-runnable step."
+    },
+    "SCN-SYS-017": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "Needs the served_model stub kind and GET /_stub/capabilities, absent from the pre-phase stub (src/bin/stub-llm.rs), and a receipt that does not exist."
+    }
+  },
+  "revision": "round-1 S1 revision: SCN-SYS-011, 013, 014, 015, 016 and 017 are NOT_RUNNABLE at baseline; only SCN-SYS-012 is a baseline FAIL; SCN-SYS-009 remains the PASS guard.",
+  "controls": {
+    "CTL-SYS-001-HELD-500": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "The control drives the system default picker (absent, frontend/src/features/providers/ui/providers-page.tsx:409-410 has only the per-provider button). On the baseline's own button the optimistic write at providers-store.ts:156-166 flips ProviderMeta before the server call and rolls back at optimistic.ts:30-37 only after the failure, so a held route would show the new default before acknowledgement; this is the defect the control targets."
+    },
+    "M1": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "mutant",
+      "evidence": "A mutant of the candidate; it has no baseline run."
+    },
+    "M2": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "mutant",
+      "evidence": "A mutant of the candidate; it has no baseline run."
+    }
+  }
+}

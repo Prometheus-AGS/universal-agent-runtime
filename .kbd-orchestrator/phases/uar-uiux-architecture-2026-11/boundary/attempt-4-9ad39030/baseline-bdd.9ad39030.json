@@ -1,0 +1,1014 @@
+{
+  "config": {
+    "argv": [
+      "/Users/gqadonis/.the-boss/commands/node",
+      "/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/playwright/cli.js",
+      "test",
+      "-c",
+      "tests/bdd/playwright.config.ts",
+      "--retries",
+      "0",
+      "--grep",
+      "Live model choice governs the next eligible response",
+      "--reporter=json"
+    ],
+    "configFile": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/playwright.config.ts",
+    "rootDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen",
+    "failOnFlakyTests": false,
+    "forbidOnly": true,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "filteredProjects": [
+      {
+        "grep": {},
+        "grepInvert": null,
+        "outputDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "name": "",
+        "testDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen",
+        "snapshotDir": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen",
+        "testIgnore": [],
+        "testMatch": "**/*.@(spec|test).?(c|m)[jt]s?(x)",
+        "timeout": 120000,
+        "use": {
+          "baseURL": "http://127.0.0.1:3002",
+          "trace": "on-first-retry",
+          "video": "on"
+        },
+        "dependencies": [],
+        "ignoreSnapshots": false,
+        "__projectId": ""
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "default",
+    "updateSourceMethod": "patch",
+    "version": "1.64.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "features/live-model-choice.feature.spec.js",
+      "file": "features/live-model-choice.feature.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Live model choice governs the next eligible response",
+          "file": "features/live-model-choice.feature.spec.js",
+          "line": 4,
+          "column": 6,
+          "specs": [
+            {
+              "title": "The operator switches the system default without restarting",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 57087,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:284:5)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:14:5",
+                        "location": {
+                          "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                          "column": 52,
+                          "line": 591
+                        },
+                        "snippet": "   at ../support/s1-ui.ts:591\n\n\u001b[0m \u001b[90m 589 |\u001b[39m \u001b[36mexport\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m openSystemDefaultPanel(operator\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n \u001b[90m 590 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[33m!\u001b[39moperator\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/admin/providers'\u001b[39m)) \u001b[36mawait\u001b[39m operator\u001b[33m.\u001b[39mgoto(\u001b[32m'/admin/providers'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 591 |\u001b[39m   \u001b[36mawait\u001b[39m expect(operator\u001b[33m.\u001b[39mgetByTestId(\u001b[33mTID\u001b[39m\u001b[33m.\u001b[39mlivePair))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m45\u001b[39m_000 })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 592 |\u001b[39m }\n \u001b[90m 593 |\u001b[39m\n \u001b[90m 594 |\u001b[39m \u001b[90m/** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                            "column": 52,
+                            "line": 591
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n\n   at ../support/s1-ui.ts:591\n\n  589 | export async function openSystemDefaultPanel(operator: Page): Promise<void> {\n  590 |   if (!operator.url().includes('/admin/providers')) await operator.goto('/admin/providers');\n> 591 |   await expect(operator.getByTestId(TID.livePair)).toBeVisible({ timeout: 45_000 });\n      |                                                    ^\n  592 | }\n  593 |\n  594 | /** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:284:5)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:14:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a fresh conversation using \"Default Assistant\"",
+                          "duration": 1200
+                        },
+                        {
+                          "title": "And 5 seconds have passed since the system default was set",
+                          "duration": 4050
+                        },
+                        {
+                          "title": "When the operator confirms the system default change to \"bdd-provider-b/claude-5-haiku\" while the acknowledgement is held",
+                          "duration": 45111,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:284:5)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:14:5",
+                            "location": {
+                              "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                              "column": 52,
+                              "line": 591
+                            },
+                            "snippet": "   at ../support/s1-ui.ts:591\n\n\u001b[0m \u001b[90m 589 |\u001b[39m \u001b[36mexport\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m openSystemDefaultPanel(operator\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n \u001b[90m 590 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[33m!\u001b[39moperator\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/admin/providers'\u001b[39m)) \u001b[36mawait\u001b[39m operator\u001b[33m.\u001b[39mgoto(\u001b[32m'/admin/providers'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 591 |\u001b[39m   \u001b[36mawait\u001b[39m expect(operator\u001b[33m.\u001b[39mgetByTestId(\u001b[33mTID\u001b[39m\u001b[33m.\u001b[39mlivePair))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m45\u001b[39m_000 })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 592 |\u001b[39m }\n \u001b[90m 593 |\u001b[39m\n \u001b[90m 594 |\u001b[39m \u001b[90m/** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\u001b[39m\u001b[0m"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-11-22T13:36:42.819Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-80985--default-without-restarting/video-1.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-80985--default-without-restarting/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-80985--default-without-restarting/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                        "column": 52,
+                        "line": 591
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-b30cea27b8ea37cf8734",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 11,
+              "column": 3
+            },
+            {
+              "title": "A conversation without an override follows the new default and says so",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 25727,
+                      "error": {
+                        "message": "Error: the transcript shows a reply to \"S1 r2 before\"\n\nthe transcript shows a reply to \"S1 r2 before\"\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+                        "stack": "Error: the transcript shows a reply to \"S1 r2 before\"\n\nthe transcript shows a reply to \"S1 r2 before\"\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at captureReply (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:104:6)\n    at finishSend (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:124:9)\n    at sendAndCapture (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:119:9)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:29:5",
+                        "location": {
+                          "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                          "column": 6,
+                          "line": 104
+                        },
+                        "snippet": "   at ../support/s1-ui.ts:104\n\n\u001b[0m \u001b[90m 102 |\u001b[39m       timeout\u001b[33m:\u001b[39m \u001b[35m15\u001b[39m_000\u001b[33m,\u001b[39m\n \u001b[90m 103 |\u001b[39m     })\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 104 |\u001b[39m     \u001b[33m.\u001b[39mtoBeGreaterThan(before)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 105 |\u001b[39m   \u001b[36mconst\u001b[39m reply \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m newestReply(page)\u001b[33m;\u001b[39m\n \u001b[90m 106 |\u001b[39m   \u001b[36mif\u001b[39m (reply \u001b[33m===\u001b[39m \u001b[36mnull\u001b[39m) \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`no reply text was found in the transcript for \"${message}\"`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 107 |\u001b[39m   s1\u001b[33m.\u001b[39mreplyShown\u001b[33m.\u001b[39m\u001b[36mset\u001b[39m(message\u001b[33m,\u001b[39m reply)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                            "column": 6,
+                            "line": 104
+                          },
+                          "message": "Error: the transcript shows a reply to \"S1 r2 before\"\n\nthe transcript shows a reply to \"S1 r2 before\"\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n   at ../support/s1-ui.ts:104\n\n  102 |       timeout: 15_000,\n  103 |     })\n> 104 |     .toBeGreaterThan(before);\n      |      ^\n  105 |   const reply = await newestReply(page);\n  106 |   if (reply === null) throw new Error(`no reply text was found in the transcript for \"${message}\"`);\n  107 |   s1.replyShown.set(message, reply);\n    at captureReply (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:104:6)\n    at finishSend (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:124:9)\n    at sendAndCapture (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:119:9)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:29:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a conversation \"Chat Y\" with no model override",
+                          "duration": 938
+                        },
+                        {
+                          "title": "And 5 seconds have passed since the system default was set",
+                          "duration": 4311
+                        },
+                        {
+                          "title": "When I send the message \"S1 r2 before\"",
+                          "duration": 20027,
+                          "error": {
+                            "message": "Error: the transcript shows a reply to \"S1 r2 before\"\n\nthe transcript shows a reply to \"S1 r2 before\"\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate",
+                            "stack": "Error: the transcript shows a reply to \"S1 r2 before\"\n\nthe transcript shows a reply to \"S1 r2 before\"\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n    at captureReply (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:104:6)\n    at finishSend (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:124:9)\n    at sendAndCapture (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:119:9)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:29:5",
+                            "location": {
+                              "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                              "column": 6,
+                              "line": 104
+                            },
+                            "snippet": "   at ../support/s1-ui.ts:104\n\n\u001b[0m \u001b[90m 102 |\u001b[39m       timeout\u001b[33m:\u001b[39m \u001b[35m15\u001b[39m_000\u001b[33m,\u001b[39m\n \u001b[90m 103 |\u001b[39m     })\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 104 |\u001b[39m     \u001b[33m.\u001b[39mtoBeGreaterThan(before)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 105 |\u001b[39m   \u001b[36mconst\u001b[39m reply \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m newestReply(page)\u001b[33m;\u001b[39m\n \u001b[90m 106 |\u001b[39m   \u001b[36mif\u001b[39m (reply \u001b[33m===\u001b[39m \u001b[36mnull\u001b[39m) \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m`no reply text was found in the transcript for \"${message}\"`\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 107 |\u001b[39m   s1\u001b[33m.\u001b[39mreplyShown\u001b[33m.\u001b[39m\u001b[36mset\u001b[39m(message\u001b[33m,\u001b[39m reply)\u001b[33m;\u001b[39m\u001b[0m"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-11-22T13:37:40.778Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-def78-the-new-default-and-says-so/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-def78-the-new-default-and-says-so/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                        "column": 6,
+                        "line": 104
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-bf19911943ec5fc33643",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 26,
+              "column": 3
+            },
+            {
+              "title": "A conversation override keeps answering on its own model",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 127850,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                            "column": 17,
+                            "line": 260
+                          },
+                          "message": "Error: locator.click: Test timeout of 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog').filter({ hasText: 'Session Configuration' }).getByTestId('session-config-model-trigger')\u001b[22m\n\n\n   at ../support/s1-ui.ts:260\n\n  258 | async function openPickerFor(page: Page, trigger: Locator, qualified: string): Promise<void> {\n  259 |   const { modelId } = splitQualifiedModel(qualified);\n> 260 |   await trigger.click();\n      |                 ^\n  261 |   const search = page.getByPlaceholder(/search models/i);\n  262 |   await search.or(page.locator(`[data-testid=\"${TID.modelOption}\"]`).first()).first().waitFor({ state: 'visible', timeout: 15_000 });\n  263 |   if ((await search.count()) > 0) await search.first().fill(modelId);\n    at openPickerFor (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:260:17)\n    at chooseModel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:268:9)\n    at saveOverrideThroughSheet (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:314:9)\n    at setOverrideOnThread (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:325:18)\n    at setOverride (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:332:3)\n    at createConversation (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:199:25)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:216:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:42:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+                          "duration": 127591,
+                          "error": {
+                            "message": "Error: locator.click: Test timeout of 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog').filter({ hasText: 'Session Configuration' }).getByTestId('session-config-model-trigger')\u001b[22m\n",
+                            "stack": "Error: locator.click: Test timeout of 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog').filter({ hasText: 'Session Configuration' }).getByTestId('session-config-model-trigger')\u001b[22m\n\n    at openPickerFor (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:260:17)\n    at chooseModel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:268:9)\n    at saveOverrideThroughSheet (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:314:9)\n    at setOverrideOnThread (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:325:18)\n    at setOverride (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:332:3)\n    at createConversation (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:199:25)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:216:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:42:5",
+                            "location": {
+                              "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                              "column": 17,
+                              "line": 260
+                            },
+                            "snippet": "   at ../support/s1-ui.ts:260\n\n\u001b[0m \u001b[90m 258 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m openPickerFor(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m trigger\u001b[33m:\u001b[39m \u001b[33mLocator\u001b[39m\u001b[33m,\u001b[39m qualified\u001b[33m:\u001b[39m string)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n \u001b[90m 259 |\u001b[39m   \u001b[36mconst\u001b[39m { modelId } \u001b[33m=\u001b[39m splitQualifiedModel(qualified)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 260 |\u001b[39m   \u001b[36mawait\u001b[39m trigger\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                 \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 261 |\u001b[39m   \u001b[36mconst\u001b[39m search \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByPlaceholder(\u001b[35m/search models/i\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 262 |\u001b[39m   \u001b[36mawait\u001b[39m search\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mlocator(\u001b[32m`[data-testid=\"${TID.modelOption}\"]`\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m15\u001b[39m_000 })\u001b[33m;\u001b[39m\n \u001b[90m 263 |\u001b[39m   \u001b[36mif\u001b[39m ((\u001b[36mawait\u001b[39m search\u001b[33m.\u001b[39mcount()) \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m) \u001b[36mawait\u001b[39m search\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mfill(modelId)\u001b[33m;\u001b[39m\u001b[0m"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-11-22T13:38:07.083Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-98561--answering-on-its-own-model/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-98561--answering-on-its-own-model/error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-3952b4b1cfa1148b6ed4",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 41,
+              "column": 3
+            },
+            {
+              "title": "Clearing an override shows what the conversation will inherit",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 127736,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                            "column": 17,
+                            "line": 260
+                          },
+                          "message": "Error: locator.click: Test timeout of 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog').filter({ hasText: 'Session Configuration' }).getByTestId('session-config-model-trigger')\u001b[22m\n\n\n   at ../support/s1-ui.ts:260\n\n  258 | async function openPickerFor(page: Page, trigger: Locator, qualified: string): Promise<void> {\n  259 |   const { modelId } = splitQualifiedModel(qualified);\n> 260 |   await trigger.click();\n      |                 ^\n  261 |   const search = page.getByPlaceholder(/search models/i);\n  262 |   await search.or(page.locator(`[data-testid=\"${TID.modelOption}\"]`).first()).first().waitFor({ state: 'visible', timeout: 15_000 });\n  263 |   if ((await search.count()) > 0) await search.first().fill(modelId);\n    at openPickerFor (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:260:17)\n    at chooseModel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:268:9)\n    at saveOverrideThroughSheet (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:314:9)\n    at setOverrideOnThread (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:325:18)\n    at setOverride (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:332:3)\n    at createConversation (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:199:25)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:216:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:53:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given the system default model is \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 21
+                        },
+                        {
+                          "title": "And a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+                          "duration": 127435,
+                          "error": {
+                            "message": "Error: locator.click: Test timeout of 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog').filter({ hasText: 'Session Configuration' }).getByTestId('session-config-model-trigger')\u001b[22m\n",
+                            "stack": "Error: locator.click: Test timeout of 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog').filter({ hasText: 'Session Configuration' }).getByTestId('session-config-model-trigger')\u001b[22m\n\n    at openPickerFor (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:260:17)\n    at chooseModel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:268:9)\n    at saveOverrideThroughSheet (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:314:9)\n    at setOverrideOnThread (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:325:18)\n    at setOverride (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:332:3)\n    at createConversation (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:199:25)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:216:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:53:5",
+                            "location": {
+                              "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                              "column": 17,
+                              "line": 260
+                            },
+                            "snippet": "   at ../support/s1-ui.ts:260\n\n\u001b[0m \u001b[90m 258 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m openPickerFor(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m trigger\u001b[33m:\u001b[39m \u001b[33mLocator\u001b[39m\u001b[33m,\u001b[39m qualified\u001b[33m:\u001b[39m string)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n \u001b[90m 259 |\u001b[39m   \u001b[36mconst\u001b[39m { modelId } \u001b[33m=\u001b[39m splitQualifiedModel(qualified)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 260 |\u001b[39m   \u001b[36mawait\u001b[39m trigger\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                 \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 261 |\u001b[39m   \u001b[36mconst\u001b[39m search \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByPlaceholder(\u001b[35m/search models/i\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 262 |\u001b[39m   \u001b[36mawait\u001b[39m search\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mlocator(\u001b[32m`[data-testid=\"${TID.modelOption}\"]`\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m15\u001b[39m_000 })\u001b[33m;\u001b[39m\n \u001b[90m 263 |\u001b[39m   \u001b[36mif\u001b[39m ((\u001b[36mawait\u001b[39m search\u001b[33m.\u001b[39mcount()) \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m) \u001b[36mawait\u001b[39m search\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mfill(modelId)\u001b[33m;\u001b[39m\u001b[0m"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-11-22T13:40:15.499Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-5eca6-e-conversation-will-inherit/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-5eca6-e-conversation-will-inherit/error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-1fb7d1e81ed7c07f773b",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 51,
+              "column": 3
+            },
+            {
+              "title": "Changing one conversation leaves the others alone",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 127944,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                            "column": 17,
+                            "line": 260
+                          },
+                          "message": "Error: locator.click: Test timeout of 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog').filter({ hasText: 'Session Configuration' }).getByTestId('session-config-model-trigger')\u001b[22m\n\n\n   at ../support/s1-ui.ts:260\n\n  258 | async function openPickerFor(page: Page, trigger: Locator, qualified: string): Promise<void> {\n  259 |   const { modelId } = splitQualifiedModel(qualified);\n> 260 |   await trigger.click();\n      |                 ^\n  261 |   const search = page.getByPlaceholder(/search models/i);\n  262 |   await search.or(page.locator(`[data-testid=\"${TID.modelOption}\"]`).first()).first().waitFor({ state: 'visible', timeout: 15_000 });\n  263 |   if ((await search.count()) > 0) await search.first().fill(modelId);\n    at openPickerFor (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:260:17)\n    at chooseModel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:268:9)\n    at saveOverrideThroughSheet (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:314:9)\n    at setOverrideOnThread (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:325:18)\n    at setOverride (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:332:3)\n    at createConversation (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:199:25)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:216:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:69:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given the system default model is \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 21
+                        },
+                        {
+                          "title": "And a conversation \"Chat Y\" with no model override",
+                          "duration": 963
+                        },
+                        {
+                          "title": "And a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+                          "duration": 126678,
+                          "error": {
+                            "message": "Error: locator.click: Test timeout of 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog').filter({ hasText: 'Session Configuration' }).getByTestId('session-config-model-trigger')\u001b[22m\n",
+                            "stack": "Error: locator.click: Test timeout of 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog').filter({ hasText: 'Session Configuration' }).getByTestId('session-config-model-trigger')\u001b[22m\n\n    at openPickerFor (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:260:17)\n    at chooseModel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:268:9)\n    at saveOverrideThroughSheet (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:314:9)\n    at setOverrideOnThread (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:325:18)\n    at setOverride (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:332:3)\n    at createConversation (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:199:25)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:216:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:69:5",
+                            "location": {
+                              "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                              "column": 17,
+                              "line": 260
+                            },
+                            "snippet": "   at ../support/s1-ui.ts:260\n\n\u001b[0m \u001b[90m 258 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m openPickerFor(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m trigger\u001b[33m:\u001b[39m \u001b[33mLocator\u001b[39m\u001b[33m,\u001b[39m qualified\u001b[33m:\u001b[39m string)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n \u001b[90m 259 |\u001b[39m   \u001b[36mconst\u001b[39m { modelId } \u001b[33m=\u001b[39m splitQualifiedModel(qualified)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 260 |\u001b[39m   \u001b[36mawait\u001b[39m trigger\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                 \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 261 |\u001b[39m   \u001b[36mconst\u001b[39m search \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mgetByPlaceholder(\u001b[35m/search models/i\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 262 |\u001b[39m   \u001b[36mawait\u001b[39m search\u001b[33m.\u001b[39mor(page\u001b[33m.\u001b[39mlocator(\u001b[32m`[data-testid=\"${TID.modelOption}\"]`\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mwaitFor({ state\u001b[33m:\u001b[39m \u001b[32m'visible'\u001b[39m\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m15\u001b[39m_000 })\u001b[33m;\u001b[39m\n \u001b[90m 263 |\u001b[39m   \u001b[36mif\u001b[39m ((\u001b[36mawait\u001b[39m search\u001b[33m.\u001b[39mcount()) \u001b[33m>\u001b[39m \u001b[35m0\u001b[39m) \u001b[36mawait\u001b[39m search\u001b[33m.\u001b[39mfirst()\u001b[33m.\u001b[39mfill(modelId)\u001b[33m;\u001b[39m\u001b[0m"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-11-22T13:42:23.878Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-08a6a-ion-leaves-the-others-alone/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-08a6a-ion-leaves-the-others-alone/error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-ed8954ff9d93e10fa745",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 66,
+              "column": 3
+            },
+            {
+              "title": "A reply already being written finishes on the model it started with",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 400,
+                      "error": {
+                        "message": "Error: the stub of openai has no /_stub/capabilities route\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m",
+                        "stack": "Error: the stub of openai has no /_stub/capabilities route\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:189:88)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:91:5",
+                        "location": {
+                          "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts",
+                          "column": 88,
+                          "line": 189
+                        },
+                        "snippet": "   at ../steps/live-model-choice.steps.ts:189\n\n\u001b[0m \u001b[90m 187 |\u001b[39m   \u001b[36mfor\u001b[39m (\u001b[36mconst\u001b[39m stub \u001b[36mof\u001b[39m \u001b[33mS1_STUBS\u001b[39m) {\n \u001b[90m 188 |\u001b[39m     \u001b[36mconst\u001b[39m kinds \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m stubCapabilities(stub\u001b[33m.\u001b[39mbaseUrl)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 189 |\u001b[39m     expect(kinds\u001b[33m,\u001b[39m \u001b[32m`the stub of ${stub.provider} has no /_stub/capabilities route`\u001b[39m)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeNull()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 190 |\u001b[39m     expect(kinds\u001b[33m,\u001b[39m \u001b[32m`the stub of ${stub.provider} supports ${kind}`\u001b[39m)\u001b[33m.\u001b[39mtoContain(kind)\u001b[33m;\u001b[39m\n \u001b[90m 191 |\u001b[39m   }\n \u001b[90m 192 |\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts",
+                            "column": 88,
+                            "line": 189
+                          },
+                          "message": "Error: the stub of openai has no /_stub/capabilities route\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n\n   at ../steps/live-model-choice.steps.ts:189\n\n  187 |   for (const stub of S1_STUBS) {\n  188 |     const kinds = await stubCapabilities(stub.baseUrl);\n> 189 |     expect(kinds, `the stub of ${stub.provider} has no /_stub/capabilities route`).not.toBeNull();\n      |                                                                                        ^\n  190 |     expect(kinds, `the stub of ${stub.provider} supports ${kind}`).toContain(kind);\n  191 |   }\n  192 | });\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:189:88)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:91:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given the stub supports \"hold_content\"",
+                          "duration": 1,
+                          "error": {
+                            "message": "Error: the stub of openai has no /_stub/capabilities route\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m",
+                            "stack": "Error: the stub of openai has no /_stub/capabilities route\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:189:88)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:91:5",
+                            "location": {
+                              "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts",
+                              "column": 88,
+                              "line": 189
+                            },
+                            "snippet": "   at ../steps/live-model-choice.steps.ts:189\n\n\u001b[0m \u001b[90m 187 |\u001b[39m   \u001b[36mfor\u001b[39m (\u001b[36mconst\u001b[39m stub \u001b[36mof\u001b[39m \u001b[33mS1_STUBS\u001b[39m) {\n \u001b[90m 188 |\u001b[39m     \u001b[36mconst\u001b[39m kinds \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m stubCapabilities(stub\u001b[33m.\u001b[39mbaseUrl)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 189 |\u001b[39m     expect(kinds\u001b[33m,\u001b[39m \u001b[32m`the stub of ${stub.provider} has no /_stub/capabilities route`\u001b[39m)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeNull()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 190 |\u001b[39m     expect(kinds\u001b[33m,\u001b[39m \u001b[32m`the stub of ${stub.provider} supports ${kind}`\u001b[39m)\u001b[33m.\u001b[39mtoContain(kind)\u001b[33m;\u001b[39m\n \u001b[90m 191 |\u001b[39m   }\n \u001b[90m 192 |\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-11-22T13:44:32.546Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-fdfa9-n-the-model-it-started-with/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-fdfa9-n-the-model-it-started-with/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts",
+                        "column": 88,
+                        "line": 189
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-0526c092158c52441ef9",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 90,
+              "column": 3
+            },
+            {
+              "title": "A choice that cannot be served is refused and nothing is claimed",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 49576,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:380:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:110:5",
+                        "location": {
+                          "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                          "column": 52,
+                          "line": 591
+                        },
+                        "snippet": "   at ../support/s1-ui.ts:591\n\n\u001b[0m \u001b[90m 589 |\u001b[39m \u001b[36mexport\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m openSystemDefaultPanel(operator\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n \u001b[90m 590 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[33m!\u001b[39moperator\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/admin/providers'\u001b[39m)) \u001b[36mawait\u001b[39m operator\u001b[33m.\u001b[39mgoto(\u001b[32m'/admin/providers'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 591 |\u001b[39m   \u001b[36mawait\u001b[39m expect(operator\u001b[33m.\u001b[39mgetByTestId(\u001b[33mTID\u001b[39m\u001b[33m.\u001b[39mlivePair))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m45\u001b[39m_000 })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 592 |\u001b[39m }\n \u001b[90m 593 |\u001b[39m\n \u001b[90m 594 |\u001b[39m \u001b[90m/** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                            "column": 52,
+                            "line": 591
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n\n   at ../support/s1-ui.ts:591\n\n  589 | export async function openSystemDefaultPanel(operator: Page): Promise<void> {\n  590 |   if (!operator.url().includes('/admin/providers')) await operator.goto('/admin/providers');\n> 591 |   await expect(operator.getByTestId(TID.livePair)).toBeVisible({ timeout: 45_000 });\n      |                                                    ^\n  592 | }\n  593 |\n  594 | /** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:380:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:110:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a conversation \"Chat X\" with no model override",
+                          "duration": 972
+                        },
+                        {
+                          "title": "When the operator tries to change the system default to \"bdd-provider-off/off-model-1\"",
+                          "duration": 45098,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:380:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:110:5",
+                            "location": {
+                              "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                              "column": 52,
+                              "line": 591
+                            },
+                            "snippet": "   at ../support/s1-ui.ts:591\n\n\u001b[0m \u001b[90m 589 |\u001b[39m \u001b[36mexport\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m openSystemDefaultPanel(operator\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n \u001b[90m 590 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[33m!\u001b[39moperator\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/admin/providers'\u001b[39m)) \u001b[36mawait\u001b[39m operator\u001b[33m.\u001b[39mgoto(\u001b[32m'/admin/providers'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 591 |\u001b[39m   \u001b[36mawait\u001b[39m expect(operator\u001b[33m.\u001b[39mgetByTestId(\u001b[33mTID\u001b[39m\u001b[33m.\u001b[39mlivePair))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m45\u001b[39m_000 })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 592 |\u001b[39m }\n \u001b[90m 593 |\u001b[39m\n \u001b[90m 594 |\u001b[39m \u001b[90m/** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\u001b[39m\u001b[0m"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-11-22T13:44:33.530Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-766e3-used-and-nothing-is-claimed/video.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-766e3-used-and-nothing-is-claimed/video-1.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-766e3-used-and-nothing-is-claimed/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                        "column": 52,
+                        "line": 591
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-bd08770f97f4b623f89d",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 108,
+              "column": 3
+            },
+            {
+              "title": "An agent with its own model keeps it and is listed when the default changes",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 50859,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at operatorChange (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:252:3)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:270:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:129:5",
+                        "location": {
+                          "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                          "column": 52,
+                          "line": 591
+                        },
+                        "snippet": "   at ../support/s1-ui.ts:591\n\n\u001b[0m \u001b[90m 589 |\u001b[39m \u001b[36mexport\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m openSystemDefaultPanel(operator\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n \u001b[90m 590 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[33m!\u001b[39moperator\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/admin/providers'\u001b[39m)) \u001b[36mawait\u001b[39m operator\u001b[33m.\u001b[39mgoto(\u001b[32m'/admin/providers'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 591 |\u001b[39m   \u001b[36mawait\u001b[39m expect(operator\u001b[33m.\u001b[39mgetByTestId(\u001b[33mTID\u001b[39m\u001b[33m.\u001b[39mlivePair))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m45\u001b[39m_000 })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 592 |\u001b[39m }\n \u001b[90m 593 |\u001b[39m\n \u001b[90m 594 |\u001b[39m \u001b[90m/** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                            "column": 52,
+                            "line": 591
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n\n   at ../support/s1-ui.ts:591\n\n  589 | export async function openSystemDefaultPanel(operator: Page): Promise<void> {\n  590 |   if (!operator.url().includes('/admin/providers')) await operator.goto('/admin/providers');\n> 591 |   await expect(operator.getByTestId(TID.livePair)).toBeVisible({ timeout: 45_000 });\n      |                                                    ^\n  592 | }\n  593 |\n  594 | /** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at operatorChange (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:252:3)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:270:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:129:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given an agent \"BDD Agent Aurora\" with the model \"openai/gpt-5.4-mini\" exists",
+                          "duration": 19
+                        },
+                        {
+                          "title": "And an agent \"BDD Agent Cirrus\" with the extension model \"bdd-provider-c/qwen-5-turbo\" exists",
+                          "duration": 14
+                        },
+                        {
+                          "title": "And an agent \"BDD Agent Dawn\" with no model exists",
+                          "duration": 14
+                        },
+                        {
+                          "title": "When the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 45106,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at operatorChange (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:252:3)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:270:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:129:5",
+                            "location": {
+                              "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                              "column": 52,
+                              "line": 591
+                            },
+                            "snippet": "   at ../support/s1-ui.ts:591\n\n\u001b[0m \u001b[90m 589 |\u001b[39m \u001b[36mexport\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m openSystemDefaultPanel(operator\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n \u001b[90m 590 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[33m!\u001b[39moperator\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/admin/providers'\u001b[39m)) \u001b[36mawait\u001b[39m operator\u001b[33m.\u001b[39mgoto(\u001b[32m'/admin/providers'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 591 |\u001b[39m   \u001b[36mawait\u001b[39m expect(operator\u001b[33m.\u001b[39mgetByTestId(\u001b[33mTID\u001b[39m\u001b[33m.\u001b[39mlivePair))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m45\u001b[39m_000 })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 592 |\u001b[39m }\n \u001b[90m 593 |\u001b[39m\n \u001b[90m 594 |\u001b[39m \u001b[90m/** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\u001b[39m\u001b[0m"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-11-22T13:45:23.666Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-16659-ed-when-the-default-changes/video.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-16659-ed-when-the-default-changes/video-1.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-16659-ed-when-the-default-changes/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                        "column": 52,
+                        "line": 591
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-fca8f4f020473c64de9a",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 125,
+              "column": 3
+            },
+            {
+              "title": "Changing the default uses only the live route",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 52328,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at operatorChange (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:252:3)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:270:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:145:5",
+                        "location": {
+                          "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                          "column": 52,
+                          "line": 591
+                        },
+                        "snippet": "   at ../support/s1-ui.ts:591\n\n\u001b[0m \u001b[90m 589 |\u001b[39m \u001b[36mexport\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m openSystemDefaultPanel(operator\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n \u001b[90m 590 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[33m!\u001b[39moperator\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/admin/providers'\u001b[39m)) \u001b[36mawait\u001b[39m operator\u001b[33m.\u001b[39mgoto(\u001b[32m'/admin/providers'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 591 |\u001b[39m   \u001b[36mawait\u001b[39m expect(operator\u001b[33m.\u001b[39mgetByTestId(\u001b[33mTID\u001b[39m\u001b[33m.\u001b[39mlivePair))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m45\u001b[39m_000 })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 592 |\u001b[39m }\n \u001b[90m 593 |\u001b[39m\n \u001b[90m 594 |\u001b[39m \u001b[90m/** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                            "column": 52,
+                            "line": 591
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n\n   at ../support/s1-ui.ts:591\n\n  589 | export async function openSystemDefaultPanel(operator: Page): Promise<void> {\n  590 |   if (!operator.url().includes('/admin/providers')) await operator.goto('/admin/providers');\n> 591 |   await expect(operator.getByTestId(TID.livePair)).toBeVisible({ timeout: 45_000 });\n      |                                                    ^\n  592 | }\n  593 |\n  594 | /** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at operatorChange (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:252:3)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:270:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:145:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given a fresh conversation using \"Default Assistant\"",
+                          "duration": 1068
+                        },
+                        {
+                          "title": "When the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+                          "duration": 45102,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('system-default-live-pair')\nExpected: visible\nTimeout: 45000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" getByTestId('system-default-live-pair') with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('system-default-live-pair')\u001b[22m\n\n    at openSystemDefaultPanel (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts:591:52)\n    at operatorChange (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:252:3)\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:270:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:145:5",
+                            "location": {
+                              "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                              "column": 52,
+                              "line": 591
+                            },
+                            "snippet": "   at ../support/s1-ui.ts:591\n\n\u001b[0m \u001b[90m 589 |\u001b[39m \u001b[36mexport\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m openSystemDefaultPanel(operator\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m)\u001b[33m:\u001b[39m \u001b[33mPromise\u001b[39m\u001b[33m<\u001b[39m\u001b[36mvoid\u001b[39m\u001b[33m>\u001b[39m {\n \u001b[90m 590 |\u001b[39m   \u001b[36mif\u001b[39m (\u001b[33m!\u001b[39moperator\u001b[33m.\u001b[39murl()\u001b[33m.\u001b[39mincludes(\u001b[32m'/admin/providers'\u001b[39m)) \u001b[36mawait\u001b[39m operator\u001b[33m.\u001b[39mgoto(\u001b[32m'/admin/providers'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 591 |\u001b[39m   \u001b[36mawait\u001b[39m expect(operator\u001b[33m.\u001b[39mgetByTestId(\u001b[33mTID\u001b[39m\u001b[33m.\u001b[39mlivePair))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m45\u001b[39m_000 })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 592 |\u001b[39m }\n \u001b[90m 593 |\u001b[39m\n \u001b[90m 594 |\u001b[39m \u001b[90m/** Opens the system default picker and clicks the provider-qualified pair; confirms nothing. */\u001b[39m\u001b[0m"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-11-22T13:46:15.097Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-fda73-lt-uses-only-the-live-route/video-1.webm"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-fda73-lt-uses-only-the-live-route/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-fda73-lt-uses-only-the-live-route/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/support/s1-ui.ts",
+                        "column": 52,
+                        "line": 591
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-03ebb8b5d940993f7edf",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 143,
+              "column": 3
+            },
+            {
+              "title": "The receipt names the model the provider reported, not the one requested",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 120000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "",
+                  "projectName": "",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 406,
+                      "error": {
+                        "message": "Error: the stub of openai has no /_stub/capabilities route\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m",
+                        "stack": "Error: the stub of openai has no /_stub/capabilities route\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:189:88)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:151:5",
+                        "location": {
+                          "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts",
+                          "column": 88,
+                          "line": 189
+                        },
+                        "snippet": "   at ../steps/live-model-choice.steps.ts:189\n\n\u001b[0m \u001b[90m 187 |\u001b[39m   \u001b[36mfor\u001b[39m (\u001b[36mconst\u001b[39m stub \u001b[36mof\u001b[39m \u001b[33mS1_STUBS\u001b[39m) {\n \u001b[90m 188 |\u001b[39m     \u001b[36mconst\u001b[39m kinds \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m stubCapabilities(stub\u001b[33m.\u001b[39mbaseUrl)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 189 |\u001b[39m     expect(kinds\u001b[33m,\u001b[39m \u001b[32m`the stub of ${stub.provider} has no /_stub/capabilities route`\u001b[39m)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeNull()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 190 |\u001b[39m     expect(kinds\u001b[33m,\u001b[39m \u001b[32m`the stub of ${stub.provider} supports ${kind}`\u001b[39m)\u001b[33m.\u001b[39mtoContain(kind)\u001b[33m;\u001b[39m\n \u001b[90m 191 |\u001b[39m   }\n \u001b[90m 192 |\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts",
+                            "column": 88,
+                            "line": 189
+                          },
+                          "message": "Error: the stub of openai has no /_stub/capabilities route\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n\n   at ../steps/live-model-choice.steps.ts:189\n\n  187 |   for (const stub of S1_STUBS) {\n  188 |     const kinds = await stubCapabilities(stub.baseUrl);\n> 189 |     expect(kinds, `the stub of ${stub.provider} has no /_stub/capabilities route`).not.toBeNull();\n      |                                                                                        ^\n  190 |     expect(kinds, `the stub of ${stub.provider} supports ${kind}`).toContain(kind);\n  191 |   }\n  192 | });\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:189:88)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:151:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        {
+                          "title": "Given the stub supports \"served_model\"",
+                          "duration": 2,
+                          "error": {
+                            "message": "Error: the stub of openai has no /_stub/capabilities route\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m",
+                            "stack": "Error: the stub of openai has no /_stub/capabilities route\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBeNull\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n    at Object.<anonymous> (/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts:189:88)\n    at BddStepInvoker.runWithAfterStepHooks (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Users/gqadonis/.claude/worktrees/uiux-baseline/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.64.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:151:5",
+                            "location": {
+                              "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts",
+                              "column": 88,
+                              "line": 189
+                            },
+                            "snippet": "   at ../steps/live-model-choice.steps.ts:189\n\n\u001b[0m \u001b[90m 187 |\u001b[39m   \u001b[36mfor\u001b[39m (\u001b[36mconst\u001b[39m stub \u001b[36mof\u001b[39m \u001b[33mS1_STUBS\u001b[39m) {\n \u001b[90m 188 |\u001b[39m     \u001b[36mconst\u001b[39m kinds \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m stubCapabilities(stub\u001b[33m.\u001b[39mbaseUrl)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 189 |\u001b[39m     expect(kinds\u001b[33m,\u001b[39m \u001b[32m`the stub of ${stub.provider} has no /_stub/capabilities route`\u001b[39m)\u001b[33m.\u001b[39mnot\u001b[33m.\u001b[39mtoBeNull()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 190 |\u001b[39m     expect(kinds\u001b[33m,\u001b[39m \u001b[32m`the stub of ${stub.provider} supports ${kind}`\u001b[39m)\u001b[33m.\u001b[39mtoContain(kind)\u001b[33m;\u001b[39m\n \u001b[90m 191 |\u001b[39m   }\n \u001b[90m 192 |\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                          }
+                        }
+                      ],
+                      "startTime": "2026-11-22T13:47:08.030Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-e98e8-orted-not-the-one-requested/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/test-results/features-live-model-choice-e98e8-orted-not-the-one-requested/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/gqadonis/.claude/worktrees/uiux-baseline/tests/bdd/steps/live-model-choice.steps.ts",
+                        "column": 88,
+                        "line": 189
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "b7785e1b35665d2e0d05-4fe7f77e4f22844a5339",
+              "file": "features/live-model-choice.feature.spec.js",
+              "line": 150,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-22T13:36:22.821Z",
+    "duration": 645901.07,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 10,
+    "flaky": 0
+  }
+}

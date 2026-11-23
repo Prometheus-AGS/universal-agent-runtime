@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { ModelSelector } from "@/features/models/model-selector";
+import { ModelPicker } from "@/features/models/pickers";
 import type { UarAgent, UarSkill, UarTool, UarKnowledgeBase } from "@/types";
 
 // ── Form state type ──────────────────────────────────────────────────────────
@@ -359,9 +359,10 @@ export const AgentEditor: FC<AgentEditorProps> = ({
             <Separator />
             <div className="space-y-2">
               <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Default Model</Label>
-              <ModelSelector
+              <ModelPicker
                 value={form.default_model}
                 onChange={(v) => update("default_model", v)}
+                ariaLabel="Default model"
                 placeholder="Select default model..."
               />
               {!form.default_model && (
@@ -375,9 +376,10 @@ export const AgentEditor: FC<AgentEditorProps> = ({
             </div>
             <div className="space-y-2">
               <Label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Fallback Model</Label>
-              <ModelSelector
+              <ModelPicker
                 value={form.fallback_model}
                 onChange={(v) => update("fallback_model", v)}
+                ariaLabel="Fallback model"
                 placeholder="Select fallback model (optional)..."
               />
             </div>

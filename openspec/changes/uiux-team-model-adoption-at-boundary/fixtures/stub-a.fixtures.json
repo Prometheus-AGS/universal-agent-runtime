@@ -1,0 +1,6 @@
+[
+  {"model": "*", "last_user_message_prefix": "", "has_tools": true, "has_tool_result": false,
+   "response": {"kind": "tool_call", "name": "team_roster", "arguments": "{\"limit\":10}"}},
+  {"model": "*", "last_user_message_prefix": "", "has_tools": true, "has_tool_result": true,
+   "response": {"kind": "content", "text": "stub-a-complete"}}
+]

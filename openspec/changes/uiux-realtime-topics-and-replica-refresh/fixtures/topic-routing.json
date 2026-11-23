@@ -1,0 +1,33 @@
+{
+  "fixtureVersion": 1,
+  "frozenAt": "2026-11-19",
+  "truthSource": "operator decisions 3 and 10 (.prometheus/decisions.md, 2026-11-19) and design.md R1-R4; not derived from any implementation output",
+  "publicTopics": [
+    {"wire": "knowledge_bases", "requiresSnapshot": true},
+    {"wire": "knowledge_documents", "requiresSnapshot": true},
+    {"wire": "agents", "requiresSnapshot": true},
+    {"wire": "providers", "requiresSnapshot": true},
+    {"wire": "models", "requiresSnapshot": true},
+    {"wire": "skills", "requiresSnapshot": true},
+    {"wire": "settings", "requiresSnapshot": true},
+    {"wire": "threads", "requiresSnapshot": true},
+    {"wire": "memory", "requiresSnapshot": true},
+    {"wire": "compiler_sessions", "requiresSnapshot": true},
+    {"wire": "conversation_policies", "requiresSnapshot": false},
+    {"wire": "team_catalog", "requiresSnapshot": false}
+  ],
+  "routing": [
+    {"settingKey": "provider.p-one", "topics": ["providers", "models"], "mustNotEmit": ["settings"]},
+    {"settingKey": "model.m-one", "topics": ["models"], "mustNotEmit": ["settings", "providers"]},
+    {"settingKey": "llm.default_provider", "topics": ["settings", "providers"], "mustNotEmit": ["models"]},
+    {"settingKey": "prompt_caching.enabled", "topics": ["settings"], "mustNotEmit": ["providers", "models"]},
+    {"settingKey": "memory.max_context_tokens", "topics": ["settings"], "mustNotEmit": ["providers", "models"]}
+  ],
+  "frameAllowedKeys": ["version", "topic", "requires_snapshot", "reason", "generation", "ready"],
+  "frameForbiddenSubstrings": ["owner", "conversation_id", "binding_id", "\"key\"", "\"id\""],
+  "snapshotIncompleteReasons": ["owner_scoped_refetch", "replica_refresh_pending", "replica_refresh_failed", "subscription_unavailable"],
+  "tablesBySurrealTopic": {
+    "conversation_policies": ["conversation_policies", "principal_conversation_policies"],
+    "team_catalog": ["uar_collaboration_state"]
+  }
+}

@@ -67,7 +67,9 @@ export function useChatRuntime(threadId: string): {
   const { startStream, cancelStream } = useMessageStream();
   const { messages, isStreaming } = useChatMessages(threadId);
   const initialMessageSent = useRef(false);
-  const titleGeneratedRef = useRef(false);
+  // Threads this view has requested a title for. The view is reused across threads, so one flag would
+  // title only the first thread of a page load.
+  const titledThreadsRef = useRef(new Set<string>());
   const messagesLoadedRef = useRef<string | undefined>(undefined);
   const attachmentManager = useAttachmentManager(threadId);
 
@@ -114,10 +116,10 @@ export function useChatRuntime(threadId: string): {
     async (userMsgText: string) => {
       markPersisted(threadId);
       touch(threadId);
-      if (titleGeneratedRef.current) return;
+      if (titledThreadsRef.current.has(threadId)) return;
       const currentThread = useThreadRegistryStore.getState().threads[threadId];
       if (currentThread && currentThread.title !== "New conversation") return;
-      titleGeneratedRef.current = true;
+      titledThreadsRef.current.add(threadId);
       const storeMessages = useChatMessageStore.getState().messagesByThread[threadId] ?? [];
       const firstAssistant = storeMessages.find((m) => m.role === "assistant" && m.status === "complete");
       const assistantText = firstAssistant ? extractText(firstAssistant) : "";
@@ -157,11 +159,11 @@ export function useChatRuntime(threadId: string): {
       // reaches IndexedDB asynchronously, so writes issued only when the answer
       // completes are lost by a reload right after it.
       if (existing?.isEphemeral) markPersisted(threadId);
-      if (existing && existing.title === "New conversation" && !titleGeneratedRef.current) {
-        titleGeneratedRef.current = true;
+      if (existing && existing.title === "New conversation" && !titledThreadsRef.current.has(threadId)) {
+        titledThreadsRef.current.add(threadId);
         void useThreadTitleStore.getState().generateTitle(userText, "")
           .then((title) => setTitle(threadId, title))
-          .catch(() => { titleGeneratedRef.current = false; });
+          .catch(() => { titledThreadsRef.current.delete(threadId); });
       }
 
       await startStream(
@@ -183,6 +185,9 @@ export function useChatRuntime(threadId: string): {
   );
 
   const onCancel = useCallback(async () => {
+    // After the reply ends, the turn stays busy until it is saved and the stream
+    // lease is released. There is no run left to stop in that window.
+    if (!useChatMessageStore.getState().streamingByThread[threadId]?.isStreaming) return;
     cancelStream();
     // Stop requests cancellation; only the original native terminal settles it.
     await useChatMessageStore.getState().finishStream(threadId, "interrupted");

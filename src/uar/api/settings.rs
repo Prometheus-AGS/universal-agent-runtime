@@ -913,8 +913,21 @@ async fn update_presentation_policy(
 /// `rag.embedding_*` rows are descriptive metadata, not selectors — the
 /// operative embedding keys are `llm.embedding.*`. Reject mutations that
 /// would otherwise persist with no consumer (explicit rejection contract).
+///
+/// `llm.default_provider` has exactly one runtime writer: the live route
+/// `POST /api/uar/providers/{id}/default` (plus the boot seed), which swaps the
+/// registry default and persists the row together. A settings-API write would
+/// persist a value the registry never applies, so every settings-API mutation
+/// (single PUT, bulk PUT, DELETE reset) is refused.
 fn rejected_unsupported(key: &str) -> Option<ApiError> {
     match key {
+        "llm.default_provider" => Some(ApiError::Validation {
+            key: key.to_string(),
+            message: format!(
+                "'{key}' is managed by the provider registry and cannot be changed here; \
+                 use POST /api/uar/providers/{{id}}/default to change the system default provider"
+            ),
+        }),
         "rag.embedding_provider" | "rag.embedding_model" => Some(ApiError::Validation {
             key: key.to_string(),
             message: format!(

@@ -9,10 +9,13 @@ import {
   fetchProviderHealth,
   setDefaultProvider,
   updateProvider,
-} from "../api/providers-api";
+} from "@/platform/entities/model-catalog/api/model-catalog-api";
 import { useProvidersStore } from "./providers-store";
 
-vi.mock("../api/providers-api", () => ({
+// The stores reach the transport through the model-catalog platform domain, so the domain
+// transport module is what must be mocked. `ProviderApiError` and the rest stay real.
+vi.mock("@/platform/entities/model-catalog/api/model-catalog-api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/platform/entities/model-catalog/api/model-catalog-api")>()),
   createProvider: vi.fn(),
   deleteProvider: vi.fn(),
   fetchCatalog: vi.fn(),
@@ -163,7 +166,7 @@ describe("providers store", () => {
     expect(useGraphStore.getState().entities.Provider?.stub).toMatchObject({ configured: true });
   });
 
-  test("sets default optimistically and retains it on success", async () => {
+  test("sets the default pair in the graph once the route confirms it", async () => {
     primeLoads(true);
     useGraphStore.getState().upsertEntity("ProviderMeta", "current", {
       id: "current",
@@ -181,7 +184,8 @@ describe("providers store", () => {
     });
   });
 
-  test("rolls default back when persistence fails", async () => {
+  test("leaves the default unchanged when persistence fails", async () => {
+    primeLoads(true);
     useGraphStore.getState().upsertEntity("ProviderMeta", "current", {
       id: "current",
       default_id: "old",

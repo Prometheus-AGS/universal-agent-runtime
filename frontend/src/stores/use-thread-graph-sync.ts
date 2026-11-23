@@ -18,7 +18,7 @@
  */
 import { useEffect, useRef } from "react";
 import { useGraphStore } from "@/platform/entities";
-import { useThreadRegistryStore } from "@/stores/thread-registry-store";
+import { PLACEHOLDER_THREAD_TITLE, useThreadRegistryStore } from "@/stores/thread-registry-store";
 
 interface ServerThreadRow {
   title?: string;
@@ -64,7 +64,9 @@ export function useThreadGraphSync(): void {
           } else {
             // Known thread — apply server fields without touching the
             // local lifecycle flags except markPersisted on transition.
-            if (row.title && row.title !== local.title) {
+            // The server snapshot titles every thread with the placeholder, so it never
+            // replaces a title the user or the title generator set.
+            if (row.title && row.title !== PLACEHOLDER_THREAD_TITLE && row.title !== local.title) {
               registry.setTitle(id, row.title);
             }
             if (local.isEphemeral) {

@@ -1,0 +1,46 @@
+{
+  "baselineRevision": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+  "note": "Read with git show f2c9e36e:frontend/public/sw.js (identical to the working tree at spec time). Nothing was built or run, so every verdict is a source reading.",
+  "scenarios": {
+    "SCN-WRK-001": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "sw.js:4 one cache 'uar-v1'; activate (sw.js:22-31) deletes only other names; cache-first puts every /assets/ response (sw.js:64) into uar-v1, so A-only entries remain after C."
+    },
+    "SCN-WRK-002": {
+      "baseline": "PASS",
+      "kind": "regression-guard",
+      "evidence": "Baseline never evicts, and offline navigations fall back to caches.match(request) then /index.html (sw.js:80-88) while assets are cache-first (sw.js:50-64), so the current build renders offline. The oracle only forbids over-eviction. Non-triviality: the control (offline reload in a fresh context that never visited online) must show the offline error page and an empty root; the runner must fail if it renders."
+    },
+    "SCN-WRK-003": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "The oracle requires an A-only file to fail offline; the baseline keeps A-only files in uar-v1 (sw.js:64) and serves them cache-first, so the fetch succeeds."
+    },
+    "SCN-WRK-004": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "Baseline sw.js:4 creates 'uar-v1'; the oracle requires no cache named uar-v1 after the upgrade, and the baseline never deletes it (sw.js:22-31 keeps CACHE_NAME)."
+    },
+    "SCN-WRK-005": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "sw.js:50-56 serves any .svg and .js path cache-first with no revalidation, so the changed favicon and /probe.js bytes are not served after the deploy."
+    },
+    "SCN-WRK-006": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "sw.js:73-80 stores each ok navigation under its own request key including the query string; 20 distinct URLs leave about 20 HTML entries against the expected 1."
+    },
+    "SCN-WRK-007": {
+      "baseline": "PASS",
+      "kind": "regression-guard",
+      "evidence": "sw.js:36-45 already returns early for non-GET, /api/, /v1/ and /metrics, so no bypass URL is cached and stream latency is unchanged. Non-triviality: the mutant worker (new sw.js with the marker block removed) is run on the new build and must cache the probe URLs; the baseline has no markers, so no mutant is derived from it. The runner must fail if the mutant run does not reject, and the scenario is BLOCKED if a probe URL does not return 200."
+    },
+    "SCN-WRK-009": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "git grep for uar:catalog in frontend/src at the baseline finds nothing, so the required uar:catalog-project and uar:catalog-filter measures do not exist (models-page.tsx:110,136 have no performance marks) and the oracle rejects."
+    }
+  }
+}

@@ -1,0 +1,326 @@
+{
+  "fixtureVersion": 1,
+  "frozenOn": "2026-11-19",
+  "rule": "Expected values below are frozen by this change. The boundary runner reads them; it must not derive any expected value from implementer-written code, from the system under test, or from a value it observed earlier in the same run.",
+  "stub": {
+    "binary": "stub-llm (Cargo.toml [[bin]] name stub-llm, required-features server)",
+    "instances": {
+      "A": "stub-a.fixtures.json (stub-a.hold.fixtures.json in held scenarios)",
+      "B": "stub-b.fixtures.json"
+    },
+    "oracleChannel": "GET /_stub/requests on each instance (request bodies in arrival order); POST /_stub/requests resets",
+    "identity": "which stub instance received a request is the oracle for which route served it; response text stub-a-complete / stub-b-complete in attempt.output is the second channel"
+  },
+  "env": {
+    "UAR_TEAM_EXECUTION_MAX_ACTIVE": "1 only in SCN-TEAM-003 queued case, otherwise unset (default 4)"
+  },
+  "routes": {
+    "A": {
+      "providerId": "stub-team-a",
+      "modelId": "stub-model-a",
+      "settingsRevisionAtInstall": 1
+    },
+    "B": {
+      "providerId": "stub-team-b",
+      "modelId": "stub-model-b",
+      "settingsRevisionAtInstall": 1
+    },
+    "ABSENT": {
+      "providerId": "stub-team-missing",
+      "modelId": "stub-model-x"
+    }
+  },
+  "bindingRevisions": {
+    "1": "modelBindings alias team-main -> A",
+    "2": "revision 1 with modelBindings alias team-main -> B; every other field identical to revision 1",
+    "2-invalid": "revision 2 with policyRevision changed from policy-rev-1 to policy-rev-2-changed",
+    "2-absent": "revision 2 with modelBindings alias team-main -> ABSENT"
+  },
+  "routeEdit": {
+    "call": "PUT /api/providers/stub-team-a",
+    "change": "baseUrl gains a trailing slash",
+    "settingsRevision": {
+      "before": 1,
+      "after": 2
+    }
+  },
+  "http": {
+    "conflict": {
+      "status": 409,
+      "codeGeneric": "collaboration_revision_conflict",
+      "bindingChangedDetailContains": "team deployment binding changed"
+    },
+    "teamCodeInBody": "error.code equals the TEAM_ code when error.detail is exactly that code",
+    "notFound": {
+      "status": 404,
+      "code": "collaboration_not_found"
+    },
+    "providerStaleEdit": {
+      "status": 409,
+      "error": "TEAM_REVISION_CONFLICT"
+    }
+  },
+  "scenarios": {
+    "SCN-TEAM-001": {
+      "task1": {
+        "route": "A",
+        "bindingRevision": 1,
+        "requests": {
+          "A": 2,
+          "B": 0
+        },
+        "output": "stub-a-complete",
+        "toolResult": {
+          "where": "the tool-role message in stub A's second logged request body",
+          "mustContain": [
+            "authorizationRevision",
+            "teamRevision"
+          ],
+          "mustNotContain": [
+            "TEAM_SCOPE_DENIED",
+            "refused",
+            "stale"
+          ],
+          "why": "a failed team_roster must not be able to pass: without this assertion a baseline whose tool call fails still returns final text and settles succeeded"
+        }
+      },
+      "task2": {
+        "route": "B",
+        "bindingRevision": 2,
+        "requests": {
+          "A": 0,
+          "B": 2
+        },
+        "output": "stub-b-complete"
+      },
+      "teamPinAfterTask2": 2,
+      "provenanceTask2": {
+        "boundary": "admission-or-dispatch",
+        "bindingRevision": 2,
+        "roles": [
+          {
+            "requestedAlias": "team-main",
+            "status": "changed",
+            "previous": {
+              "providerId": "stub-team-a",
+              "modelId": "stub-model-a",
+              "settingsRevision": 1
+            },
+            "current": {
+              "providerId": "stub-team-b",
+              "modelId": "stub-model-b",
+              "settingsRevision": 1
+            },
+            "cause": "member-model-rebind"
+          }
+        ]
+      },
+      "routeEditCase": {
+        "edit": "routeEdit",
+        "unpinnedBinding": true,
+        "expectedSettingsRevisionOnNextAttempt": 2,
+        "cause": "route-settings-edit"
+      },
+      "queuedCase": {
+        "expectedRouteAtClaim": "B",
+        "expectedBindingRevisionAtClaim": 2
+      },
+      "negativeControl": {
+        "input": "bindingRevisions.2-invalid",
+        "status": 409,
+        "code": "collaboration_revision_conflict",
+        "detailContains": "team deployment binding changed",
+        "attemptsAfter": "unchanged from before the request",
+        "teamPin": 1,
+        "requests": {
+          "A": 0,
+          "B": 0
+        }
+      }
+    },
+    "SCN-TEAM-002": {
+      "attempt": {
+        "status": "succeeded",
+        "route": "A",
+        "bindingRevision": 1,
+        "requests": {
+          "A": 2,
+          "B": 0
+        },
+        "output": "stub-a-complete",
+        "stateReason": null,
+        "diagnostic": null,
+        "toolResult": {
+          "where": "the tool-role message in stub A's second logged request body",
+          "mustContain": [
+            "authorizationRevision",
+            "teamRevision"
+          ],
+          "mustNotContain": [
+            "TEAM_SCOPE_DENIED",
+            "refused",
+            "stale"
+          ],
+          "why": "a failed team_roster must not be able to pass: without this assertion a baseline whose tool call fails still returns final text and settles succeeded"
+        }
+      },
+      "edits": [
+        "routeEdit",
+        "bindingRevisions.2 installed"
+      ],
+      "negativeControl": {
+        "input": "bindingRevisions.2-invalid installed while the attempt is held",
+        "expected": "attempt status failed or uncertain with a non-null diagnostic or stateReason naming the revalidation failure; no further request reaches A after the install"
+      }
+    },
+    "SCN-TEAM-003": {
+      "admission": {
+        "status": 409,
+        "code": "TEAM_ROUTE_PROFILE_MISMATCH",
+        "attemptsCreated": 0,
+        "requests": {
+          "A": 0,
+          "B": 0
+        },
+        "baits": "route A enabled and set as the registry default provider"
+      },
+      "queued": {
+        "attemptStatus": "failed",
+        "stateReason": "model_route_unavailable_at_boundary",
+        "diagnosticCode": "TEAM_ROUTE_PROFILE_MISMATCH",
+        "requests": {
+          "A": 0,
+          "B": 0
+        }
+      },
+      "companionRun": {
+        "input": "same binding with B enabled",
+        "route": "B",
+        "requests": {
+          "B": 2
+        }
+      },
+      "negativeControl": {
+        "input": "bindingRevisions.2-absent",
+        "status": 409,
+        "code": "TEAM_ROUTE_PROFILE_MISMATCH",
+        "attemptsCreated": 0,
+        "requests": {
+          "A": 0,
+          "B": 0
+        }
+      }
+    },
+    "SCN-TEAM-004": {
+      "afterRestartEqualsBeforeRestart": true,
+      "attempt1": {
+        "status": "initial",
+        "route": "A"
+      },
+      "attempt2": {
+        "status": "changed",
+        "from": "A",
+        "to": "B",
+        "cause": "member-model-rebind"
+      },
+      "attempt3NoChange": {
+        "status": "unchanged",
+        "cause": null
+      },
+      "consoleText": [
+        "stub-team-a/stub-model-a",
+        "stub-team-b/stub-model-b",
+        "changed from"
+      ],
+      "negativeControl": {
+        "input": "GET execution with a different workspace id",
+        "status": 404,
+        "bodyContains": [
+          "stub-team-a",
+          "stub-team-b",
+          "modelProvenance"
+        ],
+        "bodyContainsExpected": false
+      }
+    },
+    "SCN-TEAM-005": {
+      "staleDispatch": {
+        "expectedTeamRevision": "current minus 1",
+        "status": 409,
+        "code": "TEAM_REVISION_CONFLICT"
+      },
+      "staleRosterCursor": {
+        "cursor": "prior revision cursor",
+        "code": "TEAM_REVISION_CONFLICT"
+      },
+      "staleProviderEdit": {
+        "settingsRevision": "one behind",
+        "status": 409,
+        "error": "TEAM_REVISION_CONFLICT"
+      },
+      "stateAfterEachRefusal": "unchanged",
+      "negativeControl": {
+        "input": "dispatch with an attemptId that belongs to no team",
+        "status": 404,
+        "code": "collaboration_not_found"
+      }
+    },
+    "SCN-TEAM-006": {
+      "waitState": "resumed",
+      "continuationRoute": "B",
+      "continuationBindingRevision": 2,
+      "continuations": 1,
+      "negativeControl": {
+        "input": "bindingRevisions.2-invalid between yield and wake",
+        "waitState": "invalidated",
+        "reasonCode": "TEAM_WAIT_INVALIDATED",
+        "continuations": 0
+      }
+    },
+    "SCN-TEAM-007": {
+      "pinnedStale": {
+        "status": 409,
+        "code": "TEAM_REVISION_CONFLICT",
+        "attemptsCreated": 0
+      },
+      "afterNewRevision": {
+        "effectiveSettingsRevision": 2,
+        "attemptsCreated": 1
+      },
+      "negativeControl": {
+        "input": "pin with profile id uar.bogus-profile",
+        "status": 409,
+        "code": "TEAM_ROUTE_PROFILE_MISMATCH",
+        "attemptsCreated": 0
+      }
+    },
+    "SCN-TEAM-008": {
+      "attempt": {
+        "status": "succeeded",
+        "route": "A",
+        "requests": {
+          "A": 2
+        },
+        "output": "stub-a-complete",
+        "toolResult": {
+          "where": "the tool-role message in stub A's second logged request body",
+          "mustContain": [
+            "authorizationRevision",
+            "teamRevision"
+          ],
+          "mustNotContain": [
+            "TEAM_SCOPE_DENIED",
+            "refused",
+            "stale"
+          ],
+          "why": "a failed team_roster must not be able to pass: without this assertion a baseline whose tool call fails still returns final text and settles succeeded"
+        }
+      },
+      "edit": "PUT /api/providers/stub-team-a with enabled=false during the hold",
+      "negativeControl": {
+        "input": "POST attempts/{attemptId}/cancel during the hold",
+        "expected": "attempt status cancelled or cancellation_requested; no stub-a-complete output"
+      }
+    }
+  }
+}

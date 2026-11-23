@@ -1,0 +1,6 @@
+{"index": 0, "id": "bind-candidate-tree", "kind": "run", "exit": 0, "seconds": 1.3}
+{"index": 1, "id": "prepare-bdd", "kind": "build", "exit": 0, "seconds": 1960.2, "ruledLinkerLines": 1, "generatedSummaries": ["warning: `universal-agent-runtime` (bin \"universal-agent-runtime\") generated 1 warning"], "warningStop": ["(!) Some chunks are larger than 1100 kB after minification. Consider:"]}
+{"index": 2, "id": "create-baseline-worktree", "kind": "run", "exit": 0, "seconds": 17.0}
+{"index": 3, "id": "init-baseline-submodules", "kind": "run", "exit": 0, "seconds": 254.1}
+{"index": 4, "id": "install-baseline-deps", "kind": "run", "exit": 0, "seconds": 36.3}
+{"index": 5, "id": "build-baseline-frontend", "kind": "build", "exit": 0, "seconds": 10.7, "ruledFrontendNotices": 5, "ruledLinkerLines": 0, "generatedSummaries": []}

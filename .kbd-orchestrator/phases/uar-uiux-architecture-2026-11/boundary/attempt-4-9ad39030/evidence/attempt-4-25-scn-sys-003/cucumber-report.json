@@ -1,0 +1,607 @@
+[
+  {
+    "description": "  As an operator choosing the system default model, and a person chatting\n  I want a change of model to apply to the next answer without a restart,\n  and to see which model answered, why, and since when\n  So that I can trust the model I chose is the model that served the reply",
+    "elements": [
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;an-agent-with-its-own-model-keeps-it-and-is-listed-when-the-default-changes",
+        "keyword": "Scenario",
+        "line": 131,
+        "name": "An agent with its own model keeps it and is listed when the default changes",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 368000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 18000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 132,
+            "name": "an agent \"BDD Agent Aurora\" with the model \"openai/gpt-5.4-mini\" exists",
+            "result": {
+              "status": "passed",
+              "duration": 43000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 133,
+            "name": "an agent \"BDD Agent Cirrus\" with the extension model \"bdd-provider-c/qwen-5-turbo\" exists",
+            "result": {
+              "status": "passed",
+              "duration": 38000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 134,
+            "name": "an agent \"BDD Agent Dawn\" with no model exists",
+            "result": {
+              "status": "passed",
+              "duration": 22000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 135,
+            "name": "the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 2658000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 136,
+            "name": "the change result lists exactly \"BDD Agent Aurora\" and \"BDD Agent Cirrus\" as pinned",
+            "result": {
+              "status": "passed",
+              "duration": 42000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 137,
+            "name": "the change result's follow count equals the number of other agents",
+            "result": {
+              "status": "passed",
+              "duration": 171000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 138,
+            "name": "I switch to a fresh conversation using \"BDD Agent Aurora\"",
+            "result": {
+              "status": "passed",
+              "duration": 1612000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 139,
+            "name": "I send the message \"S1 r8 aurora\"",
+            "result": {
+              "status": "passed",
+              "duration": 7364000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 140,
+            "name": "the reply to \"S1 r8 aurora\" came from \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 11000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 141,
+            "name": "I switch the active agent to \"BDD Agent Cirrus\"",
+            "result": {
+              "status": "passed",
+              "duration": 524000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 142,
+            "name": "I send the message \"S1 r8 cirrus\"",
+            "result": {
+              "status": "passed",
+              "duration": 7605000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 143,
+            "name": "the reply to \"S1 r8 cirrus\" came from \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 25000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 144,
+            "name": "I switch the active agent to \"BDD Agent Dawn\"",
+            "result": {
+              "status": "passed",
+              "duration": 550000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 145,
+            "name": "I send the message \"S1 r8 dawn\"",
+            "result": {
+              "status": "failed",
+              "duration": 18040000000,
+              "error_message": "Error: the transcript shows a reply to \"S1 r8 dawn\"\n\nthe transcript shows a reply to \"S1 r8 dawn\"\n\nexpect(received).toBeGreaterThan(expected)\n\nExpected: > 2\nReceived:   2\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n   at ../support/s1-ui.ts:104\n\n  102 |       timeout: 15_000,\n  103 |     })\n> 104 |     .toBeGreaterThan(before);\n      |      ^\n  105 |   const reply = await newestReply(page);\n  106 |   if (reply === null) throw new Error(`no reply text was found in the transcript for \"${message}\"`);\n  107 |   s1.replyShown.set(message, reply);\n\n    at captureReply (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:104:6)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:124:9)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:9)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:139:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 146,
+            "name": "the reply to \"S1 r8 dawn\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 348000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 7996000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;an-agent-with-its-own-model-keeps-it-and-is-listed-when-the-default-changes",
+        "keyword": "Scenario",
+        "line": 131,
+        "name": "An agent with its own model keeps it and is listed when the default changes",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 281000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 18000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 132,
+            "name": "an agent \"BDD Agent Aurora\" with the model \"openai/gpt-5.4-mini\" exists",
+            "result": {
+              "status": "passed",
+              "duration": 21000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 133,
+            "name": "an agent \"BDD Agent Cirrus\" with the extension model \"bdd-provider-c/qwen-5-turbo\" exists",
+            "result": {
+              "status": "passed",
+              "duration": 16000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 134,
+            "name": "an agent \"BDD Agent Dawn\" with no model exists",
+            "result": {
+              "status": "passed",
+              "duration": 25000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 135,
+            "name": "the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 2492000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 136,
+            "name": "the change result lists exactly \"BDD Agent Aurora\" and \"BDD Agent Cirrus\" as pinned",
+            "result": {
+              "status": "passed",
+              "duration": 35000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 137,
+            "name": "the change result's follow count equals the number of other agents",
+            "result": {
+              "status": "passed",
+              "duration": 13000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 138,
+            "name": "I switch to a fresh conversation using \"BDD Agent Aurora\"",
+            "result": {
+              "status": "passed",
+              "duration": 1709000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 139,
+            "name": "I send the message \"S1 r8 aurora\"",
+            "result": {
+              "status": "passed",
+              "duration": 6273000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 140,
+            "name": "the reply to \"S1 r8 aurora\" came from \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 7000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 141,
+            "name": "I switch the active agent to \"BDD Agent Cirrus\"",
+            "result": {
+              "status": "passed",
+              "duration": 383000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 142,
+            "name": "I send the message \"S1 r8 cirrus\"",
+            "result": {
+              "status": "passed",
+              "duration": 7071000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 143,
+            "name": "the reply to \"S1 r8 cirrus\" came from \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 7000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 144,
+            "name": "I switch the active agent to \"BDD Agent Dawn\"",
+            "result": {
+              "status": "passed",
+              "duration": 447000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 145,
+            "name": "I send the message \"S1 r8 dawn\"",
+            "result": {
+              "status": "failed",
+              "duration": 22066000000,
+              "error_message": "Error: the transcript shows a reply to \"S1 r8 dawn\"\n\nthe transcript shows a reply to \"S1 r8 dawn\"\n\nexpect(received).toBeGreaterThan(expected)\n\nExpected: > 2\nReceived:   2\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n   at ../support/s1-ui.ts:104\n\n  102 |       timeout: 15_000,\n  103 |     })\n> 104 |     .toBeGreaterThan(before);\n      |      ^\n  105 |   const reply = await newestReply(page);\n  106 |   if (reply === null) throw new Error(`no reply text was found in the transcript for \"${message}\"`);\n  107 |   s1.replyShown.set(message, reply);\n\n    at captureReply (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:104:6)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:124:9)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:9)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:139:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 146,
+            "name": "the reply to \"S1 r8 dawn\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 292000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 7934000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;an-agent-with-its-own-model-keeps-it-and-is-listed-when-the-default-changes",
+        "keyword": "Scenario",
+        "line": 131,
+        "name": "An agent with its own model keeps it and is listed when the default changes",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 337000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 26000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 132,
+            "name": "an agent \"BDD Agent Aurora\" with the model \"openai/gpt-5.4-mini\" exists",
+            "result": {
+              "status": "passed",
+              "duration": 20000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 133,
+            "name": "an agent \"BDD Agent Cirrus\" with the extension model \"bdd-provider-c/qwen-5-turbo\" exists",
+            "result": {
+              "status": "passed",
+              "duration": 19000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 134,
+            "name": "an agent \"BDD Agent Dawn\" with no model exists",
+            "result": {
+              "status": "passed",
+              "duration": 23000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 135,
+            "name": "the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 2418000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 136,
+            "name": "the change result lists exactly \"BDD Agent Aurora\" and \"BDD Agent Cirrus\" as pinned",
+            "result": {
+              "status": "passed",
+              "duration": 45000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 137,
+            "name": "the change result's follow count equals the number of other agents",
+            "result": {
+              "status": "passed",
+              "duration": 16000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 138,
+            "name": "I switch to a fresh conversation using \"BDD Agent Aurora\"",
+            "result": {
+              "status": "passed",
+              "duration": 1754000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 139,
+            "name": "I send the message \"S1 r8 aurora\"",
+            "result": {
+              "status": "passed",
+              "duration": 6784000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 140,
+            "name": "the reply to \"S1 r8 aurora\" came from \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 39000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 141,
+            "name": "I switch the active agent to \"BDD Agent Cirrus\"",
+            "result": {
+              "status": "passed",
+              "duration": 527000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 142,
+            "name": "I send the message \"S1 r8 cirrus\"",
+            "result": {
+              "status": "passed",
+              "duration": 3643000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 143,
+            "name": "the reply to \"S1 r8 cirrus\" came from \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 7000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 144,
+            "name": "I switch the active agent to \"BDD Agent Dawn\"",
+            "result": {
+              "status": "passed",
+              "duration": 374000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 145,
+            "name": "I send the message \"S1 r8 dawn\"",
+            "result": {
+              "status": "failed",
+              "duration": 23400000000,
+              "error_message": "Error: the transcript shows a reply to \"S1 r8 dawn\"\n\nthe transcript shows a reply to \"S1 r8 dawn\"\n\nexpect(received).toBeGreaterThan(expected)\n\nExpected: > 2\nReceived:   2\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n   at ../support/s1-ui.ts:104\n\n  102 |       timeout: 15_000,\n  103 |     })\n> 104 |     .toBeGreaterThan(before);\n      |      ^\n  105 |   const reply = await newestReply(page);\n  106 |   if (reply === null) throw new Error(`no reply text was found in the transcript for \"${message}\"`);\n  107 |   s1.replyShown.set(message, reply);\n\n    at captureReply (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:104:6)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:124:9)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:9)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:139:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 146,
+            "name": "the reply to \"S1 r8 dawn\" came from \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 513000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 5874000000
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "live-model-choice-governs-the-next-eligible-response",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Live model choice governs the next eligible response",
+    "tags": [],
+    "uri": "features/live-model-choice.feature"
+  }
+]

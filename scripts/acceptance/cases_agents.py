@@ -141,18 +141,17 @@ def effective_configuration(ctx: Context) -> Outcome:
     require(original.status == 200, "default-provider setting unavailable")
     original_setting = original.json()
     alternate_id = alternate["config"]["id"]
-    saved = ctx.request("PUT", setting_path, {"value": alternate_id,
-                         "expected_revision": original_setting["revision"]})
-    require(saved.status == 200, "REST default-provider mutation failed")
-    current = ctx.request("GET", setting_path)
-    require(current.status == 200 and current.json()["saved"] == alternate_id,
-            "saved default provider differs")
-    rejected = ctx.request("PUT", setting_path, {"value": primary["config"]["id"],
-                            "expected_revision": "sha256:" + "0" * 64})
-    require(rejected.status == 409 and ctx.request("GET", setting_path).json() == current.json(),
-            "failed durable mutation changed last good setting")
+    # The settings API no longer writes llm.default_provider (SET 1.6); the live
+    # route is its only writer.
+    refused = ctx.request("PUT", setting_path, {"value": alternate_id,
+                          "expected_revision": original_setting["revision"]})
+    require(refused.status == 422 and ctx.request("GET", setting_path).json() == original_setting,
+            "settings API accepted or changed llm.default_provider")
     live = ctx.request("POST", "/api/uar/providers/" + quote(alternate_id, safe="") + "/default")
     require(live.status == 200, "live default-provider selection failed")
+    current = ctx.request("GET", setting_path)
+    require(current.status == 200 and current.json()["saved"] == alternate_id,
+            "live route did not persist the default provider")
     arithmetic(ctx, send_model=False, expected_model=alternate["qualified_model"])
     session = str(uuid.uuid4())
     policy_path = "/api/uar/sessions/" + session + "/agent-config"
@@ -169,7 +168,7 @@ def effective_configuration(ctx: Context) -> Outcome:
     arithmetic(ctx, session_id=session, send_model=False, expected_model=primary["qualified_model"])
     require(ctx.request("POST", "/api/uar/providers/" + quote(primary["config"]["id"], safe="")
                         + "/default").status == 200, "run-owned default restoration failed")
-    return Outcome(Predicate(True, "revision failure and invalid session writes preserved saved values"),
+    return Outcome(Predicate(True, "refused settings write and invalid session writes preserved saved values"),
                    Predicate(True, "real model selection obeyed default/session precedence across cold restart"),
                    {"session_id": session, "primary": primary["qualified_model"],
                     "alternate": alternate["qualified_model"]})

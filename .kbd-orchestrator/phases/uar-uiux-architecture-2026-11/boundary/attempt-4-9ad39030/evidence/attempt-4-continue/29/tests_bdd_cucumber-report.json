@@ -1,0 +1,370 @@
+[
+  {
+    "description": "  As an operator choosing the system default model, and a person chatting\n  I want a change of model to apply to the next answer without a restart,\n  and to see which model answered, why, and since when\n  So that I can trust the model I chose is the model that served the reply",
+    "elements": [
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;a-conversation-override-keeps-answering-on-its-own-model",
+        "keyword": "Scenario",
+        "line": 52,
+        "name": "A conversation override keeps answering on its own model",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 312000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 13000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 53,
+            "name": "a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 2543000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 54,
+            "name": "5 seconds have passed since the system default was set",
+            "result": {
+              "status": "passed",
+              "duration": 2706000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 55,
+            "name": "the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 1740000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 56,
+            "name": "I send the message \"S1 r3 override\"",
+            "result": {
+              "status": "failed",
+              "duration": 129196000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:45:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 57,
+            "name": "the reply to \"S1 r3 override\" came from \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 58,
+            "name": "the answer's receipt names \"bdd-provider-c/qwen-5-turbo\" and the origin \"this conversation\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 59,
+            "name": "the \"Chat X\" conversation shows the requested model \"bdd-provider-c/qwen-5-turbo\" and the effective model \"bdd-provider-c/qwen-5-turbo\" from \"this conversation\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 8521000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 16977000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;a-conversation-override-keeps-answering-on-its-own-model",
+        "keyword": "Scenario",
+        "line": 52,
+        "name": "A conversation override keeps answering on its own model",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 190000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 10000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 53,
+            "name": "a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 2258000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 54,
+            "name": "5 seconds have passed since the system default was set",
+            "result": {
+              "status": "passed",
+              "duration": 2991000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 55,
+            "name": "the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 1534000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 56,
+            "name": "I send the message \"S1 r3 override\"",
+            "result": {
+              "status": "failed",
+              "duration": 129535000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:45:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 57,
+            "name": "the reply to \"S1 r3 override\" came from \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 58,
+            "name": "the answer's receipt names \"bdd-provider-c/qwen-5-turbo\" and the origin \"this conversation\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 59,
+            "name": "the \"Chat X\" conversation shows the requested model \"bdd-provider-c/qwen-5-turbo\" and the effective model \"bdd-provider-c/qwen-5-turbo\" from \"this conversation\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 8213000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 16819000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      },
+      {
+        "description": "",
+        "id": "live-model-choice-governs-the-next-eligible-response;a-conversation-override-keeps-answering-on-its-own-model",
+        "keyword": "Scenario",
+        "line": 52,
+        "name": "A conversation override keeps answering on its own model",
+        "steps": [
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 21,
+            "name": "the stub providers \"openai\", \"bdd-provider-b\" and \"bdd-provider-c\" are configured with models \"gpt-5.4-mini\", \"claude-5-sonnet, claude-5-haiku\" and \"qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 197000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 22,
+            "name": "the system default model is \"openai/gpt-5.4-mini\"",
+            "result": {
+              "status": "passed",
+              "duration": 11000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Given ",
+            "line": 53,
+            "name": "a conversation \"Chat X\" with the model override \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "passed",
+              "duration": 2243000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 54,
+            "name": "5 seconds have passed since the system default was set",
+            "result": {
+              "status": "passed",
+              "duration": 3005000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "When ",
+            "line": 55,
+            "name": "the operator changes the system default to \"bdd-provider-b/claude-5-haiku\"",
+            "result": {
+              "status": "passed",
+              "duration": 1617000000
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 56,
+            "name": "I send the message \"S1 r3 override\"",
+            "result": {
+              "status": "failed",
+              "duration": 130548000000,
+              "error_message": "Error: locator.fill: Test timeout of 120000ms exceeded.\nCall log:\n  - waiting for getByRole('dialog').getByLabel('Thread name')\n\n   at ../support/s1-ui.ts:170\n\n  168 |   await page.getByRole('menuitem', { name: 'Rename' }).click();\n  169 |   const dialog = page.getByRole('dialog');\n> 170 |   await dialog.getByLabel('Thread name').fill(name);\n      |                                          ^\n  171 |   await dialog.getByRole('button', { name: 'Save', exact: true }).click();\n  172 |   await expect(list.getByText(name, { exact: true })).toBeVisible();\n  173 | }\n\n    at renameActiveThread (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:170:42)\n    at materializeCurrentConversation (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:179:3)\n    at finishSend (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:125:3)\n    at sendAndCapture (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/support/s1-ui.ts:119:3)\n    at Object.<anonymous> (/Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/steps/common.steps.ts:10:3)\n    at BddStepInvoker.runWithAfterStepHooks (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:82:16)\n    at BddStepInvoker.invoke (/Volumes/T7/Projects/prometheus/universal-agent-runtime/node_modules/.pnpm/playwright-bdd@9.2.1_@playwright+test@1.65.1/node_modules/playwright-bdd/src/runtime/bddStepInvoker.ts:55:5)\n    at /Volumes/T7/Projects/prometheus/universal-agent-runtime/tests/bdd/.features-gen/features/live-model-choice.feature.spec.js:45:5"
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "Then ",
+            "line": 57,
+            "name": "the reply to \"S1 r3 override\" came from \"bdd-provider-c/qwen-5-turbo\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 58,
+            "name": "the answer's receipt names \"bdd-provider-c/qwen-5-turbo\" and the origin \"this conversation\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "arguments": [],
+            "keyword": "And ",
+            "line": 59,
+            "name": "the \"Chat X\" conversation shows the requested model \"bdd-provider-c/qwen-5-turbo\" and the effective model \"bdd-provider-c/qwen-5-turbo\" from \"this conversation\"",
+            "result": {
+              "status": "skipped",
+              "duration": 0
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "passed",
+              "duration": 8992000000
+            }
+          },
+          {
+            "keyword": "After",
+            "hidden": true,
+            "result": {
+              "status": "failed",
+              "duration": 17899000000,
+              "error_message": "Test timeout of 120000ms exceeded."
+            }
+          }
+        ],
+        "tags": [],
+        "type": "scenario"
+      }
+    ],
+    "id": "live-model-choice-governs-the-next-eligible-response",
+    "line": 1,
+    "keyword": "Feature",
+    "name": "Live model choice governs the next eligible response",
+    "tags": [],
+    "uri": "features/live-model-choice.feature"
+  }
+]

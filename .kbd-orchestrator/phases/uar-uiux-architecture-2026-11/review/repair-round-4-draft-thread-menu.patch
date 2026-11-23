@@ -1,0 +1,20 @@
+--- a/frontend/src/components/layout/left-sidebar.tsx
++++ b/frontend/src/components/layout/left-sidebar.tsx
+@@ -183,7 +183,7 @@
+                 </DropdownMenuTrigger>
+                 <DropdownMenuContent align="end" sideOffset={6}>
+                   <DropdownMenuItem
+-                    onSelect={() => {
++                    onClick={() => {
+                       setRenameThreadId(thread.id);
+                       setRenameValue(thread.title);
+                     }}
+@@ -192,7 +192,7 @@
+                   </DropdownMenuItem>
+                   <DropdownMenuItem
+                     className="text-destructive focus:text-destructive"
+-                    onSelect={() => setDeleteThreadId(thread.id)}
++                    onClick={() => setDeleteThreadId(thread.id)}
+                   >
+                     <Trash2 size={14} />Delete
+                   </DropdownMenuItem>

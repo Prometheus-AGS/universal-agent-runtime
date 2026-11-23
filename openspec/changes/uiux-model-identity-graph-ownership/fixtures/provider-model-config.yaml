@@ -1,0 +1,14 @@
+# Frozen fixture for SCN-IDN-004 (written 2026-11-19).
+# One configured provider that exists in the bundled catalog (nano-gpt, 597 models), seeded with
+# one enabled model and that model as default. The base URL is the repository stub model
+# server (target/debug/stub-llm); no model call is made. How the runner loads this file as the
+# scratch config is UNVERIFIED; the lead binds the exact argv.
+providers:
+  - id: "nano-gpt"
+    display_name: "NanoGPT"
+    base_url: "http://127.0.0.1:4601/v1"
+    protocol: chat
+    enabled: true
+    default_model: "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond"
+    models:
+      - id: "Doctor-Shotgun/MS3.2-24B-Magnum-Diamond"

@@ -41,9 +41,16 @@ export interface MessageMeta {
 interface ChatMessageState {
   messagesByThread: Record<string, RichMessage[]>;
   streamingByThread: Record<string, StreamingState>;
+  /** Threads whose send turn still holds the chat stream lease. finishStream
+   * clears isStreaming before the turn is persisted and the lease is released,
+   * so the composer reads this too; a send accepted in that gap would be
+   * refused as "Another response is active". Set and cleared only by startStream. */
+  turnBusyByThread: Record<string, true>;
 }
 
 interface ChatMessageActions {
+  /** Mark a thread's turn as holding (true) or having released (false) the chat stream lease. */
+  setTurnBusy(threadId: string, busy: boolean): void;
   /** Load persisted messages for a thread from PGlite into Zustand. */
   loadMessagesFromDb(threadId: string): Promise<void>;
   /** Append turns the server session holds but the local history lost. */
@@ -542,6 +549,13 @@ export const useChatMessageStore = create<ChatMessageStore>()(
   immer((set, get) => ({
     messagesByThread: {},
     streamingByThread: {},
+    turnBusyByThread: {},
+
+    setTurnBusy: (threadId, busy) =>
+      set((state) => {
+        if (busy) state.turnBusyByThread[threadId] = true;
+        else delete state.turnBusyByThread[threadId];
+      }),
 
     loadMessagesFromDb: (threadId) => {
       if (get().streamingByThread[threadId]?.isStreaming) return Promise.resolve();
@@ -1190,8 +1204,9 @@ export const selectMessageById =
   (threadId: string, messageId: string) => (state: ChatMessageStore) =>
     state.messagesByThread[threadId]?.find((m) => m.id === messageId) ?? null;
 
+/** Busy for the whole turn: the live stream, then persistence until the lease is released. */
 export const selectIsStreaming = (threadId: string) => (state: ChatMessageStore) =>
-  state.streamingByThread[threadId]?.isStreaming ?? false;
+  (state.streamingByThread[threadId]?.isStreaming ?? false) || (state.turnBusyByThread[threadId] ?? false);
 
 export const selectIsAwaitingFirstToken = (threadId: string) => (state: ChatMessageStore) =>
   state.streamingByThread[threadId]?.awaitingFirstToken ?? false;

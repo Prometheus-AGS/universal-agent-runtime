@@ -85,7 +85,7 @@ switching to local fake peers. No arbitrary commands, callback receipts, copied
 traces or client-side answers can qualify the MCP scenarios. Acceptance remains
 separate from each real Required tool approval. All accept/decline/cancel,
 transport-disconnect, SDK no-replay, sibling-isolation and cold-history scenarios
-remain unexecuted under the full-phase verification boundary.
+remain unexecuted pending the adopted VLBV boundary for this value slice.
 
 ## Absolute lifetimes, abandonment and cold expiry (matrix 107–109)
 

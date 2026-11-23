@@ -1,0 +1,105 @@
+{
+  "kind": "kbd.boundary-baseline-expectations",
+  "phaseId": "uar-uiux-architecture-2026-11",
+  "slice": "S1",
+  "baselineRevision": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+  "baselineWorktree": "$HOME/.claude/worktrees/uiux-baseline",
+  "frozenAt": "2026-11-19",
+  "verdictVocabulary": {
+    "FAIL": "the baseline runs the scenario and the oracle rejects it",
+    "NOT_RUNNABLE": "the baseline lacks the entry control, so the scenario fails at setup",
+    "PASS": "regression guard; holds at the baseline, non-triviality proven by its control or mutant"
+  },
+  "rule": "The baseline check runs each S1 scenario command against the baseline worktree (candidate tests overlaid) and compares the result with baselineVerdict: PASS expects a passing test, FAIL and NOT_RUNNABLE expect a failing test. Any mismatch rejects the runner and step definitions; negative controls are not run against the baseline.",
+  "source": "uiux-system-model-live-default design \"S1 scenario set\" and the per-change fixtures/baseline-verdicts.json files",
+  "scenarios": [
+    {
+      "id": "SCN-SYS-001",
+      "runner": "bdd",
+      "title": "The operator switches the system default without restarting",
+      "baselineVerdict": "NOT_RUNNABLE",
+      "basis": "fixtures/baseline-verdicts.json: frontend/src/features/providers/ui/providers-page.tsx:409-410 offers only a per-provider 'Set as default' button; there is no System default model picker or provider/model pair control to drive, and the baseline PUT-then-POST sequence has no console entry (providers-store.ts:156-176 posts the route only). Round-1 revision: the target model differs from bdd-provider-b's default_model (claude-5-sonn"
+    },
+    {
+      "id": "SCN-SYS-003",
+      "runner": "bdd",
+      "title": "An agent with its own model keeps it and is listed when the default changes",
+      "baselineVerdict": "NOT_RUNNABLE",
+      "basis": "fixtures/baseline-verdicts.json: No pinned-agent list or system default change result exists in the baseline console (frontend/src/features/agents/ui/agents-page.tsx classifies status only at :206-225), and the picker entry is absent."
+    },
+    {
+      "id": "SCN-SYS-007",
+      "runner": "bdd",
+      "title": "Changing the default uses only the live route",
+      "baselineVerdict": "NOT_RUNNABLE",
+      "basis": "fixtures/baseline-verdicts.json: The console write set to compare needs the picker action (absent, providers-page.tsx:409-410). The control also fails at baseline: the settings API accepts llm.default_provider (src/uar/settings/manager.rs:1247-1249 and set_value at :666-671), whereas the oracle requires a 4xx rejection."
+    },
+    {
+      "id": "SCN-SYS-011",
+      "runner": "bdd",
+      "title": "A conversation override keeps answering on its own model",
+      "baselineVerdict": "NOT_RUNNABLE",
+      "basis": "fixtures/baseline-verdicts.json: The scenario's operator step drives the new system default picker, which the baseline lacks (frontend/src/features/providers/ui/providers-page.tsx:409-410 offers only the per-provider button); every scenario using that step is NOT_RUNNABLE at baseline."
+    },
+    {
+      "id": "SCN-SYS-012",
+      "runner": "bdd",
+      "title": "Clearing an override shows what the conversation will inherit",
+      "baselineVerdict": "FAIL",
+      "basis": "fixtures/baseline-verdicts.json: The scenario uses only baseline-runnable steps (default set through the existing route by a harness step, override chosen in the sheet, clear control present). Clearing sets an empty value with no preview (frontend/src/features/chat/session-config-panel.tsx:75-86), so the oracle's preview is absent. It needs no new stub kind."
+    },
+    {
+      "id": "SCN-SYS-013",
+      "runner": "bdd",
+      "title": "Changing one conversation leaves the others alone",
+      "baselineVerdict": "NOT_RUNNABLE",
+      "basis": "fixtures/baseline-verdicts.json: The final step changes the default through the picker, absent at baseline (providers-page.tsx:409-410), and the scenario's confirm and clear steps need the preview flow; the round-1 PASS expectation is withdrawn."
+    },
+    {
+      "id": "SCN-SYS-014",
+      "runner": "bdd",
+      "title": "A reply already being written finishes on the model it started with",
+      "baselineVerdict": "NOT_RUNNABLE",
+      "basis": "fixtures/baseline-verdicts.json: Needs the hold_content stub kind, GET /_stub/held and POST /_stub/release, absent from the pre-phase stub (src/bin/stub-llm.rs accepts only content, grounded_content and tool_call and panics on others); the capability probe GET /_stub/capabilities does not exist there, so setup fails. It also uses the picker step."
+    },
+    {
+      "id": "SCN-SYS-015",
+      "runner": "bdd",
+      "title": "A conversation without an override follows the new default and says so",
+      "baselineVerdict": "NOT_RUNNABLE",
+      "basis": "fixtures/baseline-verdicts.json: Uses the picker operator step (absent at baseline) and a receipt that does not exist; additionally PolicyScope has no system-default origin (src/uar/domain/policy.rs:346-357)."
+    },
+    {
+      "id": "SCN-SYS-016",
+      "runner": "bdd",
+      "title": "A choice that cannot be served is refused and nothing is claimed",
+      "baselineVerdict": "NOT_RUNNABLE",
+      "basis": "fixtures/baseline-verdicts.json: Scenario 7 begins with the operator trying to change the default through the picker, absent at baseline (providers-page.tsx:409-410). The route half would fail at baseline (src/uar/api/providers.rs:367-399 accepts a disabled provider) but is not reached by a baseline-runnable step."
+    },
+    {
+      "id": "SCN-SYS-017",
+      "runner": "bdd",
+      "title": "The receipt names the model the provider reported, not the one requested",
+      "baselineVerdict": "NOT_RUNNABLE",
+      "basis": "fixtures/baseline-verdicts.json: Needs the served_model stub kind and GET /_stub/capabilities, absent from the pre-phase stub (src/bin/stub-llm.rs), and a receipt that does not exist."
+    },
+    {
+      "id": "SCN-SET-003",
+      "runner": "frontend-playwright",
+      "baselineVerdict": "FAIL",
+      "basis": "uiux-settings-truthful-status-and-removals baseline-verdicts.json: PUT llm.default_provider succeeds instead of 422"
+    },
+    {
+      "id": "SCN-IDN-001",
+      "runner": "frontend-playwright",
+      "baselineVerdict": "PASS",
+      "basis": "uiux-model-identity-graph-ownership baseline-verdicts.json: regression guard; the bare-id mutant must FAIL the count"
+    },
+    {
+      "id": "SCN-PICK-002",
+      "runner": "frontend-playwright",
+      "baselineVerdict": "FAIL",
+      "basis": "uiux-schema-controls-and-pickers baseline-verdicts.json: Add Model control is a plain Select with no search"
+    }
+  ]
+}

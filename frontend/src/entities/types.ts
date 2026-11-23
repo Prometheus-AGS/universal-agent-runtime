@@ -2,32 +2,24 @@
 // Canonical entity types for the normalized graph.
 // These mirror backend API response shapes.
 
-export interface ProviderEntity extends Record<string, unknown> {
-  id: string;
-  display_name: string;
-  base_url?: string;
-  configured: boolean;
-  auth_env_var?: string;
-  endpoints: string[];
-  model_count: number;
-  /** Mirrors `CatalogProviderSummary.status` so the Provider page can render
-   *  credential-blocked badges without a separate fetch. */
-  status?: "configured" | "credential-blocked" | "available";
-  status_detail?: string;
-}
+// `Provider` and `ProviderMeta` live in the model-catalog platform domain. The legacy names stay
+// as aliases for callers that have not moved to `@/platform/entities`.
+import type { Provider, ProviderMeta } from "@/platform/entities";
+
+/** @deprecated Use `Provider` from `@/platform/entities`. */
+export type ProviderEntity = Provider;
 
 /**
- * Singleton entity holding global provider metadata (the default provider
- * id and that provider's default model). Keyed by the literal string
- * `"current"`. Backed by the `/api/uar/providers` response's `default_id`
- * field and the matching provider's `default_model` field on each fetch.
+ * Singleton entity holding global provider metadata (the default provider id and that
+ * provider's default model). Keyed by the literal string `"current"`.
+ * @deprecated Use `ProviderMeta` from `@/platform/entities`.
  */
-export interface ProviderMetaEntity extends Record<string, unknown> {
-  id: "current";
-  default_id: string | null;
-  default_model: string | null;
-}
+export type ProviderMetaEntity = ProviderMeta;
 
+/**
+ * Loose structural supertype of the domain `CatalogModel` record. New code uses `CatalogModel`
+ * from `@/platform/entities`, which every `Model` writer produces through `projectCatalogModel`.
+ */
 export interface ModelEntity extends Record<string, unknown> {
   id: string;
   name: string;

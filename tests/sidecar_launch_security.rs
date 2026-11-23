@@ -18,6 +18,8 @@ mod features;
 mod governance;
 #[path = "sidecar_launch_security/guard.rs"]
 mod guard;
+#[path = "sidecar_launch_security/supervised.rs"]
+mod supervised;
 #[path = "sidecar_launch_security/surface.rs"]
 mod surface;
 #[path = "sidecar_launch_security/token.rs"]

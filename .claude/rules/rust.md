@@ -6,16 +6,14 @@ paths: ['**/*.rs', '**/Cargo.toml']
 
 Loaded when a Rust file is read. Not resident.
 
-| Tier | Command |
-|---|---|
-| T0 every edit | `cargo check --locked --no-default-features --features server-full` |
-| T1 unit complete | `cargo test <test_name>` — the just-written unit only |
-| T2 phase complete | `cargo fmt --all -- --check`; `cargo test --locked --no-default-features --features server-full` |
-| T3 milestone only | `cargo build --release`; supported-profile tests; release certification |
+## Verification in UAR
 
-`server-full` is the BossFang sidecar profile and is the checkpoint feature set.
-Scope T0 to a crate where the workspace allows it; never workspace-wide on every
-edit.
+Follow the project-owned **UAR verification: prove the user outcome** rule in
+`AGENTS.md`. Generic tier labels do not prescribe commands or per-edit execution.
+Inspect the intended Rust behavior and evidence mapping early; run the smallest
+admitted compile and changed-behavior BDD path. `server-full` is the BossFang
+sidecar profile; use it when the changed behavior or existing release gate
+requires it, not as a blanket whole-workspace suite.
 
 ## Hard rules
 
@@ -26,8 +24,9 @@ edit.
 - Never `--release` during implementation. It invalidates incremental artifacts
   and pays full optimization for code that is about to change.
 - One build profile per session. Switching thrashes the incremental cache.
-- Batch related fixes. During implementation use static inspection and a cohesive
-  `cargo check`; validate the finished product in one consolidated sequence.
+- Batch related fixes. During implementation use source/IDE feedback and only
+  the executable development checks admitted by the selected method. Do not
+  rerun an unchanged build for a harness-only correction.
 - CI and tests are asynchronous evidence, not the work queue. Do not watch
   workflows while actionable implementation remains.
 
@@ -42,9 +41,9 @@ re-exports. Public items carry `///` docs with `# Examples`, `# Errors`, and
 
 ## Build concurrency
 
-Single-writer within one `CARGO_TARGET_DIR`. Across worktrees with separate
-target dirs and a **shared** `CARGO_HOME`, run check, build, test, and clippy in
-parallel; serialize only dependency-mutating commands (`fetch`, `update`, `add`).
+Single-writer within one `CARGO_TARGET_DIR`. Across authorized, resource-isolated worktrees, use distinct target dirs and a
+**shared** `CARGO_HOME`; do not schedule concurrent builds that compete for the
+same host resources. Serialize dependency-mutating commands (`fetch`, `update`, `add`).
 A separate `CARGO_HOME` per agent breaks registry sharing and forces full
 recompiles — the fingerprint includes that path.
 

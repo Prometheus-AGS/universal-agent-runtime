@@ -1,0 +1,1 @@
+ssh-keygen -Y sign -f ~/.ssh/id_ed25519 -n prometheus-kbd-scope-amendment .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/amendments/2026-11-21-worktree-installs.json

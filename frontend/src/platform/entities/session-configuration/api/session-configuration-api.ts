@@ -160,6 +160,45 @@ export class SessionConfigurationSaveError extends Error {
   constructor(message: string, readonly uncertain: boolean) { super(message); }
 }
 
+/**
+ * The runtime refused a conversation model with 422 `model_not_offered`: its provider is not
+ * configured, is disabled, does not list the model, or admission would refuse it. Nothing was
+ * saved, so the previous effective model still answers. `reason` is the runtime's own text.
+ */
+export class SessionModelNotOfferedError extends SessionConfigurationSaveError {
+  constructor(
+    readonly reason: string,
+    readonly providerId: string | null,
+    readonly modelId: string | null,
+  ) {
+    super(`Not saved. This model is not offered: ${reason}`, false);
+    this.name = "SessionModelNotOfferedError";
+  }
+}
+
+/** Reads the 422 `model_not_offered` body; null for any other refusal. */
+async function readModelNotOffered(response: Response): Promise<SessionModelNotOfferedError | null> {
+  if (response.status !== 422) return null;
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    return null;
+  }
+  if (!body || typeof body !== "object") return null;
+  const record = body as Record<string, unknown>;
+  if (record.code !== "model_not_offered") return null;
+  const reason =
+    typeof record.error === "string" && record.error.trim() !== ""
+      ? record.error
+      : "the provider does not offer this model";
+  return new SessionModelNotOfferedError(
+    reason,
+    typeof record.provider_id === "string" ? record.provider_id : null,
+    typeof record.model_id === "string" ? record.model_id : null,
+  );
+}
+
 export async function saveAgentSessionConfig(
   sessionId: string,
   config: AgentSessionConfig,
@@ -183,6 +222,8 @@ export async function saveAgentSessionConfig(
     throw new SessionConfigurationSaveError("The save result is unknown. Check saved configuration before saving again.", true);
   }
   if (!response.ok) {
+    const refused = await readModelNotOffered(response);
+    if (refused) throw refused;
     throw new SessionConfigurationSaveError(`Session configuration save failed: ${response.status}${response.status >= 500 ? ". Check saved configuration before saving again." : ""}`, response.status >= 500);
   }
   try {

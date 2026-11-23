@@ -1,0 +1,52 @@
+{
+  "baselineRevision": "f2c9e36efe088e06a17c5d880ada877e25f2ad52",
+  "note": "Read with git show f2c9e36e:<path>. frontend/src/platform/pglite, frontend/src/entities and frontend/public/sw.js are unchanged in the working tree versus the baseline at spec time. Nothing was built or run, so every verdict is a source reading.",
+  "scenarios": {
+    "SCN-PGL-001": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "frontend/src/platform/pglite/client.ts:106-117 loads the seed and skips runMigrations; assets.ts:3 imports pglite-seed-v3 while migrations.ts:78 declares version 4, so the first-session message insert (client.ts:260) targets columns the seeded schema lacks and the message is absent after reload. Reload history is read from PGlite (stores/chat-message-store.ts:551,629); if history is also restored from the server the oracle would need a server-independent read, which the runner must check."
+    },
+    "SCN-PGL-003": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "git grep for navigator.locks, BroadcastChannel and PGliteWorker in frontend/src at the baseline returns nothing; client.ts:106 opens PGlite on the main thread, so no pglite-election-lock is held and page.workers() is empty."
+    },
+    "SCN-PGL-004": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "No election lock exists at the baseline (same grep), so the oracle 'exactly one held lock named pglite-election-lock:uar-threads' fails with zero held locks."
+    },
+    "SCN-PGL-005": {
+      "baseline": "PASS",
+      "confidence": "low",
+      "kind": "regression-guard",
+      "evidence": "At the baseline each tab owns its own main-thread PGlite instance (client.ts:106) and no leader exists, so closing tab 1 cannot disturb tab 2's writes and the +20 count after reload most likely holds. Two instances over one idb:// database may still lose updates (UNVERIFIED); the scenario owner could not decide this from source. Non-triviality: the retry-attempts=0 mutant of the new build, 20 samples, must show at least one sample below start+20; the runner must fail if it does not."
+    },
+    "SCN-PGL-006": {
+      "baseline": "FAIL",
+      "kind": "new-behavior",
+      "evidence": "run-event-repository.ts:276,287 subscribe with live.query on the tab's own PGlite instance (client.ts:106, one instance per tab), so events written by tab 2's instance do not reach tab 1's live query; the cross-tab trace oracle fails. A single-tab variant would pass, which is why the row requires two tabs."
+    },
+    "SCN-PGL-007": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "The oracle reads the _graph_snapshot row digest and lastPersistedAt through the diagnostic reader added by task 4.5; git grep for graphSyncStatusStore, uar:catalog or a window-exposed snapshot reader in frontend/src at the baseline finds none, so the baseline cannot set up the observation. (Source reading also says every tab writes the row, bootstrap.ts:36-55.)"
+    },
+    "SCN-PGL-009": {
+      "baseline": "NOT_RUNNABLE",
+      "kind": "new-behavior",
+      "evidence": "The fixture needs the stub-llm stream_content kind (src/bin/stub-llm.rs at the baseline contains no stream_content, and its stream is two chunks, tests/integration/live/stub_llm.rs:355-392) and the diagnostic hook for ingested-event and entity counts (task 4.5, absent at the baseline). The runner may use the new stub binary with the baseline frontend; the event-count precondition still cannot be read."
+    },
+    "SCN-PGL-010": {
+      "baseline": "PASS",
+      "kind": "regression-guard",
+      "evidence": "A profile written by the baseline build and reopened by the baseline build keeps its threads, messages and snapshot (client.ts:106 same dataDir idb://uar-threads). Non-triviality: the other-origin control (localhost vs 127.0.0.1) must show an empty database; the runner must fail if it shows data."
+    },
+    "SCN-PGL-012": {
+      "baseline": "PASS",
+      "kind": "regression-guard",
+      "evidence": "The oracle asserts only that a conversation created before quitting is present after relaunch; the baseline's main-thread PGlite (client.ts:106) satisfies that in a webview that supports IndexedDB. The oracle cannot detect worker use inside the webview. Requires a baseline Boss build (lead). Non-triviality: the emptied-data-directory control must show the conversation absent."
+    }
+  }
+}

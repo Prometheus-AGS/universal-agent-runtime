@@ -1,4 +1,4 @@
-import { registerEntityFromSql, registerSchema } from "@/platform/entities";
+import { registerEntityFromSql, registerModelCatalogEntities, registerSchema } from "@/platform/entities";
 import type { EntityId } from "@/platform/entities";
 import {
   RUN_EVENT_TABLE_SQL,
@@ -17,34 +17,7 @@ export function registerAllSchemas() {
     createTableSql: RUN_EVENT_TABLE_SQL,
   });
 
-  registerSchema({
-    type: "Provider",
-    relations: {
-      models: {
-        cardinality: "hasMany",
-        targetType: "Model",
-        foreignKey: "provider_id",
-        listKeyPrefix: (id) => list("Model", { provider_id: id }),
-      },
-      health: {
-        cardinality: "hasMany",
-        targetType: "RuntimeProviderHealth",
-        foreignKey: "provider_id",
-        listKeyPrefix: (id) => list("RuntimeProviderHealth", { provider_id: id }),
-      },
-    },
-  });
-
-  registerSchema({
-    type: "Model",
-    relations: {
-      provider: {
-        cardinality: "belongsTo",
-        targetType: "Provider",
-        foreignKey: "provider_id",
-      },
-    },
-  });
+  registerModelCatalogEntities();
 
   registerSchema({
     type: "Agent",
@@ -84,7 +57,6 @@ export function registerAllSchemas() {
   registerSchema({ type: "Tool" });
   registerSchema({ type: "Setting" });
   registerSchema({ type: "SettingsType" });
-  registerSchema({ type: "ProviderMeta" });
   registerSchema({ type: "AgentLoadState" });
 
   registerSchema({

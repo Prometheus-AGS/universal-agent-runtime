@@ -1,0 +1,119 @@
+{
+ "frozenAt": "2026-11-19",
+ "purpose": "Independent expected control kinds and bounds for SCN-PICK-001 and SCN-PICK-007. Read from the backend schema source (src/uar/settings/manager.rs) by line, not from the frontend. The server's GET /api/uar/settings/types response must agree with these rows or the runner reports BLOCKED.",
+ "fields": [
+  {
+   "key": "llm.timeout_secs",
+   "xControl": "number",
+   "minimum": 1,
+   "maximum": 600,
+   "expected": "bounded stepper with unit seconds",
+   "source": "manager.rs:2781"
+  },
+  {
+   "key": "llm.max_retries",
+   "xControl": "number",
+   "minimum": 0,
+   "maximum": 10,
+   "expected": "bounded stepper",
+   "source": "manager.rs:2788"
+  },
+  {
+   "key": "llm.embedding.vector_dimension",
+   "xControl": "number",
+   "minimum": 1,
+   "maximum": 16000,
+   "expected": "bounded stepper",
+   "source": "manager.rs:2874"
+  },
+  {
+   "key": "llm.cooldown_secs",
+   "xControl": "number",
+   "minimum": 0,
+   "maximum": null,
+   "expected": "stepper with lower bound 0 and unit seconds",
+   "source": "manager.rs:2812"
+  },
+  {
+   "key": "native_tools.web_fetch_timeout_secs",
+   "xControl": "slider",
+   "xSliderMin": 5,
+   "xSliderMax": 120,
+   "expected": "slider bounded 5 to 120 with the current value shown",
+   "source": "manager.rs:3194"
+  },
+  {
+   "key": "native_tools.session_search_max_results",
+   "xControl": "slider",
+   "xSliderMin": 1,
+   "xSliderMax": 50,
+   "expected": "slider bounded 1 to 50 with the current value shown",
+   "source": "manager.rs:3223"
+  },
+  {
+   "key": "native_tools.file_max_size_kb",
+   "xControl": "number",
+   "minimum": 1,
+   "maximum": null,
+   "expected": "stepper with lower bound 1 and unit KB",
+   "source": "manager.rs:3183"
+  },
+  {
+   "key": "native_tools.file_allowed_paths",
+   "xControl": "tag-input",
+   "itemsType": "string",
+   "expected": "chip list; saved value is an array of the chips",
+   "source": "manager.rs:3179"
+  },
+  {
+   "key": "native_tools.web_fetch_allowed_domains",
+   "xControl": "tag-input",
+   "itemsType": "string",
+   "expected": "chip list; saved value is an array of the chips",
+   "source": "manager.rs:3203"
+  },
+  {
+   "key": "models.vector_threshold",
+   "xControl": "slider",
+   "minimum": 0,
+   "maximum": 1,
+   "expected": "slider bounded 0 to 1",
+   "source": "manager.rs:1887"
+  },
+  {
+   "key": "context_strategy.config",
+   "xControl": "json",
+   "declaredProperties": false,
+   "expected": "raw JSON editor only inside a collapsed Advanced disclosure; invalid JSON blocks save",
+   "source": "manager.rs:2361"
+  }
+ ],
+ "outOfRangeInputs": [
+  {
+   "key": "llm.timeout_secs",
+   "value": 601,
+   "expected": "not enterable or save disabled with the range stated"
+  },
+  {
+   "key": "llm.max_retries",
+   "value": -1,
+   "expected": "not enterable or save disabled with the range stated"
+  },
+  {
+   "key": "native_tools.session_search_max_results",
+   "value": 51,
+   "expected": "not reachable by the slider"
+  }
+ ],
+ "unknownKindFallbacks": [
+  "pricing-table",
+  "model-card",
+  "capabilities-grid"
+ ],
+ "resilienceNumbers": "Frozen in numeric-bounds-oracle.json.",
+ "schemaSourceSha256": {
+  "path": "src/uar/settings/manager.rs",
+  "sha256": "ad6310ceea33050a9689dddb2dddf20339169e53b54d6540743a0775b7aadfc7",
+  "note": "line numbers cited are valid for this digest; a different digest makes the fixture stale (BLOCKED)"
+ }
+}

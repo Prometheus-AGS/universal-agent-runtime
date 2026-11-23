@@ -1,0 +1,122 @@
+{
+  "$comment": "Frozen oracle for SCN-SET-001 and SCN-SET-002 controls and for the retained navigation. Truth source: pre-phase NAV_ITEMS (frontend/src/features/settings/ui/settings-navigation.tsx at the start of the phase) minus fixtures/removed-settings.json. Behavior expectations come from the readers read at the cited lines, not from any classifier table.",
+  "retainedNavLabels": [
+    {
+      "label": "LLM Configuration",
+      "namespace": "llm"
+    },
+    {
+      "label": "Provider Overrides",
+      "namespace": "provider"
+    },
+    {
+      "label": "Context Strategy",
+      "namespace": "context_strategy"
+    },
+    {
+      "label": "RAG & Chunking",
+      "namespace": "rag"
+    },
+    {
+      "label": "Knowledge Bases",
+      "namespace": "knowledge_bases"
+    },
+    {
+      "label": "Memory",
+      "namespace": "memory"
+    },
+    {
+      "label": "Model Files",
+      "namespace": "models"
+    },
+    {
+      "label": "Resilience",
+      "namespace": "resilience"
+    },
+    {
+      "label": "Intent Classifier",
+      "namespace": "intent_classifier"
+    },
+    {
+      "label": "Governance",
+      "namespace": "governance"
+    },
+    {
+      "label": "Agents",
+      "namespace": "agent_config",
+      "kind": "link",
+      "target": "Agents page"
+    },
+    {
+      "label": "Presentation Policy",
+      "namespace": "presentation_policy"
+    },
+    {
+      "label": "Skills",
+      "namespace": "skill_config",
+      "kind": "link",
+      "target": "Skills page"
+    },
+    {
+      "label": "Native Tools",
+      "namespace": "native_tools"
+    },
+    {
+      "label": "Prompt Caching",
+      "namespace": "prompt_caching"
+    },
+    {
+      "label": "User Settings",
+      "namespace": "user_settings"
+    }
+  ],
+  "restartProbe": {
+    "key": "rag.chunk_size",
+    "reader": "src/server.rs:1357-1368 (read once at boot)",
+    "savedValue": 200,
+    "initialValueSource": "boot value read from GET before the edit",
+    "expectedBefore": {
+      "application_status": "restart_required"
+    },
+    "expectedAfterRestart": {
+      "application_status": "effective"
+    },
+    "behaviorOracle": "chunk count of fixtures/ingest-document.txt before and after restart (see chunkOracle)"
+  },
+  "chunkOracle": {
+    "document": "openspec/changes/uiux-settings-truthful-status-and-removals/fixtures/ingest-document.txt",
+    "documentRequirement": "ASCII prose, exactly 6000 characters, no blank lines; written now and frozen. The runner uploads this file unmodified.",
+    "rule": "with the recursive strategy and chunk_size 200 the chunk count is >= 25; with the boot size (default 1024) it is <= 8. Exact counts are read from the knowledge document API and compared with these bounds, not with any system-reported prediction."
+  },
+  "liveProbes": [
+    {
+      "key": "prompt_caching.enabled",
+      "reader": "server.rs:5799,7796; policy.rs:710",
+      "observe": "GET /api/uar/sessions/{id}/prompt-caching reflects the saved boolean on the next request",
+      "expected": {
+        "application_status": "effective"
+      }
+    },
+    {
+      "key": "resilience.retry_max_attempts",
+      "reader": "settings/persisted_resilience.rs:18",
+      "expected": {
+        "application_status": "effective"
+      }
+    }
+  ],
+  "invalidValueControls": [
+    {
+      "key": "rag.chunk_size",
+      "value": 10,
+      "why": "schema minimum is 64 (manager.rs rag schema)",
+      "expected": "non-2xx response; row unchanged"
+    },
+    {
+      "key": "resilience.retry_max_attempts",
+      "value": "abc",
+      "why": "integer key",
+      "expected": "non-2xx response; row unchanged"
+    }
+  ]
+}

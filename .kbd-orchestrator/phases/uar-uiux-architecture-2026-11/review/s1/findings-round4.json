@@ -1,0 +1,88 @@
+{
+  "mode": "artifact",
+  "verdict": "BLOCK",
+  "isolation_mode": "harness-native",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 888,
+      "claim": "bind-candidate-tree can never pass, so every later command is BLOCKED. It requires HEAD == candidateCommit and an empty `git status --porcelain --untracked-files=all` for everything outside boundary/. The file that holds candidateCommit is .kbd-orchestrator/phases/uar-uiux-architecture-2026-11/implementation-complete-inventory.json, which is outside boundary/ and is not git-ignored. A commit cannot contain its own hash. So the inventory is either untracked, which shows `??` and fails the check, or committed in a later commit, which makes HEAD differ from candidateCommit. The same applies to tracked orchestrator files written after the candidate commit: hooks.log.jsonl, which is tracked (committed in 6cf00edd) and modified by KBD hooks; the phase ledger entry that records the inventory; and current-waypoint.json.",
+      "evidence": "adopted-contract.json:888 (the pathspec excludes only `.../boundary`). tasks.md:65 (7.13): 'commit the candidate; record each patch's sha256 and the candidate commit in the inventory', so the inventory is written after the commit. adopted-contract.json:1769 puts the inventory path outside boundary/. `git check-ignore -v <inventory>` returned rc=1 (not ignored). `git ls-files --error-unmatch .../hooks.log.jsonl` succeeds, and gitStatus at session start shows it as ' M'. adopted-contract.json:1785: bind failure makes every later command BLOCKED.",
+      "suggested_fix": "Move the inventory under boundary/, or add explicit `:(exclude)` entries for the inventory, hooks.log.jsonl, hooks-status.json and the ledger files. Better: check `git diff --quiet \"$C\" -- <product, test, fixture and config paths>` plus an untracked-file check scoped to those paths, rather than checking the whole tree.",
+      "resolves": "NEW"
+    },
+    {
+      "severity": "CRITICAL",
+      "file": "openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json",
+      "line": 187,
+      "claim": "No conforming implementation can satisfy heldArrivalCondition. It says the held step returns only after the route handler has intercepted a request 'whose body names bdd-provider-b'. design.md:750 says the same: 'whose body names the target provider'. The live default route carries no body. The provider id is only in the URL path, and the server extracts only Path(id). The design itself says 'The route accepts only a provider id' and 'no new HTTP route, no schema change'. A step written to the frozen oracle waits forever. SCN-SYS-001 then fails on a correct candidate, and CTL-SYS-001-HELD-500 never reaches its rejection, so the control does not run and SCN-SYS-001 is BLOCKED. The alternatives are a step that deviates from the frozen oracle, which the mandated step review should reject, or a product change that adds an ignored body just to pass the test.",
+      "evidence": "s1-oracle.json:187 heldArrivalCondition '...a request was intercepted and its body names bdd-provider-b'. design.md:750 '...intercepted a request whose body names the target provider'. frontend/src/features/providers/api/providers-api.ts:70-71 `fetch(`/api/uar/providers/${providerId}/default`, { method: \"POST\" })`, with no body. src/uar/api/providers.rs:367-370 `set_default(State(..), Path(id): Path<String>)`, with no body extractor. design.md:46 and :127.",
+      "suggested_fix": "Replace 'body names' with 'whose URL path is /api/uar/providers/bdd-provider-b/default' in s1-oracle.json:187 (then re-freeze its sha256 in design.md:341) and in design.md:750.",
+      "resolves": "NEW"
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1790,
+      "claim": "Round-3's tree-binding defect is closed for the first run only. bind-candidate-tree runs once, as the first command. The contract also authorises 'fix at the source and rerun only that step' and two repair attempts. Nothing says that a repair needs a new candidateCommit, recreated mutant worktrees and a rerun of neg-sys-015 and neg-sys-017. worktree-new.sh dies if the worktree already exists, so recreation is not even possible without a removal step. After a repair to the step definitions, the invalidationKeys (which now include tests/bdd/steps/**) invalidate neg-sys-015 and neg-sys-017, but rerunning them uses the old worktrees and their old, strict step code. That is the vacuous-main and strict-mutant split that round 3 described. 'depends on it' (line 1734) is prose: no dependsOn field exists in the command objects. tests/bdd/playwright.config.ts, which controls the steps glob and timeouts, is still missing from the SCN-SYS-015 and SCN-SYS-017 invalidationKeys.",
+      "evidence": "adopted-contract.json:864 repairAttempts 2. :1790 'rerun only that step'. :1734 'every ... command depends on it'. jq for dependsOn over the contract returns nothing. scripts/worktree-new.sh:41 dies with 'target already exists'. SCN-SYS-015 and SCN-SYS-017 invalidationKeys lack tests/bdd/playwright.config.ts.",
+      "suggested_fix": "Add a stop condition: any repair that changes a tracked file requires a new commit and a new inventory, a rerun of bind-candidate-tree, worktree-rm.sh then recreation of s1-mutant-m1 and s1-mutant-m2, and a rerun of neg-sys-015 and neg-sys-017. Add tests/bdd/playwright.config.ts to both invalidationKeys lists.",
+      "resolves": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json:964"
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 1017,
+      "claim": "verify-mutant-m1-diff and verify-mutant-m2-diff do not detect files that a patch adds. `git apply` without --index leaves new files untracked, and `git diff --name-only \"$C\"` lists only tracked changes. A patch can therefore add a module that the target file imports, or a step file that tests/bdd/playwright.config.ts loads through 'steps/*.ts', and still pass the 'lists exactly the inventory targetFile' check. This contradicts design.md:635 ('lists any file other than the patch's single target').",
+      "evidence": "adopted-contract.json:1007 `git apply \"$R/...patch\"` (no --index). :1017 `test \"$(git diff --name-only \"$C\")\" = \"$T\"`. tests/bdd/playwright.config.ts:32 `steps: ['steps/*.ts', 'support/world.ts']`.",
+      "suggested_fix": "Use `git apply --index`, or add `test -z \"$(git ls-files --others --exclude-standard)\"` to the diff check before install.",
+      "resolves": "NEW"
+    },
+    {
+      "severity": "WARNING",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 967,
+      "claim": "The PASS side of round-3's 'spec ok' warning is fixed: def passed requires every result to be passed and no skip or fixme annotation. The FAIL side is not. For SCN-SET-003 and SCN-PICK-002 (baselineVerdict FAIL), the check passes whenever passed is false. That includes a test skipped in the baseline environment and a test that failed for an unrelated in-test reason, such as a fixture's UAR_STATIC_DIR or index.html assertion, which line 1741 says must be BLOCKED. Global setup and webServer failures do fail closed, because Playwright runs plugin setup before the report-begin task and the report then has no specs. Separately, the mutant judgement accepts any error at the named step, and the M2 health scenario has no time assertion. Review of both patches by the critic (line 1735) now mitigates this, but the jq still does not check the wrong value. Line 1738 lists only the M1 patch as unauthored.",
+      "evidence": "Synthetic report run through the line-967 jq: a skipped result returns true (rc=0) for SCN-SET-003, and results:[] returns true (rc=0). Playwright 1.64.1 lib/runner/index.js: createGlobalSetupTasks (plugin setup) runs before createRunTestsTasks -> createReportBeginTask. neg-sys-015 jq at :1480: `$s[$i].error != null`. live-model-choice.feature:52-59 has no receipt-time step.",
+      "suggested_fix": "For baselineVerdict FAIL, require at least one result with status failed and no skip or fixme. Pin the failing assertion or step per supporting spec the way the mutant checks do. For the mutants, require the step error message to contain the expected value (`claude-5-haiku-20261101`, or the A-window time).",
+      "resolves": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json:914 (round-3 WARNING) and :1427 (round-3 WARNING)"
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "tests/bdd/features/live-model-choice-controls.feature",
+      "line": 59,
+      "claim": "In CTL-SYS-001-HELD-500, 'no confirmation is shown' is an instant absence assertion. Nothing in the step contract makes 'the held acknowledgement fails with status 500' wait until the page has processed the fulfilled response, so the check can run before a wrong UI renders a confirmation. The later error and control assertions wait, so this matters only for a UI that shows both an error and a confirmation.",
+      "evidence": "live-model-choice-controls.feature:57-61 order. design.md:754 describes `the held acknowledgement fails with status {int}` only as route.fulfill.",
+      "suggested_fix": "Move 'no confirmation is shown' after 'an error says the system default was not changed', or make the fail step await the response event.",
+      "resolves": "NEW"
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 967,
+      "claim": "In baseline-check-supporting and the neg-sys-015 and neg-sys-017 commands, `(cd X && cmd > report; true)` does not truncate the report when cd fails. A stale report from an earlier attempt in the boundary directory, which is excluded from bind and survives repairs, is then judged. The mutant jq also rejects status timedOut, so a step that waits with toPass or expect.poll with no timeout makes the control INVALID even when the mutant is caught.",
+      "evidence": "adopted-contract.json:967, :1480, :1565. Synthetic run: the same report with status timedOut gives rc=1.",
+      "suggested_fix": "Run `rm -f <report>` before each run. Pin expect timeouts in the step contract, or accept timedOut at the named step.",
+      "resolves": "NEW"
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json",
+      "line": 967,
+      "claim": "Round-3 prefix-assignment CRITICAL: RESOLVED. The jq literals are now passed directly. shlex tokenisation shows the intended --arg values, `bash -n` passes, and the filter contains no single quote.",
+      "evidence": "adopted-contract.json:967 `jq -e --arg id \"SCN-SET-003\" --arg t \"SCN-SET-003 System default has one live control\"`. bash -n -c over argv[2]: syntax-ok.",
+      "suggested_fix": "None.",
+      "resolves": ".kbd-orchestrator/phases/uar-uiux-architecture-2026-11/adopted-contract.json:914"
+    },
+    {
+      "severity": "SUGGESTION",
+      "file": "openspec/changes/uiux-system-model-live-default/fixtures/s1-oracle.json",
+      "line": 207,
+      "claim": "Round-3 SUGGESTION on the non-discriminating registry read-back: RESOLVED. It is documented as notClaimed in the oracle, the feature comment and contract line 1743. Round-3 held-arrival CRITICAL: RESOLVED in substance, because the absence assertions now run after the PUT returns 2xx and the POST is intercepted, which is after optimisticUpsert. This depends on the body-condition defect being fixed (CRITICAL above).",
+      "evidence": "s1-oracle.json:187, :207. live-model-choice-controls.feature:51-54. design.md:750.",
+      "suggested_fix": "None beyond the CRITICAL above.",
+      "resolves": "tests/bdd/features/live-model-choice-controls.feature:58 and openspec/changes/uiux-system-model-live-default/design.md:754"
+    }
+  ]
+}

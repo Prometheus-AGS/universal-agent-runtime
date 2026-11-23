@@ -22,7 +22,7 @@ fn spa_fixture(parent: &Path) -> PathBuf {
 }
 
 /// Listening TCP sockets owned by `pid`, as `address:port` strings.
-fn listening_sockets(pid: u32) -> Vec<String> {
+pub(crate) fn listening_sockets(pid: u32) -> Vec<String> {
     #[cfg(target_os = "macos")]
     {
         let output = std::process::Command::new("lsof")
