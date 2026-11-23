@@ -1,0 +1,11 @@
+{
+  "stage": "reflect",
+  "completedAt": "2026-11-23T13:21:17Z",
+  "outputs": [
+    "reflection.md"
+  ],
+  "nextStage": null,
+  "summaryForNext": "Closed CLOSED_SUPERSEDED: S1 shipped in rc.6 and the 15 rc.6 BDD checks passed, but the bound S1 packet never ran to completion and is withdrawn uncertified to #542. Corrective action: adopt one value slice per phase with runnable scenarios before signing. Recommended next phase: UAR 1.4.0-rc.7 from issue #542 on the Intel Mac, opened by a signed start-successor manifest.",
+  "skipped": false,
+  "skipReason": null
+}
