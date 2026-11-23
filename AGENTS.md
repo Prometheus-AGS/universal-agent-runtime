@@ -294,121 +294,89 @@ yourself across every root, not just this folder.
 
 Outside the managed region. Re-running the bootstrap will not touch this.
 
-### Full-phase verification boundary
+### UAR verification: prove the user outcome
 
-Finish the entire active KBD phase's planned production implementation before
-running any verification. A completed change, task, subsystem, hourly slice, or
-calendar boundary is never permission to test. An unfinished phase stays
-unfinished across hours and sessions. This rule overrides the managed base
-instructions for “Tier 0 every edit,” “Tier 1 unit complete,” and “one edit and
-its cheap check,” as well as any skill or plan that places verification earlier.
+This project-owned section is the UAR interpretation of the generic managed
+verification tiers and the Rust/TypeScript path rules. It does not override
+canonical KBD admission, an adopted contract, or established release controls.
+If the selected method and the local rules disagree, record the exact conflict
+and resolve it once through the canonical mechanism; do not work around a hook
+or ask for a series of redundant approvals.
 
-Before the full implementation boundary, use source inspection and reasoning to
-continue work. Tests may be authored but not executed. Do not start or delegate
-unit, mock, integration, end-to-end, conformance, or regression tests; lint,
-format, typecheck, Cargo check, compiler probes, review-driven verification,
-standalone or customer builds, packaging validation, or scripts that invoke any
-of these indirectly. Do not launch them locally, in CI, through a subagent, or
-through an external gate. There is no automatic compiler-error exception. Stop
-an already running early gate and record its incomplete result; do not count it
-as phase acceptance.
+<!-- kbd-policy:begin -->
+compiler-exception: retired
+cadence-exception: retired
+<!-- kbd-policy:end -->
 
-The boundary is reached only when every planned change's usable production
-behavior, persistence, contracts, migrations, operational settings or UI, and
-required documentation are implemented for the active phase. Inspect the
-authoritative KBD waypoint and the phase's complete plan/task ledger, identify
-every implementation item, and record an explicit implementation-complete
-inventory before issuing a verification command. Verification tasks may remain
-pending at that point; an implementation item may not. Uncertainty about any
-item means the boundary has not been reached. A plan revision adds its work to
-the same boundary.
+**Assess the Origin/Before story.** Name the real person or agent, the job they
+are trying to finish, the expected value, and what would prevent or disprove it.
+Choose one independently usable outcome; do not combine unrelated journeys
+into one phase merely because they share a release.
 
-After that boundary, run the planned production integration gate serially
-through the real path, including the customer build needed for independently
-usable delivery. When the phase includes The Boss, include
-`pnpm build:mac:arm64`. Record the exact command, result, and produced artifact.
-Fix a failure and rerun only its failed gate; do not expand a passing gate into
-broader checks. Earlier acceptance never certifies new work.
+**Plan a reachable exit.** Name the exact candidate and the observable outcome.
+For every required predicate record its user value, starting state, real path,
+fixture/oracle, authority and finite retry or terminal disposition. Verify
+that prerequisites are available and acyclic before adoption: e.g., only test
+production behavior after the admitted deployment, and acquire any effect-bound
+consent after its input exists, before the effect. An unresolved material
+prerequisite stays explicitly blocked, never a circular acceptance criterion.
+Choose the smallest production
+path and Gherkin/BDD coverage that can disprove the intended result. Keep a
+negative or recovery case only when failure would matter to that user or an
+actual trust boundary. No default whole-workspace test suite, old-baseline
+execution, deliberately broken builds, repeated scenarios, or unrelated
+platform/profile matrix. Add one only when it answers a named material risk or
+is already required by the applicable release process.
 
-If an agent believes any verification must run before full phase implementation,
-it must stop and ask the operator for explicit permission first. The request
-must name the exact command, the unfinished implementation items, why source
-inspection cannot resolve the blocker, and what the result would and would not
-prove. Silence, a prior exception, an hourly deadline, and approval for a
-different command are not permission. Wait for an explicit answer before running
-that command. This exception process preserves trust-boundary requirements,
-single-writer build discipline, and truthful reporting.
+**Find harness problems early.** As soon as a scenario is authored, inspect its
+selectors, steps, fixtures, commands, expected signals and admissible target.
+Use source/IDE diagnostics and authorized non-executing checks of the evidence
+plan; these are development feedback, not product acceptance. Once a slice is
+runnable, use a selective compile or local BDD disconfirmation early only if
+the canonical method/cadence and an applicable grant admit it. Where current
+KBD allows execution only at B4, make the smallest independently useful slice
+the adopted VLBV phase. A task, an hourly checkpoint, and a project Markdown
+edit cannot open an execution gate. UAR uses VLBV only for phase acceptance and
+exit; do not select a substitute method, proof mode, or waiver.
 
-### Phase verification and goal-mode authorization
+**Verify and finish.** At the adopted boundary, run the existing clean build
+and the focused changed-behavior packet once against the exact candidate. Don't
+redesign a proven build or release process. Build and release checks are
+prerequisites or delivery evidence; they are not a second phase exit method.
+Keep required security controls and
+applicable artifact/platform checks, including The Boss ARM64 build only when
+it is in the adopted release scope. Record exact product revision, relevant
+configuration and fixture/oracle identities and observed outcome. Passing
+editor feedback or a passing test on a different candidate is not acceptance.
 
-Verification defaults to CLOSED. Goal mode, a handoff, an inventory, or a
-checkpoint alone grants no authority. The operator may grant a named KBD phase
-standing authorization for a bounded set of actions and owned resources. Record
-the grant and any exclusions in the phase ledger. One grant can cover local
-builds, tests, policy checks, Docker, disposable fixtures, independent review,
-and KBD closeout. It applies only to the phases and resources it names.
+**Repair selectively.** Distinguish a product oracle failure from a bad selector,
+fixture, stub, missing prerequisite, or runner failure that did not exercise
+the behavior. Preserve raw evidence and classify the latter truthfully as
+blocked or not exercised under the applicable contract. Do not rebuild an
+unchanged product for a harness-only correction. After a permitted repair,
+rerun only the affected scenarios/controls under current authority, and carry
+forward only receipts whose relevant inputs and scope are still identical.
+If a consumed boundary or a change to an adopted oracle requires signed
+recovery, use the smallest exact recovery supported now; don't erase history,
+call a blocked check a pass, or repeat an unrelated suite. Once user outcomes,
+applicable compile checks and existing release gates are satisfied, close and
+hand off the work for review; minor polish and speculative cases are not blockers.
 
-The full-phase implementation boundary still applies. Finish all planned
-production behavior, fixtures, configuration, migrations, operational settings,
-UI and required documentation before product verification. Reconcile the
-authoritative waypoint, task ledger and writer handoffs, and record the exact
-implementation-complete source inventory. A repository-mandated pre-edit
-policy check may run inside the grant as an edit prerequisite. It earns no
-product acceptance credit.
+### Authorization and agent ownership
 
-Within a phase grant, choose and record exact commands before running them.
-After the implementation boundary, run them serially when required, including
-in-scope prerequisites. Stop the current batch at its first failing check or
-warning subject to the clean-build rule. Diagnose and repair within scope,
-renew the exact inventory, and retry affected checks without another approval.
-The grant survives command changes, repairs, handoffs and gate request numbers
-within its scope. Carry prior receipts forward only for the inputs and behavior
-they actually exercised. Maintain single-writer discipline and preserve other
-agents’ work.
+A recorded scoped phase grant covers the actions, resources and cadence it
+actually names. Work within that grant without seeking approval for every
+ordinary in-scope command or repair. Ask only when an actual material decision,
+authorization or unavailable prerequisite requires the operator. Inventory,
+goals, handoffs and prior grants are not themselves new permission. Preserve
+separate authority for signing, publication, deployment, spending, credential
+changes and other threads' resources.
 
-Ask only for an action outside the grant, a material operator decision, or an
-unavailable prerequisite. Respect explicit closures and the operator's limits.
-Publication, signing, deployment, paid calls, credential changes, and changes
-to another chat's resources require separate authority. A child grant does not
-authorize work in the parent or any other phase. Without a phase grant, use
-explicit command-by-command approval after recording the full inventory.
-
-Before each command or delegation, classify it as source inspection,
-implementation, or verification. Include the applicable gate and scope in
-each team packet. At each 120-minute checkpoint and handoff, reconcile the
-waypoint, ledger, active agents, commands and authorization. Stop and record
-any accidental out-of-scope verification. A checkpoint never opens a gate.
-
-### Agent-team execution and context continuity
-
-Use an agent team for this Dot phase and every multi-change KBD development
-phase. The lead owns the authoritative waypoint, phase plan, integration order,
-source ownership map, and full-phase verification boundary. Delegate bounded
-implementation, research, and independent review to teammates; do not silently
-replace team execution with one agent carrying the entire phase in its context.
-Use the existing `.agent-team/uar-core` roles when they fit the assigned work.
-If team tools are unavailable, stop, report the limitation, and ask the operator
-how to proceed before doing multi-change implementation alone.
-
-Give each teammate a specific outcome, owned files or subsystem, relevant
-contracts, and a concise handoff location. Tell teammates that others share the
-checkout and that they must preserve others' edits. Assign one writer per file
-and one writer per build target. Teammates may inspect source and implement
-their assigned work, but the full-phase verification boundary above applies to
-every teammate and any process they start. No teammate may start an early test,
-check, build, or external gate on the lead's behalf.
-
-Keep context bounded by reading the waypoint and only the relevant phase
-artifacts and source for the next task. Send small, explicit task packets to
-fresh-context teammates rather than copying the entire conversation. Require
-each handoff to state files changed, unresolved decisions, current source state,
-and what remains unverified. Record decisions and progress in the KBD phase's
-authoritative artifacts so a new lead context can resume without reconstructing
-the phase from chat history. Summarize tool output; preserve exact commands and
-receipts in artifacts rather than flooding the lead context. Before context
-exhaustion, stop at a safe boundary, update the handoff, and resume from that
-record. Do not claim that team use removes context limits; manage those limits
-explicitly.
+Use agent teams and fresh-context review when independent work or risk warrants
+it, not as a gate for an otherwise bounded fix. Keep one writer per file or
+build target. For delegation, state the user outcome, owned files and exact
+verification authority. Save concise handoffs with changed inputs, actual
+receipts and remaining work; progress reports are not verification gates.
 
 ### UI design skill precedence
 
@@ -594,14 +562,13 @@ Always use `rust-best-practices` for general implementation and review. Add
 `rust-mcp-server-generator` for Rust MCP server or transport work. Repository
 dependency pins and protocol contracts override generator examples.
 
-Skill activation does not authorize immediate Cargo execution. Finish the entire
-active phase's production implementation under the full-phase verification boundary
-above, then run one serialized validation batch. Start with the smallest
-integration target that exercises the real production path and collaborators.
-Unit, module-local, mock-only, and filtered function tests do not count as
-completion evidence. Defer broader, specialized, release, and feature-matrix
-checks until the applicable final boundary.
-Read the skill's phase-gated verification reference before the first Cargo command.
+Skill activation does not authorize Cargo execution. Follow **UAR verification:
+prove the user outcome** above. Use the smallest admitted compile or integration
+target that exercises the changed production behavior. Unit, module-local and
+mock-only results do not certify a production outcome. Do not change the
+established release profile, compile with a different feature set just to make
+a check pass, or add a release matrix unrelated to the promised outcome.
+Read the selected skill's effective method before an executable Cargo check.
 
 ### Clean compile: no errors, no warnings — 2026-10-30
 
@@ -625,8 +592,8 @@ The active UAR already has jwt_required=false; team APIs nevertheless require a 
 **Always think in terms of user goals and value—not in tests or assumptions.**
 
 - **Assess and analyze:** Name the actual user or agent, the outcome they need, and why it matters. Trace the reported conditions through the real UI, service, and source of truth before choosing a fix. Distinguish confirmed intent from assumptions.
-- **Plan:** In the existing accepted spec or behavior contract, record each rule's condition, observable outcome, evidence, exceptions, and unresolved assumptions. Trace each material rule to a reachable phase-end Gherkin/VLBV scenario. Do not invent speculative cases or add an unrelated verification gate.
-- **Execute and reflect:** Stay within the adopted KBD scope and verification windows. Use the established build, phase-end verification, approval and release process unchanged. At the authorized boundary, run the smallest relevant checks that exercise the changed behavior, then record what was actually observed, any limitations, and how the user gets the intended value.
+- **Plan:** In the existing accepted spec or behavior contract, record each rule's condition, observable outcome, evidence, exceptions, and unresolved assumptions. Trace each material rule to a reachable Gherkin/VLBV scenario in the smallest applicable value slice. Do not invent speculative cases or add an unrelated verification gate.
+- **Execute and reflect:** Stay within adopted KBD scope and cadence. Use the UAR verification rule above and preserve the established build and release process. Record the observed result, its limits and how the user gets the intended value.
 - **Finish the handoff:** Use the agreed exit contract. Once applicable compile and changed-behavior checks satisfy it and review is authorized, hand off the reviewable change with evidence, not an indefinite draft. Do not hold on unrelated polish or bypass a real gate.
 
 For settings, distinguish “the picker displays the new model” from “the next turn uses the selected provider and model at the intended scope.” Where relevant and authorized, verify both surfaces and that clearing the override restores inheritance.

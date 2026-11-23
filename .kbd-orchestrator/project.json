@@ -3,6 +3,7 @@
   "displayName": "Universal Agent Runtime",
   "sourceOfTruth": ".kbd-orchestrator",
   "specSystem": "openspec",
+  "verificationMethod": "VLBV",
   "activeChange": null,
   "activePhase": "uar-uiux-architecture-2026-11",
   "memoryMirror": {
