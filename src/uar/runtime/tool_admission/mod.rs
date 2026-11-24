@@ -701,6 +701,8 @@ impl std::fmt::Debug for ToolAdmissionRuntime {
 
 impl ToolAdmissionRuntime {
     /// Observe the existing run cancellation at the final executor boundary.
+    pub(crate) fn cancellation_token(&self) -> tokio_util::sync::CancellationToken { self.cancellation.clone() }
+
     pub fn is_cancelled(&self) -> bool {
         self.cancellation.is_cancelled()
     }

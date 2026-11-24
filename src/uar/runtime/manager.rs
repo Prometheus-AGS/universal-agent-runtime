@@ -4908,6 +4908,23 @@ impl RunManager {
         // Attempt-bound peer handlers are created later, but their identities
         // must enter the universe before normal scopes can select or deny them.
         let mut attempt_native_tools = BTreeSet::new();
+        // The configured root owner's headers stay private even if the connector
+        // disappears or its launch declaration changes. Only a matching captured
+        // declaration reserves the report as a candidate in normal policy resolution.
+        let demo_profile = self.harness_config.unanswered_demo.as_ref().filter(|config| {
+            inherited.is_none() && verified_owner.as_ref()
+                .and_then(|owner| owner.credential_principal())
+                .is_some_and(|principal| config.matches_owner(principal))
+        }).cloned();
+        if let (Some(config), Some(resources)) = (&demo_profile, &mcp_resources)
+            && Some(resources.owner()) == verified_owner.as_ref()
+            && resources.catalog().definitions().any(|server| {
+                resources.run_scoped_names().is_none_or(|names| names.contains(server.name()))
+                    && config.matches_declaration(server)
+            })
+        {
+            attempt_native_tools.insert(crate::mcp::programmatic::TOOL.to_owned());
+        }
         if collaboration_binding
             .as_ref()
             .is_some_and(|binding| binding.team_attempt.is_some())
@@ -8031,7 +8048,7 @@ impl RunManager {
         // Tool definitions ride on every model call, so their serialized cost
         // is withheld from the history allowance like world state and the
         // response reserve. The tool set is resolved before any reduction.
-        let (mcp, mcp_preflight, mcp_descriptors, active_for_manifest) = {
+        let (mcp, mcp_preflight, mut mcp_descriptors, active_for_manifest) = {
             let context = activation_context.lock().await;
             (
                 Arc::new(context.mcp().clone()),
@@ -8040,34 +8057,46 @@ impl RunManager {
                 context.active(),
             )
         };
-        let authorized_tools =
-            match crate::uar::runtime::turn::contributors::collect_authorized_tools(
-                mcp_descriptors
-                    .into_iter()
-                    .chain(native_skills.descriptors().await),
-            ) {
-                Ok(tools) => tools,
-                Err(error) => {
-                    if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
-                        state.run.status = RunStatus::Error;
-                    }
-                    activation_context.lock().await.record_outcomes(false);
-                    emitter
-                        .emit(NormalizedEvent::Error {
-                            run_id: run_id.clone(),
-                            code: "turn_assembly_rejected".into(),
-                            message: error.to_string(),
-                        })
-                        .await;
-                    emitter
-                        .emit(NormalizedEvent::RunDone {
-                            run_id: run_id.clone(),
-                        })
-                        .await;
-                    self.run_cancellations.write().await.remove(&run_id);
-                    return run_id;
+        let authorized_projection = async {
+            let mut native = native_skills.descriptors().await;
+            if let Some(config) = &demo_profile {
+                mcp_descriptors.retain(|descriptor| !config.hides_raw(descriptor));
+                if config.authorize(verified_owner.as_ref(), &effective_policy,
+                    &artifact.policy.tools.execution_mode, mcp_preflight.as_deref()).await.is_ok()
+                {
+                    native.push(crate::llm::Orchestrator::demo_descriptor(&native_skills).map_err(|error|
+                        crate::uar::runtime::turn::contributors::AssemblyError::ContributorFailed {
+                            name: crate::mcp::programmatic::TOOL.to_owned(), message: error.to_string(),
+                        })?);
                 }
-            };
+            }
+            crate::uar::runtime::turn::contributors::collect_authorized_tools(
+                mcp_descriptors.into_iter().chain(native),
+            )
+        }.await;
+        let authorized_tools = match authorized_projection {
+            Ok(tools) => tools,
+            Err(error) => {
+                if let Some(state) = self.active_runs.write().await.get_mut(&run_id) {
+                    state.run.status = RunStatus::Error;
+                }
+                activation_context.lock().await.record_outcomes(false);
+                emitter
+                    .emit(NormalizedEvent::Error {
+                        run_id: run_id.clone(),
+                        code: "turn_assembly_rejected".into(),
+                        message: error.to_string(),
+                    })
+                    .await;
+                emitter
+                    .emit(NormalizedEvent::RunDone {
+                        run_id: run_id.clone(),
+                    })
+                    .await;
+                self.run_cancellations.write().await.remove(&run_id);
+                return run_id;
+            }
+        };
         let tool_reserved_tokens = {
             let (mut definitions, has_deferred) = {
                 let exposure =
@@ -8755,6 +8784,7 @@ impl RunManager {
         let (orchestrator, graph_thread_delegate) = {
             let o = model_bindings
                 .orchestrator(mcp, Arc::clone(&native_skills))
+                .with_demo_config(demo_profile.clone())
                 .with_sandbox_scope(sandbox_scope.clone())
                 .with_terminal_scope(terminal_scope.clone())
                 .with_artifact_collector(

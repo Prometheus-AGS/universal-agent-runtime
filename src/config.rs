@@ -210,6 +210,9 @@ pub enum SkillActivationMode {
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, schemars::JsonSchema)]
 pub struct HarnessConfig {
+    /// Optional operator-scoped, fixed read-only MailCraft/BunBox pilot.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unanswered_demo: Option<crate::mcp::programmatic::DemoConfig>,
     #[serde(default)]
     pub mode: HarnessMode,
     #[serde(default)]

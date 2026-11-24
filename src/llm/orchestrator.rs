@@ -25,6 +25,8 @@
 
 use std::collections::BTreeMap;
 use std::pin::Pin;
+
+mod programmatic;
 use std::sync::Arc;
 
 use backon::Retryable;
@@ -501,6 +503,7 @@ pub struct Orchestrator {
     tool_approval_gate: Option<ToolApprovalGate>,
     /// Exact prepared-invocation authority used by standalone and paired hosts.
     tool_admission: Arc<crate::uar::runtime::tool_admission::ToolAdmissionRuntime>,
+    demo_config: Option<Arc<crate::mcp::programmatic::DemoConfig>>,
     #[cfg(feature = "bauar-native-admission-gate")]
     native_admission_gate:
         Arc<crate::uar::runtime::native_skills::search_tools_gate::NativeAdmissionGateObserver>,
@@ -884,16 +887,26 @@ impl Orchestrator {
         call_index: usize,
         history: Vec<Message>,
     ) -> anyhow::Result<(String, String, ToolOutcome)> {
-        let descriptors = self.assembled_descriptors().await?;
+        let mut scoped_host;
+        let host = if call.function.name == crate::mcp::programmatic::TOOL && self.demo_config.is_some() {
+            scoped_host = self.clone();
+            scoped_host.native_skills = Arc::new(self.native_skills.filtered(None).await);
+            if let Some(activation) = &self.skill_activation {
+                scoped_host.mcp_preflight = activation.context.lock().await.mcp_preflight().cloned();
+            }
+            anyhow::ensure!(scoped_host.register_demo().await?, "Recovered staged tool grant is unavailable");
+            &scoped_host
+        } else { self };
+        let descriptors = host.assembled_descriptors().await?;
         let descriptor = descriptors
             .get(&call.function.name)
             .ok_or_else(|| anyhow::anyhow!("Recovered tool descriptor is unavailable"))?;
         anyhow::ensure!(
-            !self.requires_sandbox(descriptor),
+            !host.requires_sandbox(descriptor),
             "Recovered tool requires unavailable sandbox renewal"
         );
         let arguments = validate::validate(&descriptor.validator, &call.function.arguments)?;
-        let admitted = self
+        let admitted = host
             .prepare_and_admit_tool_with_history(
                 call.id.clone(),
                 descriptor,
@@ -903,14 +916,14 @@ impl Orchestrator {
             )
             .await
             .map_err(anyhow::Error::msg)?;
-        let outcome = self
+        let outcome = host
             .execute_direct_tool(
                 (1_u64 << 32) | call_index as u64,
                 &admitted,
                 descriptor.output_limit.unwrap_or(self.tool_output_policy),
             )
             .await;
-        self.finish_tool_execution(&admitted, outcome).await
+        host.finish_tool_execution(&admitted, outcome).await
     }
 
     /// Replace the complete canonical history after host recovery produced real results.
@@ -1039,6 +1052,19 @@ impl Orchestrator {
             .await
             {
                 Ok(execution) => execution,
+                Err(error) if error.downcast_ref::<programmatic::StagedError>().is_some() => {
+                    let staged = error.downcast_ref::<programmatic::StagedError>()
+                        .expect("the match guard identified a staged failure");
+                    let outcome = staged.outcome();
+                    let value = self.preserve_canonical_tool_result(
+                        sequence, call_id, provider_name,
+                        crate::uar::persistence::agent_threads::CanonicalReceiptSource::Native,
+                        outcome, serde_json::json!({"status": "error", "reason": staged.to_string()}),
+                        Vec::new(), true, 0,
+                    ).await?;
+                    let content = serde_json::to_string(&value)?;
+                    return Ok((content.clone(), content, outcome));
+                }
                 Err(error) => {
                     let content = self
                         .preserve_terminal_tool_failure(
@@ -1166,6 +1192,7 @@ impl Orchestrator {
             health_monitor: None,
             native_skills,
             tool_approval_gate: None,
+            demo_config: None,
             tool_admission: Arc::new(
                 crate::uar::runtime::tool_admission::ToolAdmissionRuntime::standalone_ephemeral(),
             ),
@@ -2180,9 +2207,16 @@ impl Orchestrator {
                     .map(|tool| Arc::clone(tool.descriptor())),
             );
         }
-        for descriptor in mcp_descriptors
-            .into_iter()
-            .chain(self.native_skills.descriptors().await)
+        let mut native_descriptors = self.native_skills.descriptors().await;
+        if let Some(config) = self.demo_scope() {
+            mcp_descriptors.retain(|tool| !config.hides_raw(tool));
+            if native_descriptors.iter().any(|d| d.provider_name == crate::mcp::programmatic::TOOL)
+                && !self.demo_authorized(config).await
+            {
+                native_descriptors.retain(|d| d.provider_name != crate::mcp::programmatic::TOOL);
+            }
+        }
+        for descriptor in mcp_descriptors.into_iter().chain(native_descriptors)
         {
             if let Some(existing) = descriptors.get(&descriptor.provider_name) {
                 if !existing.equivalent_to(&descriptor) {
@@ -2579,6 +2613,7 @@ impl Orchestrator {
 
             let mut iteration = 0;
             let mut search_registered = false;
+            let mut demo_registered = false;
 
             loop {
                 if iteration >= MAX_TOOL_ITERATIONS {
@@ -2627,6 +2662,9 @@ impl Orchestrator {
                 // that reduction and refusal use the tools actually sent this step.
                 let projected = async {
                     use crate::uar::runtime::native_skills::search_tools::{SEARCH_TOOLS_NAME, SearchToolsTool};
+                    if !demo_registered {
+                        demo_registered = orchestrator.register_demo().await?;
+                    }
                     let mut current = orchestrator.assembled_descriptors().await?;
                     if search_registered { current.remove(SEARCH_TOOLS_NAME); }
                     let snapshot = exposure.project(&current);

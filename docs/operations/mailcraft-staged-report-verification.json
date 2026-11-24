@@ -1,0 +1,99 @@
+{
+  "date": "2026-11-23",
+  "scope": "Authenticated UAR staged admission and BunBox executable pin on the synthetic small mailbox fixture",
+  "platform": "macOS arm64",
+  "model": "qwen3:8b",
+  "uarSha256": "4680b0c91dfe71b92aa9248de6559373fb78096b6f4c5417f21efbb537998ab4",
+  "bunboxBinarySha256": "1adc181346ff5a8b95a2070cb9c03bc7ca6c80505dff57a2bd09d27c4fc3983d",
+  "recipeSha256": "14a6a558997f83ab816365d29fa6d25031a05c4e9d456a8d2797ad7fc1f5dc91",
+  "build": {
+    "command": "ORT_LIB_PATH=\"$ORT_LIB_PATH\" ORT_PREFER_DYNAMIC_LINK=1 CARGO_BUILD_BUILD_DIR=\"$CARGO_BUILD_BUILD_DIR\" cargo build --locked --bin universal-agent-runtime --features local-models",
+    "onnxRuntime": "1.30.0",
+    "artifactCheck": "shasum -a 256 target/debug/universal-agent-runtime"
+  },
+  "measurement": {
+    "adapter": "KnowCraft docs/pilots/mcp-code-mode/pilot_run.py, arm B, small fixture",
+    "commandsFromPilotWorkspace": [
+      "python3 pin-boundary.py",
+      "python3 admission-drift-control.py"
+    ],
+    "scriptSha256": {
+      "pin-boundary.py": "43da21f460d0639a310f35bf3db38274b24cda9693a16fd7c6ed8da4f33a6905",
+      "admission-drift-control.py": "97b73181c1005b7450006a76f067268d5e1bb8bc1f2df3babfef526795291d95"
+    },
+    "sourceReceiptSha256": {
+      "pinControls": "e8fd8cdbc89d21d982e6e86f591db8ca3b6fd97303bf1043dce1a1ca09b1d97a",
+      "declarationDrift": "d5868dfa5a6392ad0ba275d574763272a7753067d4661315d6aceb0b6148a3d1"
+    }
+  },
+  "controls": {
+    "correctPin": {
+      "configuredSha256": "1adc181346ff5a8b95a2070cb9c03bc7ca6c80505dff57a2bd09d27c4fc3983d",
+      "pass": true,
+      "providerCalls": 2,
+      "pageCalls": 1,
+      "rowsRead": 11,
+      "toolCalls": [
+        "unanswered_demo_report"
+      ],
+      "reasonCodes": [],
+      "newJobs": 1,
+      "rawHeadersInModel": false,
+      "rawHeadersInPublicHistory": false,
+      "mailboxUnchanged": true,
+      "venueStillReserved": false,
+      "outOfScopeSuccesses": 0,
+      "writes": 0,
+      "sends": 0,
+      "terminalJobStatus": "succeeded",
+      "oracle": {
+        "correct": true,
+        "tp": 4,
+        "fp": 0,
+        "fn": 0,
+        "resolved": 5,
+        "cited": 5,
+        "coverageCorrect": true,
+        "expectedCoverage": "complete",
+        "uncertaintyCorrect": true,
+        "shapeCorrect": true
+      }
+    },
+    "wrongPin": {
+      "configuredSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "pass": true,
+      "providerCalls": 2,
+      "pageCalls": 1,
+      "rowsRead": 11,
+      "toolCalls": [
+        "unanswered_demo_report"
+      ],
+      "reasonCodes": [
+        "executor_pin_mismatch"
+      ],
+      "newJobs": 0,
+      "rawHeadersInModel": false,
+      "rawHeadersInPublicHistory": false,
+      "mailboxUnchanged": true,
+      "venueStillReserved": false,
+      "outOfScopeSuccesses": 0,
+      "writes": 0,
+      "sends": 0
+    },
+    "declarationDrift": {
+      "change": "Decrease the declared connector cutoff by one second while keeping the original report cutoff.",
+      "configuredSha256": "1adc181346ff5a8b95a2070cb9c03bc7ca6c80505dff57a2bd09d27c4fc3983d",
+      "pass": true,
+      "providerCalls": 1,
+      "leakedTools": [],
+      "pageCalls": 0,
+      "outOfScopeSuccesses": 0,
+      "writes": 0,
+      "sends": 0,
+      "newJobs": 0,
+      "rawHeadersInModel": false,
+      "mailboxUnchanged": true,
+      "venueStillReserved": false
+    }
+  }
+}
