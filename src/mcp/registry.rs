@@ -1867,7 +1867,7 @@ impl McpRegistry {
     }
 
     /// Sanitize tool names for `OpenAI` API compatibility.
-    fn sanitize_tool_name(name: &str) -> String {
+    pub(crate) fn sanitize_tool_name(name: &str) -> String {
         let mut sanitized: String = name
             .chars()
             .map(|c| {

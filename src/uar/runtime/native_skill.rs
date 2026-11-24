@@ -427,22 +427,17 @@ impl NativeSkillRegistry {
         self.register_arc(Arc::new(skill)).await
     }
 
-    /// Register a native skill from an [`Arc`] after compiling its descriptor.
-    ///
-    /// # Errors
-    ///
-    /// Returns an assembly error for an invalid schema or a conflicting
-    /// provider-visible name. An identical descriptor is deduplicated.
-    pub async fn register_arc(&self, skill: Arc<dyn NativeSkill>) -> Result<(), ToolAssemblyError> {
+    /// Compile the same descriptor used for registration when freezing a run manifest.
+    pub(crate) fn compile_descriptor(&self, skill: &dyn NativeSkill) -> Result<Arc<ToolDescriptor>, ToolAssemblyError> {
         let id = skill.name().to_owned();
         let provider_name = Self::provider_tool_name(&id);
         let input_schema = skill.parameters_schema();
         let validator = self
             .validator_compiler
             .compile(&provider_name, &input_schema)?;
-        let descriptor = Arc::new(ToolDescriptor {
+        Ok(Arc::new(ToolDescriptor {
             id,
-            provider_name: provider_name.clone(),
+            provider_name,
             description: skill.description().to_owned(),
             source: skill.source(),
             server: None,
@@ -454,8 +449,18 @@ impl NativeSkillRegistry {
             concurrency_key: skill.concurrency_key().map(str::to_owned),
             exposure: skill.exposure(),
             output_limit: skill.output_limit(),
-        });
+        }))
+    }
 
+    /// Register a native skill from an [`Arc`] after compiling its descriptor.
+    ///
+    /// # Errors
+    ///
+    /// Returns an assembly error for an invalid schema or a conflicting
+    /// provider-visible name. An identical descriptor is deduplicated.
+    pub async fn register_arc(&self, skill: Arc<dyn NativeSkill>) -> Result<(), ToolAssemblyError> {
+        let descriptor = self.compile_descriptor(skill.as_ref())?;
+        let provider_name = descriptor.provider_name.clone();
         let mut skills = self.skills.write().await;
         if let Some(existing) = skills.get(&provider_name) {
             if existing.descriptor.equivalent_to(&descriptor) {

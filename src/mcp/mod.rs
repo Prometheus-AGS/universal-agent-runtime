@@ -36,6 +36,7 @@ pub mod interaction;
 pub mod outcome;
 pub mod preflight;
 pub mod projection;
+pub mod programmatic;
 pub mod registry;
 pub(crate) mod run_events;
 pub mod runtime;

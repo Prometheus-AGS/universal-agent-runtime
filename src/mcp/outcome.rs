@@ -36,6 +36,19 @@ impl ToolOutcome {
     }
 }
 
+impl From<super::programmatic::JobError> for ToolOutcome {
+    fn from(error: super::programmatic::JobError) -> Self {
+        use super::programmatic::JobError;
+        match error {
+            JobError::OutcomeUnknown | JobError::CleanupUnknown | JobError::InvalidJobReceipt => {
+                Self::OutcomeUnknown
+            }
+            JobError::ExecutorUnavailable => Self::TransportFailed,
+            _ => Self::ApplicationFailed,
+        }
+    }
+}
+
 /// A failed MCP invocation with its complete SDK-represented response, when received.
 /// Formatting deliberately excludes server content and transport diagnostics.
 #[derive(Clone, PartialEq, Eq)]
